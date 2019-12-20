@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<page-set xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.gatein.org/xml/ns/gatein_objects_1_3 http://www.gatein.org/xml/ns/gatein_objects_1_3"
+	xmlns="http://www.gatein.org/xml/ns/gatein_objects_1_3">
+	<page>
+		<name>appCenterAdminSetup</name>
+		<title>App Center Admin Setup</title>
+		<access-permissions>*:/platform/administrators</access-permissions>
+		<edit-permission>*:/platform/administrators</edit-permission>
+		<portlet-application>
+			<portlet>
+				<application-ref>app-center</application-ref>
+				<portlet-ref>AppCenterAdminSetupPortlet</portlet-ref>
+				<preferences>
+					<preference>
+						<name>maxApps</name>
+						<value>10</value>
+						<read-only>false</read-only>
+					</preference>
+				</preferences>
+			</portlet>
+			<title>App Center Admin Setup</title>
+			<access-permissions>*:/platform/administrators</access-permissions>
+			<show-info-bar>false</show-info-bar>
+		</portlet-application>
+	</page>
+</page-set>

@@ -43,3 +43,10 @@ node_modules/
 transaction.log
 rebel-remote.xml
 rebel.xml
+
+# Npm
+node_modules/
+node/
+package-lock.json
+vue/
+webpack.watch.js

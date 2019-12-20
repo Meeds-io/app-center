@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd" xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
+    <!-- This configuration adds appCenter admin setup drop-down menu -->
+    <external-component-plugins>
+        <target-component>org.exoplatform.platform.common.service.MenuConfiguratorService</target-component>
+        <component-plugin>
+            <name>App Center Admin Setup MenuConfigurationService Plugin</name>
+            <set-method>addNavigation</set-method>
+            <type>org.exoplatform.platform.common.service.plugin.MenuConfiguratorAddNodePlugin</type>
+            <init-params>
+                <value-param>
+                    <name>extended.setup.navigation.file</name>
+                    <value>war:/conf/app-center/portal/group/platform/administrators/navigation.xml</value>
+                </value-param>
+            </init-params>
+        </component-plugin>
+    </external-component-plugins>
+</configuration>
