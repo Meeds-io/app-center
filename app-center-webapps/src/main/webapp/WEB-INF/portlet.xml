@@ -14,7 +14,7 @@
       <portlet-mode>edit</portlet-mode>
     </supports>
     <supported-locale>fr</supported-locale>
-    <resource-bundle>locale.appCenter.portlets</resource-bundle>
+    <resource-bundle>locale.portlets.appCenterPortlets</resource-bundle>
     <portlet-info>
       <title>App center admin setup portlet</title>
       <keywords>App center portlets</keywords>
@@ -39,7 +39,7 @@
       <portlet-mode>edit</portlet-mode>
     </supports>
     <supported-locale>fr</supported-locale>
-    <resource-bundle>locale.appCenter.portlets</resource-bundle>
+    <resource-bundle>locale.portlets.appCenterPortlets</resource-bundle>
     <portlet-info>
       <title>App center user setup portlet</title>
       <keywords>App center portlets</keywords>
@@ -67,7 +67,6 @@
       <mime-type>text/html</mime-type>
     </supports>
     <supported-locale>fr</supported-locale>
-    <resource-bundle>locale.appCenter.portlets</resource-bundle>
     <portlet-info>
       <title>App center my applications portlet</title>
       <keywords>App center portlets</keywords>

@@ -15,7 +15,7 @@
 			</li>
 		</ul>
 		<div v-if="maxFavoriteApps == undefined || favoriteApplicationsList.length < maxFavoriteApps" class="addTool">
-      		<a href="/portal/intranet/userApplications">
+      		<a href="/portal/intranet/appCenterUserSetup">
 	        	<img src="/app-center/skin/images/plusIcon.png">
 			</a>
 		</div>

@@ -4,7 +4,7 @@
 	xmlns="http://www.gatein.org/xml/ns/gatein_objects_1_3">
 	<page>
 		<name>appCenterAdminSetup</name>
-		<title>App Center Admin Setup</title>
+		<title>App center admin setup</title>
 		<access-permissions>*:/platform/administrators</access-permissions>
 		<edit-permission>*:/platform/administrators</edit-permission>
 		<portlet-application>
