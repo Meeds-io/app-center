@@ -11,11 +11,11 @@
 
 	PortletURL actionURL = renderResponse.createActionURL();
 	PortletPreferences preferences = renderRequest.getPreferences();
-	String maxApps = renderRequest.getParameter("maxApps");
-	if (maxApps == null) {
-	  maxApps = preferences.getValue("maxApps", "");
-		if (maxApps == null) {
-		  maxApps = "";
+	String pageSize = renderRequest.getParameter("pageSize");
+	if (pageSize == null) {
+		pageSize = preferences.getValue("pageSize", "");
+		if (pageSize == null) {
+			pageSize = "";
 		}
 	}
 %>
@@ -26,10 +26,10 @@
 			<div class="form-horizontal">
 				<div class="control-group">
 					<label class="control-label portlet-form-label">
-						<%=resource.getString("editpref.form.maxApps")%>
+						<%=resource.getString("editpref.form.pageSize")%>
 					</label>
 					<div class="controls portlet-input-field">
-						<input name="maxApps" type="text" value="<%=maxApps%>">
+						<input name="pageSize" type="text" value="<%=pageSize%>">
 					</div>
 				</div>
 			</div>

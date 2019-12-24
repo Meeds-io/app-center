@@ -1,5 +1,5 @@
 <template>
-	<div class="userApplications">
+	<div class="userSetup">
   		<div class="userApplicationTitle">
   			{{ $t("appCenter.userSetup.appDirectory") }}
   			<a v-if="isAdmin" target="_blank" href="/portal/g/:platform:administrators/appCenterAdminSetup">
@@ -23,7 +23,7 @@
         },
 	
 		created() {
-	    	this.maxApps = this.$parent.$data.preferences.maxApps;
+	    	this.pageSize = this.$parent.$data.preferences.pageSize;
 		}
 	}
 </script>

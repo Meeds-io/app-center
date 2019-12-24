@@ -3,16 +3,16 @@
 <portlet:defineObjects/>
 <%
     PortletPreferences preferences = renderRequest.getPreferences();
-    String maxApps = preferences.getValue("maxApps", "");
-    if (maxApps == null) {
-    	maxApps = "";
+    String pageSize = preferences.getValue("pageSize", "");
+    if (pageSize == null) {
+		pageSize = "";
     }
 %>
 <div id="userSetup">
 	<script>
 		require(['SHARED/userSetupPortletBundle'], function(userSetupPortletApp) {
 			var preferences = {
-				maxApps: "<%=maxApps%>"
+				pageSize: "<%=pageSize%>"
 			};
 			userSetupPortletApp.init(preferences);
 	    });

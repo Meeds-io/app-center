@@ -21,8 +21,8 @@
     </portlet-info>
     <portlet-preferences>
       <preference>
-        <name>maxApps</name>
-        <value></value>
+        <name>pageSize</name>
+        <value>10</value>
         <read-only>false</read-only>
       </preference>
     </portlet-preferences>
@@ -46,8 +46,8 @@
     </portlet-info>
     <portlet-preferences>
       <preference>
-        <name>maxApps</name>
-        <value></value>
+        <name>pageSize</name>
+        <value>10</value>
         <read-only>false</read-only>
       </preference>
     </portlet-preferences>

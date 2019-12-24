@@ -34,9 +34,9 @@ public class UserSetupPortlet extends GenericPortlet {
   @Override
   public void processAction(ActionRequest request, ActionResponse response) throws IOException, PortletException {
     PortletPreferences preferences = request.getPreferences();
-    String maxApps = request.getParameter("maxApps");
-    preferences.setValue("maxApps", maxApps);
-    response.setRenderParameter("maxApps", maxApps);
+    String pageSize = request.getParameter("pageSize");
+    preferences.setValue("pageSize", pageSize);
+    response.setRenderParameter("pageSize", pageSize);
     preferences.store();
   }
 }

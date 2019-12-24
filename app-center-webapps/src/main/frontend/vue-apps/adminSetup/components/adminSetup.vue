@@ -1,5 +1,5 @@
 <template>
-	<div class="adminSetup">
+	<div class="applicationsAdmin">
     	<div class="uiTabNormal uiTabInPage">
       		<ul class="nav nav-tabs">
         		<li :class="{active: activeTab === 1}" @click="activeTab=1">
@@ -30,7 +30,7 @@ export default {
     	};
   	},
   	created() {
-  		this.maxApps = this.$parent.$data.preferences.maxApps;
+  		this.pageSize = this.$parent.$data.preferences.pageSize;
 	},
   	mounted() {
     	const windowLocationHash = window.location.hash;

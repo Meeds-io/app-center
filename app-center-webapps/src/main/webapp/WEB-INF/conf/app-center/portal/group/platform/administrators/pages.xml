@@ -13,7 +13,7 @@
 				<portlet-ref>AppCenterAdminSetupPortlet</portlet-ref>
 				<preferences>
 					<preference>
-						<name>maxApps</name>
+						<name>pageSize</name>
 						<value>10</value>
 						<read-only>false</read-only>
 					</preference>

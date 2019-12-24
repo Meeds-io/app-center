@@ -3,9 +3,9 @@
 <portlet:defineObjects/>
 <%
     PortletPreferences preferences = renderRequest.getPreferences();
-    String maxApps = preferences.getValue("maxApps", "");
-    if (maxApps == null) {
-    	maxApps = "";
+    String pageSize = preferences.getValue("pageSize", "");
+    if (pageSize == null) {
+    	pageSize = "";
     }
     
 %>
@@ -13,7 +13,7 @@
 	<script>
 		require(['SHARED/adminSetupPortletBundle'], function(adminSetupPortletApp) {
 			var preferences = {
-				maxApps: "<%=maxApps%>"
+				pageSize: "<%=pageSize%>"
 			};
 			adminSetupPortletApp.init(preferences);
 	    });

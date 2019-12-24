@@ -256,7 +256,6 @@
 		        showAddEditApplicationModal: false,
 		        showDeleteApplicationModal: false,
 		        currentPage: 1,
-		        pageSize: 10,
 		        totalApplications: '',
 		        totalPages: '',
 		        groups: []
@@ -264,14 +263,14 @@
         },
         
         created() {
-        	this.preferences = this.$parent.$data.preferences;
+        	this.pageSize = this.$parent.pageSize;
        		this.getApplicationsList();
         },
 
         methods:{
        		getApplicationsList() {
        			
-            	var getApplicationsListUrl = "/rest/appCenter/applications/getApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.$parent.pageSize + "&keyword=" + this.keyword;
+            	var getApplicationsListUrl = "/rest/appCenter/applications/getApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.keyword;
             	
             	axios.get(getApplicationsListUrl)
               	.then(response => {
