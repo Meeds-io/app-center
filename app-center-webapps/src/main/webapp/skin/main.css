@@ -1,0 +1,756 @@
+/* This file contains CSS for admin setup portlet */
+.applicationsAdmin {
+  margin: 20px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage ul.nav.nav-tabs {
+  border-bottom: 1px solid #f5f5f5;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage ul.nav.nav-tabs li {
+  margin-bottom: -1px;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage ul.nav.nav-tabs li a {
+  border: 1px solid #f5f5f5;
+  background: transparent;
+  cursor: pointer;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage ul.nav.nav-tabs li.active a {
+  border-width: 1px;
+  background-color: #578dc9;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr th {
+  font-weight: normal;
+  font-size: 15px;
+  color: #424242;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr td img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  overflow: hidden;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr td:first-child {
+  width: 50px;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage .applicationsPaginator {
+  margin-top: 15px;
+  float: right;
+}
+.applicationsAdmin .uiTabNormal.uiTabInPage .noApp {
+  text-align: center;
+}
+.applicationsAdmin .uiTabNormal .tab-content {
+  background: #ffffff;
+  border: none;
+}
+.applicationsAdmin .uiTabNormal .tab-content .listApplications .applicationListHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.applicationsAdmin .addApplication .appCenter-form .custom-file-upload,
+.applicationsAdmin .editApplication .appCenter-form .custom-file-upload,
+.applicationsAdmin .generalParams .appCenter-form .custom-file-upload {
+  display: inline;
+}
+.applicationsAdmin .addApplication .appCenter-form .file-listing,
+.applicationsAdmin .editApplication .appCenter-form .file-listing,
+.applicationsAdmin .generalParams .appCenter-form .file-listing {
+  width: 65%;
+  margin-left: 0;
+  margin-right: 0;
+}
+.applicationsAdmin .generalParams .form-container {
+  background: #ffffff;
+  padding-bottom: 0;
+  min-height: inherit;
+  border-radius: 0;
+  box-shadow: initial;
+}
+.applicationsAdmin .generalParams .form-container div {
+  padding: 10px 0;
+}
+.applicationsAdmin .generalParams .form-container .defaultAppImage .file-listing {
+  width: 15%;
+}
+.applicationsAdmin .generalParams .form-container .defaultAppImage .errorInput {
+  color: red;
+  font-size: 11px;
+  font-style: italic;
+}
+.applicationsAdmin .generalParams .form-container .defaultAppImage .sizeInfo {
+  color: #b3b3b3;
+}
+.applicationsAdmin .generalParams .form-container .defaultAppImage .appImage {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  overflow: hidden;
+}
+.applicationsAdmin .addApplicationButton {
+  margin: 10px 0 20px 0;
+}
+.applicationsAdmin .addApplicationButton img {
+  width: 18px;
+  height: auto;
+}
+.applicationsAdmin .addApplicationButton span {
+  font-weight: normal;
+  font-size: 16px;
+  color: #5d5d5d;
+}
+.applicationsAdmin .addApplicationButton:hover span {
+  color: #578dc9;
+}
+.applicationsAdmin .modal-mask {
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  position: fixed;
+  overflow-y: scroll;
+}
+.applicationsAdmin .modal-mask .modal-content {
+  width: 420px;
+  left: 35%;
+  top: 0;
+}
+.applicationsAdmin .modal-mask .modal-content .popupHeader .popupTitle {
+  color: #848484;
+  cursor: move;
+  display: block;
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0;
+  text-align: center;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form {
+  padding-bottom: 0!important;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable textarea,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable textarea {
+  min-height: inherit!important;
+  height: 80px!important;
+  padding: 0 10px!important;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable input[type="text"],
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable input[type="text"],
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable input[type="url"],
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable input[type="url"] {
+  border-bottom: 1px solid #cccccc;
+  border: none;
+  box-shadow: 0 0 5px 0px #e8e8e8;
+  margin-bottom: 15px;
+  height: 35px!important;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .file-listing,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .file-listing {
+  display: block;
+  margin: 15px 0 !important;
+  overflow: hidden;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 260px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable span.remove-file,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable span.remove-file {
+  background: #ffffff;
+  color: red;
+  position: absolute;
+  right: 0;
+  top: -4px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable td {
+  vertical-align: top;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td .errorInput,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable td .errorInput {
+  color: red;
+  text-align: right;
+  padding-right: 30px;
+  margin-top: -10px;
+  font-size: 11px;
+  font-style: italic;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td .sizeInfo,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable td .sizeInfo {
+  color: #b3b3b3;
+  font-size: 11px;
+  font-style: italic;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td .sizeInfo.error,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable td .sizeInfo.error {
+  color: red;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .requiredInput,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .requiredInput {
+  color: #333333;
+  padding: 0 10px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .uploadImage,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .uploadImage {
+  height: 60px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload {
+  background: #7a3f8f;
+  border-radius: 5px;
+  border: 1px solid #7a3f8f;
+  color: #ffffff;
+  padding: 5px 6px;
+  transition: 0.5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload:hover,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload:hover {
+  background: #ffffff !important;
+  color: #7a3f8f;
+  transition: 0.5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td:nth-child(2),
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable td:nth-child(2) {
+  display: block;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .editImage,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .editImage {
+  width: 40px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .selectize-control .selectize-input,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .selectize-control .selectize-input {
+  height: auto;
+  max-height: unset;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox {
+  height: 40px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox label,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox label {
+  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
+  -moz-transition: background 0.3s, text-indent 0.3s;
+  -o-transition: background 0.3s, text-indent 0.3s;
+  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
+  -webkit-transition: background 0.3s, text-indent 0.3s;
+  background: #e8e8e8;
+  border-radius: 25px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: bold;
+  height: 20px;
+  left: 0px;
+  position: absolute;
+  text-indent: 27px;
+  top: 0px;
+  transition: background 0.3s, text-indent 0.3s;
+  width: 60px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox label:after,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox label:after {
+  color: #7b7b7b;
+  content: "Non";
+  display: block;
+  font-size: 12px;
+  left: 0px;
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  z-index: 1;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox label:before,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox label:before {
+  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  -moz-transition: left 0.3s;
+  -o-transition: left 0.3s;
+  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  -webkit-transition: left 0.3s;
+  background: #7b7b7b;
+  border-radius: 25px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
+  content: "";
+  display: block;
+  height: 18px;
+  left: 1px;
+  position: absolute;
+  top: 1px;
+  transition: left 0.3s;
+  width: 18px;
+  z-index: 2;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox input,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox input {
+  visibility: hidden;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox input:checked + label,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox input:checked + label {
+  background: #578dc9;
+  text-indent: 8px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox input:checked + label:after,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox input:checked + label:after {
+  color: #ffffff;
+  content: "Oui";
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox input:checked + label:before,
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox input:checked + label:before {
+  background: #e3d8e6;
+  left: 41px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .application-checkbox td:nth-child(2),
+.applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .application-checkbox td:nth-child(2) {
+  position: relative;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons {
+  text-align: center;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-submit {
+  padding: 10px 15px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-submit:hover {
+  background: #ffffff !important;
+  color: #7a3f8f;
+  transition: 0.5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-reset {
+  background: #d4d4d4;
+  border-radius: 3px;
+  border: 1px solid #cccccc;
+  box-shadow: none;
+  color: #4a4a4a;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 17px;
+  padding: 10px 15px;
+  text-align: center;
+  transition: 0.5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-reset:hover {
+  background: transparent;
+  border: 1px solid #cccccc;
+  color: #4a4a4a;
+  padding: 10px 15px;
+}
+.applicationsAdmin .modal-mask .modal-content .popupContent .requiredField {
+  text-align: right;
+  font-size: 11px;
+  padding-top: 10px;
+  color: red;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication {
+  text-align: center;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication h3 {
+  font-size: 18px;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication h3 span {
+  color: red;
+  font-weight: bold;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication .application-buttons {
+  text-align: center;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication .application-buttons .form-submit {
+  background: #e20000;
+  color: #fff;
+  padding: 5px 10px;
+  border: 1px solid #e20000;
+  border-radius: 5px;
+  transition: .5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication .application-buttons .form-submit:hover {
+  background: transparent;
+  color: #e20000;
+  transition: .5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication .application-buttons .form-reset {
+  background: #b9b9b9;
+  color: #ffffff;
+  padding: 5px 10px;
+  border: 1px solid #b9b9b9;
+  border-radius: 5px;
+  transition: .5s all;
+}
+.applicationsAdmin .modal-mask .modal-content .deleteApplication .application-buttons .form-reset:hover {
+  background: transparent;
+  color: #b9b9b9;
+  transition: .5s all;
+}
+@media screen and (max-width: 1024px) {
+  .applicationsAdmin .uiPopup {
+    width: 420px!important;
+    top: 37%!important;
+    margin: 70px auto!important;
+  }
+}
+@media screen and (max-width: 520px) {
+  .applicationsAdmin .uiPopup {
+    width: 300px!important;
+  }
+  .applicationsAdmin .uiPopup input[type="text"],
+  .applicationsAdmin .uiPopup input[type="url"],
+  .applicationsAdmin .uiPopup textarea {
+    border: none;
+    box-shadow: 0 0 5px 0px #e8e8e8;
+    margin-bottom: 15px;
+    width: 150px;
+    height: 35px;
+  }
+  .applicationsAdmin .form-container.appCenter-form .applicationTable .file-listing {
+    width: 170px !important;
+  }
+}
+/* This file contains CSS for user setup portlet */
+.userApplications .userApplicationTitle {
+  width: 100%;
+  color: #6d6d6d;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding-top: 20px;
+}
+.userApplications .userApplicationTitle .uiIconPLF24x24Setup {
+  font-size: 20px;
+  margin-top: -4px;
+}
+.userApplications .userApplicationContent {
+  align-items: flex-start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding-top: 50px;
+  width: 100%;
+}
+.userApplications .authorizedApplications {
+  display: inline-flex;
+  flex-wrap: wrap;
+  flex: 1 1 73%;
+  margin-right: 15px;
+  border-right: 1px solid #efefef;
+  position: relative;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications {
+  display: inline-flex;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 30%;
+  padding: 20px 10px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent img {
+  border-radius: 5px;
+  box-shadow: 0 0 5px darkgrey;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent img.default {
+  border-radius: unset;
+  box-shadow: none;
+  margin-top: -52px;
+  margin-left: 16px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .userAppDescription {
+  flex: 1;
+  cursor: pointer;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .userAppDescription div p {
+  color: #797979;
+  font-size: 13px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .applicationHeader {
+  display: flex;
+  width: 100%;
+  margin-bottom: 15px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .applicationHeader h5 {
+  font-size: 15px;
+  font-weight: bold;
+  padding-left: 10px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .applicationHeader .image {
+  width: 45px;
+  height: 45px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .applicationHeader .title {
+  max-width: 128px;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .authorisedAppContent .applicationHeader .appImage {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  overflow: hidden;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton a {
+  background: transparent;
+  border-radius: 25px;
+  border: 1px solid #797979;
+  color: #797979;
+  font-size: 12px;
+  padding: 5px 7px;
+  margin: 5px 0;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton a:hover {
+  background: #797979;
+  color: #ffffff;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button {
+  background: transparent;
+  border: 1px solid #797979;
+  color: #797979;
+  border-radius: 25px;
+  font-size: 12px;
+  line-height: initial;
+  padding: 5px 7px;
+  margin: 5px 0;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button:hover {
+  color: #ffffff;
+  background: #578dc9;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button:hover:disabled {
+  color: #797979;
+  background: transparent;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button.favorite {
+  color: #ffffff;
+  background: #578dc9;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button.favorite:hover {
+  color: #797979;
+  background: transparent;
+}
+.userApplications .authorizedApplications .userAuthorizedApplications .authorizedApplication .applicationButton button.favorite:hover:disabled {
+  color: #ffffff;
+  background: #578dc9;
+}
+.userApplications .authorizedApplications .noApp {
+  margin-right: auto;
+  margin-left: auto;
+}
+.userApplications .authorizedApplications .appPaginator {
+  padding-top: 30px;
+}
+.userApplications .authorizedApplications .appPaginator button {
+  background: #578dc9;
+  border: 1px solid #578dc9;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 3px #ff7c4061;
+}
+.userApplications .authorizedApplications .appPaginator button:hover {
+  background: transparent;
+  color: #578dc9;
+}
+.userApplications .authorizedApplications .appSearch {
+  text-align: right;
+  position: absolute;
+  top: -80px;
+  right: 0;
+}
+.userFavoriteApplications {
+  flex: 1 1 23%;
+}
+.userFavoriteApplications .favoritAppTitle {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: .5px;
+  padding-bottom: 25px;
+}
+.userFavoriteApplications .favoriteApplication {
+  border-bottom: 1px solid #efefef;
+  display: inline-flex;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  width: 100%;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppImage {
+  width: 50px;
+  height: 50px;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppImage .appImage {
+  border-radius: 5px;
+  box-shadow: 0 0 5px darkgrey;
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  overflow: hidden;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppImage .default {
+  border-radius: unset;
+  box-shadow: none;
+  margin-top: -53px;
+  margin-left: 20px;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppUrl {
+  max-width: 130px;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppUrl h5 {
+  color: #797979;
+  font-size: 15px;
+  padding-left: 10px;
+  flex: 1;
+}
+.userFavoriteApplications .favoriteApplication .favoriteAppRemove a i:before {
+  font-size: 14px;
+  font-weight: normal;
+  color: #929292;
+}
+.userFavoriteApplications .maxFavoriteReached {
+  font-style: italic;
+  font-size: 13px;
+  color: #b3b3b3;
+}
+@media screen and (max-width: 1264px) {
+  .userApplications .authorizedApplications {
+    flex: 1 1 60%;
+  }
+  .userApplications .authorizedApplications .authorizedApplication {
+    padding: 20px 5px!important;
+  }
+  .appSearch {
+    position: relative!important;
+    top: 0!important;
+  }
+}
+@media screen and (max-width: 767px) {
+  .userApplications .authorizedApplications {
+    flex: 1 1 100%;
+    margin-right: 0;
+    border-right: none;
+  }
+  .userApplications .authorizedApplications .authorizedApplication {
+    flex: 0 1 41%!important;
+    padding: 20px 15px!important;
+  }
+  .userApplications .userFavoriteApplications {
+    flex: 1 1 100%;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f5f5f5;
+  }
+}
+@media screen and (max-width: 481px) {
+  .userApplications .authorizedApplications .authorizedApplication {
+    flex: 0 1 100%!important;
+  }
+  .userApplications .applicationButton a,
+  .userApplications .applicationButton button {
+    text-align: center;
+    line-height: initial;
+    display: block;
+    margin: 5px 0;
+  }
+  .userApplications .applicationButton a {
+    width: auto;
+  }
+  .userApplications .applicationButton button {
+    width: 100%;
+  }
+}
+/* This file contains CSS for my applications portlet on home page */
+.myTools {
+  display: flex;
+  flex-direction: column;
+  min-height: 210px;
+}
+.myTools .myToolsHeader {
+  align-items: center;
+  display: inline-flex;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  width: 100%;
+}
+.myTools .myToolsHeader span {
+  color: #414141;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: left;
+}
+.myTools .myToolsHeader a {
+  color: #414141;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+.myTools .myToolsList {
+  padding-inline-start: 0;
+  flex-grow: 1;
+}
+.myTools .myToolsList li {
+  flex: 1 0 50%;
+  list-style: none;
+  padding: 10px 0;
+}
+.myTools .myToolsList li a {
+  display: flex;
+}
+.myTools .myToolsList .myToolTitle {
+  color: #202020;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 15px;
+  max-width: 91px;
+}
+.myTools .myToolsList .myToolImage {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  overflow: hidden;
+  padding-right: 5px;
+}
+.myTools .addTool {
+  text-align: right;
+}
+.myTools .addTool a img {
+  width: 25px;
+}
+.vue-tooltip-theme[aria-hidden='true'] {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .15s, visibility .15s;
+}
+.vue-tooltip-theme[aria-hidden='false'] {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity .15s;
+}
+.vue-tooltip-theme[x-placement^="bottom"] {
+  margin-top: 5px;
+}
+.vue-tooltip-theme[x-placement^="bottom"] .tooltip-arrow {
+  border-width: 0 5px 5px 5px;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-top-color: transparent !important;
+  top: -5px;
+  left: calc(45%);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.vue-tooltip-theme .tooltip-arrow {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  position: absolute;
+  margin: 5px;
+  border-color: black;
+}
+@media (min-width: 780px) {
+  .myTools .myToolsList {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
