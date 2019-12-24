@@ -1,5 +1,5 @@
 <template>
-	<div class="userSetup">
+	<div class="userApplications">
   		<div class="userApplicationTitle">
   			{{ $t("appCenter.userSetup.appDirectory") }}
   			<a v-if="isAdmin" target="_blank" href="/portal/g/:platform:administrators/appCenterAdminSetup">

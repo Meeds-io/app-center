@@ -51,6 +51,46 @@
   flex-wrap: wrap;
   justify-content: space-between;
 }
+.applicationsAdmin .appCenter-form {
+	background: #fff;
+    min-height: 100px;
+    border-radius: 6px;
+    box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
+}
+.applicationsAdmin .appCenter-form input[type="file"] {
+    display: none;
+}
+.applicationsAdmin .appCenter-form span.remove-file {
+    color: red;
+    cursor: pointer;
+    float: right;
+}
+.applicationsAdmin .appCenter-form .row-form-items:before, .row-form-items:after {
+    display: table;
+    content: " ";
+  }
+.applicationsAdmin .appCenter-form .row.row-form-items {
+	margin-left: 0;
+}
+.applicationsAdmin .appCenter-form .download-icon {
+    margin-right: 10px;
+}
+.applicationsAdmin .appCenter-form div.file-listing {
+    border: 1px dashed #e7e9ea;
+    margin: 5px auto;
+}
+.applicationsAdmin .appCenter-form .form-submit {
+    background: #578dc9;
+    box-shadow: none;
+    border: 1px solid #578dc9;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 17px;
+    text-align: center;
+    transition: .5s all;
+    border-radius: 3px;
+}
 .applicationsAdmin .addApplication .appCenter-form .custom-file-upload,
 .applicationsAdmin .editApplication .appCenter-form .custom-file-upload,
 .applicationsAdmin .generalParams .appCenter-form .custom-file-upload {
@@ -198,9 +238,9 @@
 }
 .applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload,
 .applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload {
-  background: #7a3f8f;
+  background: #578dc9;
   border-radius: 5px;
-  border: 1px solid #7a3f8f;
+  border: 1px solid #578dc9;
   color: #ffffff;
   padding: 5px 6px;
   transition: 0.5s all;
@@ -208,7 +248,7 @@
 .applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload:hover,
 .applicationsAdmin .modal-mask .modal-content .popupContent .editApplication .form-container.appCenter-form .applicationTable .uploadImage .custom-file-upload:hover {
   background: #ffffff !important;
-  color: #7a3f8f;
+  color: #578dc9;
   transition: 0.5s all;
 }
 .applicationsAdmin .modal-mask .modal-content .popupContent .addApplication .form-container.appCenter-form .applicationTable td:nth-child(2),
@@ -312,7 +352,7 @@
 }
 .applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-submit:hover {
   background: #ffffff !important;
-  color: #7a3f8f;
+  color: #578dc9;
   transition: 0.5s all;
 }
 .applicationsAdmin .modal-mask .modal-content .popupContent .application-buttons .form-reset {
@@ -404,6 +444,13 @@
   }
 }
 /* This file contains CSS for user setup portlet */
+.userApplications {
+  margin: 20px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
+}
 .userApplications .userApplicationTitle {
   width: 100%;
   color: #6d6d6d;
@@ -662,6 +709,10 @@
   display: flex;
   flex-direction: column;
   min-height: 210px;
+  border-radius: 6px;
+  box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
+  background-color: #fff;
+  padding: 20px 30px;
 }
 .myTools .myToolsHeader {
   align-items: center;
