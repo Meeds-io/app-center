@@ -20,8 +20,8 @@
 	</parent>
 	<artifactId>app-center-packaging</artifactId>
 	<packaging>pom</packaging>
-	<name>eXo Add-on:: Application Center - Packaging</name>
-	<description>eXo Add-on:: eXo Application Center - Packaging</description>
+	<name>Add-on:: Application Center - Packaging</name>
+	<description>Application Center - Packaging</description>
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>

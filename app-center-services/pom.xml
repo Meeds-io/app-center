@@ -19,7 +19,7 @@
     <version>1.0.x-SNAPSHOT</version>
   </parent>
   <artifactId>app-center-services</artifactId>
-  <name>eXo Add-on:: Application Center - Services</name>
+  <name>Add-on:: Application Center - Services</name>
   <properties>
     <exo.test.coverage.ratio>0.6</exo.test.coverage.ratio>
   </properties>

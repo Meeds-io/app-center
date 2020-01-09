@@ -22,7 +22,7 @@
 	<artifactId>app-center</artifactId>
 	<version>1.0.x-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>eXo Add-on:: Application Center - Parent POM</name>
+	<name>Add-on:: Application Center - Parent POM</name>
 	<description>Application Center Addon</description>
 	<modules>
 		<module>app-center-services</module>
