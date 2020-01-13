@@ -6,7 +6,7 @@
       			v-tooltip.bottom='$t("appCenter.adminSetupForm.addNewApp")' 
          		data-placement="bottom" 
          		data-container="body">
-	        	<img src="/app-center/skin/images/plusIcon.png">
+	        	<i class="uiIconPlus uiIconLightGray"></i>
 	        	<span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
 			</a>
       		<input @input="currentPage = 1;getApplicationsList()" v-model="keyword" :placeholder="$t('appCenter.adminSetupList.search')" type="text">
