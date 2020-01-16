@@ -2,7 +2,7 @@
 	<div class="userApplications">
   		<div class="userApplicationTitle">
   			{{ $t("appCenter.userSetup.appDirectory") }}
-  			<a v-if="isAdmin" target="_blank" href="/portal/g/:platform:administrators/appCenterAdminSetup">
+  			<a v-if="isAdmin" href="/portal/g/:platform:administrators/appCenterAdminSetup">
   				<i class="uiIconPLF24x24Setup"></i>
   			</a>
   		</div>
