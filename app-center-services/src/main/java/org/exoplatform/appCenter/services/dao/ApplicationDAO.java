@@ -12,31 +12,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.appCenter.services.entity.jpa.Application;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.services.organization.Group;
-import org.exoplatform.services.organization.OrganizationService;
 
 /**
  * @author Ayoub Zayati
  */
 public class ApplicationDAO extends GenericDAOJPAImpl<Application, Long> {
 
-  private OrganizationService organizationService;
-
-  public ApplicationDAO(OrganizationService organizationService) {
-    this.organizationService = organizationService;
-  }
-
   public List<Application> getAuthorizedApplications(String userName,
+                                                     Collection<Group> groups,
                                                      String keyword) {
     try {
-      Collection<Group> groups = organizationService.getGroupHandler()
-                                                    .findGroupsOfUser(userName);
       List<Application> results = new ArrayList<Application>();
       groups.forEach(group -> {
         results.addAll((List<Application>) getEntityManager().createNamedQuery("ApplicationEntity.getAuthorizedApplications")
-                                                             .setParameter("permission",
-                                                                           "%"
-                                                                               + group.getGroupName()
-                                                                               + "%")
+                                                             .setParameter("permissionPattern1",
+                                                                           "%:" + group.getId())
+                                                             .setParameter("permissionPattern2",
+                                                                           "%:" + group.getId() + ",%")
                                                              .getResultList());
       });
       return results.stream()
@@ -51,17 +43,15 @@ public class ApplicationDAO extends GenericDAOJPAImpl<Application, Long> {
     }
   }
 
-  public List<Application> getDefaultApplications(String userName) {
+  public List<Application> getDefaultApplications(String userName, Collection<Group> groups) {
     try {
-      Collection<Group> groups = organizationService.getGroupHandler()
-                                                    .findGroupsOfUser(userName);
       List<Application> results = new ArrayList<Application>();
       groups.forEach(group -> {
         results.addAll((List<Application>) getEntityManager().createNamedQuery("ApplicationEntity.getDefaultApplications")
-                                                             .setParameter("permission",
-                                                                           "%"
-                                                                               + group.getGroupName()
-                                                                               + "%")
+                                                             .setParameter("permissionPattern1",
+                                                                           "%:" + group.getId())
+                                                             .setParameter("permissionPattern2",
+                                                                           "%:" + group.getId() + ",%")
                                                              .getResultList());
       });
       return results.stream().distinct().collect(Collectors.toList());
@@ -70,9 +60,9 @@ public class ApplicationDAO extends GenericDAOJPAImpl<Application, Long> {
     }
   }
 
-  public Application getAppByNameOrTitle(String title, String url) {
+  public Application getAppByTitleOrUrl(String title, String url) {
     try {
-      return (Application) getEntityManager().createNamedQuery("ApplicationEntity.getAppByNameOrTitle")
+      return (Application) getEntityManager().createNamedQuery("ApplicationEntity.getAppByTitleOrUrl")
                                              .setParameter("title", title)
                                              .setParameter("url", url)
                                              .getSingleResult();

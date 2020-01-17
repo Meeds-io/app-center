@@ -97,7 +97,7 @@ public class ApplicationsRestService implements ResourceContainer {
   @RolesAllowed("administrators")
   public Response addApplication(@Context UriInfo uriInfo,
                                  ApplicationForm applicationForm) throws Exception {
-    Application existingApplication = applicationDAO.getAppByNameOrTitle(applicationForm.getTitle(),
+    Application existingApplication = applicationDAO.getAppByTitleOrUrl(applicationForm.getTitle(),
                                                                          applicationForm.getUrl());
     if (existingApplication != null) {
       return existingApplication.getTitle().equals(applicationForm.getTitle()) ? Util.getResponse(applicationForm.getTitle()
@@ -385,7 +385,9 @@ public class ApplicationsRestService implements ResourceContainer {
     String currentUser = ConversationState.getCurrent()
                                           .getIdentity()
                                           .getUserId();
+    Collection<Group> groups = organizationService.getGroupHandler().findGroupsOfUser(currentUser);
     List<Application> authorizedApplicationsList = applicationDAO.getAuthorizedApplications(currentUser,
+                                                                                            groups,
                                                                                             keyword);
     JSONObject authorizedApplicationsListJson = getApplicationsListJson(authorizedApplicationsList,
                                                                         offset,
@@ -568,15 +570,16 @@ public class ApplicationsRestService implements ResourceContainer {
                                                                          : null;
   }
 
-  private List<Application> getFavoriteApplications() {
+  private List<Application> getFavoriteApplications() throws Exception {
     String currentUser = ConversationState.getCurrent()
                                           .getIdentity()
                                           .getUserId();
     List<Application> favoriteApplications = new ArrayList<Application>();
+    Collection<Group> groups = organizationService.getGroupHandler().findGroupsOfUser(currentUser);
     favoriteApplications = Stream.concat(favoriteApplicationDAO.getFavoriteApps(currentUser)
                                                                .stream()
                                                                .map(userFavoriteApp -> userFavoriteApp.getApplication()),
-                                         applicationDAO.getDefaultApplications(currentUser)
+                                         applicationDAO.getDefaultApplications(currentUser, groups)
                                                        .stream())
                                  .distinct()
                                  .sorted(Comparator.comparing(Application::getTitle))

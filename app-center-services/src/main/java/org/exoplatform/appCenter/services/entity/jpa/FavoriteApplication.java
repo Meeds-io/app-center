@@ -19,14 +19,14 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
  */
 @Entity(name = "FavoriteApplicationEntity")
 @ExoEntity
-@Table(name = "FAVORITE_APPLICATION")
+@Table(name = "AC_FAVORITE_APPLICATION")
 @NamedQueries({
     @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteApps", query = "SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp "
-        + "WHERE favoriteApp.userName= :userName"),
+        + "WHERE favoriteApp.userName = :userName"),
     @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppByUserNameAndAppId", query = "SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp "
-        + "WHERE favoriteApp.application.id= :applicationId AND favoriteApp.userName= :userName"),
+        + "WHERE favoriteApp.application.id = :applicationId AND favoriteApp.userName = :userName"),
     @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppsByAppId", query = "SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp "
-        + "WHERE favoriteApp.application.id= :applicationId"),
+        + "WHERE favoriteApp.application.id = :applicationId"),
 
 })
 public class FavoriteApplication {
