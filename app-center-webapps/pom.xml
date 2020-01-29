@@ -21,9 +21,6 @@
   <artifactId>app-center-webapps</artifactId>
   <packaging>war</packaging>
   <name>Add-on:: Application Center - Webapp</name>
-  <properties>
-    <com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>javax.portlet</groupId>
