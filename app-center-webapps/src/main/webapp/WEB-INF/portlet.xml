@@ -74,4 +74,26 @@
     <portlet-preferences>
     </portlet-preferences>
   </portlet>
+  <!-- ================================================================ -->
+  <!-- = App Center App Launcher Portlet = -->
+  <!-- ================================================================== -->
+  <portlet>
+    <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
+    <display-name xml:lang="EN">App center app launcher portlet</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/appLauncher.html</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>fr</supported-locale>
+    <portlet-info>
+      <title>App center app launcher portlet</title>
+      <keywords>App center portlets</keywords>
+    </portlet-info>
+    <portlet-preferences>
+    </portlet-preferences>
+  </portlet>
 </portlet-app>

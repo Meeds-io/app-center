@@ -806,3 +806,86 @@
     flex-wrap: wrap;
   }
 }
+
+/*--------------------------- App Launcher -----------------------------*/
+/*----------------------------------------------------------------------*/
+
+.AppCenterAppLauncherPortletTDContainer {
+  float: right !important;
+  max-height: 58px;
+}
+
+#app-center-launcher {
+  background: transparent;
+}
+
+.uiApplicationIcon {
+  color: white!important;
+  font-size: 18px;
+  font-style: normal;
+  height: 58px;
+  padding: 0 5px;
+}
+
+.uiApplicationIcon:before {
+  font-family: 'PLF-FONT-ICONS';
+  content: "\ea95" !important;
+}
+
+.VuetifyApp .v-overlay--absolute, .VuetifyApp .v-navigation-drawer--absolute {
+  position: fixed;
+}
+.VuetifyApp .v-list-item {
+  padding: 0px;
+}
+.VuetifyApp .v-navigation-drawer--temporary {
+  z-index: 1050;
+}
+
+.uiCloseIcon {
+  color: #a8b3c5;
+  font-size: 20px;
+  font-style: normal;
+  cursor: pointer;
+}
+
+.uiCloseIcon:before {
+  font-family: 'PLF-FONT-ICONS';
+  content: "\e937" !important;
+}
+
+.appLauncherDrawerTitle {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4D5466;
+}
+
+.appLauncherList {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 20px 0;
+}
+
+.appLauncherItem {
+  flex: 1 1 33%;
+}
+
+.appLauncherItem a {
+  display: block;
+  padding: 10px;
+}
+
+.appLauncherImage {
+  width: 65px;
+  height: 65px;
+  display: block;
+  margin: 8px auto;
+}
+
+.appLauncherTitle {
+  display: block;
+  text-align: center;
+  color: #555759;
+  font-size: 16px;
+}

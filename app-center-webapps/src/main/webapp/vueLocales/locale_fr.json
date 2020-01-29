@@ -45,5 +45,6 @@
   "appCenter.userSetup.shortcuts": "Raccourcis",
   "appCenter.userSetup.maxFavoriteApps.reached": "Vous avez atteint le maximum de favoris autorisé",
   "appCenter.userSetup.seeAll":"Voir tout",
-  "appCenter.userSetup.loading":"Chargement en cours ..."
+  "appCenter.userSetup.loading":"Chargement en cours ...",
+  "appCenter.appLauncher.drawer.title":"Mes applications"
 }
