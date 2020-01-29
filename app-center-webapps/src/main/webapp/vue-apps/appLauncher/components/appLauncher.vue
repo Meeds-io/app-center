@@ -24,7 +24,7 @@
                 <v-row class="mx-0 px-3">
                     <v-list-item class="appLauncherDrawerHeader">
                         <v-list-item-content>
-                            <span class="appLauncherDrawerTitle">My Applications</span>
+                            <span class="appLauncherDrawerTitle">{{ $t('appCenter.appLauncher.drawer.title') }}</span>
                         </v-list-item-content>
                         <v-list-item-action class="appLauncherDrawerIcons">
                             <i class="uiCloseIcon appLauncherDrawerClose" @click="toggleDrawer()"></i>
