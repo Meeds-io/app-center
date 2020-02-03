@@ -821,7 +821,7 @@
 
 .uiApplicationIcon {
   color: white!important;
-  font-size: 18px;
+  font-size: 20px!important;
   font-style: normal;
   height: 58px;
   padding: 0 5px;
@@ -868,12 +868,12 @@
 }
 
 .appLauncherItem {
-  flex: 1 1 33%;
+  flex: 0 1 33%;
 }
 
 .appLauncherItem a {
   display: block;
-  padding: 10px;
+  padding: 5px;
 }
 
 .appLauncherImage {
@@ -881,6 +881,9 @@
   height: 65px;
   display: block;
   margin: 8px auto;
+  border: 1px solid #f0f4fe!important;
+  border-radius: 5px;
+  padding: 10px;
 }
 
 .appLauncherTitle {
@@ -888,4 +891,34 @@
   text-align: center;
   color: #555759;
   font-size: 16px;
+}
+
+.appHeaderBorder {
+  border-color: #f0f4fe!important;
+}
+
+.appLauncherItem a:hover .appLauncherImage{
+  box-shadow: -3px 3px 6px 0px #ececec;
+  transition: all .3s;
+}
+
+.seeAllApplicationsBtn {
+  border: 1px solid #1976d27a!important;
+  padding: 8px 15px;
+  border-radius: 3px!important;
+  cursor: pointer!important;
+  letter-spacing: .5px;
+}
+
+.seeAllApplicationsBtn:hover {
+  background-color: #1976d21c!important;
+}
+
+.seeAllApplications {
+  padding-top: 10px;
+  padding-bottom: 20px;
+}
+
+.open-app-drawer {
+  overflow: hidden;
 }

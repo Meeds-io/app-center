@@ -1,5 +1,5 @@
 import './components/initComponents.js';
-import AdminSetupApp from './components/adminSetup.vue'
+import AdminSetupApp from './components/AdminSetup.vue'
 
 const lang = eXo.env.portal.language;
 const url = `/app-center/vueLocales/locale_${lang}.json`;

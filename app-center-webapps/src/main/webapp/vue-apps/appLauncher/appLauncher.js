@@ -1,4 +1,4 @@
-import AppLauncherApp from './components/appLauncher.vue';
+import AppLauncherApp from './components/AppLauncher.vue';
 
 Vue.use(Vuetify);
 

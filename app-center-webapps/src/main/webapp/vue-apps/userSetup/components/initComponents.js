@@ -1,5 +1,5 @@
-import UserAuthorizedApplications from './userAuthorizedApplications.vue';
-import UserFavoriteApplications from './userFavoriteApplications.vue';
+import UserAuthorizedApplications from './UserAuthorizedApplications.vue';
+import UserFavoriteApplications from './UserFavoriteApplications.vue';
 
 const components = {
   'user-authorizedApplications': UserAuthorizedApplications,

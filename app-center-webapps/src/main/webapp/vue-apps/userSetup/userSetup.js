@@ -1,5 +1,5 @@
 import './components/initComponents.js';
-import UserSetupApp from './components/userSetup.vue'
+import UserSetupApp from './components/UserSetup.vue'
 
 const lang = eXo.env.portal.language;
 const url = `/app-center/vueLocales/locale_${lang}.json`;

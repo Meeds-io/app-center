@@ -1,4 +1,4 @@
-import MyApplicationsApp from './components/myApplications.vue'
+import MyApplicationsApp from './components/MyApplications.vue'
 
 const lang = eXo.env.portal.language;
 const url = `/app-center/vueLocales/locale_${lang}.json`;

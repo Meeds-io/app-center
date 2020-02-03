@@ -13,5 +13,4 @@ module.exports = merge(common, {
     output: {
         path: path.resolve(`${exoServerPath}/webapps/${app}/`)
     },
-    devtool: 'inline-source-map'
 });

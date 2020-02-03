@@ -217,7 +217,7 @@
     import { faExclamationCircle, faDownload, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
     import BootstrapVue from 'bootstrap-vue';
-    import Paginator from './paginator.vue';
+    import Paginator from './Paginator.vue';
     import VueEsc from 'vue-esc';
     import VTooltip from 'v-tooltip'
 	 

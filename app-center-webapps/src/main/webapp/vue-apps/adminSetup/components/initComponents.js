@@ -1,6 +1,6 @@
 import ExoModal from './modal/ExoModal.vue';
-import AdminSetupGeneralParams from './adminSetupGeneralParams.vue';
-import AdminSetupList from './adminSetupList.vue';
+import AdminSetupGeneralParams from './AdminSetupGeneralParams.vue';
+import AdminSetupList from './AdminSetupList.vue';
 
 const components = {
   'adminSetup-generalParams': AdminSetupGeneralParams,
