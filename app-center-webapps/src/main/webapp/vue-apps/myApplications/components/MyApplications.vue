@@ -24,8 +24,6 @@
 </template>
 
 <script>
-
-    import axios from 'axios';
     import dot from 'vue-text-dot'
 	import VTooltip from 'v-tooltip'
 	 
@@ -49,21 +47,32 @@
         	
         	getFavoriteApplicationsList() {
         		var getFavoriteApplicationsListUrl = "/rest/appCenter/applications/getFavoriteApplicationsList";
-        		axios.get(getFavoriteApplicationsListUrl)
-        		.then(response => {
-        			this.favoriteApplicationsList = response.data.applications;
-        			
-        		}).catch(e => {
-        		})
+				return fetch(getFavoriteApplicationsListUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting the favorite applications list');
+					}
+				}).then(data => {
+					this.favoriteApplicationsList = data.applications;
+				})
         	},
         	
         	getMaxFavoriteApps() {
         		var getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
-	        	axios.get(getGeneralSettingsUrl)
-	            .then(response => {
-	            	this.maxFavoriteApps = response.data.maxFavoriteApps;
-	           	}).catch(e => {
-	            })
+				return fetch(getGeneralSettingsUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting the general applications list');
+					}
+				}).then(data => {
+					this.maxFavoriteApps = data.maxFavoriteApps;
+				})
           	},
     	}
  	}

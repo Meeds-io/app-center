@@ -211,12 +211,9 @@
 </template>
 
 <script>
-
-    import axios from 'axios';
     import { library } from '@fortawesome/fontawesome-svg-core'
     import { faExclamationCircle, faDownload, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-    import BootstrapVue from 'bootstrap-vue';
     import Paginator from './Paginator.vue';
     import VueEsc from 'vue-esc';
     import VTooltip from 'v-tooltip'
@@ -271,14 +268,20 @@
        		getApplicationsList() {
        			
             	var getApplicationsListUrl = "/rest/appCenter/applications/getApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.keyword;
-            	
-            	axios.get(getApplicationsListUrl)
-              	.then(response => {
-                	this.applicationsList = response.data.applications;
-                	this.totalApplications = response.data.totalApplications;
-					this.totalPages = response.data.totalPages;
-              	}).catch(e => {
-              	})
+
+				return fetch(getApplicationsListUrl, {
+					method: 'GET',
+				}).then((resp) => {
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting the favorite applications list');
+					}
+				}).then(data => {
+					this.applicationsList = data.applications;
+					this.totalApplications = data.totalApplications;
+					this.totalPages = data.totalPages;
+				})
             },
             
             onPageChange(page) {
@@ -318,30 +321,39 @@
             
             addEditApplication() {
 		    	var addEditApplication = this.formArray.viewMode ? "/rest/appCenter/applications/addApplication" : "/rest/appCenter/applications/editApplication";
-		        axios.post(addEditApplication, this.formArray)
-		        .then(response => {
-		        	this.getApplicationsList();
-		        	this.resetForm();
-		    	})
-		    	.catch(e => {
-		    		if (e.response.status == 401) {
-                		this.error = this.$t("appCenter.adminSetupForm.unauthorized");
-                	}
-                	else {
-		        		this.error = this.$t('appCenter.adminSetupForm.error');
-		        	}
-		    	})
+		        return fetch(addEditApplication, {
+		        	headers: {
+		        		'content-Type': 'application/json'
+					},
+					method: 'POST',
+					body: JSON.stringify(this.formArray)
+				}).then(response => {
+					this.getApplicationsList();
+					this.resetForm();
+				}).catch(e => {
+					if (e.response.status == 401) {
+						this.error = this.$t("appCenter.adminSetupForm.unauthorized");
+					}
+					else {
+						this.error = this.$t('appCenter.adminSetupForm.error');
+					}
+				});
       		},
 
             deleteApplication() {
-            	axios.get("/rest/appCenter/applications/deleteApplication/" + this.formArray.id)
-            	.then(response => {
-                	this.closeDeleteModal();
-                	this.currentPage = 1;
-                	this.getApplicationsList();
-		      	}).catch(e => {
-		        	this.error = this.$t('appCenter.adminSetupForm.error');
-		    	})
+				return fetch("/rest/appCenter/applications/deleteApplication/" + this.formArray.id, {
+					method: 'GET',
+				}).then( (resp) => {
+					if(resp && resp.ok) {
+						return resp.json;
+					} else {
+						throw new Error('Error when deleting application by id');
+					}
+				}).then(() => {
+					this.closeDeleteModal();
+					this.currentPage = 1;
+					this.getApplicationsList();
+				})
             },
             
           	resetForm() {

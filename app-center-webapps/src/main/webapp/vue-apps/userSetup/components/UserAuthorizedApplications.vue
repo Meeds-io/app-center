@@ -39,8 +39,6 @@
 </template>
 
 <script>
-
-    import axios from 'axios';
     import dot from 'vue-text-dot'
 	import VTooltip from 'v-tooltip'
 	 
@@ -70,33 +68,44 @@
         	
         	getAuthorizedApplicationsList() {
         		var getAuthorizedApplicationsListUrl = "/rest/appCenter/applications/getAuthorizedApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.keyword;
-	        	axios.get(getAuthorizedApplicationsListUrl)
-	            .then(response => {
-	            	this.authorizedApplicationsList = this.authorizedApplicationsList.concat(response.data.applications);
-	            	this.totalApplications = response.data.totalApplications;
-	            	this.canAddFavorite = response.data.canAddFavorite;
-	            	if (this.currentPage * this.pageSize < this.totalApplications) {
-	            		this.showPaginator = true;
-	            	}
-	            	else {
-	            		this.showPaginator = false;
-	            	}
-	            	this.authorizedApplicationsListMsg = this.totalApplications == 0 ? this.$t("appCenter.adminSetupForm.noApp") : "";
-	           	}).catch(e => {
-	            })
+				return fetch(getAuthorizedApplicationsListUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting authorized applications list');
+					}
+				}).then(data => {
+					this.authorizedApplicationsList = this.authorizedApplicationsList.concat(data.applications);
+					this.totalApplications = data.totalApplications;
+					this.canAddFavorite = data.canAddFavorite;
+					if (this.currentPage * this.pageSize < this.totalApplications) {
+						this.showPaginator = true;
+					}
+					else {
+						this.showPaginator = false;
+					}
+					this.authorizedApplicationsListMsg = this.totalApplications == 0 ? this.$t("appCenter.adminSetupForm.noApp") : "";
+				})
           	},
           	
          	addDeleteFavoriteApplication(appId, index) {
          		if (!this.authorizedApplicationsList[index].isFavorite) {
 	        		var addFavoriteApplicationUrl = "/rest/appCenter/applications/addFavoriteApplication/" + appId;
-		        	axios.get(addFavoriteApplicationUrl)
-		            .then(response => {
-		           		this.$parent.$children[1].getFavoriteApplicationsList();
-		           		this.canAddFavorite = this.maxFavoriteApps == undefined || response.data.applications.length < this.maxFavoriteApps;
-		           		this.authorizedApplicationsList[index].isFavorite = true;
-		           		
-		           	}).catch(e => {
-		            })
+					return fetch(addFavoriteApplicationUrl, {
+						method: 'GET'
+					}).then((resp) =>{
+						if(resp && resp.ok) {
+							return resp.json();
+						} else {
+							throw new Error('Error when deleting a favorite application');
+						}
+					}).then(data => {
+						this.$parent.$children[1].getFavoriteApplicationsList();
+						this.canAddFavorite = this.maxFavoriteApps == undefined || data.applications.length < this.maxFavoriteApps;
+						this.authorizedApplicationsList[index].isFavorite = true;
+					})
 		    	}
 		    	else {
 		    		this.$parent.$children[1].deleteFavoriteApplication(appId);
@@ -110,11 +119,17 @@
           	
           	getMaxFavoriteApps() {
         		var getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
-	        	axios.get(getGeneralSettingsUrl)
-	            .then(response => {
-	            	this.maxFavoriteApps = response.data.maxFavoriteApps;
-	           	}).catch(e => {
-	            })
+				return fetch(getGeneralSettingsUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting the general applications list');
+					}
+				}).then(data => {
+					this.maxFavoriteApps = data.maxFavoriteApps;
+				})
           	},
           	
           	searchAuthorizedApplicationsList() {

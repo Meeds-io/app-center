@@ -54,13 +54,9 @@
 </template>
 
 <script>
-
-    import axios from 'axios';
-    import jq from 'jquery';
    	import { library } from '@fortawesome/fontawesome-svg-core'
     import { faExclamationCircle, faDownload, faTimes } from '@fortawesome/free-solid-svg-icons'
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-    import BootstrapVue from 'bootstrap-vue';
 	import VTooltip from 'v-tooltip'
 	 
 	Vue.use(VTooltip);
@@ -92,19 +88,25 @@
         methods:{
         	getAppGeneralSettings() {
         		var getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
-	        	axios.get(getGeneralSettingsUrl)
-	            .then(response => {
-	            	if (response.data.maxFavoriteApps != undefined) {
-	            		this.maxFavoriteApps = response.data.maxFavoriteApps;
-	            	}
-	            	if (response.data.defaultAppImageName != undefined) {
-	            		this.defaultAppImage.fileName = response.data.defaultAppImageName;
-	            	}
-	            	if (response.data.defaultAppImageBody != undefined) {
-	            		this.defaultAppImage.fileBody = response.data.defaultAppImageBody;
-	            	}
-	           	}).catch(e => {
-	            })
+				return fetch(getGeneralSettingsUrl, {
+					method: 'GET',
+				}).then((resp) => {
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error getting favorite applications list');
+					}
+				}).then(data => {
+					if (data.maxFavoriteApps != undefined) {
+						this.maxFavoriteApps = data.maxFavoriteApps;
+					}
+					if (data.defaultAppImageName != undefined) {
+						this.defaultAppImage.fileName = data.defaultAppImageName;
+					}
+					if (data.defaultAppImageBody != undefined) {
+						this.defaultAppImage.fileBody = data.defaultAppImageBody;
+					}
+				})
           	},
           	
           	setMaxFavoriteApps() {
@@ -112,12 +114,11 @@
 		    	if (this.maxFavoriteApps != '') {
 		    		setMaxFavoriteAppsUrl += "?number=" + this.maxFavoriteApps;
 		    	}
-	           	axios.get(setMaxFavoriteAppsUrl)
-	            .then(response => {
-	            	this.isMaxFavoriteAppsView = true;
-	           	}).catch(e => {
-	           		
-	            })
+				return fetch(setMaxFavoriteAppsUrl, {
+					method: 'GET'
+				}).then(() =>{
+					this.isMaxFavoriteAppsView = true;
+				})
           	},
           	
           	submitDefaultAppImage() {
@@ -149,16 +150,18 @@
           	
           	setDefaultAppImage() {
 				var setDefaultAppImageUrl = "/rest/appCenter/applications/setDefaultImage";
-				axios.post(setDefaultAppImageUrl,this.defaultAppImage, {
+				return fetch(setDefaultAppImageUrl, {
 					headers: {
-						"Content-Type": "application/json; charset=utf-8"
-					}
-				})
-			   	.then(response => {
-			    	this.defaultAppImage.isView = true;
-			    	this.getAppGeneralSettings();
-			  	}).catch(e => {
-			    })
+						'content-Type': 'application/json'
+					},
+					method: 'POST',
+					body: JSON.stringify(this.defaultAppImage)
+				}).then(() => {
+					this.defaultAppImage.isView = true;
+					this.getAppGeneralSettings();
+				}).catch(e => {
+					throw new Error('Error when setting the default application image ' + e)
+				});
           	},
           	
           	handleDefaultAppImageFileUpload(){

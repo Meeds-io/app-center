@@ -27,8 +27,6 @@
 </template>
 
 <script>
-
-    import axios from 'axios';
     import dot from 'vue-text-dot'
     import VTooltip from 'v-tooltip'
 	 
@@ -51,24 +49,37 @@
         	
         	getFavoriteApplicationsList() {
         		var getFavoriteApplicationsListUrl = "/rest/appCenter/applications/getFavoriteApplicationsList";
-	        	axios.get(getFavoriteApplicationsListUrl)
-	            .then(response => {
-	            	this.favoriteApplicationsList = response.data.applications;
-	            	this.canAddFavorite = this.$parent.$children[0].maxFavoriteApps == undefined || this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;
-				}).catch(e => {
-	            })
+				return fetch(getFavoriteApplicationsListUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when getting the general applications list');
+					}
+				}).then(data => {
+					this.favoriteApplicationsList = data.applications;
+					this.canAddFavorite = this.$parent.$children[0].maxFavoriteApps == undefined || this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;
+
+				})
           	},
           	
          	deleteFavoriteApplication(appId) {
         		var deleteFavoriteApplicationUrl = "/rest/appCenter/applications/deleteFavoriteApplication/" + appId;
-	        	axios.get(deleteFavoriteApplicationUrl)
-	            .then(response => {
-	           		this.getFavoriteApplicationsList();
-	           		var index = this.$parent.$children[0].authorizedApplicationsList.findIndex(app => app.appId == appId);
-	            	this.$parent.$children[0].authorizedApplicationsList[index].isFavorite = false;
-	            	this.$parent.$children[0].canAddFavorite = this.$parent.$children[0].maxFavoriteApps == undefined || response.data.applications.length < this.$parent.$children[0].maxFavoriteApps;
-	           	}).catch(e => {
-	            })
+				return fetch(deleteFavoriteApplicationUrl, {
+					method: 'GET'
+				}).then((resp) =>{
+					if(resp && resp.ok) {
+						return resp.json();
+					} else {
+						throw new Error('Error when deleting a favorite application');
+					}
+				}).then(data => {
+					this.getFavoriteApplicationsList();
+					var index = this.$parent.$children[0].authorizedApplicationsList.findIndex(app => app.appId == appId);
+					this.$parent.$children[0].authorizedApplicationsList[index].isFavorite = false;
+					this.$parent.$children[0].canAddFavorite = this.$parent.$children[0].maxFavoriteApps == undefined || data.applications.length < this.$parent.$children[0].maxFavoriteApps;
+				})
           	}
     	}
     }
