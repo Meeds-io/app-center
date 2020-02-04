@@ -1,7 +1,7 @@
 <template>
 	<div class="authorizedApplications">
 		<div class="appSearch">
-			<input @input="searchAuthorizedApplicationsList()" v-model="keyword" :placeholder="$t('appCenter.adminSetupList.search')" type="text">
+			<input v-model="searchText" :placeholder="$t('appCenter.adminSetupList.search')" type="text">
 		</div>
 		<div class="userAuthorizedApplications">
 			<div :key="authorizedApp.appId" class="authorizedApplication" v-for="(authorizedApp, index) in authorizedApplicationsList">
@@ -49,14 +49,29 @@
     	components: { dot },
     	data(){
         	return{
-        		authorizedApplicationsList: [],
-        		showPaginator: false,
-        		currentPage: 1,
-        		keyword: '',
-        		maxFavoriteApps: '',
-        		authorizedApplicationsListMsg: this.$t("appCenter.userSetup.loading")
+        	  authorizedApplicationsList: [],
+			  showPaginator: false,
+			  currentPage: 1,
+			  searchText: '',
+			  searchApp: '',
+			  searchDelay: 300,
+			  maxFavoriteApps: '',
+			  authorizedApplicationsListMsg: this.$t("appCenter.userSetup.loading")
         	}
         },
+
+		watch: {
+			searchText() {
+				if (this.searchText && this.searchText.trim().length) {
+					clearTimeout(this.searchApp);
+					this.searchApp = setTimeout(() => {
+						this.searchAuthorizedApplicationsList();
+					}, this.searchDelay);
+				} else {
+					this.searchAuthorizedApplicationsList();
+				}
+			}
+		},
 
         created() {
        		this.pageSize = this.$parent.pageSize;
@@ -67,7 +82,7 @@
         methods:{
         	
         	getAuthorizedApplicationsList() {
-        		var getAuthorizedApplicationsListUrl = "/rest/appCenter/applications/getAuthorizedApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.keyword;
+        		var getAuthorizedApplicationsListUrl = "/rest/appCenter/applications/getAuthorizedApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.searchText;
 				return fetch(getAuthorizedApplicationsListUrl, {
 					method: 'GET'
 				}).then((resp) =>{
