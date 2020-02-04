@@ -1,26 +1,28 @@
 <template>
-	<div class="myTools">
-		<div class="myToolsHeader">
-			<span>{{ $t("appCenter.userSetup.shortcuts") }}</span>
-			<a class="seeAll" href="/portal/intranet/appCenterUserSetup">{{ $t("appCenter.userSetup.seeAll") }}</a>
-		</div>
-		<ul class="myToolsList">
-			<li v-for="favoriteApp in favoriteApplicationsList">
-				<a :href="favoriteApp.appUrl" target="_blank">
-					<img class="myToolImage" v-if="favoriteApp.appImageFileBody != undefined && favoriteApp.appImageFileBody != ''" :src="favoriteApp.appImageFileBody"/>
-  					<span v-tooltip.bottom="favoriteApp.appDescription" class="myToolTitle">
-  						<dot :msg="favoriteApp.appTitle" :line="2"></dot>
-  					</span>
-				</a>
-			</li>
-		</ul>
-		<div v-if="maxFavoriteApps == undefined || favoriteApplicationsList.length < maxFavoriteApps" class="addTool">
-      		<a href="/portal/intranet/appCenterUserSetup">
-	        	<i class="uiIconPlus uiIconLightGray"></i>
-			</a>
-		</div>
-		
- </div>
+  <div class="myTools">
+    <div class="myToolsHeader">
+      <span>{{ $t("appCenter.userSetup.shortcuts") }}</span>
+      <a class="seeAll" href="/portal/intranet/appCenterUserSetup">{{ $t("appCenter.userSetup.seeAll") }}</a>
+    </div>
+    <ul class="myToolsList">
+      <li v-for="favoriteApp in favoriteApplicationsList">
+        <a :href="favoriteApp.appUrl" target="_blank">
+          <img
+            v-if="favoriteApp.appImageFileBody != undefined && favoriteApp.appImageFileBody != ''"
+            class="myToolImage"
+            :src="favoriteApp.appImageFileBody">
+          <span v-tooltip.bottom="favoriteApp.appDescription" class="myToolTitle">
+            <dot :msg="favoriteApp.appTitle" :line="2" />
+          </span>
+        </a>
+      </li>
+    </ul>
+    <div v-if="maxFavoriteApps == undefined || favoriteApplicationsList.length < maxFavoriteApps" class="addTool">
+      <a href="/portal/intranet/appCenterUserSetup">
+        <i class="uiIconPlus uiIconLightGray"></i>
+      </a>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -29,7 +31,7 @@
 	 
 	Vue.use(VTooltip);    
     export default {
-        name: "myTools",
+        name: "MyTools",
         components: { dot },
         data(){
             return{
@@ -46,7 +48,7 @@
         methods:{
         	
         	getFavoriteApplicationsList() {
-        		var getFavoriteApplicationsListUrl = "/rest/appCenter/applications/getFavoriteApplicationsList";
+        		const getFavoriteApplicationsListUrl = "/rest/appCenter/applications/getFavoriteApplicationsList";
 				return fetch(getFavoriteApplicationsListUrl, {
 					method: 'GET'
 				}).then((resp) =>{
@@ -61,7 +63,7 @@
         	},
         	
         	getMaxFavoriteApps() {
-        		var getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
+        		const getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
 				return fetch(getGeneralSettingsUrl, {
 					method: 'GET'
 				}).then((resp) =>{

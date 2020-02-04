@@ -1,213 +1,254 @@
 <template>
-	<div class="listApplications" v-esc="closeModals">
-  		<div class="applicationListHeader">
-      		<a @click.prevent="showAddApplicationModal()"  
-      			class="actionIcon addApplicationButton" 
-      			v-tooltip.bottom='$t("appCenter.adminSetupForm.addNewApp")' 
-         		data-placement="bottom" 
-         		data-container="body">
-	        	<i class="uiIconPlus uiIconLightGray"></i>
-	        	<span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
-			</a>
-      		<input @input="currentPage = 1;getApplicationsList()" v-model="keyword" :placeholder="$t('appCenter.adminSetupList.search')" type="text">
-		</div>
+  <div v-esc="closeModals" class="listApplications">
+    <div class="applicationListHeader">
+      <a
+        v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.addNewApp&quot;)"  
+        class="actionIcon addApplicationButton" 
+        data-placement="bottom" 
+        data-container="body" 
+        @click.prevent="showAddApplicationModal()">
+        <i class="uiIconPlus uiIconLightGray"></i>
+        <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
+      </a>
+      <input
+        v-model="keyword"
+        :placeholder="$t('appCenter.adminSetupList.search')"
+        type="text"
+        @input="currentPage = 1;getApplicationsList()">
+    </div>
 		
-		<table class="uiGrid table table-hover table-striped">
-        	<tr>          
-            	<th>
-              		{{ $t('appCenter.adminSetupList.picto') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupList.application') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupForm.url') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupForm.description') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupForm.permissions') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupForm.byDefault') }}
-            	</th>
-            	<th>
-              		{{ $t('appCenter.adminSetupForm.active') }}
-            	</th>
-            	<th class="actions">
-              		{{ $t('appCenter.adminSetupList.actions') }}
-            	</th>
-			</tr>
-          	<tr :key="application.appId" v-for="application in applicationsList">
-          		<td>
-              		<img v-if="application.appImageFileBody != undefined && application.appImageFileBody != ''" :src="application.appImageFileBody"/>
-            	</td>
-            	<td>
-              		<h5>{{ application.appTitle }}</h5>
-            	</td>
-            	<td>
-              		<h5>{{ application.appUrl }}</h5>
-            	</td>
-            	<td>
-              		<h5>{{ application.appDescription }}</h5>
-            	</td>
-            	<td>
-              		<h5 v-for="permission in application.appPermissions">{{ permission }}</h5>
-            	</td>
-            	<td>
-              		<input disabled="disabled" type="checkbox" v-model="application.appDefault"/>
-            	</td>
-            	<td>
-              		<input disabled="disabled" type="checkbox" v-model="application.appActive"/>
-            	</td>
-            	<td>
-	            	<a @click.prevent="showEditApplicationModal(application)" 
-	            		class="actionIcon" 
-	            		v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' 
-	            		data-placement="bottom" 
-	            		data-container="body">
-	              			<i class="uiIconEdit uiIconLightGray"></i>
-	            	</a>
+    <table class="uiGrid table table-hover table-striped">
+      <tr>          
+        <th>
+          {{ $t('appCenter.adminSetupList.picto') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupList.application') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupForm.url') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupForm.description') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupForm.permissions') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupForm.byDefault') }}
+        </th>
+        <th>
+          {{ $t('appCenter.adminSetupForm.active') }}
+        </th>
+        <th class="actions">
+          {{ $t('appCenter.adminSetupList.actions') }}
+        </th>
+      </tr>
+      <tr v-for="application in applicationsList" :key="application.appId">
+        <td>
+          <img v-if="application.appImageFileBody != undefined && application.appImageFileBody != ''" :src="application.appImageFileBody">
+        </td>
+        <td>
+          <h5>{{ application.appTitle }}</h5>
+        </td>
+        <td>
+          <h5>{{ application.appUrl }}</h5>
+        </td>
+        <td>
+          <h5>{{ application.appDescription }}</h5>
+        </td>
+        <td>
+          <h5 v-for="permission in application.appPermissions">{{ permission }}</h5>
+        </td>
+        <td>
+          <input
+            v-model="application.appDefault"
+            disabled="disabled"
+            type="checkbox">
+        </td>
+        <td>
+          <input
+            v-model="application.appActive"
+            disabled="disabled"
+            type="checkbox">
+        </td>
+        <td>
+          <a
+            v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.edit&quot;)" 
+            class="actionIcon" 
+            data-placement="bottom" 
+            data-container="body" 
+            @click.prevent="showEditApplicationModal(application)">
+            <i class="uiIconEdit uiIconLightGray"></i>
+          </a>
 	            
-	          		<a @click.prevent="toDeleteApplicationModal(application)" 
-	          			class="actionIcon" 
-	          			v-tooltip.bottom='$t("appCenter.adminSetupList.remove")' 
-	          			data-placement="bottom" 
-	          			data-container="body">
-	              			<i class="uiIconRemove uiIconLightGray"></i>
-	            	</a>
-            	</td>
-			</tr>
-		</table>
-    	<div class="noApp" v-if="applicationsList.length == 0">{{ $t("appCenter.adminSetupForm.noApp") }}</div>
-		<div v-if="applicationsList != '' && totalPages != '' && totalPages != '0' && totalPages != '1'" class="applicationsPaginator">
-	     	<paginator
-	        	:current-page='currentPage'
-	        	:per-page='pageSize'
-	        	:total='totalApplications'
-	        	:total-pages='totalPages'
-	        	@pagechanged="onPageChange">
-			</paginator>
-		</div>
+          <a
+            v-tooltip.bottom="$t(&quot;appCenter.adminSetupList.remove&quot;)" 
+            class="actionIcon" 
+            data-placement="bottom" 
+            data-container="body" 
+            @click.prevent="toDeleteApplicationModal(application)">
+            <i class="uiIconRemove uiIconLightGray"></i>
+          </a>
+        </td>
+      </tr>
+    </table>
+    <div v-if="applicationsList.length == 0" class="noApp">{{ $t("appCenter.adminSetupForm.noApp") }}</div>
+    <div v-if="applicationsList != '' && totalPages != '' && totalPages != '0' && totalPages != '1'" class="applicationsPaginator">
+      <paginator
+        :current-page="currentPage"
+        :per-page="pageSize"
+        :total="totalApplications"
+        :total-pages="totalPages"
+        @pagechanged="onPageChange" />
+    </div>
 	
-		<transition name="fade">
-			<exo-modal v-show="showAddEditApplicationModal" :title="formArray.viewMode ? $t('appCenter.adminSetupForm.createNewApp') : $t('appCenter.adminSetupForm.editApp')" @modal-closed="resetForm()">
-	        	<div class="addApplication">
-	        		<div class="form-container appCenter-form">
-	          			<div class="row row-form-items">
-	              			<form>
-	                			<table class="applicationTable">
-	                  				<tr>
-	                    				<td>  
-	                    					<span>{{ $t("appCenter.adminSetupForm.title") }}</span>
-	                    				</td>
-	                    				<td>  
-	                    					<input type="text" v-model="formArray.title" :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')">
-	                    					<span class="requiredInput">*</span>
-	                        				<p v-if="formArray.title == ''" class="errorInput">{{ $t("appCenter.adminSetupForm.titleError") }}</p>
-	                    				</td>
-	                  				</tr>
-	                  				<tr>
-					                    <td>  
-					                    	<span>{{ $t("appCenter.adminSetupForm.url") }}</span>
-					                    </td>
-					                    <td>  
-					                    	<input type="url" 
-					                        	v-model="formArray.url" 
-					                         	:placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')">
-					                      	<span class="requiredInput">*</span>
-					                      	<p v-if="!validUrl(formArray.url) || formArray.url == ''" class="errorInput">{{ $t('appCenter.adminSetupForm.urlError') }}</p>
-	                   					</td>
-	                  				</tr>
-				                  	<tr class="uploadImage">
-				                    	<td>  
-				                    		<span>{{ $t("appCenter.adminSetupForm.image") }}</span>
-				                    	</td>
-				                    	<td>  
-				                    		<label for="file" class="custom-file-upload">
-				                        		<font-awesome-icon icon="download" class="download-icon"/> {{ $t("appCenter.adminSetupForm.browse") }}
-				                            </label>
-				                        	<input id="file" type="file" accept="image/*" ref="file" @change="handleFileUpload()" />
-				                           	<div v-if="formArray.imageFileName != undefined && formArray.imageFileName != ''" class="file-listing">
-				                            	{{ formArray.imageFileName }}
-				                              	<span class="remove-file" @click="removeFile()">
-				                                	<font-awesome-icon icon="times"/>
-				                                </span>
-				                         	</div>
-				                         	<p :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')">
-				                         		<img width="13" height="13" src="/app-center/skin/images/Info tooltip.png"/>
-				                         		{{ $t('appCenter.adminSetupForm.sizeError') }}
-				                         	</p>
-				                         	<p v-if="formArray.invalidImage" class="errorInput">{{ $t('appCenter.adminSetupForm.imageError') }}</p>
-				                  		</td>
-				         			</tr>
-				                    <tr>
-				                    	<td>  
-				                    		<span>{{ $t("appCenter.adminSetupForm.description") }}</span>
-				                    	</td>
-				                      	<td>  
-				                      		<textarea type="text" v-model="formArray.description" :placeholder="$t('appCenter.adminSetupForm.description')" ></textarea>
-				                      	</td>
-				                   	</tr>
-				                    <tr class="application-checkbox">
-				                    	<td>
-				                    		<span>{{ $t("appCenter.adminSetupForm.byDefault") }}</span>
-				                    	</td>
-				                      	<td>
-				                        	<input :disabled="!formArray.active" type="checkbox" id="byDefault" v-model="formArray.byDefault">
-				                        	<label for="byDefault"></label>
-				                      	</td>
-				                 	</tr>
-				                  	<tr class="application-checkbox">
-				                    	<td>
-				                    		<span>{{ $t("appCenter.adminSetupForm.active") }}</span>
-				                    	</td>
-				                     	<td>  
-				                        	<input type="checkbox" id="active" @change="onActiveChange()" v-model="formArray.active">
-				                       		<label for="active"></label>
-				                    	</td>
-				                	</tr>
-				                    <tr>
-				                    	<td>  
-				                    		<span>{{ $t("appCenter.adminSetupForm.permissions") }}</span>
-				                    	</td>
-				                    	<td>
-										    <input type="text" id="permissions-suggester">
-				                    	</td>
-				                 	</tr>
-	                			</table>
+    <transition name="fade">
+      <exo-modal
+        v-show="showAddEditApplicationModal"
+        :title="formArray.viewMode ? $t('appCenter.adminSetupForm.createNewApp') : $t('appCenter.adminSetupForm.editApp')"
+        @modal-closed="resetForm()">
+        <div class="addApplication">
+          <div class="form-container appCenter-form">
+            <div class="row row-form-items">
+              <form>
+                <table class="applicationTable">
+                  <tr>
+                    <td>  
+                      <span>{{ $t("appCenter.adminSetupForm.title") }}</span>
+                    </td>
+                    <td>  
+                      <input
+                        v-model="formArray.title"
+                        type="text"
+                        :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')">
+                      <span class="requiredInput">*</span>
+                      <p v-if="formArray.title == ''" class="errorInput">{{ $t("appCenter.adminSetupForm.titleError") }}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>  
+                      <span>{{ $t("appCenter.adminSetupForm.url") }}</span>
+                    </td>
+                    <td>  
+                      <input
+                        v-model="formArray.url" 
+                        type="url" 
+                        :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')">
+                      <span class="requiredInput">*</span>
+                      <p v-if="!validUrl(formArray.url) || formArray.url == ''" class="errorInput">{{ $t('appCenter.adminSetupForm.urlError') }}</p>
+                    </td>
+                  </tr>
+                  <tr class="uploadImage">
+                    <td>  
+                      <span>{{ $t("appCenter.adminSetupForm.image") }}</span>
+                    </td>
+                    <td>  
+                      <label for="file" class="custom-file-upload">
+                        <font-awesome-icon icon="download" class="download-icon" /> {{ $t("appCenter.adminSetupForm.browse") }}
+                      </label>
+                      <input
+                        id="file"
+                        ref="file"
+                        type="file"
+                        accept="image/*"
+                        @change="handleFileUpload()">
+                      <div v-if="formArray.imageFileName != undefined && formArray.imageFileName != ''" class="file-listing">
+                        {{ formArray.imageFileName }}
+                        <span class="remove-file" @click="removeFile()">
+                          <font-awesome-icon icon="times" />
+                        </span>
+                      </div>
+                      <p :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')">
+                        <img
+                          width="13"
+                          height="13"
+                          src="/app-center/skin/images/Info tooltip.png">
+                        {{ $t('appCenter.adminSetupForm.sizeError') }}
+                      </p>
+                      <p v-if="formArray.invalidImage" class="errorInput">{{ $t('appCenter.adminSetupForm.imageError') }}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>  
+                      <span>{{ $t("appCenter.adminSetupForm.description") }}</span>
+                    </td>
+                    <td>  
+                      <textarea
+                        v-model="formArray.description"
+                        type="text"
+                        :placeholder="$t('appCenter.adminSetupForm.description')"></textarea>
+                    </td>
+                  </tr>
+                  <tr class="application-checkbox">
+                    <td>
+                      <span>{{ $t("appCenter.adminSetupForm.byDefault") }}</span>
+                    </td>
+                    <td>
+                      <input
+                        id="byDefault"
+                        v-model="formArray.byDefault"
+                        :disabled="!formArray.active"
+                        type="checkbox">
+                      <label for="byDefault"></label>
+                    </td>
+                  </tr>
+                  <tr class="application-checkbox">
+                    <td>
+                      <span>{{ $t("appCenter.adminSetupForm.active") }}</span>
+                    </td>
+                    <td>  
+                      <input
+                        id="active"
+                        v-model="formArray.active"
+                        type="checkbox"
+                        @change="onActiveChange()">
+                      <label for="active"></label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>  
+                      <span>{{ $t("appCenter.adminSetupForm.permissions") }}</span>
+                    </td>
+                    <td>
+                      <input id="permissions-suggester" type="text">
+                    </td>
+                  </tr>
+                </table>
 	                
-		                       	<div class="form-group application-buttons">
-		                       		<button @click.prevent="submitForm()" class="form-submit">{{ $t("appCenter.adminSetupForm.save") }}</button>
-		                        	<button @click.prevent="resetForm()" class="form-reset">{{ $t("appCenter.adminSetupForm.cancel") }}</button>
-		                       	</div>
-		                       	<div class="requiredField"><span>{{ $t("appCenter.adminSetupForm.requiredField") }}</span></div>
-		                       <div class="error" v-if="error != ''">
-		                      		<span>{{ error }}</span>
-		                       </div>
-							</form>
-	            		</div>
-	        		</div>
-				</div>  
-	      	</exo-modal>
-		</transition>
+                <div class="form-group application-buttons">
+                  <button class="form-submit" @click.prevent="submitForm()">{{ $t("appCenter.adminSetupForm.save") }}</button>
+                  <button class="form-reset" @click.prevent="resetForm()">{{ $t("appCenter.adminSetupForm.cancel") }}</button>
+                </div>
+                <div class="requiredField"><span>{{ $t("appCenter.adminSetupForm.requiredField") }}</span></div>
+                <div v-if="error != ''" class="error">
+                  <span>{{ error }}</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>  
+      </exo-modal>
+    </transition>
 
-		<transition name="fade">    
-	    	<exo-modal v-show="showDeleteApplicationModal" :title="$t('appCenter.adminSetupForm.DeleteApp')" @modal-closed="closeDeleteModal()">
-	      		<div class="deleteApplication">
-		        	<h3>{{ $t("appCenter.adminSetupForm.confirmDelete") }}<span>{{ formArray.title }}</span> ?</h3>
-		         	<div class="form-group application-buttons">
-		            	<button @click.prevent="deleteApplication()" class="form-submit"><font-awesome-icon icon="trash-alt"/> {{ $t("appCenter.adminSetupForm.delete") }}</button>
-		            	<button @click.prevent="showDeleteApplicationModal = false" class="form-reset"><font-awesome-icon icon="times"/> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
-					</div>
-					<div class="error" v-if="error != ''">
-		                  <span>{{ error }}</span>
-		            </div>
-				</div>
-			</exo-modal>
-		</transition>
-	</div>  
+    <transition name="fade">    
+      <exo-modal
+        v-show="showDeleteApplicationModal"
+        :title="$t('appCenter.adminSetupForm.DeleteApp')"
+        @modal-closed="closeDeleteModal()">
+        <div class="deleteApplication">
+          <h3>{{ $t("appCenter.adminSetupForm.confirmDelete") }}<span>{{ formArray.title }}</span> ?</h3>
+          <div class="form-group application-buttons">
+            <button class="form-submit" @click.prevent="deleteApplication()"><font-awesome-icon icon="trash-alt" /> {{ $t("appCenter.adminSetupForm.delete") }}</button>
+            <button class="form-reset" @click.prevent="showDeleteApplicationModal = false"><font-awesome-icon icon="times" /> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
+          </div>
+          <div v-if="error != ''" class="error">
+            <span>{{ error }}</span>
+          </div>
+        </div>
+      </exo-modal>
+    </transition>
+  </div>  
 </template>
 
 <script>
@@ -226,7 +267,7 @@
     Vue.use(VueEsc);
     
     export default {
-    	name: "adminSetup",
+    	name: "AdminSetup",
    		components: {
         	Paginator
     	},
@@ -267,7 +308,7 @@
         methods:{
        		getApplicationsList() {
        			
-            	var getApplicationsListUrl = "/rest/appCenter/applications/getApplicationsList?offset="+ (this.currentPage - 1) +"&limit=" + this.pageSize + "&keyword=" + this.keyword;
+            	const getApplicationsListUrl = `/rest/appCenter/applications/getApplicationsList?offset=${ this.currentPage - 1 }&limit=${  this.pageSize  }&keyword=${  this.keyword}`;
 
 				return fetch(getApplicationsListUrl, {
 					method: 'GET',
@@ -296,7 +337,7 @@
 	          		}
           			else {
 	                	if (this.$refs.file.files.length > 0) {
-	                  		var reader = new FileReader();
+	                  		const reader = new FileReader();
 	                  		reader.onload = (e) => {
 	                  			console.log(e.target.result);
 	                    		this.formArray.imageFileBody = e.target.result;
@@ -320,7 +361,7 @@
             },
             
             addEditApplication() {
-		    	var addEditApplication = this.formArray.viewMode ? "/rest/appCenter/applications/addApplication" : "/rest/appCenter/applications/editApplication";
+		    	const addEditApplication = this.formArray.viewMode ? "/rest/appCenter/applications/addApplication" : "/rest/appCenter/applications/editApplication";
 		        return fetch(addEditApplication, {
 		        	headers: {
 		        		'content-Type': 'application/json'
@@ -341,7 +382,7 @@
       		},
 
             deleteApplication() {
-				return fetch("/rest/appCenter/applications/deleteApplication/" + this.formArray.id, {
+				return fetch(`/rest/appCenter/applications/deleteApplication/${  this.formArray.id}`, {
 					method: 'GET',
 				}).then( (resp) => {
 					if(resp && resp.ok) {
@@ -439,7 +480,7 @@
 			},
 			          	
           	initPermissionsSuggester() {
-		    	var permissionsSuggester = jq('#permissions-suggester');
+		    	const permissionsSuggester = jq('#permissions-suggester');
 		      	if(permissionsSuggester && permissionsSuggester.length) {
 					
 		        	const component = this;
@@ -510,7 +551,7 @@
 		    	if (!query.length) {
 		        	return callback(); 
 		      	}
-		      	fetch('/rest/v1/groups?q=' + query, {credentials: 'include'}).then(resp => resp.json()).then(data => {
+		      	fetch(`/rest/v1/groups?q=${  query}`, {credentials: 'include'}).then(resp => resp.json()).then(data => {
 		        	const groups = [];
 		        	for(const group of data) {
 		          		groups.push({

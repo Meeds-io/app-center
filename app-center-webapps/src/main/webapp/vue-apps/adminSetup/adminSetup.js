@@ -7,11 +7,11 @@ const url = `/app-center/vueLocales/locale_${lang}.json`;
 export function init(preferences) {
 	exoi18n.loadLanguageAsync(lang, url).then(i18n => {
 		new Vue({
-        	render: h => h(AdminSetupApp),
-        	i18n,
 			data: {
 		    	preferences: preferences
-			}
+			},
+        	render: h => h(AdminSetupApp),
+        	i18n
 		}).$mount('#adminSetup');
 	});
 }

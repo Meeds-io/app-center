@@ -1,38 +1,37 @@
 <template>
-    <ul class="paginator">
-        <li class="paginator-item prev-page">
-            <button
-                    :disabled="isInFirstPage"
-                    @click="onClickPreviousPage"
-                    type="button">
-                <img src="/app-center/skin/images/paginator/previous-page.svg">
-            </button>
-        </li>
+  <ul class="paginator">
+    <li class="paginator-item prev-page">
+      <button
+        :disabled="isInFirstPage"
+        type="button"
+        @click="onClickPreviousPage">
+        <img src="/app-center/skin/images/paginator/previous-page.svg">
+      </button>
+    </li>
 
-        <li class="paginator-item" v-for="page in pages">
-            <button
-                    :class="{ isActive: isPageActive(page.name) }"
-                    :disabled="page.isDisabled"
-                    @click="onClickPage(page.name)"
-                    type="button">
-                {{ page.name }}
-            </button>
-        </li>
+    <li v-for="page in pages" class="paginator-item">
+      <button
+        :class="{ isActive: isPageActive(page.name) }"
+        :disabled="page.isDisabled"
+        type="button"
+        @click="onClickPage(page.name)">
+        {{ page.name }}
+      </button>
+    </li>
 
-        <li class="paginator-item next-page">
-            <button
-                    :disabled="isInLastPage"
-                    @click="onClickNextPage"
-                    type="button">
-                <img src="/app-center/skin/images/paginator/next-page.svg">
-            </button>
-        </li>
-    </ul>
-
+    <li class="paginator-item next-page">
+      <button
+        :disabled="isInLastPage"
+        type="button"
+        @click="onClickNextPage">
+        <img src="/app-center/skin/images/paginator/next-page.svg">
+      </button>
+    </li>
+  </ul>
 </template>
 <script>
     export default {
-        name: "paginator",
+        name: "Paginator",
         props: {
             maxVisibleButtons: {
                 type: Number,
@@ -64,9 +63,9 @@
 
                 if (this.currentPage == this.totalPages) {
                     if(this.totalPages - this.maxVisibleButtons +1 < 0)
-                    return 1;
+                    {return 1;}
                     else
-                        return this.totalPages - this.maxVisibleButtons +1;
+                        {return this.totalPages - this.maxVisibleButtons +1;}
                 }
 
                 if (this.currentPage < this.maxVisibleButtons)

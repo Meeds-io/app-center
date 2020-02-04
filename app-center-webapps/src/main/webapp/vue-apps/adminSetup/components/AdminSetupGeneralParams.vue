@@ -1,56 +1,112 @@
 <template>
-	<div class="generalParams">
-		<div class="form-container appCenter-form">
-			<div class="maxFavoriteApps">
-				<span>{{ $t("appCenter.adminSetupForm.maxFavoriteApps") }}</span>
-				<span v-if="isMaxFavoriteAppsView && maxFavoriteApps != ''">
-					{{ maxFavoriteApps }}
-				</span>
+  <div class="generalParams">
+    <div class="form-container appCenter-form">
+      <div class="maxFavoriteApps">
+        <span>{{ $t("appCenter.adminSetupForm.maxFavoriteApps") }}</span>
+        <span v-if="isMaxFavoriteAppsView && maxFavoriteApps != ''">
+          {{ maxFavoriteApps }}
+        </span>
 					
-				<input v-if="!isMaxFavoriteAppsView" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" v-model="maxFavoriteApps">
+        <input
+          v-if="!isMaxFavoriteAppsView"
+          v-model="maxFavoriteApps"
+          type="number"
+          min="0"
+          onkeypress="return event.charCode >= 48 && event.charCode <= 57">
 
-				<a v-if="isMaxFavoriteAppsView" @click.prevent="isMaxFavoriteAppsView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
-			     	<i class="uiIconEdit uiIconLightGray"></i>
-			   	</a>
-			  	<a v-if="!isMaxFavoriteAppsView" @click.prevent="setMaxFavoriteApps()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
-			   		<i class="uiIconSave uiIconLightGray"></i>
-			    </a>
-			    <a v-if="!isMaxFavoriteAppsView" @click.prevent="isMaxFavoriteAppsView = true" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
-			    	<i class="uiIconClose uiIconLightGray"></i>
-			 	</a>
-			</div>
+        <a
+          v-if="isMaxFavoriteAppsView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.edit&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="isMaxFavoriteAppsView = false">
+          <i class="uiIconEdit uiIconLightGray"></i>
+        </a>
+        <a
+          v-if="!isMaxFavoriteAppsView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.save&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="setMaxFavoriteApps()">
+          <i class="uiIconSave uiIconLightGray"></i>
+        </a>
+        <a
+          v-if="!isMaxFavoriteAppsView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.cancel&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="isMaxFavoriteAppsView = true">
+          <i class="uiIconClose uiIconLightGray"></i>
+        </a>
+      </div>
 				
-			<div class="defaultAppImage">
-				<span>{{ $t("appCenter.adminSetupForm.defaultAppImage") }}</span>
-				<img class="appImage" v-if="defaultAppImage.isView && defaultAppImage.fileBody != ''" :src="defaultAppImage.fileBody"/>
+      <div class="defaultAppImage">
+        <span>{{ $t("appCenter.adminSetupForm.defaultAppImage") }}</span>
+        <img
+          v-if="defaultAppImage.isView && defaultAppImage.fileBody != ''"
+          class="appImage"
+          :src="defaultAppImage.fileBody">
 					
-				<label v-if="!defaultAppImage.isView" for="defaultAppImageFile" class="custom-file-upload">
-			  		<font-awesome-icon icon="download" class="download-icon"/> {{ $t("appCenter.adminSetupForm.browse") }}
-			  	</label>
-			  	<input v-if="!defaultAppImage.isView" id="defaultAppImageFile" type="file" accept="image/*" ref="defaultAppImageFile" @change="handleDefaultAppImageFileUpload()" />
-				<div v-if="!defaultAppImage.isView && defaultAppImage.fileName != undefined && defaultAppImage.fileName != ''" class="file-listing">
-					{{ defaultAppImage.fileName }}
-					<span class="remove-file" @click="removeDefaultAppImageFile()">
-				   		<font-awesome-icon icon="times"/>
-				  	</span>
-			  	</div>
-			  	<a v-if="defaultAppImage.isView" @click.prevent="defaultAppImage.isView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
-			   		<i class="uiIconEdit uiIconLightGray"></i>
-			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.prevent="submitDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
-			   		<i class="uiIconSave uiIconLightGray"></i>
-			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.prevent="resetDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
-			    	<i class="uiIconClose uiIconLightGray"></i>
-			  	</a>
-			  	<p :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
-					<img width="13" height="13" src="/app-center/skin/images/Info tooltip.png"/>
-					{{ $t('appCenter.adminSetupForm.sizeError') }}
-				</p>
-				<p v-if="defaultAppImage.invalidImage" class="errorInput">{{ $t('appCenter.adminSetupForm.imageError') }}</p>
-			</div>
-		</div>
-	</div>	
+        <label
+          v-if="!defaultAppImage.isView"
+          for="defaultAppImageFile"
+          class="custom-file-upload">
+          <font-awesome-icon icon="download" class="download-icon" /> {{ $t("appCenter.adminSetupForm.browse") }}
+        </label>
+        <input
+          v-if="!defaultAppImage.isView"
+          id="defaultAppImageFile"
+          ref="defaultAppImageFile"
+          type="file"
+          accept="image/*"
+          @change="handleDefaultAppImageFileUpload()">
+        <div v-if="!defaultAppImage.isView && defaultAppImage.fileName != undefined && defaultAppImage.fileName != ''" class="file-listing">
+          {{ defaultAppImage.fileName }}
+          <span class="remove-file" @click="removeDefaultAppImageFile()">
+            <font-awesome-icon icon="times" />
+          </span>
+        </div>
+        <a
+          v-if="defaultAppImage.isView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.edit&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="defaultAppImage.isView = false">
+          <i class="uiIconEdit uiIconLightGray"></i>
+        </a>
+        <a
+          v-if="!defaultAppImage.isView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.save&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="submitDefaultAppImage()">
+          <i class="uiIconSave uiIconLightGray"></i>
+        </a>
+        <a
+          v-if="!defaultAppImage.isView"
+          v-tooltip.bottom="$t(&quot;appCenter.adminSetupForm.cancel&quot;)"
+          class="actionIcon"
+          data-placement="bottom"
+          data-container="body"
+          @click.prevent="resetDefaultAppImage()">
+          <i class="uiIconClose uiIconLightGray"></i>
+        </a>
+        <p :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
+          <img
+            width="13"
+            height="13"
+            src="/app-center/skin/images/Info tooltip.png">
+          {{ $t('appCenter.adminSetupForm.sizeError') }}
+        </p>
+        <p v-if="defaultAppImage.invalidImage" class="errorInput">{{ $t('appCenter.adminSetupForm.imageError') }}</p>
+      </div>
+    </div>
+  </div>	
 </template>
 
 <script>
@@ -66,7 +122,7 @@
     Vue.component('font-awesome-icon', FontAwesomeIcon)
     
     export default {
-    	name: "adminSetupGeneralParams",
+    	name: "AdminSetupGeneralParams",
     	data(){
         	return{
               	maxFavoriteApps: '',
@@ -87,7 +143,7 @@
 
         methods:{
         	getAppGeneralSettings() {
-        		var getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
+        		const getGeneralSettingsUrl = "/rest/appCenter/applications/getGeneralSettings";
 				return fetch(getGeneralSettingsUrl, {
 					method: 'GET',
 				}).then((resp) => {
@@ -110,9 +166,9 @@
           	},
           	
           	setMaxFavoriteApps() {
-		    	var setMaxFavoriteAppsUrl = "/rest/appCenter/applications/setMaxFavorite";
+		    	let setMaxFavoriteAppsUrl = "/rest/appCenter/applications/setMaxFavorite";
 		    	if (this.maxFavoriteApps != '') {
-		    		setMaxFavoriteAppsUrl += "?number=" + this.maxFavoriteApps;
+		    		setMaxFavoriteAppsUrl += `?number=${  this.maxFavoriteApps}`;
 		    	}
 				return fetch(setMaxFavoriteAppsUrl, {
 					method: 'GET'
@@ -127,7 +183,7 @@
           		}
           		else {
 	          		if (this.$refs.defaultAppImageFile.files.length > 0) {
-		            	var reader = new FileReader();
+		            	const reader = new FileReader();
 				    	reader.onload = (e) => {
 				    		if(!e.target.result.includes("data:image")) {
 	                    		this.defaultAppImage.invalidImage = true;
@@ -149,7 +205,7 @@
           	},
           	
           	setDefaultAppImage() {
-				var setDefaultAppImageUrl = "/rest/appCenter/applications/setDefaultImage";
+				const setDefaultAppImageUrl = "/rest/appCenter/applications/setDefaultImage";
 				return fetch(setDefaultAppImageUrl, {
 					headers: {
 						'content-Type': 'application/json'
@@ -160,7 +216,7 @@
 					this.defaultAppImage.isView = true;
 					this.getAppGeneralSettings();
 				}).catch(e => {
-					throw new Error('Error when setting the default application image ' + e)
+					throw new Error(`Error when setting the default application image ${  e}`)
 				});
           	},
           	
