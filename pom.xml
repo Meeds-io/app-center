@@ -20,7 +20,7 @@
 	</parent>
 	<groupId>org.exoplatform.addons.app-center</groupId>
 	<artifactId>app-center</artifactId>
-	<version>1.0.x-SNAPSHOT</version>
+	<version>2.0.x-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Add-on:: Application Center - Parent POM</name>
 	<description>Application Center Addon</description>
@@ -30,7 +30,7 @@
 		<module>app-center-packaging</module>
 	</modules>
 	<properties>
-		<org.exoplatform.platform.version>5.3.0</org.exoplatform.platform.version>
+		<org.exoplatform.platform.version>6.0.x-SNAPSHOT</org.exoplatform.platform.version>
 		<com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
 	</properties>
 	<dependencyManagement>
