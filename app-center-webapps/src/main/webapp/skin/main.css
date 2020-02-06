@@ -835,9 +835,6 @@
 .VuetifyApp .v-overlay--absolute, .VuetifyApp .v-navigation-drawer--absolute {
   position: fixed;
 }
-.VuetifyApp .v-list-item {
-  padding: 0px;
-}
 .VuetifyApp .v-navigation-drawer--temporary {
   z-index: 1050;
 }
