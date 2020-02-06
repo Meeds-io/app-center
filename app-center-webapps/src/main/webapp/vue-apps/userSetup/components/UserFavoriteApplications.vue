@@ -14,7 +14,7 @@
 				</h5>
 			</a>
 			<div class="favoriteAppRemove">
-				<a v-if="!favoriteApp.appDefault" @click.prevent="deleteFavoriteApplication(favoriteApp.appId)" class="actionIcon" v-tooltip.bottom="$t('appCenter.adminSetupForm.delete')">
+				<a v-if="!favoriteApp.appDefault" @click.stop="deleteFavoriteApplication(favoriteApp.appId)" class="actionIcon" v-tooltip.bottom="$t('appCenter.adminSetupForm.delete')">
 					<i class="uiIconClose uiIconLightGray"></i>
 				</a>
 			</div>
