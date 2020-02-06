@@ -15,7 +15,7 @@
 			</li>
 		</ul>
 		<div v-if="maxFavoriteApps == undefined || favoriteApplicationsList.length < maxFavoriteApps" class="addTool">
-      		<a href="/portal/intranet/appCenterUserSetup">
+      		<a :href="appCenterUserSetupLink">
 	        	<i class="uiIconPlus uiIconLightGray"></i>
 			</a>
 		</div>
@@ -34,13 +34,15 @@
         data(){
             return{
             	favoriteApplicationsList: [],
-            	maxFavoriteApps: ''
+            	maxFavoriteApps: '',
+				appCenterUserSetupLink: ''
             }
         },
 
         created() {
         	this.getFavoriteApplicationsList();
         	this.getMaxFavoriteApps();
+			this.appCenterUserSetupLink = eXo.env.portal.context + "/" + eXo.env.portal.portalName + "/appCenterUserSetup";
         },
 
         methods:{

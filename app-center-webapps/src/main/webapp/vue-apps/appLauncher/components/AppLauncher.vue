@@ -21,7 +21,7 @@
                     temporary
                     width="380"
                     class="appCenterDrawer">
-                <v-row class="mx-0 px-3">
+                <v-row class="mx-0">
                     <v-list-item class="appLauncherDrawerHeader">
                         <v-list-item-content>
                             <span class="appLauncherDrawerTitle">{{ $t('appCenter.appLauncher.drawer.title') }}</span>
@@ -52,7 +52,7 @@
                             class="d-flex flex justify-center mx-2">
                         <a
                                 class="primary--text seeAllApplicationsBtn"
-                                href="/portal/dw/appCenterUserSetup"
+                                :href="appCenterUserSetupLink"
                                 >{{ $t('appCenter.appLauncher.drawer.viewAll') }}</a>
                     </v-card>
                 </v-row>
@@ -66,7 +66,8 @@
         data () {
             return {
                 appLauncherDrawer : null,
-                favoriteApplicationsList: []
+                favoriteApplicationsList: [],
+                appCenterUserSetupLink: ''
             }
         },
         created() {
@@ -74,6 +75,7 @@
             window.require(['SHARED/appCenterBundle'], function (appCenterBundle) {
                 appCenterBundle.init();
             });
+            this.appCenterUserSetupLink = eXo.env.portal.context + "/" + eXo.env.portal.portalName + "/appCenterUserSetup";
         },
         methods : {
             toggleDrawer() {
