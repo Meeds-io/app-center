@@ -1,7 +1,7 @@
 <template>
 	<div class="listApplications" v-esc="closeModals">
   		<div class="applicationListHeader">
-      		<a @click.prevent="showAddApplicationModal()"  
+      		<a @click.stop="showAddApplicationModal()"  
       			class="actionIcon addApplicationButton" 
       			v-tooltip.bottom='$t("appCenter.adminSetupForm.addNewApp")' 
          		data-placement="bottom" 
@@ -62,7 +62,7 @@
               		<input disabled="disabled" type="checkbox" v-model="application.appActive"/>
             	</td>
             	<td>
-	            	<a @click.prevent="showEditApplicationModal(application)" 
+	            	<a @click.stop="showEditApplicationModal(application)" 
 	            		class="actionIcon" 
 	            		v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' 
 	            		data-placement="bottom" 
@@ -70,7 +70,7 @@
 	              			<i class="uiIconEdit uiIconLightGray"></i>
 	            	</a>
 	            
-	          		<a @click.prevent="toDeleteApplicationModal(application)" 
+	          		<a @click.stop="toDeleteApplicationModal(application)" 
 	          			class="actionIcon" 
 	          			v-tooltip.bottom='$t("appCenter.adminSetupList.remove")' 
 	          			data-placement="bottom" 
@@ -179,8 +179,8 @@
 	                			</table>
 	                
 		                       	<div class="form-group application-buttons">
-		                       		<button @click.prevent="submitForm()" class="form-submit">{{ $t("appCenter.adminSetupForm.save") }}</button>
-		                        	<button @click.prevent="resetForm()" class="form-reset">{{ $t("appCenter.adminSetupForm.cancel") }}</button>
+		                       		<button @click.stop="submitForm()" class="form-submit">{{ $t("appCenter.adminSetupForm.save") }}</button>
+		                        	<button @click.stop="resetForm()" class="form-reset">{{ $t("appCenter.adminSetupForm.cancel") }}</button>
 		                       	</div>
 		                       	<div class="requiredField"><span>{{ $t("appCenter.adminSetupForm.requiredField") }}</span></div>
 		                       <div class="error" v-if="error != ''">
@@ -198,8 +198,8 @@
 	      		<div class="deleteApplication">
 		        	<h3>{{ $t("appCenter.adminSetupForm.confirmDelete") }}<span>{{ formArray.title }}</span> ?</h3>
 		         	<div class="form-group application-buttons">
-		            	<button @click.prevent="deleteApplication()" class="form-submit"><font-awesome-icon icon="trash-alt"/> {{ $t("appCenter.adminSetupForm.delete") }}</button>
-		            	<button @click.prevent="showDeleteApplicationModal = false" class="form-reset"><font-awesome-icon icon="times"/> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
+		            	<button @click.stop="deleteApplication()" class="form-submit"><font-awesome-icon icon="trash-alt"/> {{ $t("appCenter.adminSetupForm.delete") }}</button>
+		            	<button @click.stop="showDeleteApplicationModal = false" class="form-reset"><font-awesome-icon icon="times"/> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
 					</div>
 					<div class="error" v-if="error != ''">
 		                  <span>{{ error }}</span>

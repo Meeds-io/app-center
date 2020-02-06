@@ -52,7 +52,7 @@
                             class="d-flex flex justify-center mx-2">
                         <a
                                 class="primary--text seeAllApplicationsBtn"
-                                href="/portal/intranet/appCenterUserSetup"
+                                href="/portal/dw/appCenterUserSetup"
                                 >{{ $t('appCenter.appLauncher.drawer.viewAll') }}</a>
                     </v-card>
                 </v-row>

@@ -26,7 +26,7 @@
 					</div>
 					<div class="applicationButton">
 						<a target="_blank" :href="authorizedApp.appUrl">{{ $t("appCenter.userSetup.authorized.access") }}</a>
-						<button :disabled="authorizedApp.appDefault || !authorizedApp.isFavorite && !canAddFavorite" @click.prevent="addDeleteFavoriteApplication(authorizedApp.appId, index)" :class="authorizedApp.appDefault || authorizedApp.isFavorite ? 'favorite' : ''">{{ $t("appCenter.userSetup.authorized.favorite") }}</button>
+						<button :disabled="authorizedApp.appDefault || !authorizedApp.isFavorite && !canAddFavorite" @click.stop="addDeleteFavoriteApplication(authorizedApp.appId, index)" :class="authorizedApp.appDefault || authorizedApp.isFavorite ? 'favorite' : ''">{{ $t("appCenter.userSetup.authorized.favorite") }}</button>
 					</div>
 				</div>
 			</div>

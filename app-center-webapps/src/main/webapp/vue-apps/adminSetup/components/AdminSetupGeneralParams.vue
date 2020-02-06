@@ -9,13 +9,13 @@
 					
 				<input v-if="!isMaxFavoriteAppsView" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" v-model="maxFavoriteApps">
 
-				<a v-if="isMaxFavoriteAppsView" @click.prevent="isMaxFavoriteAppsView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
+				<a v-if="isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
 			     	<i class="uiIconEdit uiIconLightGray"></i>
 			   	</a>
-			  	<a v-if="!isMaxFavoriteAppsView" @click.prevent="setMaxFavoriteApps()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
+			  	<a v-if="!isMaxFavoriteAppsView" @click.stop="setMaxFavoriteApps()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
 			   		<i class="uiIconSave uiIconLightGray"></i>
 			    </a>
-			    <a v-if="!isMaxFavoriteAppsView" @click.prevent="isMaxFavoriteAppsView = true" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
+			    <a v-if="!isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = true" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
 			    	<i class="uiIconClose uiIconLightGray"></i>
 			 	</a>
 			</div>
@@ -34,13 +34,13 @@
 				   		<font-awesome-icon icon="times"/>
 				  	</span>
 			  	</div>
-			  	<a v-if="defaultAppImage.isView" @click.prevent="defaultAppImage.isView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
+			  	<a v-if="defaultAppImage.isView" @click.stop="defaultAppImage.isView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
 			   		<i class="uiIconEdit uiIconLightGray"></i>
 			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.prevent="submitDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
+			   	<a v-if="!defaultAppImage.isView" @click.stop="submitDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
 			   		<i class="uiIconSave uiIconLightGray"></i>
 			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.prevent="resetDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
+			   	<a v-if="!defaultAppImage.isView" @click.stop="resetDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
 			    	<i class="uiIconClose uiIconLightGray"></i>
 			  	</a>
 			  	<p :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
