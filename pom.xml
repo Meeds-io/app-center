@@ -30,16 +30,16 @@
 		<module>app-center-packaging</module>
 	</modules>
 	<properties>
-		<org.exoplatform.platform.version>6.0.x-SNAPSHOT</org.exoplatform.platform.version>
+		<org.exoplatform.social.version>6.0.x-SNAPSHOT</org.exoplatform.social.version>
 		<com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
-			<!-- Import versions from platform project -->
+			<!-- Import versions from projects -->
 			<dependency>
-				<groupId>org.exoplatform.platform</groupId>
-				<artifactId>platform</artifactId>
-				<version>${org.exoplatform.platform.version}</version>
+				<groupId>org.exoplatform.social</groupId>
+				<artifactId>social</artifactId>
+				<version>${org.exoplatform.social.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
