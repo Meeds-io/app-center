@@ -827,6 +827,10 @@
   padding: 0 5px;
 }
 
+.UIToolbarContainerLight .uiApplicationIcon {
+  color: #578dc9!important;
+}
+
 .uiApplicationIcon:before {
   font-family: 'PLF-FONT-ICONS';
   content: "\ea95" !important;
