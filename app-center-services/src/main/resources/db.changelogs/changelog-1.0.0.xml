@@ -49,14 +49,16 @@
             	<constraints nullable="false"/>
             </column>
     	</createTable>
-        <addForeignKeyConstraint constraintName="FK_AC_FAVORITE_APPLICATION_AC_APPLICATION"
-                               baseTableName="AC_FAVORITE_APPLICATION"
-                               baseColumnNames="APPLICATION_ID"
-                               referencedTableName="AC_APPLICATION"
-                               referencedColumnNames="ID"
-                               onDelete="CASCADE" />
         <modifySql dbms="mysql">
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
+	<changeSet author="appCenter" id="1.0.0-2">
+		<addForeignKeyConstraint constraintName="FK_AC_FAVORITE_APPLICATION_AC_APPLICATION"
+			baseTableName="AC_FAVORITE_APPLICATION"
+            baseColumnNames="APPLICATION_ID"
+            referencedTableName="AC_APPLICATION"
+            referencedColumnNames="ID"
+            onDelete="CASCADE" />
+	</changeSet>
 </databaseChangeLog>
