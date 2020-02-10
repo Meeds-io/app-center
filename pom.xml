@@ -30,7 +30,7 @@
 		<module>app-center-packaging</module>
 	</modules>
 	<properties>
-		<org.exoplatform.social.version>6.0.x-SNAPSHOT</org.exoplatform.social.version>
+		<org.exoplatform.social.version>6.0.0-M18</org.exoplatform.social.version>
 		<com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
 	</properties>
 	<dependencyManagement>
