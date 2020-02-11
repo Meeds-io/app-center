@@ -9,13 +9,15 @@
 				</a>
 			</div>
 			<a class="favoriteAppUrl" target="_blank" :href="favoriteApp.appUrl">
-				<h5 v-tooltip.bottom="favoriteApp.appTitle">
+				<h5 class="tooltipContent">
 					<dot :msg="favoriteApp.appTitle" :line="2"></dot>
+					<span class="tooltiptext">{{ favoriteApp.appTitle }}</span>
 				</h5>
 			</a>
 			<div class="favoriteAppRemove">
-				<a v-if="!favoriteApp.appDefault" @click.stop="deleteFavoriteApplication(favoriteApp.appId)" class="actionIcon" v-tooltip.bottom="$t('appCenter.adminSetupForm.delete')">
+				<a v-if="!favoriteApp.appDefault" @click.stop="deleteFavoriteApplication(favoriteApp.appId)" class="actionIcon tooltipContent" >
 					<i class="uiIconClose uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t('appCenter.adminSetupForm.delete') }}</span>
 				</a>
 			</div>
 		</div>
@@ -28,9 +30,6 @@
 
 <script>
     import dot from 'vue-text-dot'
-    import VTooltip from 'v-tooltip'
-	 
-	Vue.use(VTooltip);   
 
     export default {
     	name: "userFavoriteApplications",

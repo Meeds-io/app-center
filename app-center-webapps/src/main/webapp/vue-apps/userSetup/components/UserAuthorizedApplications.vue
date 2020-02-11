@@ -15,14 +15,16 @@
 						</div>
 						<div class="title">
 							<a target="_blank" :href="authorizedApp.appUrl">
-								<h5 v-tooltip.bottom="authorizedApp.appTitle">
+								<h5 class="tooltipContent">
 									<dot :msg="authorizedApp.appTitle" :line="2"></dot>
+									<span class="tooltiptext">{{ authorizedApp.appTitle }}</span>
 								</h5>
 							</a>
 						</div>
 					</div>
-					<div class="userAppDescription" v-tooltip.bottom="authorizedApp.appDescription">
+					<div class="userAppDescription tooltipContent">
 						<dot :msg="authorizedApp.appDescription" :line="4"></dot>
+						<span class="tooltiptext">{{ authorizedApp.appDescription }}</span>
 					</div>
 					<div class="applicationButton">
 						<a target="_blank" :href="authorizedApp.appUrl">{{ $t("appCenter.userSetup.authorized.access") }}</a>
@@ -40,9 +42,6 @@
 
 <script>
     import dot from 'vue-text-dot'
-	import VTooltip from 'v-tooltip'
-	 
-	Vue.use(VTooltip);   
 
     export default {
     	name: "userAuthorizedApplications",

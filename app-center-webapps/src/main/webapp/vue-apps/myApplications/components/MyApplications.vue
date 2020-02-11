@@ -8,8 +8,9 @@
 			<li v-for="favoriteApp in favoriteApplicationsList">
 				<a :href="favoriteApp.appUrl" target="_blank">
 					<img class="myToolImage" v-if="favoriteApp.appImageFileBody != undefined && favoriteApp.appImageFileBody != ''" :src="favoriteApp.appImageFileBody"/>
-  					<span v-tooltip.bottom="favoriteApp.appDescription" class="myToolTitle">
+  					<span class="myToolTitle tooltipContent">
   						<dot :msg="favoriteApp.appTitle" :line="2"></dot>
+						<span class="tooltiptext">{{ favoriteApp.appDescription }}</span>
   					</span>
 				</a>
 			</li>
@@ -25,9 +26,6 @@
 
 <script>
     import dot from 'vue-text-dot'
-	import VTooltip from 'v-tooltip'
-	 
-	Vue.use(VTooltip);    
     export default {
         name: "myTools",
         components: { dot },
