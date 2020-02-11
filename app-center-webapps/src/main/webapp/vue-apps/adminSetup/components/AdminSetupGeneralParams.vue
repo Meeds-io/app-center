@@ -9,14 +9,17 @@
 					
 				<input v-if="!isMaxFavoriteAppsView" type="number" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" v-model="maxFavoriteApps">
 
-				<a v-if="isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
+				<a v-if="isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = false" class="actionIcon tooltipContent" data-placement="bottom" data-container="body">
 			     	<i class="uiIconEdit uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.edit") }}</span>
 			   	</a>
-			  	<a v-if="!isMaxFavoriteAppsView" @click.stop="setMaxFavoriteApps()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
+			  	<a v-if="!isMaxFavoriteAppsView" @click.stop="setMaxFavoriteApps()" class="actionIcon tooltipContent"  data-placement="bottom" data-container="body">
 			   		<i class="uiIconSave uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.save") }}</span>
 			    </a>
-			    <a v-if="!isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = true" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
+			    <a v-if="!isMaxFavoriteAppsView" @click.stop="isMaxFavoriteAppsView = true" class="actionIcon tooltipContent" data-placement="bottom" data-container="body">
 			    	<i class="uiIconClose uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.cancel") }}</span>
 			 	</a>
 			</div>
 				
@@ -25,23 +28,26 @@
 				<img class="appImage" v-if="defaultAppImage.isView && defaultAppImage.fileBody != ''" :src="defaultAppImage.fileBody"/>
 					
 				<label v-if="!defaultAppImage.isView" for="defaultAppImageFile" class="custom-file-upload">
-			  		<font-awesome-icon icon="download" class="download-icon"/> {{ $t("appCenter.adminSetupForm.browse") }}
+					<i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
 			  	</label>
 			  	<input v-if="!defaultAppImage.isView" id="defaultAppImageFile" type="file" accept="image/*" ref="defaultAppImageFile" @change="handleDefaultAppImageFileUpload()" />
 				<div v-if="!defaultAppImage.isView && defaultAppImage.fileName != undefined && defaultAppImage.fileName != ''" class="file-listing">
 					{{ defaultAppImage.fileName }}
 					<span class="remove-file" @click="removeDefaultAppImageFile()">
-				   		<font-awesome-icon icon="times"/>
+						<i class="uiCloseIcon"></i>
 				  	</span>
 			  	</div>
-			  	<a v-if="defaultAppImage.isView" @click.stop="defaultAppImage.isView = false" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' data-placement="bottom" data-container="body">
+			  	<a v-if="defaultAppImage.isView" @click.stop="defaultAppImage.isView = false" class="actionIcon tooltipContent" data-placement="bottom" data-container="body">
 			   		<i class="uiIconEdit uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.edit") }}</span>
 			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.stop="submitDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.save")' data-placement="bottom" data-container="body">
+			   	<a v-if="!defaultAppImage.isView" @click.stop="submitDefaultAppImage()" class="actionIcon tooltipContent"  data-placement="bottom" data-container="body">
 			   		<i class="uiIconSave uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.save") }}</span>
 			   	</a>
-			   	<a v-if="!defaultAppImage.isView" @click.stop="resetDefaultAppImage()" class="actionIcon" v-tooltip.bottom='$t("appCenter.adminSetupForm.cancel")' data-placement="bottom" data-container="body">
+			   	<a v-if="!defaultAppImage.isView" @click.stop="resetDefaultAppImage()" class="actionIcon tooltipContent" data-placement="bottom" data-container="body">
 			    	<i class="uiIconClose uiIconLightGray"></i>
+					<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.cancel") }}</span>
 			  	</a>
 			  	<p :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
 					<img width="13" height="13" src="/app-center/skin/images/Info tooltip.png"/>
@@ -54,17 +60,7 @@
 </template>
 
 <script>
-   	import { library } from '@fortawesome/fontawesome-svg-core'
-    import { faExclamationCircle, faDownload, faTimes } from '@fortawesome/free-solid-svg-icons'
-    import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-	import VTooltip from 'v-tooltip'
-	 
-	Vue.use(VTooltip);
 
-    library.add(faExclamationCircle, faDownload, faTimes)
-
-    Vue.component('font-awesome-icon', FontAwesomeIcon)
-    
     export default {
     	name: "adminSetupGeneralParams",
     	data(){

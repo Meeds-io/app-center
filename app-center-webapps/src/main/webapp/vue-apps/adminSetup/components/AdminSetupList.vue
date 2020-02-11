@@ -2,12 +2,12 @@
 	<div class="listApplications" v-esc="closeModals">
   		<div class="applicationListHeader">
       		<a @click.stop="showAddApplicationModal()"  
-      			class="actionIcon addApplicationButton" 
-      			v-tooltip.bottom='$t("appCenter.adminSetupForm.addNewApp")' 
+      			class="actionIcon addApplicationButton tooltipContent"
          		data-placement="bottom" 
          		data-container="body">
 	        	<i class="uiIconPlus uiIconLightGray"></i>
 	        	<span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
+				<span class="tooltiptext">{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
 			</a>
       		<input @input="currentPage = 1;getApplicationsList()" v-model="keyword" :placeholder="$t('appCenter.adminSetupList.search')" type="text">
 		</div>
@@ -63,19 +63,19 @@
             	</td>
             	<td>
 	            	<a @click.stop="showEditApplicationModal(application)" 
-	            		class="actionIcon" 
-	            		v-tooltip.bottom='$t("appCenter.adminSetupForm.edit")' 
+	            		class="actionIcon tooltipContent"
 	            		data-placement="bottom" 
 	            		data-container="body">
 	              			<i class="uiIconEdit uiIconLightGray"></i>
+						<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupForm.edit") }}</span>
 	            	</a>
 	            
 	          		<a @click.stop="toDeleteApplicationModal(application)" 
-	          			class="actionIcon" 
-	          			v-tooltip.bottom='$t("appCenter.adminSetupList.remove")' 
+	          			class="actionIcon tooltipContent"
 	          			data-placement="bottom" 
 	          			data-container="body">
 	              			<i class="uiIconRemove uiIconLightGray"></i>
+						<span class="tooltiptext tooltiptextIcon">{{ $t("appCenter.adminSetupList.remove") }}</span>
 	            	</a>
             	</td>
 			</tr>
@@ -126,13 +126,13 @@
 				                    	</td>
 				                    	<td>  
 				                    		<label for="file" class="custom-file-upload">
-				                        		<font-awesome-icon icon="download" class="download-icon"/> {{ $t("appCenter.adminSetupForm.browse") }}
+												<i class="uiDownloadIcon download-icon"></i> {{ $t("appCenter.adminSetupForm.browse") }}
 				                            </label>
 				                        	<input id="file" type="file" accept="image/*" ref="file" @change="handleFileUpload()" />
 				                           	<div v-if="formArray.imageFileName != undefined && formArray.imageFileName != ''" class="file-listing">
 				                            	{{ formArray.imageFileName }}
 				                              	<span class="remove-file" @click="removeFile()">
-				                                	<font-awesome-icon icon="times"/>
+													<i class="uiCloseIcon"></i>
 				                                </span>
 				                         	</div>
 				                         	<p :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')">
@@ -198,8 +198,8 @@
 	      		<div class="deleteApplication">
 		        	<h3>{{ $t("appCenter.adminSetupForm.confirmDelete") }}<span>{{ formArray.title }}</span> ?</h3>
 		         	<div class="form-group application-buttons">
-		            	<button @click.stop="deleteApplication()" class="form-submit"><font-awesome-icon icon="trash-alt"/> {{ $t("appCenter.adminSetupForm.delete") }}</button>
-		            	<button @click.stop="showDeleteApplicationModal = false" class="form-reset"><font-awesome-icon icon="times"/> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
+		            	<button @click.stop="deleteApplication()" class="form-submit"><i class="uiTrashIcon"></i> {{ $t("appCenter.adminSetupForm.delete") }}</button>
+		            	<button @click.stop="showDeleteApplicationModal = false" class="form-reset"> <i class="uiCloseIcon"></i> {{ $t("appCenter.adminSetupForm.cancel") }}</button>
 					</div>
 					<div class="error" v-if="error != ''">
 		                  <span>{{ error }}</span>
@@ -211,18 +211,9 @@
 </template>
 
 <script>
-    import { library } from '@fortawesome/fontawesome-svg-core'
-    import { faExclamationCircle, faDownload, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
-    import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
     import Paginator from './Paginator.vue';
     import VueEsc from 'vue-esc';
-    import VTooltip from 'v-tooltip'
-	 
-	Vue.use(VTooltip);
 
-    library.add(faExclamationCircle, faDownload, faTimes, faTrashAlt);
-
-    Vue.component('font-awesome-icon', FontAwesomeIcon);
     Vue.use(VueEsc);
     
     export default {
