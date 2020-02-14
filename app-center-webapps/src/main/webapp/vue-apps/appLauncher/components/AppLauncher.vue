@@ -19,7 +19,7 @@
                     right
                     absolute
                     temporary
-                    width="380"
+                    width="420"
                     class="appCenterDrawer">
                 <v-row class="mx-0">
                     <v-list-item class="appLauncherDrawerHeader">
@@ -49,9 +49,9 @@
                     <v-card
                             flat
                             tile
-                            class="d-flex flex justify-center mx-2">
+                            class="d-flex flex justify-end mx-2">
                         <a
-                                class="primary--text seeAllApplicationsBtn"
+                                class="text-uppercase caption primary--text seeAllApplicationsBtn"
                                 :href="appCenterUserSetupLink"
                                 >{{ $t('appCenter.appLauncher.drawer.viewAll') }}</a>
                     </v-card>

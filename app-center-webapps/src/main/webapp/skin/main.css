@@ -887,8 +887,14 @@
 }
 
 .seeAllApplications {
-  padding-top: 10px;
-  padding-bottom: 20px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  border-top: 1px solid #f0f4fe!important;
+  background: white;
 }
 
 .open-app-drawer {
@@ -942,6 +948,8 @@
   visibility: visible;
   opacity: 1;
 }
+
+
 
 /*----------------icons-------------------*/
 
