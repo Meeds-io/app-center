@@ -29,6 +29,12 @@
 		<module>app-center-webapps</module>
 		<module>app-center-packaging</module>
 	</modules>
+	<scm>
+    		<connection>scm:git:git://github.com/exoplatform/app-center.git</connection>
+    		<developerConnection>scm:git:ssh://git@github.com/exoplatform/app-center.git</developerConnection>
+    		<url>https://github.com/exoplatform/app-center</url>
+    		<tag>HEAD</tag>
+  	</scm>
 	<properties>
 		<org.exoplatform.social.version>6.0.x-SNAPSHOT</org.exoplatform.social.version>
 		<com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
