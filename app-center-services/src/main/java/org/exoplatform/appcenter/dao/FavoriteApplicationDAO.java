@@ -1,10 +1,10 @@
-package org.exoplatform.appCenter.services.dao;
+package org.exoplatform.appcenter.dao;
 
 import java.util.List;
 
 import javax.persistence.NoResultException;
 
-import org.exoplatform.appCenter.services.entity.jpa.FavoriteApplication;
+import org.exoplatform.appcenter.entity.FavoriteApplication;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 
 /**

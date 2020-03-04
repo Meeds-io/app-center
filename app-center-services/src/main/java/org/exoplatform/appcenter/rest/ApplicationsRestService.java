@@ -1,39 +1,24 @@
-package org.exoplatform.appCenter.services.rest;
+package org.exoplatform.appcenter.rest;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import org.exoplatform.appCenter.services.dao.ApplicationDAO;
-import org.exoplatform.appCenter.services.dao.FavoriteApplicationDAO;
-import org.exoplatform.appCenter.services.entity.ApplicationForm;
-import org.exoplatform.appCenter.services.entity.ApplicationImage;
-import org.exoplatform.appCenter.services.entity.jpa.Application;
-import org.exoplatform.appCenter.services.entity.jpa.FavoriteApplication;
+import org.exoplatform.appcenter.dao.ApplicationDAO;
+import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
+import org.exoplatform.appcenter.dto.ApplicationForm;
+import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.entity.Application;
+import org.exoplatform.appcenter.entity.FavoriteApplication;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;

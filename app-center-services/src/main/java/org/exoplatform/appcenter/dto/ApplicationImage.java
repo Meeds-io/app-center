@@ -1,4 +1,4 @@
-package org.exoplatform.appCenter.services.entity;
+package org.exoplatform.appcenter.dto;
 
 /**
  * @author Ayoub Zayati

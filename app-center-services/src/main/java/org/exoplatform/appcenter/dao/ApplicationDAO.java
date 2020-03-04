@@ -1,15 +1,13 @@
-package org.exoplatform.appCenter.services.dao;
+package org.exoplatform.appcenter.dao;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.persistence.NoResultException;
 
 import org.apache.commons.lang3.StringUtils;
 
-import org.exoplatform.appCenter.services.entity.jpa.Application;
+import org.exoplatform.appcenter.entity.Application;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.services.organization.Group;
 
