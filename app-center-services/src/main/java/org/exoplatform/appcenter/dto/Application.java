@@ -5,45 +5,45 @@ package org.exoplatform.appcenter.dto;
 
 /**
  * @author Ayoub Zayati
- *
  */
-public class ApplicationForm {
-  
-  private Long id;
-  
-  private String title;
-  
-  private String url;
-  
-  private String description;
-  
-  private boolean active;
-  
-  private boolean byDefault;
+public class Application {
+
+  private Long     id;
+
+  private String   title;
+
+  private String   url;
+
+  private String   description;
+
+  private boolean  active;
+
+  private boolean  byDefault;
 
   private String[] permissions;
-  
-  private String imageFileBody;
 
-  private String imageFileName;
-  
-  public ApplicationForm() {
-  }
+  private String   imageFileBody;
 
-  public ApplicationForm(String title,
-                         String url,
-                         String description,
-                         boolean active,
-                         boolean byDefault,
-                         String[] permissions,
-                         String imageFileBody,
-                         String imageFileName) {
+  private String   imageFileName;
+
+  private Long     imageFileId;
+
+  public Application(String title,
+                     String url,
+                     Long imageFileId,
+                     String imageFileBody,
+                     String imageFileName,
+                     String description,
+                     boolean active,
+                     boolean byDefault,
+                     String[] permissions) {
     this.title = title;
     this.url = url;
     this.description = description;
     this.active = active;
     this.byDefault = byDefault;
     this.permissions = permissions;
+    this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
     this.imageFileName = imageFileName;
   }
@@ -142,7 +142,7 @@ public class ApplicationForm {
   /**
    * @param permissions the permissions to set
    */
-  public void setPermissions(String[] permissions) {
+  public void setPermissions(String... permissions) {
     this.permissions = permissions;
   }
 
@@ -172,5 +172,13 @@ public class ApplicationForm {
    */
   public void setImageFileName(String imageFileName) {
     this.imageFileName = imageFileName;
+  }
+
+  public Long getImageFileId() {
+    return imageFileId;
+  }
+
+  public void setImageFileId(Long imageFileId) {
+    this.imageFileId = imageFileId;
   }
 }

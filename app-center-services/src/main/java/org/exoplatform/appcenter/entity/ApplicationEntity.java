@@ -16,8 +16,11 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "ApplicationEntity.getDefaultApplications", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.byDefault = true AND (app.permissions LIKE :permissionPattern1 OR app.permissions LIKE :permissionPattern2)"),
     @NamedQuery(name = "ApplicationEntity.getAppByTitleOrUrl", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.title = :title OR app.url = :url") })
-public class Application {
+        + "WHERE app.title = :title OR app.url = :url"),
+    @NamedQuery(name = "ApplicationEntity.findApplications", query = "SELECT app FROM ApplicationEntity app "
+        + "WHERE app.title like :title OR app.url like :url"),
+})
+public class ApplicationEntity {
 
   @Id
   @SequenceGenerator(name = "SEQ_APPLICATION_ID", sequenceName = "SEQ_APPLICATION_ID")
@@ -46,16 +49,18 @@ public class Application {
   @Column(name = "PERMISSIONS")
   private String  permissions;
 
-  public Application() {
+  public ApplicationEntity() {
   }
 
-  public Application(String title,
-                     String url,
-                     Long imageFileId,
-                     String description,
-                     boolean active,
-                     boolean byDefault,
-                     String permissions) {
+  public ApplicationEntity(Long id,
+                           String title,
+                           String url,
+                           Long imageFileId,
+                           String description,
+                           boolean active,
+                           boolean byDefault,
+                           String permissions) {
+    this.id = id;
     this.title = title;
     this.url = url;
     this.imageFileId = imageFileId;
