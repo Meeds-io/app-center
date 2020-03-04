@@ -1,71 +1,42 @@
 package org.exoplatform.appcenter.dao;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 
-import org.apache.commons.lang3.StringUtils;
-
-import org.exoplatform.appcenter.entity.Application;
+import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
-import org.exoplatform.services.organization.Group;
 
 /**
  * @author Ayoub Zayati
  */
-public class ApplicationDAO extends GenericDAOJPAImpl<Application, Long> {
+public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
 
-  public List<Application> getAuthorizedApplications(String userName,
-                                                     Collection<Group> groups,
-                                                     String keyword) {
-    try {
-      List<Application> results = new ArrayList<Application>();
-      groups.forEach(group -> {
-        results.addAll((List<Application>) getEntityManager().createNamedQuery("ApplicationEntity.getAuthorizedApplications")
-                                                             .setParameter("permissionPattern1",
-                                                                           "%:" + group.getId())
-                                                             .setParameter("permissionPattern2",
-                                                                           "%:" + group.getId() + ",%")
-                                                             .getResultList());
-      });
-      return results.stream()
-                    .distinct()
-                    .filter(app -> StringUtils.containsIgnoreCase(app.getTitle(),
-                                                                  keyword)
-                        || StringUtils.containsIgnoreCase(app.getDescription(),
-                                                          keyword))
-                    .collect(Collectors.toList());
-    } catch (Exception e) {
-      return null;
+  public List<ApplicationEntity> findApplications(String keyword, int offset, int limit) {
+    TypedQuery<ApplicationEntity> query = getEntityManager().createNamedQuery("ApplicationEntity.findApplications",
+                                                                              ApplicationEntity.class);
+    keyword = "%" + keyword + "%";
+    query.setParameter("title", keyword);
+    query.setParameter("url", keyword);
+    if (offset > 0) {
+      query.setFirstResult(offset);
     }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
   }
 
-  public List<Application> getDefaultApplications(String userName, Collection<Group> groups) {
+  public ApplicationEntity getApplicationByTitleOrUrl(String title, String url) {
     try {
-      List<Application> results = new ArrayList<Application>();
-      groups.forEach(group -> {
-        results.addAll((List<Application>) getEntityManager().createNamedQuery("ApplicationEntity.getDefaultApplications")
-                                                             .setParameter("permissionPattern1",
-                                                                           "%:" + group.getId())
-                                                             .setParameter("permissionPattern2",
-                                                                           "%:" + group.getId() + ",%")
-                                                             .getResultList());
-      });
-      return results.stream().distinct().collect(Collectors.toList());
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  public Application getAppByTitleOrUrl(String title, String url) {
-    try {
-      return (Application) getEntityManager().createNamedQuery("ApplicationEntity.getAppByTitleOrUrl")
-                                             .setParameter("title", title)
-                                             .setParameter("url", url)
-                                             .getSingleResult();
+      return getEntityManager().createNamedQuery("ApplicationEntity.getAppByTitleOrUrl", ApplicationEntity.class)
+                               .setParameter("title", title)
+                               .setParameter("url", url)
+                               .getSingleResult();
     } catch (NoResultException e) {
       return null;
     }
   }
+
 }

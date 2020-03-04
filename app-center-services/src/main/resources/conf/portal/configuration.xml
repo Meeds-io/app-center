@@ -1,50 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.exoplaform.org/xml/ns/kernel_1_2.xsd http://www.exoplaform.org/xml/ns/kernel_1_2.xsd"
-	xmlns="http://www.exoplaform.org/xml/ns/kernel_1_2.xsd">
-	
-	<component>
-		<type>org.exoplatform.appCenter.services.dao.ApplicationDAO</type>
-	</component>
-		
-	<component>
-		<type>org.exoplatform.appCenter.services.dao.FavoriteApplicationDAO</type>
-	</component>
-	
-	<component>
-		<type>org.exoplatform.appCenter.services.rest.ApplicationsRestService</type>
-	</component>
-	
-	<external-component-plugins>
-        <target-component>org.exoplatform.commons.api.persistence.DataInitializer</target-component>
-        <component-plugin>
-            <name>AppCenterChangeLogsPlugin</name>
-            <set-method>addChangeLogsPlugin</set-method>
-            <type>org.exoplatform.commons.persistence.impl.ChangeLogsPlugin</type>
-            <init-params>
-                <values-param>
-                    <name>changelogs</name>
-                    <description>Change logs of appCenter</description>
-                    <value>db.changelogs/changelog-1.0.0.xml</value>
-                </values-param>
-            </init-params>
-        </component-plugin>
-    </external-component-plugins>
-    
-	<external-component-plugins>
-        <target-component>org.exoplatform.commons.file.services.NameSpaceService</target-component>
-        <component-plugin>
-            <name>AppCenterNameSpacePlugin</name>
-            <set-method>addNameSpacePlugin</set-method>
-            <type>org.exoplatform.commons.file.services.NameSpacePlugin</type>
-            <init-params>
-                <properties-param>
-                    <name>fileNameSpace.params</name>
-                    <property name="name" value="appCenter"/>
-                    <property name="description" value="appCenter applications images"/>
-                </properties-param>
-            </init-params>
-        </component-plugin>
-    </external-component-plugins>
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.exoplaform.org/xml/ns/kernel_1_2.xsd http://www.exoplaform.org/xml/ns/kernel_1_2.xsd" xmlns="http://www.exoplaform.org/xml/ns/kernel_1_2.xsd">
+
+  <component>
+    <type>org.exoplatform.appcenter.dao.ApplicationDAO</type>
+  </component>
+
+  <component>
+    <type>org.exoplatform.appcenter.dao.FavoriteApplicationDAO</type>
+  </component>
+
+  <component>
+    <type>org.exoplatform.appcenter.storage.ApplicationCenterStorage</type>
+  </component>
+
+  <component>
+    <type>org.exoplatform.appcenter.service.ApplicationCenterService</type>
+  </component>
+
+  <component>
+    <type>org.exoplatform.appcenter.rest.ApplicationCenterREST</type>
+  </component>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.persistence.DataInitializer</target-component>
+    <component-plugin>
+      <name>AppCenterChangeLogsPlugin</name>
+      <set-method>addChangeLogsPlugin</set-method>
+      <type>org.exoplatform.commons.persistence.impl.ChangeLogsPlugin</type>
+      <init-params>
+        <values-param>
+          <name>changelogs</name>
+          <description>Change logs of appCenter</description>
+          <value>db.changelogs/changelog-1.0.0.xml</value>
+        </values-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.file.services.NameSpaceService</target-component>
+    <component-plugin>
+      <name>AppCenterNameSpacePlugin</name>
+      <set-method>addNameSpacePlugin</set-method>
+      <type>org.exoplatform.commons.file.services.NameSpacePlugin</type>
+      <init-params>
+        <properties-param>
+          <name>fileNameSpace.params</name>
+          <property name="name" value="appCenter" />
+          <property name="description" value="appCenter applications images" />
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
 
 </configuration>
