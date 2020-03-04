@@ -19,9 +19,9 @@
     <node>
       <uri>appCenterUserSetup</uri>
       <name>appCenterUserSetup</name>
-      <label>#{portal.intranet.appCenterUserSetup}</label>
+      <label>#{portal.global.appCenterUserSetup}</label>
       <visibility>SYSTEM</visibility>
-      <page-reference>portal::intranet::appCenterUserSetup</page-reference>
+      <page-reference>portal::global::appCenterUserSetup</page-reference>
     </node>
   </page-nodes>
 </node-navigation>
