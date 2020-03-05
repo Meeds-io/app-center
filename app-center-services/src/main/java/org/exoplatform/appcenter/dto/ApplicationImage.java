@@ -5,16 +5,16 @@ package org.exoplatform.appcenter.dto;
  */
 public class ApplicationImage {
 
+  private Long   id;
+
   private String fileBody;
 
   private String fileName;
-  
-  public ApplicationImage() {
-  }
 
-  public ApplicationImage(String fileBody, String fileName) {
-    this.fileBody = fileBody;
+  public ApplicationImage(Long id, String fileName, String fileBody) {
+    this.id = id;
     this.fileName = fileName;
+    this.fileBody = fileBody;
   }
 
   /**
@@ -45,4 +45,11 @@ public class ApplicationImage {
     this.fileName = fileName;
   }
 
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
 }

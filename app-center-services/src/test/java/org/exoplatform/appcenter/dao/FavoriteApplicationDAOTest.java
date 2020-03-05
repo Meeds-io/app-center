@@ -1,4 +1,4 @@
-package org.exoplatform.appcenter.service;
+package org.exoplatform.appcenter.dao;
 
 import static org.junit.Assert.*;
 
@@ -6,8 +6,6 @@ import java.util.List;
 
 import org.junit.*;
 
-import org.exoplatform.appcenter.dao.ApplicationDAO;
-import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.appcenter.entity.FavoriteApplicationEntity;
 import org.exoplatform.container.*;
@@ -18,12 +16,16 @@ public class FavoriteApplicationDAOTest {
 
   private PortalContainer container;
 
-  @Before
-  public void setup() {
+  @BeforeClass
+  @SuppressWarnings("deprecation")
+  public static void startDB() {
     RootContainer rootContainer = RootContainer.getInstance();
     InitialContextInitializer initializer = rootContainer.getComponentInstanceOfType(InitialContextInitializer.class);
-    initializer.recall();
+    initializer.recall(); // NOSONAR
+  }
 
+  @Before
+  public void setup() {
     container = PortalContainer.getInstance();
     assertNotNull(container);
     ExoContainerContext.setCurrentContainer(container);

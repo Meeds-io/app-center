@@ -1,6 +1,7 @@
 package org.exoplatform.appcenter.storage;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,9 +56,10 @@ public class ApplicationCenterStorage {
       throw new IllegalArgumentException("application is mandatory");
     }
     ApplicationEntity application = toEntity(applicationForm);
-    FileItem fileItem = createAppImageFileItem(applicationForm.getImageFileName(), applicationForm.getImageFileBody());
-    if (fileItem != null && fileItem.getFileInfo() != null) {
-      application.setImageFileId(fileItem.getFileInfo().getId());
+    ApplicationImage applicationImage = createAppImageFileItem(applicationForm.getImageFileName(),
+                                                               applicationForm.getImageFileBody());
+    if (applicationImage != null) {
+      application.setImageFileId(applicationImage.getId());
     }
     application = applicationDAO.create(application);
     return toDTO(application);
@@ -86,14 +88,15 @@ public class ApplicationCenterStorage {
         deleteOldImage = true;
       }
     } else if (oldImageFileExists) {
-      // Delete old attached image to application
-      // FIXME : For now, we keep the old file as it is
-      // deleteOldImage = true;
+      /*
+       * Delete old attached image to application FIXME : For now, we keep the
+       * old file as it is // NOSONAR deleteOldImage = true;
+       */ // NOSONAR
     }
     if (attachNewImage) {
-      FileItem fileItem = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
-      if (fileItem != null && fileItem.getFileInfo() != null) {
-        application.setImageFileId(fileItem.getFileInfo().getId());
+      ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
+      if (applicationImage != null) {
+        application.setImageFileId(applicationImage.getId());
       }
     }
     ApplicationEntity applicationEntity = toEntity(application);
@@ -175,46 +178,32 @@ public class ApplicationCenterStorage {
     return favoriteApplicationDAO.countFavoritesForUser(username);
   }
 
-  public FileItem createAppImageFileItem(String fileName, String fileBody) throws Exception {
-    if (StringUtils.isBlank(fileName) || StringUtils.isBlank(fileBody)) {
-      return null;
+  public ApplicationImage saveAppImageFileItem(ApplicationImage defaultAppImage) throws Exception {
+    if (defaultAppImage == null) {
+      throw new IllegalArgumentException("Application image is mandatory");
     }
-
-    String fileContent = fileBody;
-    String fileMime = "image/png";
-    if (fileBody.contains(",")) {
-      String[] file = fileBody.split(",");
-      fileMime = file[0].replace("data:", "").replace(";base64", "");
-      fileContent = file[1];
+    if (defaultAppImage.getId() == null || defaultAppImage.getId() <= 0) {
+      return createAppImageFileItem(defaultAppImage.getFileName(), defaultAppImage.getFileBody());
+    } else {
+      return updateAppImageFileItem(defaultAppImage.getId(), defaultAppImage.getFileName(), defaultAppImage.getFileBody());
     }
+  }
 
-    // Retrieve mime file from "data:application/pdf;base64"
-    Date currentDate = new Date();
-    byte[] fileContentBytes = Base64.getDecoder().decode(fileContent);
-    long size = 0;
-    FileItem fileItem = new FileItem(null,
-                                     fileName,
-                                     fileMime,
-                                     NAME_SPACE,
-                                     size,
-                                     currentDate,
-                                     null,
-                                     false,
-                                     new ByteArrayInputStream(fileContentBytes));
-    return fileService.writeFile(fileItem);
+  public ApplicationImage createAppImageFileItem(String fileName, String fileBody) throws Exception {
+    return updateAppImageFileItem(null, fileName, fileBody);
   }
 
   public ApplicationImage getAppImageFile(Long fileId) throws FileStorageException {
     FileItem fileItem = fileService.getFile(fileId);
-    ApplicationImage applicationImage = new ApplicationImage();
     if (fileItem != null) {
       byte[] bytes = fileItem.getAsByte();
-      String fileBody = Base64.getEncoder().encodeToString(bytes);
+      String fileBody = new String(bytes, Charset.defaultCharset());
       String fileMime = fileItem.getFileInfo().getMimetype();
       String fileName = fileItem.getFileInfo().getName();
-      applicationImage.setFileName(fileName);
-      applicationImage.setFileBody("data:" + fileMime + ";base64," + fileBody);
-      return applicationImage;
+
+      return new ApplicationImage(fileId,
+                                  fileName,
+                                  "data:" + fileMime + ";base64," + fileBody);
     }
     return null;
   }
@@ -257,6 +246,39 @@ public class ApplicationCenterStorage {
                                  application.isActive(),
                                  application.isByDefault(),
                                  StringUtils.join(application.getPermissions(), ","));
+  }
+
+  private ApplicationImage updateAppImageFileItem(Long fileId, String fileName, String fileBody) throws Exception { // NOSONAR
+    if (StringUtils.isBlank(fileName) || StringUtils.isBlank(fileBody)) {
+      return null;
+    }
+
+    String fileContent = fileBody;
+    String fileMime = "image/png";
+    if (fileBody.contains(",")) {
+      String[] file = fileBody.split(",");
+      fileMime = file[0].replace("data:", "").replace(";base64", "");
+      fileContent = file[1];
+    }
+
+    Date currentDate = new Date();
+    long size = 0;
+    FileItem fileItem = new FileItem(fileId,
+                                     fileName,
+                                     fileMime,
+                                     NAME_SPACE,
+                                     size,
+                                     currentDate,
+                                     null,
+                                     false,
+                                     new ByteArrayInputStream(fileContent.getBytes(Charset.defaultCharset().name())));
+    if (fileId != null && fileId > 0) {
+      fileItem = fileService.updateFile(fileItem);
+    } else {
+      fileItem = fileService.writeFile(fileItem);
+    }
+    Long id = fileItem == null || fileItem.getFileInfo() == null ? null : fileItem.getFileInfo().getId();
+    return new ApplicationImage(id, fileName, fileBody);
   }
 
 }

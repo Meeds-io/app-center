@@ -13,7 +13,6 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -26,7 +25,9 @@ public class ApplicationCenterService {
 
   private static final Log         LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
 
-  public static final String       DEFAULT_ADMINISTRATORS_PERMISSION = "*:/platform/administrators";
+  public static final String       DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
+
+  public static final String       DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
   public static final String       MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
@@ -37,6 +38,10 @@ public class ApplicationCenterService {
   public static final String       DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
 
   public static final int          DEFAULT_LIMIT                     = 1000;
+
+  private static final Context     APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
+
+  private static final Scope       APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
 
   private SettingService           settingService;
 
@@ -69,13 +74,16 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Create new Application that will be available for all users
+   * Create new Application that will be available for all users. If the
+   * application already exits an {@link ApplicationAlreadyExistsException} will
+   * be thrown.
    * 
    * @param application application to create
+   * @return stored {@link Application} in datasource
    * @throws Exception when application already exists or an error occurs while
    *           creating application or its attached image
    */
-  public void createApplication(Application application) throws Exception {
+  public Application createApplication(Application application) throws Exception {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
@@ -92,43 +100,42 @@ public class ApplicationCenterService {
     if (application.getPermissions() == null || application.getPermissions().length == 0) {
       application.setPermissions(this.defaultAdministratorPermission);
     }
-    appCenterStorage.createApplication(application);
+    return appCenterStorage.createApplication(application);
   }
 
   /**
-   * Add an application, identified by its technical id, as favorite of a user
+   * Update an existing application on datasource. If the application doesn't
+   * exit an {@link ApplicationNotFoundException} will be thrown.
    * 
-   * @param applicationId technical application id
-   * @param username user login
-   * @throws ApplicationNotFoundException when application is not found
+   * @param application dto to update on store
+   * @param username username storing application
+   * @return stored {@link Application} in datasource
+   * @throws Exception when {@link ApplicationNotFoundException} is thrown or an
+   *           error occurs while saving application
    */
-  public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException("username is mandatory");
-    }
-    if (applicationId <= 0) {
-      throw new IllegalArgumentException("applicationId must be a positive integer");
-    }
-    appCenterStorage.addApplicationToUserFavorite(applicationId, username);
-  }
-
-  public void updateApplication(Application application, String username) throws Exception {
+  public Application updateApplication(Application application, String username) throws Exception {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     Long applicationId = application.getId();
+    if (applicationId == null) {
+      throw new ApplicationNotFoundException("Application with null id wasn't found");
+    }
     Application storedApplication = appCenterStorage.getApplicationById(applicationId);
     if (storedApplication == null) {
-      throw new ApplicationNotFoundException("Application with id " + applicationId + "wasn't found");
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
 
     String[] storedPermissions = storedApplication.getPermissions();
     boolean isNotallowedToModifyApplication = hasPermission(username, storedPermissions);
     if (!isNotallowedToModifyApplication) {
-      throw new IllegalAccessException("User " + username + "is not allowed to modify application : "
+      throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
-    appCenterStorage.updateApplication(application);
+    return appCenterStorage.updateApplication(application);
   }
 
   public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException, IllegalAccessException {
@@ -151,6 +158,34 @@ public class ApplicationCenterService {
     appCenterStorage.deleteApplication(applicationId);
   }
 
+  /**
+   * Add an application, identified by its technical id, as favorite of a user
+   * 
+   * @param applicationId technical application id
+   * @param username user login
+   * @throws ApplicationNotFoundException when application is not found
+   * @throws IllegalAccessException if user hasn't access permission to the
+   *           application
+   */
+  public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException,
+                                                                          IllegalAccessException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
+    if (applicationId <= 0) {
+      throw new IllegalArgumentException("applicationId must be a positive integer");
+    }
+    Application application = appCenterStorage.getApplicationById(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found in store");
+    }
+    if (!hasPermission(username, application)) {
+      throw new IllegalAccessException("User " + username + " doesn't have enough permissions to delete application "
+          + application.getTitle());
+    }
+    appCenterStorage.addApplicationToUserFavorite(applicationId, username);
+  }
+
   public void deleteFavoriteApplication(Long applicationId, String username) {
     if (applicationId == null || applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
@@ -163,22 +198,22 @@ public class ApplicationCenterService {
 
   public void setMaxFavoriteApps(long number) {
     if (number > 0) {
-      settingService.set(Context.GLOBAL,
-                         Scope.GLOBAL,
+      settingService.set(APP_CENTER_CONTEXT,
+                         APP_CENTER_SCOPE,
                          MAX_FAVORITE_APPS,
                          SettingValue.create(number));
       this.maxFavoriteApps = number;
     } else {
-      settingService.remove(Context.GLOBAL,
-                            Scope.GLOBAL,
+      settingService.remove(APP_CENTER_CONTEXT,
+                            APP_CENTER_SCOPE,
                             MAX_FAVORITE_APPS);
-      this.maxFavoriteApps = 0;
+      this.maxFavoriteApps = -1;
     }
   }
 
   public long getMaxFavoriteApps() {
     if (this.maxFavoriteApps < 0) {
-      SettingValue<?> maxFavoriteAppsValue = settingService.get(Context.GLOBAL, Scope.GLOBAL, MAX_FAVORITE_APPS);
+      SettingValue<?> maxFavoriteAppsValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS);
       if (maxFavoriteAppsValue != null && maxFavoriteAppsValue.getValue() != null) {
         this.maxFavoriteApps = Long.parseLong(maxFavoriteAppsValue.getValue().toString());
       } else {
@@ -188,35 +223,36 @@ public class ApplicationCenterService {
     return this.maxFavoriteApps;
   }
 
-  public void setDefaultAppImage(ApplicationImage defaultAppImage) throws Exception {
+  public ApplicationImage setDefaultAppImage(ApplicationImage defaultAppImage) throws Exception {
     if (defaultAppImage == null
         || (StringUtils.isBlank(defaultAppImage.getFileName()) && StringUtils.isBlank(defaultAppImage.getFileBody()))) {
-      settingService.remove(Context.GLOBAL,
-                            Scope.GLOBAL,
+      settingService.remove(APP_CENTER_CONTEXT,
+                            APP_CENTER_SCOPE,
                             DEFAULT_APP_IMAGE_ID);
     } else {
-      FileItem fileItem = appCenterStorage.createAppImageFileItem(defaultAppImage.getFileName(),
-                                                                  defaultAppImage.getFileBody());
-      if (fileItem != null) {
-        settingService.set(Context.GLOBAL,
-                           Scope.GLOBAL,
+      ApplicationImage applicationImage = appCenterStorage.saveAppImageFileItem(defaultAppImage);
+      if (applicationImage != null && applicationImage.getId() != null && applicationImage.getId() > 0) {
+        settingService.set(APP_CENTER_CONTEXT,
+                           APP_CENTER_SCOPE,
                            DEFAULT_APP_IMAGE_ID,
-                           SettingValue.create(String.valueOf(fileItem.getFileInfo())));
+                           SettingValue.create(String.valueOf(applicationImage.getId())));
+        return applicationImage;
       }
     }
+    return null;
   }
 
   public JSONObject getAppGeneralSettings() throws Exception { // NOSONAR
     JSONObject generalsettings = new JSONObject();
-    generalsettings.put(MAX_FAVORITE_APPS,
-                        getMaxFavoriteApps());
-    SettingValue<?> defaultAppImageIdSetting = settingService.get(Context.GLOBAL,
-                                                                  Scope.GLOBAL,
+    generalsettings.put(MAX_FAVORITE_APPS, getMaxFavoriteApps());
+    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT,
+                                                                  APP_CENTER_SCOPE,
                                                                   DEFAULT_APP_IMAGE_ID);
     if (defaultAppImageIdSetting != null && defaultAppImageIdSetting.getValue() != null) {
       long defaultAppImageId = Long.parseLong(defaultAppImageIdSetting.getValue().toString());
       ApplicationImage defaultImage = appCenterStorage.getAppImageFile(defaultAppImageId);
       if (defaultImage != null) {
+        generalsettings.put(DEFAULT_APP_IMAGE_ID, defaultAppImageId);
         generalsettings.put(DEFAULT_APP_IMAGE_NAME, defaultImage.getFileName());
         generalsettings.put(DEFAULT_APP_IMAGE_BODY, defaultImage.getFileBody());
       }
@@ -239,6 +275,9 @@ public class ApplicationCenterService {
                                                        int limit,
                                                        String keyword,
                                                        String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     ApplicationList resultApplicationsList = new ApplicationList();
     List<Application> userApplicationsList = getApplications(offset, limit, keyword, username);
     resultApplicationsList.setApplications(userApplicationsList);
@@ -268,10 +307,15 @@ public class ApplicationCenterService {
 
   private boolean hasPermission(String username, String permissionExpression) {
     if (StringUtils.isBlank(permissionExpression)) {
-      throw new IllegalArgumentException("Permission expression is mandatory");
+      return true;
     }
+
     if (StringUtils.isBlank(username)) {
       return false;
+    }
+
+    if (StringUtils.equals(IdentityConstants.ANY, permissionExpression)) {
+      return true;
     }
 
     org.exoplatform.services.security.Identity identity = identityRegistry.getIdentity(username);
