@@ -8,6 +8,7 @@ import javax.ws.rs.core.*;
 
 import org.json.JSONObject;
 
+import org.exoplatform.appcenter.dao.*;
 import org.exoplatform.appcenter.dto.Application;
 import org.exoplatform.appcenter.dto.ApplicationImage;
 import org.exoplatform.appcenter.dto.ApplicationList;
@@ -20,7 +21,7 @@ import org.exoplatform.services.security.ConversationState;
 @Path("appCenter/applications")
 public class ApplicationCenterREST implements ResourceContainer {
 
-  private static final Log LOG = ExoLogger.getLogger(ApplicationCenterREST.class);
+  private static final Log         LOG = ExoLogger.getLogger(ApplicationCenterREST.class);
 
   private ApplicationCenterService appCenterService;
 
@@ -90,6 +91,9 @@ public class ApplicationCenterREST implements ResourceContainer {
   public Response addFavoriteApplication(@PathParam("applicationId") Long applicationId) {
     try {
       appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
+    } catch (IllegalAccessException e) {
+      LOG.warn(e.getMessage());
+      return Response.status(403).build();
     } catch (ApplicationNotFoundException e) {
       LOG.warn(e.getMessage());
       return Response.serverError().build();

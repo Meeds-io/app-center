@@ -11,7 +11,6 @@ import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.dto.Application;
 import org.exoplatform.appcenter.dto.ApplicationImage;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
-import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.commons.file.services.impl.NameSpaceServiceImpl;
 import org.exoplatform.container.*;
@@ -22,13 +21,16 @@ public class ApplicationCenterStorageTest {
 
   private PortalContainer container;
 
-  @Before
+  @BeforeClass
   @SuppressWarnings("deprecation")
-  public void setup() {
+  public static void startDB() {
     RootContainer rootContainer = RootContainer.getInstance();
     InitialContextInitializer initializer = rootContainer.getComponentInstanceOfType(InitialContextInitializer.class);
     initializer.recall(); // NOSONAR
+  }
 
+  @Before
+  public void setup() {
     container = PortalContainer.getInstance();
     assertNotNull(container);
     ExoContainerContext.setCurrentContainer(container);
@@ -526,12 +528,10 @@ public class ApplicationCenterStorageTest {
     assertNull(applicationCenterStorage.createAppImageFileItem(null, null));
     assertNull(applicationCenterStorage.createAppImageFileItem("name", null));
     assertNull(applicationCenterStorage.createAppImageFileItem(null, "fileContent"));
-    FileItem fileItem = applicationCenterStorage.createAppImageFileItem("name", "fileContent");
-    assertNotNull(fileItem);
-    assertNotNull(fileItem.getFileInfo());
-    assertNotNull(fileItem.getFileInfo().getName());
-    assertNotNull(fileItem.getFileInfo().getSize());
-    assertNotNull(fileItem.getAsByte());
+    ApplicationImage applicationImage = applicationCenterStorage.createAppImageFileItem("name", "fileContent");
+    assertNotNull(applicationImage);
+    assertNotNull(applicationImage.getFileName());
+    assertNotNull(applicationImage.getFileBody());
   }
 
   @Test
@@ -539,10 +539,10 @@ public class ApplicationCenterStorageTest {
     ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
-    FileItem fileItem = applicationCenterStorage.createAppImageFileItem("name", "fileContent");
-    assertNotNull(fileItem);
+    ApplicationImage applicationImage = applicationCenterStorage.createAppImageFileItem("name", "fileContent");
+    assertNotNull(applicationImage);
 
-    ApplicationImage applicationImage = applicationCenterStorage.getAppImageFile(fileItem.getFileInfo().getId());
+    applicationImage = applicationCenterStorage.getAppImageFile(applicationImage.getId());
     assertNotNull(applicationImage);
     assertNotNull(applicationImage.getFileName());
     assertNotNull(applicationImage.getFileBody());
