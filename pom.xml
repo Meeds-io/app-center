@@ -16,7 +16,7 @@
 	<parent>
 		<artifactId>addons-parent-pom</artifactId>
 		<groupId>org.exoplatform.addons</groupId>
-		<version>10</version>
+		<version>11</version>
 	</parent>
 	<groupId>org.exoplatform.addons.app-center</groupId>
 	<artifactId>app-center</artifactId>
@@ -30,11 +30,11 @@
 		<module>app-center-packaging</module>
 	</modules>
 	<scm>
-    		<connection>scm:git:git://github.com/exoplatform/app-center.git</connection>
-    		<developerConnection>scm:git:ssh://git@github.com/exoplatform/app-center.git</developerConnection>
-    		<url>https://github.com/exoplatform/app-center</url>
-    		<tag>HEAD</tag>
-  	</scm>
+    <connection>scm:git:git://github.com/exoplatform/app-center.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/exoplatform/app-center.git</developerConnection>
+    <url>https://github.com/exoplatform/app-center</url>
+    <tag>HEAD</tag>
+  </scm>
 	<properties>
 		<org.exoplatform.social.version>6.0.x-SNAPSHOT</org.exoplatform.social.version>
 		<com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>
@@ -62,6 +62,20 @@
 				<version>${project.version}</version>
 				<scope>provided</scope>
 				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>app-center-packaging</artifactId>
+				<version>${project.version}</version>
+				<scope>provided</scope>
+				<type>zip</type>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>app-center-packaging</artifactId>
+				<version>${project.version}</version>
+				<scope>provided</scope>
+				<type>pom</type>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

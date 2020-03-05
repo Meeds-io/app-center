@@ -16,7 +16,6 @@ import org.exoplatform.appcenter.service.ApplicationNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.file.services.FileStorageException;
-import org.exoplatform.services.security.ConversationState;
 
 /**
  * Storage service to access / load and save applications. This service will be
@@ -32,13 +31,21 @@ public class ApplicationCenterStorage {
 
   private FavoriteApplicationDAO favoriteApplicationDAO;
 
-  public ApplicationCenterStorage(ApplicationDAO applicationDAO, FavoriteApplicationDAO favoriteApplicationDAO, FileService fileService) {
+  public ApplicationCenterStorage(ApplicationDAO applicationDAO,
+                                  FavoriteApplicationDAO favoriteApplicationDAO,
+                                  FileService fileService) {
     this.applicationDAO = applicationDAO;
     this.favoriteApplicationDAO = favoriteApplicationDAO;
     this.fileService = fileService;
   }
 
   public Application getApplicationByTitleOrURL(String title, String url) {
+    if (StringUtils.isBlank(title)) {
+      throw new IllegalArgumentException("title is mandatory");
+    }
+    if (StringUtils.isBlank(url)) {
+      throw new IllegalArgumentException("url is mandatory");
+    }
     ApplicationEntity applicationentity = applicationDAO.getApplicationByTitleOrUrl(title, url);
     return toDTO(applicationentity);
   }
@@ -56,7 +63,7 @@ public class ApplicationCenterStorage {
     return toDTO(application);
   }
 
-  public void updateApplication(Application application) throws Exception {
+  public Application updateApplication(Application application) throws Exception {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
@@ -90,12 +97,13 @@ public class ApplicationCenterStorage {
       }
     }
     ApplicationEntity applicationEntity = toEntity(application);
-    applicationDAO.update(applicationEntity);
+    applicationEntity = applicationDAO.update(applicationEntity);
 
     // Cleanup old useless image
     if (deleteOldImage) {
       fileService.deleteFile(oldImageFileId);
     }
+    return toDTO(applicationEntity);
   }
 
   public void deleteApplication(long applicationId) throws ApplicationNotFoundException {
@@ -140,6 +148,9 @@ public class ApplicationCenterStorage {
   }
 
   public List<Application> getFavoriteApplicationsByUser(String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteApps(username);
     return applications.stream()
                        .map(FavoriteApplicationEntity::getApplication)
@@ -148,11 +159,49 @@ public class ApplicationCenterStorage {
   }
 
   public boolean isFavoriteApplication(Long applicationId, String username) {
+    if (applicationId == null || applicationId <= 0) {
+      throw new IllegalArgumentException("applicationId must be a positive integer");
+    }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     return favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username) != null;
   }
 
   public long countFavorites(String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     return favoriteApplicationDAO.countFavoritesForUser(username);
+  }
+
+  public FileItem createAppImageFileItem(String fileName, String fileBody) throws Exception {
+    if (StringUtils.isBlank(fileName) || StringUtils.isBlank(fileBody)) {
+      return null;
+    }
+
+    String fileContent = fileBody;
+    String fileMime = "image/png";
+    if (fileBody.contains(",")) {
+      String[] file = fileBody.split(",");
+      fileMime = file[0].replace("data:", "").replace(";base64", "");
+      fileContent = file[1];
+    }
+
+    // Retrieve mime file from "data:application/pdf;base64"
+    Date currentDate = new Date();
+    byte[] fileContentBytes = Base64.getDecoder().decode(fileContent);
+    long size = 0;
+    FileItem fileItem = new FileItem(null,
+                                     fileName,
+                                     fileMime,
+                                     NAME_SPACE,
+                                     size,
+                                     currentDate,
+                                     null,
+                                     false,
+                                     new ByteArrayInputStream(fileContentBytes));
+    return fileService.writeFile(fileItem);
   }
 
   public ApplicationImage getAppImageFile(Long fileId) throws FileStorageException {
@@ -170,35 +219,8 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  public FileItem createAppImageFileItem(String fileName, String fileBody) throws Exception {
-    FileItem fileItem = null;
-    if (StringUtils.isNotBlank(fileName) && StringUtils.isNotBlank(fileBody)) {
-      String[] file = fileBody.split(",");
-      String fileContent = file[1];
-      // Retrieve mime file from "data:application/pdf;base64"
-      String fileMime = file[0].replace("data:", "").replace(";base64", "");
-      Date currentDate = new Date();
-      byte[] fileContentBytes = Base64.getDecoder().decode(fileContent);
-      long size = 0;
-      String currentUser = ConversationState.getCurrent()
-                                            .getIdentity()
-                                            .getUserId();
-      fileItem = new FileItem(null,
-                              fileName,
-                              fileMime,
-                              NAME_SPACE,
-                              size,
-                              currentDate,
-                              currentUser,
-                              false,
-                              new ByteArrayInputStream(fileContentBytes));
-      fileItem = fileService.writeFile(fileItem);
-    }
-    return fileItem;
-  }
-
-  public List<Application> findApplications(String keyword, int offset, int limit) {
-    List<ApplicationEntity> applicatiions = applicationDAO.findApplications(keyword, offset, limit);
+  public List<Application> getApplications(String keyword, int offset, int limit) {
+    List<ApplicationEntity> applicatiions = applicationDAO.getApplications(keyword, offset, limit);
     return applicatiions.stream().map(this::toDTO).collect(Collectors.toList());
   }
 
@@ -211,7 +233,8 @@ public class ApplicationCenterStorage {
       return null;
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    return new Application(applicationEntity.getTitle(),
+    return new Application(applicationEntity.getId(),
+                           applicationEntity.getTitle(),
                            applicationEntity.getUrl(),
                            applicationEntity.getImageFileId(),
                            null,

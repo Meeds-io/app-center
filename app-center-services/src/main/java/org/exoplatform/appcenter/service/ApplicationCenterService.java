@@ -24,57 +24,37 @@ import org.exoplatform.services.security.*;
  */
 public class ApplicationCenterService {
 
-  private static final Log   LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
+  private static final Log         LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
 
-  public static final String DEFAULT_ADMINISTRATORS_PERMISSION = "*:/platform/administrators";
+  public static final String       DEFAULT_ADMINISTRATORS_PERMISSION = "*:/platform/administrators";
 
-  public static final String MAX_FAVORITE_APPS                 = "maxFavoriteApps";
+  public static final String       MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
-  public static final String DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
+  public static final String       DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
 
-  public static final String DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
+  public static final String       DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
 
-  public static final String DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
+  public static final String       DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
 
-  public static final String APP_ID                            = "appId";
+  public static final int          DEFAULT_LIMIT                     = 1000;
 
-  public static final String APP_TITLE                         = "appTitle";
+  private SettingService           settingService;
 
-  public static final String APP_URL                           = "appUrl";
+  private Authenticator            authenticator;
 
-  public static final String APP_IMAGE_FILE_ID                 = "appImageFileId";
+  private IdentityRegistry         identityRegistry;
 
-  public static final String APP_IMAGE_FILE_NAME               = "appImageFileName";
+  private ApplicationCenterStorage appCenterStorage;
 
-  public static final String APP_IMAGE_FILE_BODY               = "appImageFileBody";
+  private String                   defaultAdministratorPermission    = null;
 
-  public static final String APP_DESCRIPTION                   = "appDescription";
-
-  public static final String APP_ACTIVE                        = "appActive";
-
-  public static final String APP_DEFAULT                       = "appDefault";
-
-  public static final String APP_PERMISSIONS                   = "appPermissions";
-
-  public static final int    DEFAULT_LIMIT                     = 1000;
-
-  private SettingService     settingService;
-
-  private Authenticator      authenticator;
-
-  private IdentityRegistry   identityRegistry;
-
-  private ApplicationCenterStorage   appCenterStorage;
-
-  private String             defaultAdministratorPermission    = null;
-
-  private long               maxFavoriteApps                   = -1;
+  private long                     maxFavoriteApps                   = -1;
 
   public ApplicationCenterService(ApplicationCenterStorage appCenterStorage,
-                          SettingService settingService,
-                          IdentityRegistry identityRegistry,
-                          Authenticator authenticator,
-                          InitParams params) {
+                                  SettingService settingService,
+                                  IdentityRegistry identityRegistry,
+                                  Authenticator authenticator,
+                                  InitParams params) {
     this.settingService = settingService;
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
@@ -226,7 +206,7 @@ public class ApplicationCenterService {
     }
   }
 
-  public JSONObject getAppGeneralSettings() throws Exception {
+  public JSONObject getAppGeneralSettings() throws Exception { // NOSONAR
     JSONObject generalsettings = new JSONObject();
     generalsettings.put(MAX_FAVORITE_APPS,
                         getMaxFavoriteApps());
@@ -248,7 +228,7 @@ public class ApplicationCenterService {
                                              int limit,
                                              String keyword) {
     ApplicationList applicationList = new ApplicationList();
-    List<Application> applications = appCenterStorage.findApplications(keyword, offset, limit);
+    List<Application> applications = appCenterStorage.getApplications(keyword, offset, limit);
     applicationList.setApplications(applications);
     long totalApplications = appCenterStorage.countApplications();
     applicationList.setTotalApplications(totalApplications);
@@ -328,7 +308,7 @@ public class ApplicationCenterService {
     int limitToRetrieve = offset + limit;
     int offsetOfSearch = 0;
     do {
-      List<Application> applications = appCenterStorage.findApplications(keyword, offsetOfSearch, offset + limit);
+      List<Application> applications = appCenterStorage.getApplications(keyword, offsetOfSearch, offset + limit);
       applications = applications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
       userApplicationsList.addAll(applications);
       limitToRetrieve = applications.isEmpty() ? 0 : limitToRetrieve - userApplicationsList.size();

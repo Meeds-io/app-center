@@ -15,6 +15,13 @@
 
   <component>
     <type>org.exoplatform.appcenter.service.ApplicationCenterService</type>
+    <init-params>
+      <value-param>
+        <name>default.administrators.expression</name>
+        <description>Default administrators of application center</description>
+        <value>${exo.appcenter.administrators.expression:*:/platform/administrators}</value>
+      </value-param>
+    </init-params>
   </component>
 
   <component>
