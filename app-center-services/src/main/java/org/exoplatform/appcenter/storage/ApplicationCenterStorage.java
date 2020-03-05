@@ -1,16 +1,17 @@
 package org.exoplatform.appcenter.storage;
 
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.xmlbeans.impl.util.Base64;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
-import org.exoplatform.appcenter.dto.Application;
-import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.appcenter.entity.FavoriteApplicationEntity;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
@@ -56,6 +57,7 @@ public class ApplicationCenterStorage {
       throw new IllegalArgumentException("application is mandatory");
     }
     ApplicationEntity application = toEntity(applicationForm);
+    application.setId(null);
     ApplicationImage applicationImage = createAppImageFileItem(applicationForm.getImageFileName(),
                                                                applicationForm.getImageFileBody());
     if (applicationImage != null) {
@@ -70,40 +72,27 @@ public class ApplicationCenterStorage {
       throw new IllegalArgumentException("application is mandatory");
     }
     Long applicationId = application.getId();
-    ApplicationEntity storedApplicationentity = applicationDAO.find(applicationId);
-    if (storedApplicationentity == null) {
+    ApplicationEntity storedApplicationEntity = applicationDAO.find(applicationId);
+    if (storedApplicationEntity == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-    Long oldImageFileId = storedApplicationentity.getImageFileId();
-    Long newImageFileId = application.getImageFileId();
-    boolean newImageExists = application.getImageFileId() != null && application.getImageFileId() > 0;
-    boolean oldImageFileExists = oldImageFileId != null && oldImageFileId > 0;
-    boolean attachNewImage = false;
-    boolean deleteOldImage = false;
-    if (newImageExists) {
-      if (oldImageFileExists && oldImageFileId.longValue() != newImageFileId.longValue()) {
-        // we should update new image
-        attachNewImage = true;
-        // Delete old attached image to application
-        deleteOldImage = true;
-      }
-    } else if (oldImageFileExists) {
-      /*
-       * Delete old attached image to application FIXME : For now, we keep the
-       * old file as it is // NOSONAR deleteOldImage = true;
-       */ // NOSONAR
-    }
-    if (attachNewImage) {
+    Long oldImageFileId = storedApplicationEntity.getImageFileId();
+    boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
+        && StringUtils.isNotBlank(application.getImageFileName());
+    if (newImageAttached) {
       ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
       if (applicationImage != null) {
         application.setImageFileId(applicationImage.getId());
       }
+    } else {
+      application.setImageFileId(storedApplicationEntity.getImageFileId());
     }
+
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity = applicationDAO.update(applicationEntity);
 
     // Cleanup old useless image
-    if (deleteOldImage) {
+    if (newImageAttached) {
       fileService.deleteFile(oldImageFileId);
     }
     return toDTO(applicationEntity);
@@ -150,14 +139,14 @@ public class ApplicationCenterStorage {
     }
   }
 
-  public List<Application> getFavoriteApplicationsByUser(String username) {
+  public List<ApplicationFavorite> getFavoriteApplicationsByUser(String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteApps(username);
     return applications.stream()
                        .map(FavoriteApplicationEntity::getApplication)
-                       .map(this::toDTO)
+                       .map(this::toFavoriteDTO)
                        .collect(Collectors.toList());
   }
 
@@ -193,17 +182,29 @@ public class ApplicationCenterStorage {
     return updateAppImageFileItem(null, fileName, fileBody);
   }
 
+  public Long getApplicationImageLastUpdated(long fileId) throws FileStorageException {
+    FileItem fileItem = fileService.getFile(fileId);
+    if (fileItem != null && fileItem.getFileInfo().getUpdatedDate() != null) {
+      return fileItem.getFileInfo().getUpdatedDate().getTime();
+    }
+    return null;
+  }
+
+  public InputStream getApplicationImageInputStream(long fileId) throws FileStorageException, IOException { // NOSONAR
+    FileItem fileItem = fileService.getFile(fileId);
+    if (fileItem != null && fileItem.getFileInfo().getUpdatedDate() != null) {
+      return new ByteArrayInputStream(Base64.decode(fileItem.getAsByte()));
+    }
+    return null;
+  }
+
   public ApplicationImage getAppImageFile(Long fileId) throws FileStorageException {
     FileItem fileItem = fileService.getFile(fileId);
     if (fileItem != null) {
       byte[] bytes = fileItem.getAsByte();
       String fileBody = new String(bytes, Charset.defaultCharset());
-      String fileMime = fileItem.getFileInfo().getMimetype();
       String fileName = fileItem.getFileInfo().getName();
-
-      return new ApplicationImage(fileId,
-                                  fileName,
-                                  "data:" + fileMime + ";base64," + fileBody);
+      return new ApplicationImage(fileId, fileName, fileBody);
     }
     return null;
   }
@@ -234,6 +235,24 @@ public class ApplicationCenterStorage {
                            permissions);
   }
 
+  private ApplicationFavorite toFavoriteDTO(ApplicationEntity applicationEntity) {
+    if (applicationEntity == null) {
+      return null;
+    }
+    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
+    return new ApplicationFavorite(applicationEntity.getId(),
+                                   applicationEntity.getTitle(),
+                                   applicationEntity.getUrl(),
+                                   applicationEntity.getImageFileId(),
+                                   null,
+                                   null,
+                                   applicationEntity.getDescription(),
+                                   applicationEntity.isActive(),
+                                   applicationEntity.isByDefault(),
+                                   true,
+                                   permissions);
+  }
+
   private ApplicationEntity toEntity(Application application) {
     if (application == null) {
       return null;
@@ -254,10 +273,8 @@ public class ApplicationCenterStorage {
     }
 
     String fileContent = fileBody;
-    String fileMime = "image/png";
     if (fileBody.contains(",")) {
       String[] file = fileBody.split(",");
-      fileMime = file[0].replace("data:", "").replace(";base64", "");
       fileContent = file[1];
     }
 
@@ -265,7 +282,7 @@ public class ApplicationCenterStorage {
     long size = 0;
     FileItem fileItem = new FileItem(fileId,
                                      fileName,
-                                     fileMime,
+                                     "image/png",
                                      NAME_SPACE,
                                      size,
                                      currentDate,

@@ -2,7 +2,6 @@ package org.exoplatform.appcenter.service;
 
 import static org.junit.Assert.*;
 
-import org.json.JSONObject;
 import org.junit.*;
 import org.picocontainer.Startable;
 
@@ -311,32 +310,25 @@ public class ApplicationCenterServiceTest {
     applicationCenterService.setDefaultAppImage(null);
     applicationCenterService.setMaxFavoriteApps(0);
 
-    JSONObject generalSettings = applicationCenterService.getAppGeneralSettings();
+    GeneralSettings generalSettings = applicationCenterService.getAppGeneralSettings();
     assertNotNull(generalSettings);
-    assertEquals(0, generalSettings.getLong(ApplicationCenterService.MAX_FAVORITE_APPS));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_NAME));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_BODY));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_ID));
+    assertEquals(0, generalSettings.getMaxFavoriteApps());
+    assertNull(generalSettings.getDefaultApplicationImage());
 
     applicationCenterService.setDefaultAppImage(new ApplicationImage(null, null, null));
     generalSettings = applicationCenterService.getAppGeneralSettings();
 
-    assertEquals(0, generalSettings.getLong(ApplicationCenterService.MAX_FAVORITE_APPS));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_NAME));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_BODY));
-    assertFalse(generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_ID));
+    assertEquals(0, generalSettings.getMaxFavoriteApps());
+    assertNull(generalSettings.getDefaultApplicationImage());
 
     applicationCenterService.setDefaultAppImage(new ApplicationImage(null, "name", "content"));
 
     generalSettings = applicationCenterService.getAppGeneralSettings();
-    assertEquals(0, generalSettings.getLong(ApplicationCenterService.MAX_FAVORITE_APPS));
-    assertTrue(generalSettings.toString() + "does not contain file",
-               generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_NAME));
-    assertEquals("name", generalSettings.getString(ApplicationCenterService.DEFAULT_APP_IMAGE_NAME));
-    assertTrue(generalSettings.toString() + "does not contain file",
-               generalSettings.has(ApplicationCenterService.DEFAULT_APP_IMAGE_BODY));
-    assertTrue(generalSettings.getString(ApplicationCenterService.DEFAULT_APP_IMAGE_BODY).contains("content"));
-    assertNotNull(generalSettings.getLong(ApplicationCenterService.DEFAULT_APP_IMAGE_ID));
+    assertEquals(0, generalSettings.getMaxFavoriteApps());
+    assertNotNull(generalSettings.getDefaultApplicationImage());
+    assertEquals("name", generalSettings.getDefaultApplicationImage().getFileName());
+    assertTrue(generalSettings.getDefaultApplicationImage().getFileBody().contains("content"));
+    assertNotNull(generalSettings.getDefaultApplicationImage().getId());
   }
 
   @Test

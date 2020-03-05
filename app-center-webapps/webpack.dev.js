@@ -6,7 +6,7 @@ const common = require('./webpack.common.js');
 const app = 'app-center';
 
 // add the server path to your server location path
-const exoServerPath = "/server-exo";
+const exoServerPath = "/exo-server";
 
 module.exports = merge(common, {
 

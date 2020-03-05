@@ -8,8 +8,7 @@ import org.junit.*;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
-import org.exoplatform.appcenter.dto.Application;
-import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.commons.file.services.impl.NameSpaceServiceImpl;
@@ -352,7 +351,7 @@ public class ApplicationCenterStorageTest {
       // Expected
     }
 
-    List<Application> favoriteApplications = applicationCenterStorage.getFavoriteApplicationsByUser("testuser");
+    List<ApplicationFavorite> favoriteApplications = applicationCenterStorage.getFavoriteApplicationsByUser("testuser");
     assertNotNull(favoriteApplications);
     assertEquals(0, favoriteApplications.size());
 

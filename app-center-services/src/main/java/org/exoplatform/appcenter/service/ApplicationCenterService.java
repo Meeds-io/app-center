@@ -1,11 +1,12 @@
 package org.exoplatform.appcenter.service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
-import org.json.JSONObject;
 
 import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.storage.ApplicationCenterStorage;
@@ -13,6 +14,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.commons.file.services.FileStorageException;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -128,10 +130,7 @@ public class ApplicationCenterService {
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-
-    String[] storedPermissions = storedApplication.getPermissions();
-    boolean isNotallowedToModifyApplication = hasPermission(username, storedPermissions);
-    if (!isNotallowedToModifyApplication) {
+    if (!hasPermission(username, storedApplication)) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
@@ -242,20 +241,14 @@ public class ApplicationCenterService {
     return null;
   }
 
-  public JSONObject getAppGeneralSettings() throws Exception { // NOSONAR
-    JSONObject generalsettings = new JSONObject();
-    generalsettings.put(MAX_FAVORITE_APPS, getMaxFavoriteApps());
-    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT,
-                                                                  APP_CENTER_SCOPE,
-                                                                  DEFAULT_APP_IMAGE_ID);
-    if (defaultAppImageIdSetting != null && defaultAppImageIdSetting.getValue() != null) {
-      long defaultAppImageId = Long.parseLong(defaultAppImageIdSetting.getValue().toString());
+  public GeneralSettings getAppGeneralSettings() throws Exception { // NOSONAR
+    GeneralSettings generalsettings = new GeneralSettings();
+    generalsettings.setMaxFavoriteApps(getMaxFavoriteApps());
+
+    Long defaultAppImageId = getDefaultImageId();
+    if (defaultAppImageId != null) {
       ApplicationImage defaultImage = appCenterStorage.getAppImageFile(defaultAppImageId);
-      if (defaultImage != null) {
-        generalsettings.put(DEFAULT_APP_IMAGE_ID, defaultAppImageId);
-        generalsettings.put(DEFAULT_APP_IMAGE_NAME, defaultImage.getFileName());
-        generalsettings.put(DEFAULT_APP_IMAGE_BODY, defaultImage.getFileBody());
-      }
+      generalsettings.setDefaultApplicationImage(defaultImage);
     }
     return generalsettings;
   }
@@ -280,6 +273,11 @@ public class ApplicationCenterService {
     }
     ApplicationList resultApplicationsList = new ApplicationList();
     List<Application> userApplicationsList = getApplications(offset, limit, keyword, username);
+    userApplicationsList = userApplicationsList.stream().map(app -> {
+      ApplicationFavorite applicationFavorite = new ApplicationFavorite(app);
+      applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
+      return applicationFavorite;
+    }).collect(Collectors.toList());
     resultApplicationsList.setApplications(userApplicationsList);
     long countFavorites = appCenterStorage.countFavorites(username);
     resultApplicationsList.setTotalApplications(countFavorites);
@@ -287,9 +285,52 @@ public class ApplicationCenterService {
     return resultApplicationsList;
   }
 
-  public List<Application> getFavoriteApplicationsList(String username) {
-    List<Application> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
+  public List<ApplicationFavorite> getFavoriteApplicationsList(String username) {
+    List<ApplicationFavorite> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
     return favoriteApplications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
+  }
+
+  public Long getApplicationImageLastUpdated(long applicationId, String username) throws ApplicationNotFoundException,
+                                                                                  IllegalAccessException,
+                                                                                  FileStorageException {
+    Application application = appCenterStorage.getApplicationById(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
+    }
+    if (!hasPermission(username, application)) {
+      throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
+    }
+    if (application.getImageFileId() != null && application.getImageFileId() > 0) {
+      return appCenterStorage.getApplicationImageLastUpdated(application.getImageFileId());
+    } else {
+      Long defaultImageId = getDefaultImageId();
+      if (defaultImageId != null && defaultImageId > 0) {
+        return appCenterStorage.getApplicationImageLastUpdated(defaultImageId);
+      }
+    }
+    return null;
+  }
+
+  public InputStream getApplicationImageInputStream(long applicationId, String username) throws ApplicationNotFoundException,
+                                                                                         IllegalAccessException,
+                                                                                         FileStorageException,
+                                                                                         IOException {
+    Application application = appCenterStorage.getApplicationById(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
+    }
+    if (!hasPermission(username, application)) {
+      throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
+    }
+    if (application.getImageFileId() != null && application.getImageFileId() > 0) {
+      return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+    } else {
+      Long defaultImageId = getDefaultImageId();
+      if (defaultImageId != null && defaultImageId > 0) {
+        return appCenterStorage.getApplicationImageInputStream(defaultImageId);
+      }
+    }
+    return null;
   }
 
   private boolean hasPermission(String username, Application application) {
@@ -339,6 +380,17 @@ public class ApplicationCenterService {
       return StringUtils.equals(username, permissionExpression);
     }
     return identity.isMemberOf(membership);
+  }
+
+  private Long getDefaultImageId() {
+    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT,
+                                                                  APP_CENTER_SCOPE,
+                                                                  DEFAULT_APP_IMAGE_ID);
+    Long defaultAppImageId = null;
+    if (defaultAppImageIdSetting != null && defaultAppImageIdSetting.getValue() != null) {
+      defaultAppImageId = Long.parseLong(defaultAppImageIdSetting.getValue().toString());
+    }
+    return defaultAppImageId;
   }
 
   private List<Application> getApplications(int offset, int limit, String keyword, String username) {
