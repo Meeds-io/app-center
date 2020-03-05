@@ -28,7 +28,8 @@ public class Application {
 
   private Long     imageFileId;
 
-  public Application(String title,
+  public Application(Long id,
+                     String title,
                      String url,
                      Long imageFileId,
                      String imageFileBody,
@@ -36,7 +37,8 @@ public class Application {
                      String description,
                      boolean active,
                      boolean byDefault,
-                     String[] permissions) {
+                     String... permissions) {
+    this.id = id;
     this.title = title;
     this.url = url;
     this.description = description;

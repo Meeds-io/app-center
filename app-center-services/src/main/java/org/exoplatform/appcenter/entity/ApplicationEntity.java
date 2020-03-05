@@ -11,14 +11,11 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @ExoEntity
 @Table(name = "AC_APPLICATION")
 @NamedQueries({
-    @NamedQuery(name = "ApplicationEntity.getAuthorizedApplications", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.active = true AND (app.permissions LIKE :permissionPattern1 OR app.permissions LIKE :permissionPattern2)"),
-    @NamedQuery(name = "ApplicationEntity.getDefaultApplications", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.byDefault = true AND (app.permissions LIKE :permissionPattern1 OR app.permissions LIKE :permissionPattern2)"),
     @NamedQuery(name = "ApplicationEntity.getAppByTitleOrUrl", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.title = :title OR app.url = :url"),
-    @NamedQuery(name = "ApplicationEntity.findApplications", query = "SELECT app FROM ApplicationEntity app "
+    @NamedQuery(name = "ApplicationEntity.getApplicationsByKeyword", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.title like :title OR app.url like :url"),
+    @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
 })
 public class ApplicationEntity {
 
