@@ -1,16 +1,14 @@
 package org.exoplatform.appcenter.rest;
 
+import java.io.InputStream;
 import java.util.List;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
-import org.json.JSONObject;
-
+import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.dto.Application;
-import org.exoplatform.appcenter.dto.ApplicationImage;
-import org.exoplatform.appcenter.dto.ApplicationList;
 import org.exoplatform.appcenter.service.*;
 import org.exoplatform.common.http.HTTPStatus;
 import org.exoplatform.services.log.ExoLogger;
@@ -188,8 +186,8 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response getAppGeneralSettings() {
     try {
-      JSONObject appGeneralSettings = appCenterService.getAppGeneralSettings();
-      return Response.ok(appGeneralSettings).build();
+      GeneralSettings generalSettings = appCenterService.getAppGeneralSettings();
+      return Response.ok(generalSettings).build();
     } catch (ApplicationNotFoundException e) {
       LOG.warn(e.getMessage());
       return Response.serverError().build();
@@ -255,10 +253,58 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response getFavoriteApplicationsList() {
     try {
-      List<Application> applications = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
+      List<ApplicationFavorite> applications = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
       return Response.ok(applications).build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @GET
+  @Path("/illustration/{applicationId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Gets an application illustration by application id", httpMethod = "GET", response = Response.class, notes = "This can only be done by the logged in user.")
+  @ApiResponses(value = {
+      @ApiResponse(code = 200, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error"),
+      @ApiResponse(code = 400, message = "Invalid query input"),
+      @ApiResponse(code = 404, message = "Resource not found") })
+  public Response getApplicationIllustration(@Context Request request,
+                                             @ApiParam(value = "Application id", required = true) @PathParam("applicationId") long applicationId) {
+    try {
+      Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId, getCurrentUserName());
+      if (lastUpdated == null) {
+        return Response.status(404).build();
+      }
+      EntityTag eTag = new EntityTag(Integer.toString(lastUpdated.hashCode()));
+      Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
+      if (builder == null) {
+        InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, getCurrentUserName());
+        if (stream == null) {
+          return Response.status(404).build();
+        }
+        /*
+         * As recommended in the the RFC1341
+         * (https://www.w3.org/Protocols/rfc1341/4_Content-Type.html), we set
+         * the avatar content-type to "image/png". So, its data would be
+         * recognized as "image" by the user-agent.
+         */
+        builder = Response.ok(stream, "image/png");
+        builder.tag(eTag);
+      }
+      CacheControl cc = new CacheControl();
+      cc.setMaxAge(86400);
+      builder.cacheControl(cc);
+      return builder.cacheControl(cc).build();
+    } catch (IllegalAccessException e) {
+      LOG.warn(e.getMessage());
+      return Response.status(HTTPStatus.UNAUTHORIZED).build();
+    } catch (ApplicationNotFoundException e) {
+      LOG.warn(e.getMessage());
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while getting application illustration", e);
       return Response.serverError().build();
     }
   }

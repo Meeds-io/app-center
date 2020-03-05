@@ -1,15 +1,29 @@
 package org.exoplatform.appcenter.dto;
 
+import java.io.Serializable;
+
 /**
  * @author Ayoub Zayati
  */
-public class ApplicationImage {
+public class ApplicationImage implements Serializable {
 
-  private Long   id;
+  private static final long serialVersionUID = -2001197615359890089L;
 
-  private String fileBody;
+  private Long              id;
 
-  private String fileName;
+  private String            fileBody;
+
+  private String            fileName;
+
+  private Long              lastUpdated;
+
+  public ApplicationImage() {
+    this(null, null, null);
+  }
+
+  public ApplicationImage(String fileName, String fileBody) {
+    this(null, fileName, fileBody);
+  }
 
   public ApplicationImage(Long id, String fileName, String fileBody) {
     this.id = id;
@@ -51,5 +65,13 @@ public class ApplicationImage {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public Long getLastUpdated() {
+    return lastUpdated;
+  }
+
+  public void setLastUpdated(Long lastUpdated) {
+    this.lastUpdated = lastUpdated;
   }
 }

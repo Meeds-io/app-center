@@ -3,7 +3,10 @@
     <div :class="modalClass" class="uiPopup modal-content">
       <div class="popupHeader">
         <span class="PopupTitle popupTitle">{{ title }}</span>
-        <a v-if="displayClose" class="uiIconClose pull-right" @click.stop="closeModal"></a> 
+        <a
+          v-if="displayClose"
+          class="uiIconClose pull-right"
+          @click.stop="closeModal"></a>
       </div>
       <div class="PopupContent popupContent">
         <slot></slot>
@@ -21,20 +24,18 @@ export default {
     },
     title: {
       type: String,
-      default: ''
+      default: ""
     },
     modalClass: {
       type: String,
-      default: ''
+      default: ""
     }
   },
   methods: {
     closeModal() {
       // Emit the click event of close icon
-      this.$emit('modal-closed');
+      this.$emit("modal-closed");
     }
   }
 };
 </script>
-
-
