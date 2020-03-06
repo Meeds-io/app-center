@@ -253,7 +253,7 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response getFavoriteApplicationsList() {
     try {
-      List<ApplicationFavorite> applications = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
+      List<UserApplication> applications = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
       return Response.ok(applications).build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);

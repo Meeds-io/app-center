@@ -139,7 +139,7 @@ public class ApplicationCenterStorage {
     }
   }
 
-  public List<ApplicationFavorite> getFavoriteApplicationsByUser(String username) {
+  public List<UserApplication> getFavoriteApplicationsByUser(String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -235,12 +235,12 @@ public class ApplicationCenterStorage {
                            permissions);
   }
 
-  private ApplicationFavorite toFavoriteDTO(ApplicationEntity applicationEntity) {
+  private UserApplication toFavoriteDTO(ApplicationEntity applicationEntity) {
     if (applicationEntity == null) {
       return null;
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    return new ApplicationFavorite(applicationEntity.getId(),
+    return new UserApplication(applicationEntity.getId(),
                                    applicationEntity.getTitle(),
                                    applicationEntity.getUrl(),
                                    applicationEntity.getImageFileId(),

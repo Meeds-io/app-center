@@ -3,13 +3,13 @@
  */
 package org.exoplatform.appcenter.dto;
 
-public class ApplicationFavorite extends Application {
+public class UserApplication extends Application {
 
   private static final long serialVersionUID = -2451635329141517005L;
 
   private boolean           favorite;
 
-  public ApplicationFavorite(Application app) {
+  public UserApplication(Application app) {
     super(app.getId(),
           app.getTitle(),
           app.getUrl(),
@@ -22,7 +22,7 @@ public class ApplicationFavorite extends Application {
           app.getPermissions());
   }
 
-  public ApplicationFavorite(Long id,
+  public UserApplication(Long id,
                              String title,
                              String url,
                              Long imageFileId,
