@@ -1,5 +1,7 @@
 package org.exoplatform.appcenter.entity;
 
+import java.util.Collection;
+
 import javax.persistence.*;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
@@ -16,6 +18,10 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "ApplicationEntity.getApplicationsByKeyword", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.title like :title OR app.url like :url"),
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
+    @NamedQuery(name = "ApplicationEntity.getSystemApplications", query = "SELECT app FROM ApplicationEntity app WHERE app.system = TRUE"),
+    @NamedQuery(name = "ApplicationEntity.getFavoriteActiveApps", query = "SELECT distinct(app) FROM ApplicationEntity app "
+        + " LEFT JOIN app.favorites as favoriteApp "
+        + " WHERE app.active = TRUE AND (app.byDefault = TRUE OR favoriteApp.userName = :userName)"),
 })
 public class ApplicationEntity {
 
@@ -23,28 +29,34 @@ public class ApplicationEntity {
   @SequenceGenerator(name = "SEQ_APPLICATION_ID", sequenceName = "SEQ_APPLICATION_ID")
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_APPLICATION_ID")
   @Column(name = "ID")
-  private Long    id;
+  private Long                                  id;
 
   @Column(name = "TITLE")
-  private String  title;
+  private String                                title;
 
   @Column(name = "URL")
-  private String  url;
+  private String                                url;
 
   @Column(name = "IMAGE_FILE_ID")
-  private Long    imageFileId;
+  private Long                                  imageFileId;
 
   @Column(name = "DESCRIPTION")
-  private String  description;
+  private String                                description;
 
   @Column(name = "ACTIVE")
-  private boolean active;
+  private boolean                               active;
 
   @Column(name = "BY_DEFAULT")
-  private boolean byDefault;
+  private boolean                               byDefault;
+
+  @Column(name = "IS_SYSTEM")
+  private Boolean                               system;
 
   @Column(name = "PERMISSIONS")
-  private String  permissions;
+  private String                                permissions;
+
+  @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)
+  private Collection<FavoriteApplicationEntity> favorites;
 
   public ApplicationEntity() {
   }
@@ -178,4 +190,13 @@ public class ApplicationEntity {
   public void setPermissions(String permissions) {
     this.permissions = permissions;
   }
+
+  public boolean isSystem() {
+    return system != null && system;
+  }
+
+  public void setSystem(boolean system) {
+    this.system = system;
+  }
+
 }

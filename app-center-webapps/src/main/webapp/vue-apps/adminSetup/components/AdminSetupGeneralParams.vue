@@ -173,7 +173,7 @@ export default {
 
     setMaxFavoriteApps() {
       let setMaxFavoriteAppsUrl = "/rest/appCenter/applications/setMaxFavorite";
-      if (!this.maxFavoriteApps) {
+      if (this.maxFavoriteApps) {
         setMaxFavoriteAppsUrl += `?number=${this.maxFavoriteApps}`;
       }
       return fetch(setMaxFavoriteAppsUrl, {

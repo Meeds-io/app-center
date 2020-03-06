@@ -76,6 +76,10 @@ public class ApplicationCenterStorage {
     if (storedApplicationEntity == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
+
+    // Avoid changing this flag by UI
+    application.setSystem(storedApplicationEntity.isSystem());
+
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
     boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
         && StringUtils.isNotBlank(application.getImageFileName());
@@ -143,10 +147,16 @@ public class ApplicationCenterStorage {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
-    List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteApps(username);
+    List<ApplicationEntity> applications = applicationDAO.getFavoriteActiveApps(username);
     return applications.stream()
-                       .map(FavoriteApplicationEntity::getApplication)
                        .map(this::toFavoriteDTO)
+                       .collect(Collectors.toList());
+  }
+
+  public List<Application> getSystemApplications() {
+    List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
+    return applications.stream()
+                       .map(this::toDTO)
                        .collect(Collectors.toList());
   }
 
@@ -192,8 +202,8 @@ public class ApplicationCenterStorage {
 
   public InputStream getApplicationImageInputStream(long fileId) throws FileStorageException, IOException { // NOSONAR
     FileItem fileItem = fileService.getFile(fileId);
-    if (fileItem != null && fileItem.getFileInfo().getUpdatedDate() != null) {
-      return new ByteArrayInputStream(Base64.decode(fileItem.getAsByte()));
+    if (fileItem != null && fileItem.getAsByte() != null) {
+      return new ByteArrayInputStream(fileItem.getAsByte());
     }
     return null;
   }
@@ -202,7 +212,7 @@ public class ApplicationCenterStorage {
     FileItem fileItem = fileService.getFile(fileId);
     if (fileItem != null) {
       byte[] bytes = fileItem.getAsByte();
-      String fileBody = new String(bytes, Charset.defaultCharset());
+      String fileBody = new String(Base64.encode(bytes), Charset.defaultCharset());
       String fileName = fileItem.getFileInfo().getName();
       return new ApplicationImage(fileId, fileName, fileBody);
     }
@@ -223,16 +233,18 @@ public class ApplicationCenterStorage {
       return null;
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    return new Application(applicationEntity.getId(),
-                           applicationEntity.getTitle(),
-                           applicationEntity.getUrl(),
-                           applicationEntity.getImageFileId(),
-                           null,
-                           null,
-                           applicationEntity.getDescription(),
-                           applicationEntity.isActive(),
-                           applicationEntity.isByDefault(),
-                           permissions);
+    Application application = new Application(applicationEntity.getId(),
+                                              applicationEntity.getTitle(),
+                                              applicationEntity.getUrl(),
+                                              applicationEntity.getImageFileId(),
+                                              null,
+                                              null,
+                                              applicationEntity.getDescription(),
+                                              applicationEntity.isActive(),
+                                              applicationEntity.isByDefault(),
+                                              permissions);
+    application.setSystem(applicationEntity.isSystem());
+    return application;
   }
 
   private UserApplication toFavoriteDTO(ApplicationEntity applicationEntity) {
@@ -240,31 +252,35 @@ public class ApplicationCenterStorage {
       return null;
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    return new UserApplication(applicationEntity.getId(),
-                                   applicationEntity.getTitle(),
-                                   applicationEntity.getUrl(),
-                                   applicationEntity.getImageFileId(),
-                                   null,
-                                   null,
-                                   applicationEntity.getDescription(),
-                                   applicationEntity.isActive(),
-                                   applicationEntity.isByDefault(),
-                                   true,
-                                   permissions);
+    UserApplication userApplication = new UserApplication(applicationEntity.getId(),
+                                                          applicationEntity.getTitle(),
+                                                          applicationEntity.getUrl(),
+                                                          applicationEntity.getImageFileId(),
+                                                          null,
+                                                          null,
+                                                          applicationEntity.getDescription(),
+                                                          applicationEntity.isActive(),
+                                                          applicationEntity.isByDefault(),
+                                                          true,
+                                                          permissions);
+    userApplication.setSystem(applicationEntity.isSystem());
+    return userApplication;
   }
 
   private ApplicationEntity toEntity(Application application) {
     if (application == null) {
       return null;
     }
-    return new ApplicationEntity(application.getId(),
-                                 application.getTitle(),
-                                 application.getUrl(),
-                                 application.getImageFileId(),
-                                 application.getDescription(),
-                                 application.isActive(),
-                                 application.isByDefault(),
-                                 StringUtils.join(application.getPermissions(), ","));
+    ApplicationEntity applicationEntity = new ApplicationEntity(application.getId(),
+                                                                application.getTitle(),
+                                                                application.getUrl(),
+                                                                application.getImageFileId(),
+                                                                application.getDescription(),
+                                                                application.isActive(),
+                                                                application.isByDefault(),
+                                                                StringUtils.join(application.getPermissions(), ","));
+    applicationEntity.setSystem(application.isSystem());
+    return applicationEntity;
   }
 
   private ApplicationImage updateAppImageFileItem(Long fileId, String fileName, String fileBody) throws Exception { // NOSONAR
@@ -273,22 +289,25 @@ public class ApplicationCenterStorage {
     }
 
     String fileContent = fileBody;
-    if (fileBody.contains(",")) {
-      String[] file = fileBody.split(",");
+    if (fileBody.contains("base64,")) {
+      String[] file = fileBody.split("base64,");
       fileContent = file[1];
     }
 
-    Date currentDate = new Date();
-    long size = 0;
+    byte[] bytesContent = fileContent.getBytes(Charset.defaultCharset().name());
+    byte[] decodedBytes = Base64.decode(bytesContent);
+    if (decodedBytes != null) {
+      bytesContent = decodedBytes;
+    }
     FileItem fileItem = new FileItem(fileId,
                                      fileName,
                                      "image/png",
                                      NAME_SPACE,
-                                     size,
-                                     currentDate,
+                                     bytesContent.length,
+                                     new Date(),
                                      null,
                                      false,
-                                     new ByteArrayInputStream(fileContent.getBytes(Charset.defaultCharset().name())));
+                                     new ByteArrayInputStream(bytesContent));
     if (fileId != null && fileId > 0) {
       fileItem = fileService.updateFile(fileItem);
     } else {

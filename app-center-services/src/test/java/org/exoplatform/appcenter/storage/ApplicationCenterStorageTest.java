@@ -88,10 +88,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
   @Test
@@ -131,10 +128,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
   @Test
@@ -210,10 +204,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
   @Test
@@ -267,10 +258,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
   @Test

@@ -17,6 +17,12 @@ import org.exoplatform.services.log.Log;
 public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
   private static final Log LOG = ExoLogger.getLogger(ApplicationDAO.class);
 
+  public List<ApplicationEntity> getFavoriteActiveApps(String userName) {
+    return getEntityManager().createNamedQuery("ApplicationEntity.getFavoriteActiveApps", ApplicationEntity.class)
+                             .setParameter("userName", userName)
+                             .getResultList();
+  }
+
   public List<ApplicationEntity> getApplications(String keyword, int offset, int limit) {
     TypedQuery<ApplicationEntity> query = null;
     if (StringUtils.isBlank(keyword)) {
@@ -36,6 +42,12 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
     if (limit > 0) {
       query.setMaxResults(limit);
     }
+    return query.getResultList();
+  }
+
+  public List<ApplicationEntity> getSystemApplications() {
+    TypedQuery<ApplicationEntity> query = getEntityManager().createNamedQuery("ApplicationEntity.getSystemApplications",
+                                                                              ApplicationEntity.class);
     return query.getResultList();
   }
 

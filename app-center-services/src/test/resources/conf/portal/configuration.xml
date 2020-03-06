@@ -44,6 +44,7 @@
           <description>Change logs of settings</description>
           <value>db/changelog/quartz.db.changelog-1.0.0.xml</value>
           <value>db/changelog/settings.db.changelog-1.0.0.xml</value>
+          <value>db.changelogs/app-center-changelog-1.0.0.xml</value>
         </values-param>
       </init-params>
     </component-plugin>

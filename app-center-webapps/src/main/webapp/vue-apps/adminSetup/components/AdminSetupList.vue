@@ -92,8 +92,9 @@
               $t("appCenter.adminSetupForm.edit")
             }}</span>
           </a>
-
+  
           <a
+            v-if="!application.system"
             class="actionIcon tooltipContent"
             data-placement="bottom"
             data-container="body"
@@ -111,12 +112,7 @@
       {{ $t("appCenter.adminSetupForm.noApp") }}
     </div>
     <div
-      v-if="
-        applicationsList != '' &&
-          totalPages != '' &&
-          totalPages != '0' &&
-          totalPages != '1'
-      "
+      v-if="totalPages > 1"
       class="applicationsPaginator">
       <paginator
         :current-page="currentPage"
@@ -148,6 +144,7 @@
                       <input
                         v-model="formArray.title"
                         type="text"
+                        :readonly="formArray.system"
                         :placeholder="
                           $t('appCenter.adminSetupForm.titlePlaceholder')
                         ">
@@ -165,6 +162,7 @@
                       <input
                         v-model="formArray.url"
                         type="url"
+                        :readonly="formArray.system"
                         :placeholder="
                           $t('appCenter.adminSetupForm.urlPlaceholder')
                         ">
@@ -358,8 +356,8 @@ export default {
       showAddEditApplicationModal: false,
       showDeleteApplicationModal: false,
       currentPage: 1,
-      totalApplications: "",
-      totalPages: "",
+      totalApplications: 0,
+      totalPages: 0,
       groups: []
     };
   },
@@ -389,7 +387,7 @@ export default {
         .then(data => {
           this.applicationsList = data.applications;
           this.totalApplications = data.totalApplications;
-          this.totalPages = Number((data.totalApplications + this.pageSize - 1) / this.pageSize);
+          this.totalPages = Number.parseInt((data.totalApplications + this.pageSize - 1) / this.pageSize);
         });
     },
 
@@ -426,8 +424,6 @@ export default {
     },
 
     addEditApplication() {
-      console.warn(this.formArray.imageFileBody);
-      
       const addEditApplication = this.formArray.id
         ? "/rest/appCenter/applications/editApplication"
         : "/rest/appCenter/applications/addApplication";

@@ -21,7 +21,7 @@
   <artifactId>app-center-services</artifactId>
   <name>Add-on:: Application Center - Services</name>
   <properties>
-    <exo.test.coverage.ratio>0.67</exo.test.coverage.ratio>
+    <exo.test.coverage.ratio>0.7</exo.test.coverage.ratio>
   </properties>
   <dependencies>
     <dependency>

@@ -1,6 +1,8 @@
 package org.exoplatform.appcenter.dto;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Ayoub Zayati
@@ -21,7 +23,9 @@ public class Application implements Serializable {
 
   private boolean           byDefault;
 
-  private String[]          permissions;
+  private boolean           system;
+
+  private List<String>      permissions;
 
   private String            imageFileBody;
 
@@ -42,6 +46,28 @@ public class Application implements Serializable {
                      boolean active,
                      boolean byDefault,
                      String... permissions) {
+    this(id,
+         title,
+         url,
+         imageFileId,
+         imageFileBody,
+         imageFileName,
+         description,
+         active,
+         byDefault,
+         permissions == null ? null : Arrays.asList(permissions));
+  }
+
+  public Application(Long id,
+                     String title,
+                     String url,
+                     Long imageFileId,
+                     String imageFileBody,
+                     String imageFileName,
+                     String description,
+                     boolean active,
+                     boolean byDefault,
+                     List<String> permissions) {
     this.id = id;
     this.title = title;
     this.url = url;
@@ -102,11 +128,15 @@ public class Application implements Serializable {
     this.byDefault = byDefault;
   }
 
-  public String[] getPermissions() {
+  public List<String> getPermissions() {
     return permissions;
   }
 
   public void setPermissions(String... permissions) {
+    this.permissions = Arrays.asList(permissions);
+  }
+
+  public void setPermissions(List<String> permissions) {
     this.permissions = permissions;
   }
 
@@ -134,4 +164,16 @@ public class Application implements Serializable {
     this.imageFileId = imageFileId;
   }
 
+  public boolean isSystem() {
+    return system;
+  }
+
+  public void setSystem(boolean system) {
+    this.system = system;
+  }
+
+  @Override
+  public String toString() {
+    return "[Application: title = '" + title + "', url = '" + url + "']";
+  }
 }
