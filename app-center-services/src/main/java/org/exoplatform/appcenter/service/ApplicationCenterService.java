@@ -274,7 +274,7 @@ public class ApplicationCenterService {
     ApplicationList resultApplicationsList = new ApplicationList();
     List<Application> userApplicationsList = getApplications(offset, limit, keyword, username);
     userApplicationsList = userApplicationsList.stream().map(app -> {
-      ApplicationFavorite applicationFavorite = new ApplicationFavorite(app);
+      UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
       return applicationFavorite;
     }).collect(Collectors.toList());
@@ -285,8 +285,8 @@ public class ApplicationCenterService {
     return resultApplicationsList;
   }
 
-  public List<ApplicationFavorite> getFavoriteApplicationsList(String username) {
-    List<ApplicationFavorite> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
+  public List<UserApplication> getFavoriteApplicationsList(String username) {
+    List<UserApplication> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
     return favoriteApplications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
   }
 

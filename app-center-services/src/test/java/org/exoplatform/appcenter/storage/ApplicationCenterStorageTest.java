@@ -351,7 +351,7 @@ public class ApplicationCenterStorageTest {
       // Expected
     }
 
-    List<ApplicationFavorite> favoriteApplications = applicationCenterStorage.getFavoriteApplicationsByUser("testuser");
+    List<UserApplication> favoriteApplications = applicationCenterStorage.getFavoriteApplicationsByUser("testuser");
     assertNotNull(favoriteApplications);
     assertEquals(0, favoriteApplications.size());
 
