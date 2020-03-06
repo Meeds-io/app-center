@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.exoplatform.appcenter.dto;
 
 import java.io.Serializable;
