@@ -2,8 +2,6 @@ package org.exoplatform.appcenter.dao;
 
 import static org.junit.Assert.*;
 
-import java.util.List;
-
 import org.junit.*;
 
 import org.exoplatform.appcenter.entity.ApplicationEntity;
@@ -72,54 +70,6 @@ public class FavoriteApplicationDAOTest {
     assertNotNull(favoriteApp.getApplication());
     assertEquals(applicationEntity.getId(), favoriteApp.getApplication().getId());
     assertEquals("testuser", favoriteApp.getUserName());
-  }
-
-  @Test
-  public void testGetFavoriteApps() {
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
-    assertNotNull(applicationDAO);
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
-    assertNotNull(favoriteApplicationDAO);
-
-    ApplicationEntity applicationEntity = new ApplicationEntity(null,
-                                                                "title",
-                                                                "url",
-                                                                5L,
-                                                                "description",
-                                                                true,
-                                                                false,
-                                                                "permissions");
-    applicationEntity = applicationDAO.create(applicationEntity);
-
-    ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
-                                                                 "title2",
-                                                                 "url2",
-                                                                 5L,
-                                                                 "description2",
-                                                                 true,
-                                                                 false,
-                                                                 "permissions");
-    applicationEntity2 = applicationDAO.create(applicationEntity2);
-
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser"));
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser2"));
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser3"));
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser4"));
-
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser"));
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser3"));
-
-    List<FavoriteApplicationEntity> favorites = favoriteApplicationDAO.getFavoriteApps("testuser");
-    assertNotNull(favorites);
-    assertEquals(2, favorites.size());
-
-    favorites = favoriteApplicationDAO.getFavoriteApps("testuser2");
-    assertNotNull(favorites);
-    assertEquals(1, favorites.size());
-
-    favorites = favoriteApplicationDAO.getFavoriteApps("fake");
-    assertNotNull(favorites);
-    assertEquals(0, favorites.size());
   }
 
   @Test

@@ -15,12 +15,6 @@ import org.exoplatform.services.log.Log;
 public class FavoriteApplicationDAO extends GenericDAOJPAImpl<FavoriteApplicationEntity, Long> {
   private static final Log LOG = ExoLogger.getLogger(FavoriteApplicationDAO.class);
 
-  public List<FavoriteApplicationEntity> getFavoriteApps(String userName) {
-    return getEntityManager().createNamedQuery("FavoriteApplicationEntity.getFavoriteApps", FavoriteApplicationEntity.class)
-                             .setParameter("userName", userName)
-                             .getResultList();
-  }
-
   public FavoriteApplicationEntity getFavoriteAppByUserNameAndAppId(Long applicationId, String userName) {
     TypedQuery<FavoriteApplicationEntity> query =
                                                 getEntityManager().createNamedQuery("FavoriteApplicationEntity.getFavoriteAppByUserNameAndAppId",
