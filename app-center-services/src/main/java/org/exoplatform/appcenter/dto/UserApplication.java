@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.exoplatform.appcenter.dto;
 
 public class UserApplication extends Application {
