@@ -2,19 +2,27 @@ package org.exoplatform.appcenter.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xmlbeans.impl.util.Base64;
+import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
+import org.exoplatform.appcenter.plugin.ApplicationPlugin;
 import org.exoplatform.appcenter.storage.ApplicationCenterStorage;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.file.services.FileStorageException;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.container.configuration.ConfigurationManager;
+import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -23,45 +31,55 @@ import org.exoplatform.services.security.*;
 /**
  * A Service to access and store applications
  */
-public class ApplicationCenterService {
+public class ApplicationCenterService implements Startable {
 
-  private static final Log         LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
+  private static final Log               LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
 
-  public static final String       DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
+  public static final String             DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
 
-  public static final String       DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
+  public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
-  public static final String       MAX_FAVORITE_APPS                 = "maxFavoriteApps";
+  public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
-  public static final String       DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
+  public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
 
-  public static final String       DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
+  public static final String             DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
 
-  public static final String       DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
+  public static final String             DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
 
-  public static final int          DEFAULT_LIMIT                     = 1000;
+  public static final int                DEFAULT_LIMIT                     = 1000;
 
-  private static final Context     APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
+  private static final Context           APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
 
-  private static final Scope       APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
+  private static final Scope             APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
 
-  private SettingService           settingService;
+  private PortalContainer                container;
 
-  private Authenticator            authenticator;
+  private ConfigurationManager           configurationManager;
 
-  private IdentityRegistry         identityRegistry;
+  private SettingService                 settingService;
 
-  private ApplicationCenterStorage appCenterStorage;
+  private Authenticator                  authenticator;
 
-  private String                   defaultAdministratorPermission    = null;
+  private IdentityRegistry               identityRegistry;
 
-  private long                     maxFavoriteApps                   = -1;
+  private ApplicationCenterStorage       appCenterStorage;
 
-  public ApplicationCenterService(ApplicationCenterStorage appCenterStorage,
+  private String                         defaultAdministratorPermission    = null;
+
+  private long                           maxFavoriteApps                   = -1;
+
+  private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
+
+  public ApplicationCenterService(ConfigurationManager configurationManager,
+                                  ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
                                   IdentityRegistry identityRegistry,
                                   Authenticator authenticator,
+                                  PortalContainer container,
                                   InitParams params) {
+    this.container = container;
+    this.configurationManager = configurationManager;
     this.settingService = settingService;
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
@@ -73,6 +91,110 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(this.defaultAdministratorPermission)) {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
     }
+  }
+
+  /**
+   * A method that will be invoked when the server starts (
+   * {@link PortalContainer} starts ) to inject default application and to
+   * delete injected default applications
+   */
+  @Override
+  public void start() {
+    ExoContainerContext.setCurrentContainer(container);
+    RequestLifeCycle.begin(this.container);
+    try {
+      List<Application> systemApplications = appCenterStorage.getSystemApplications();
+      systemApplications.forEach(application -> {
+        if (!isDefaultSystemApplication(application)) {
+          try {
+            LOG.info("Delete application '{}' that was previously injected as system application and that doesn't exist in configuration anymore",
+                     application.getTitle());
+            appCenterStorage.deleteApplication(application.getId());
+          } catch (Exception e) {
+            LOG.warn("An unknown error occurs while deleting not found system application '{}' in store",
+                     application.getTitle());
+          }
+        }
+      });
+
+      this.defaultApplications.values().forEach(applicationPlugin -> {
+        Application application = applicationPlugin.getApplication();
+        String pluginName = applicationPlugin.getName();
+        if (application == null) {
+          LOG.warn("An application plugin '{}' holds an empty application", pluginName);
+          return;
+        }
+
+        String title = application.getTitle();
+        if (StringUtils.isBlank(title)) {
+          LOG.warn("Plugin '{}' has an application with empty title, it will not be injected", pluginName);
+          return;
+        }
+
+        String url = application.getUrl();
+        if (StringUtils.isBlank(url)) {
+          LOG.warn("Plugin '{}' has an application with empty url, it will not be injected", pluginName);
+          return;
+        }
+
+        Application storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+        if (storedApplication != null && !applicationPlugin.isOverride()) {
+          LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
+          return;
+        }
+
+        List<String> permissions = application.getPermissions();
+        if (permissions == null || permissions.isEmpty()) {
+          // Set default permission if empty
+          application.setPermissions(this.defaultAdministratorPermission);
+        }
+
+        String imagePath = applicationPlugin.getImagePath();
+        if (StringUtils.isNotBlank(imagePath)) {
+          try {
+            InputStream inputStream = configurationManager.getInputStream(imagePath);
+            String fileBody = new String(Base64.encode(IOUtils.toByteArray(inputStream)));
+            application.setImageFileBody(fileBody);
+          } catch (Exception e) {
+            LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
+          }
+        }
+
+        if (StringUtils.isBlank(application.getImageFileName())) {
+          application.setImageFileName(application.getTitle() + ".png");
+        }
+
+        if (storedApplication == null) {
+          try {
+            LOG.info("Create system application '{}'",
+                     application.getTitle());
+            application.setSystem(true);
+            application.setImageFileId(null);
+            this.createApplication(application);
+          } catch (Exception e) {
+            LOG.error("Error creating application {}", application, e);
+          }
+        } else {
+          try {
+            LOG.info("Update system application '{}'",
+                     application.getTitle());
+            application.setSystem(true);
+            application.setId(storedApplication.getId());
+            application.setImageFileId(storedApplication.getImageFileId());
+            appCenterStorage.updateApplication(application);
+          } catch (Exception e) {
+            LOG.error("Error updating application {}", application, e);
+          }
+        }
+      });
+    } finally {
+      RequestLifeCycle.end();
+    }
+  }
+
+  @Override
+  public void stop() {
+    // Nothing to do
   }
 
   /**
@@ -99,7 +221,7 @@ public class ApplicationCenterService {
       }
     }
 
-    if (application.getPermissions() == null || application.getPermissions().length == 0) {
+    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(this.defaultAdministratorPermission);
     }
     return appCenterStorage.createApplication(application);
@@ -157,6 +279,10 @@ public class ApplicationCenterService {
     Application storedApplication = appCenterStorage.getApplicationById(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " not found");
+    }
+    if (storedApplication.isSystem()) {
+      throw new IllegalAccessException("Application with id " + applicationId
+          + " is a system application, thus it can't be deleted");
     }
 
     if (!hasPermission(username, storedApplication.getPermissions())) {
@@ -426,11 +552,60 @@ public class ApplicationCenterService {
     return null;
   }
 
+  /**
+   * Inject a default application using IOC {@link ComponentPlugin} using
+   * configuration
+   * 
+   * @param applicationPlugin plugin containing application to inject
+   */
+  public void addApplicationPlugin(ApplicationPlugin applicationPlugin) {
+    if (applicationPlugin == null) {
+      throw new IllegalArgumentException("'applicationPlugin' is mandatory");
+    }
+    if (StringUtils.isBlank(applicationPlugin.getName())) {
+      throw new IllegalStateException("'applicationPlugin' name is mandatory");
+    }
+    this.defaultApplications.put(applicationPlugin.getName(), applicationPlugin);
+  }
+
+  /**
+   * Delete an injected plugin identified by its name
+   * 
+   * @param pluginName plugin name to delete
+   */
+  public void removeApplicationPlugin(String pluginName) {
+    if (StringUtils.isBlank(pluginName)) {
+      throw new IllegalArgumentException("'pluginName' is mandatory");
+    }
+    this.defaultApplications.remove(pluginName);
+  }
+
+  /**
+   * Checks whether the application is a system application injected by
+   * configuration or not
+   * 
+   * @param application application to check its state
+   * @return true if the configuration of the application exists with same title
+   *         and URL, else false.
+   */
+  public boolean isDefaultSystemApplication(Application application) {
+    if (application == null) {
+      throw new IllegalArgumentException("'application' is mandatory");
+    }
+    return this.defaultApplications.values()
+                                   .stream()
+                                   .anyMatch(app -> StringUtils.equals(app.getApplication().getTitle(), application.getTitle())
+                                       && StringUtils.equals(app.getApplication().getUrl(), application.getUrl()));
+  }
+
   private boolean hasPermission(String username, Application application) {
     return hasPermission(username, application.getPermissions());
   }
 
-  private boolean hasPermission(String username, String[] storedPermissions) {
+  private boolean hasPermission(String username, List<String> storedPermissions) {
+    if (storedPermissions == null) {
+      return true;
+    }
     for (String storedPermission : storedPermissions) {
       if (hasPermission(username, storedPermission)) {
         return true;

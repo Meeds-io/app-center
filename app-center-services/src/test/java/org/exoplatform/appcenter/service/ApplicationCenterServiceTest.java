@@ -8,9 +8,11 @@ import org.picocontainer.Startable;
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.dto.*;
+import org.exoplatform.appcenter.plugin.ApplicationPlugin;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.container.*;
 import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.container.xml.*;
 import org.exoplatform.services.naming.InitialContextInitializer;
 import org.exoplatform.services.organization.*;
 import org.exoplatform.services.organization.idm.MembershipImpl;
@@ -109,10 +111,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
       applicationCenterService.createApplication(storedApplication);
@@ -187,10 +186,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
     assertEquals(application.isByDefault(), storedApplication.isByDefault());
-    assertNotNull(application.getPermissions());
-    assertNotNull(storedApplication.getPermissions());
-    assertEquals(application.getPermissions().length, storedApplication.getPermissions().length);
-    assertEquals(application.getPermissions()[0], storedApplication.getPermissions()[0]);
+    assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
       storedApplication = applicationCenterService.updateApplication(application, SIMPLE_USERNAME);
@@ -327,7 +323,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(0, generalSettings.getMaxFavoriteApps());
     assertNotNull(generalSettings.getDefaultApplicationImage());
     assertEquals("name", generalSettings.getDefaultApplicationImage().getFileName());
-    assertTrue(generalSettings.getDefaultApplicationImage().getFileBody().contains("content"));
+    assertFalse(generalSettings.getDefaultApplicationImage().getFileBody().isEmpty());
     assertNotNull(generalSettings.getDefaultApplicationImage().getId());
   }
 
@@ -583,4 +579,160 @@ public class ApplicationCenterServiceTest {
     assertEquals(0, applicationsList.getTotalApplications());
   }
 
+  @Test
+  public void testAddApplicationPlugin() {
+    try {
+      applicationCenterService.addApplicationPlugin(null);
+      fail("Shouldn't be able to add null plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    try {
+      new ApplicationPlugin(null);
+      fail("Shouldn't be able to add null params in plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    InitParams params = new InitParams();
+    try {
+      new ApplicationPlugin(params);
+      fail("Shouldn't be able to add null application in parameter of plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    ObjectParameter applicationParam = new ObjectParameter();
+    applicationParam.setName("application");
+    applicationParam.setObject(application);
+    params.addParameter(applicationParam);
+
+    ApplicationPlugin applicationPlugin = new ApplicationPlugin(params);
+    assertNotNull(applicationPlugin.getApplication());
+    assertNull(applicationPlugin.getImagePath());
+
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      fail("Shouldn't be able to add plugin with null name");
+    } catch (IllegalStateException e) {
+      // Expected
+    }
+
+    String pluginName = "testapp";
+    applicationPlugin.setName(pluginName);
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      assertNotNull(applicationsList);
+      assertNotNull(applicationsList.getApplications());
+      assertEquals(1, applicationsList.getApplications().size());
+
+      Application storedApplication = applicationsList.getApplications().get(0);
+
+      assertNotNull(storedApplication);
+      assertNotNull(storedApplication.getId());
+      assertEquals(application.getTitle(), storedApplication.getTitle());
+      assertEquals(application.getUrl(), storedApplication.getUrl());
+      assertEquals(application.getDescription(), storedApplication.getDescription());
+      assertEquals(application.isActive(), storedApplication.isActive());
+      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertTrue(storedApplication.isSystem());
+      assertEquals(application.getPermissions(), storedApplication.getPermissions());
+      assertNull(application.getImageFileId());
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
+
+    // Second start with file attached
+    ValueParam imagePathValueParam = new ValueParam();
+    imagePathValueParam.setName("imagePath");
+    imagePathValueParam.setValue("jar:/test.png");
+    params.addParameter(imagePathValueParam);
+
+    applicationPlugin = new ApplicationPlugin(params);
+    applicationPlugin.setName(pluginName);
+    assertNotNull(applicationPlugin.getApplication());
+    assertNotNull(applicationPlugin.getImagePath());
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      assertNotNull(applicationsList);
+      assertNotNull(applicationsList.getApplications());
+      assertEquals(1, applicationsList.getApplications().size());
+
+      Application storedApplication = applicationsList.getApplications().get(0);
+
+      assertNotNull(storedApplication);
+      assertNotNull(storedApplication.getId());
+      assertEquals(application.getTitle(), storedApplication.getTitle());
+      assertEquals(application.getUrl(), storedApplication.getUrl());
+      assertEquals(application.getDescription(), storedApplication.getDescription());
+      assertEquals(application.isActive(), storedApplication.isActive());
+      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertTrue(storedApplication.isSystem());
+      assertEquals(application.getPermissions(), storedApplication.getPermissions());
+      assertNull(application.getImageFileId());
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
+
+    // Third start with override turned on
+    ValueParam overrideValueParam = new ValueParam();
+    overrideValueParam.setName("override");
+    overrideValueParam.setValue("true");
+    params.addParameter(overrideValueParam);
+
+    applicationPlugin = new ApplicationPlugin(params);
+    applicationPlugin.setName(pluginName);
+    assertNotNull(applicationPlugin.getApplication());
+    assertNotNull(applicationPlugin.getImagePath());
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      assertNotNull(applicationsList);
+      assertNotNull(applicationsList.getApplications());
+      assertEquals(1, applicationsList.getApplications().size());
+
+      Application storedApplication = applicationsList.getApplications().get(0);
+
+      assertNotNull(storedApplication);
+      assertNotNull(storedApplication.getId());
+      assertEquals(application.getTitle(), storedApplication.getTitle());
+      assertEquals(application.getUrl(), storedApplication.getUrl());
+      assertEquals(application.getDescription(), storedApplication.getDescription());
+      assertEquals(application.isActive(), storedApplication.isActive());
+      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertTrue(storedApplication.isSystem());
+      assertEquals(application.getPermissions(), storedApplication.getPermissions());
+      assertNotNull(application.getImageFileId());
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
+
+    // Test after deleting plugin from list, if the application was removed
+    applicationCenterService.start();
+
+    ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+    assertNotNull(applicationsList);
+    assertNotNull(applicationsList.getApplications());
+    assertEquals(0, applicationsList.getApplications().size());
+  }
 }
