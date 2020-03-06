@@ -96,7 +96,7 @@ public class ApplicationCenterStorage {
     applicationEntity = applicationDAO.update(applicationEntity);
 
     // Cleanup old useless image
-    if (newImageAttached) {
+    if (newImageAttached && oldImageFileId != null) {
       fileService.deleteFile(oldImageFileId);
     }
     return toDTO(applicationEntity);

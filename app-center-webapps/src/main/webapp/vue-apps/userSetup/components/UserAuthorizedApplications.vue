@@ -15,7 +15,7 @@
           <div class="applicationHeader">
             <div class="image">
               <a target="_blank" :href="authorizedApp.url">
-                <img class="appImage" :src="`/portal/rest/appCenter/applications/illustration/${authorizedApp.id}`">
+                <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
               </a>
             </div>
             <div class="title">
@@ -39,7 +39,7 @@
               :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
               :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
               @click.stop="
-                addDeleteFavoriteApplication(authorizedApp.id, index)
+                addOrDeleteFavoriteApplication(authorizedApp)
               ">
               {{ $t("appCenter.userSetup.authorized.favorite") }}
             </button>
@@ -98,10 +98,9 @@ export default {
 
   methods: {
     getAuthorizedApplicationsList() {
-      const getAuthorizedApplicationsListUrl = `/rest/appCenter/applications/getAuthorizedApplicationsList?offset=${this
-        .currentPage - 1}&limit=${this.pageSize}&keyword=${this.searchText}`;
-      return fetch(getAuthorizedApplicationsListUrl, {
-        method: "GET"
+      const offset = this.currentPage - 1;
+      return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
+        method: 'GET'
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -111,47 +110,39 @@ export default {
           }
         })
         .then(data => {
-          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(
-            data.applications
-          );
-          this.totalApplications = data.totalApplications;
+          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(data.applications);
           this.canAddFavorite = data.canAddFavorite;
-          if (this.currentPage * this.pageSize < this.totalApplications) {
+          if (this.currentPage * this.pageSize < data.size) {
             this.showPaginator = true;
           } else {
             this.showPaginator = false;
           }
         });
     },
-
-    addDeleteFavoriteApplication(appId, index) {
-      if (!this.authorizedApplicationsList[index].favorite) {
-        const addFavoriteApplicationUrl = `/rest/appCenter/applications/addFavoriteApplication/${appId}`;
-        return fetch(addFavoriteApplicationUrl, {
-          method: "GET"
+    addOrDeleteFavoriteApplication(application) {
+      return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
+        credentials: 'include',
+        method: application.favorite ? 'DELETE' : 'POST',
+      })
+        .then(() => {
+          return this.$parent.$children[1].getFavoriteApplicationsList();
         })
-          .then(() => {
-            return this.$parent.$children[1].getFavoriteApplicationsList();
-          })
-          .then(applications => {
-            this.canAddFavorite =
-              !this.maxFavoriteApps ||
-              applications.length < this.maxFavoriteApps;
-            this.authorizedApplicationsList[index].favorite = true;
-          });
-      } else {
-        this.$parent.$children[1].deleteFavoriteApplication(appId);
-      }
+        .then(data => {
+          const applications = (data && data.applications && data.applications.length) || [];
+          this.canAddFavorite = !this.maxFavoriteApps || applications.length < this.maxFavoriteApps;
+          application.favorite = !application.favorite;
+          if (!application.favorite) {
+            this.$parent.$children[1].deleteFavoriteApplication(application.id);
+          }
+        });
     },
     nextPage() {
       this.currentPage++;
       this.getAuthorizedApplicationsList();
     },
     getMaxFavoriteApps() {
-      const getGeneralSettingsUrl =
-        "/rest/appCenter/applications/getGeneralSettings";
-      return fetch(getGeneralSettingsUrl, {
-        method: "GET"
+      return fetch('/portal/rest/app-center/settings', {
+        method: 'GET'
       })
         .then(resp => {
           if (resp && resp.ok) {

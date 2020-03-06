@@ -1,7 +1,7 @@
 package org.exoplatform.appcenter.rest;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.*;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -11,186 +11,65 @@ import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.dto.Application;
 import org.exoplatform.appcenter.service.*;
 import org.exoplatform.common.http.HTTPStatus;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.MembershipEntry;
 
 import io.swagger.annotations.*;
+import io.swagger.jaxrs.PATCH;
 
-@Path("appCenter/applications")
+@Path("app-center")
 @RolesAllowed("users")
-@Api(value = "/appCenter/applications", description = "Manage and access application center applications") // NOSONAR
+@Api(value = "/app-center", description = "Manage and access application center applications") // NOSONAR
 public class ApplicationCenterREST implements ResourceContainer {
 
-  private static final Log         LOG = ExoLogger.getLogger(ApplicationCenterREST.class);
+  private static final String      APPLICATIONS_ENDPOINT            = "applications";
+
+  private static final String      SETTINGS_ENDPOINT                = "settings";
+
+  private static final String      FAVORITES_APPLICATIONS_ENDPOINT  = "applications/favorites";
+
+  private static final String      AUTHORIZED_APPLICATIONS_ENDPOINT = "applications/authorized";
+
+  private static final String      ADMINISTRATORS_GROUP             = "/platform/administrators";
+
+  private static final Log         LOG                              = ExoLogger.getLogger(ApplicationCenterREST.class);
 
   private ApplicationCenterService appCenterService;
 
-  public ApplicationCenterREST(ApplicationCenterService appCenterService) {
+  private final String             baseURI;
+
+  public ApplicationCenterREST(ApplicationCenterService appCenterService, PortalContainer container) {
     this.appCenterService = appCenterService;
-  }
-
-  @POST
-  @Path("/addApplication")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @RolesAllowed("administrators")
-  @ApiOperation(value = "Creates a new application in application center", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response createApplication(@ApiParam(value = "Application to save", required = true) Application application) {
-    try {
-      appCenterService.createApplication(application);
-    } catch (ApplicationAlreadyExistsException e) {
-      LOG.warn(e.getMessage());
-      return Response.serverError().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while creating application", e);
-      return Response.serverError().build();
-    }
-    return Response.noContent().build();
-  }
-
-  @POST
-  @Path("/editApplication")
-  @RolesAllowed("administrators")
-  @ApiOperation(value = "Updates an existing application identified by its id or title or url", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response updateApplication(@ApiParam(value = "Application to update", required = true) Application application) {
-    try {
-      appCenterService.updateApplication(application, getCurrentUserName());
-    } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
-      return Response.status(HTTPStatus.UNAUTHORIZED).build();
-    } catch (ApplicationAlreadyExistsException e) {
-      LOG.warn(e);
-      return Response.serverError().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while updating application", e);
-      return Response.serverError().build();
-    }
-    return Response.noContent().build();
+    this.baseURI = "/" + container.getName() + "/" + container.getRestContextName() + "/";
   }
 
   @GET
-  @Path("/deleteApplication/{applicationId}")
-  @RolesAllowed("administrators")
-  @ApiOperation(value = "Deletes an existing application identified by its id", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response deleteApplication(@ApiParam(value = "Application technical id to delete", required = true) @PathParam("applicationId") Long applicationId) {
-    try {
-      appCenterService.deleteApplication(applicationId, getCurrentUserName());
-    } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
-      return Response.status(HTTPStatus.UNAUTHORIZED).build();
-    } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
-      return Response.serverError().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while deleting application", e);
-      return Response.serverError().build();
-    }
-    return Response.noContent().build();
-  }
-
-  @GET
-  @Path("/addFavoriteApplication/{applicationId}")
-  @RolesAllowed("users")
-  @ApiOperation(value = "Adds an existing application identified by its id as favorite for current authenticated user", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response addFavoriteApplication(@ApiParam(value = "Application technical id to add as favorite", required = true) @PathParam("applicationId") Long applicationId) {
-    try {
-      appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
-      return Response.noContent().build();
-    } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
-      return Response.status(HTTPStatus.UNAUTHORIZED).build();
-    } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
-      return Response.serverError().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while adding application as favorite", e);
-      return Response.serverError().build();
-    }
-  }
-
-  @GET
-  @Path("/deleteFavoriteApplication/{applicationId}")
-  @RolesAllowed("users")
-  @ApiOperation(value = "Deletes an existing application identified by its id from current authenticated user favorites", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response deleteFavoriteApplication(@ApiParam(value = "Application technical id to delete from favorite", required = true) @PathParam("applicationId") Long applicationId) {
-    try {
-      appCenterService.deleteFavoriteApplication(applicationId, getCurrentUserName());
-      return Response.noContent().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while deleting application from favorites", e);
-      return Response.serverError().build();
-    }
-  }
-
-  @GET
-  @Path("/setMaxFavorite")
-  @RolesAllowed("administrators")
-  @ApiOperation(value = "Modifies maximum application count to add as favorites for all users", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response setMaxFavoriteApps(@ApiParam(value = "Max favorites number", required = true) @QueryParam("number") long number) {
-    try {
-      appCenterService.setMaxFavoriteApps(number);
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while updating application", e);
-      return Response.serverError().build();
-    }
-    return Response.noContent().build();
-  }
-
-  @POST
-  @Path("/setDefaultImage")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @RolesAllowed("administrators")
-  @ApiOperation(value = "Modifies default application image setting", httpMethod = "GET", response = Response.class, notes = "empty response")
-  @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
-      @ApiResponse(code = 500, message = "Internal server error") })
-  public Response setDefaultAppImage(@ApiParam(value = "Application image id, body and name", required = true) ApplicationImage defaultAppImage) {
-    try {
-      appCenterService.setDefaultAppImage(defaultAppImage);
-      return Response.noContent().build();
-    } catch (Exception e) {
-      LOG.error("Unknown error occurred while updating application", e);
-      return Response.serverError().build();
-    }
-  }
-
-  @GET
-  @Path("/getGeneralSettings")
   @Produces(MediaType.APPLICATION_JSON)
-  @RolesAllowed("users")
-  @ApiOperation(value = "Modifies default application image setting", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiOperation(value = "Retrieves all available subresources of current endpoint", httpMethod = "GET", response = Response.class, produces = "application/json")
   @ApiResponses(value = {
-      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
       @ApiResponse(code = 500, message = "Internal server error") })
-  public Response getAppGeneralSettings() {
+  public Response getAvailableSubResources() {
     try {
-      GeneralSettings generalSettings = appCenterService.getAppGeneralSettings();
-      return Response.ok(generalSettings).build();
-    } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
-      return Response.serverError().build();
+      Map<String, List<String>> availableEnpoints = new HashMap<>();
+      ConversationState current = ConversationState.getCurrent();
+      if (current.getIdentity().isMemberOf(new MembershipEntry(ADMINISTRATORS_GROUP, "*"))) {
+        availableEnpoints.put("subResourcesHref",
+                              Arrays.asList(this.baseURI + FAVORITES_APPLICATIONS_ENDPOINT,
+                                            this.baseURI + AUTHORIZED_APPLICATIONS_ENDPOINT,
+                                            this.baseURI + SETTINGS_ENDPOINT,
+                                            this.baseURI + APPLICATIONS_ENDPOINT));
+      } else {
+        availableEnpoints.put("subResourcesHref",
+                              Arrays.asList(this.baseURI + FAVORITES_APPLICATIONS_ENDPOINT,
+                                            this.baseURI + AUTHORIZED_APPLICATIONS_ENDPOINT,
+                                            this.baseURI + SETTINGS_ENDPOINT));
+      }
+      return Response.ok(availableEnpoints).build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);
       return Response.serverError().build();
@@ -198,7 +77,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   }
 
   @GET
-  @Path("/getApplicationsList")
+  @Path(APPLICATIONS_ENDPOINT)
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("administrators")
   @ApiOperation(value = "Retrieves all available applications", httpMethod = "GET", response = Response.class, produces = "application/json", notes = "Return list of applications in json format")
@@ -220,7 +99,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   }
 
   @GET
-  @Path("/getAuthorizedApplicationsList")
+  @Path(AUTHORIZED_APPLICATIONS_ENDPOINT)
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
   @ApiOperation(value = "Retrieves all authorized applications for currently authenticated user", httpMethod = "GET", response = Response.class, produces = "application/json", notes = "Return list of applications in json format")
@@ -244,7 +123,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   }
 
   @GET
-  @Path("/getFavoriteApplicationsList")
+  @Path(FAVORITES_APPLICATIONS_ENDPOINT)
   @Produces(MediaType.APPLICATION_JSON)
   @RolesAllowed("users")
   @ApiOperation(value = "Retrieves favorite applications for currently authenticated user", httpMethod = "GET", response = Response.class, produces = "application/json", notes = "Return list of applications in json format")
@@ -253,8 +132,8 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response getFavoriteApplicationsList() {
     try {
-      List<UserApplication> applications = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
-      return Response.ok(applications).build();
+      ApplicationList applicationList = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
+      return Response.ok(applicationList).build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);
       return Response.serverError().build();
@@ -262,7 +141,173 @@ public class ApplicationCenterREST implements ResourceContainer {
   }
 
   @GET
-  @Path("/illustration/{applicationId}")
+  @Path(SETTINGS_ENDPOINT)
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @ApiOperation(value = "Modifies default application image setting", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response getAppGeneralSettings() {
+    try {
+      GeneralSettings generalSettings = appCenterService.getAppGeneralSettings();
+      return Response.ok(generalSettings).build();
+    } catch (ApplicationNotFoundException e) {
+      LOG.warn(e.getMessage());
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @POST
+  @Path(APPLICATIONS_ENDPOINT)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @RolesAllowed("administrators")
+  @ApiOperation(value = "Creates a new application in application center", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response createApplication(@ApiParam(value = "Application to save", required = true) Application application) {
+    try {
+      appCenterService.createApplication(application);
+    } catch (ApplicationAlreadyExistsException e) {
+      LOG.warn(e.getMessage());
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while creating application", e);
+      return Response.serverError().build();
+    }
+    return Response.noContent().build();
+  }
+
+  @PUT
+  @Path(APPLICATIONS_ENDPOINT)
+  @RolesAllowed("administrators")
+  @ApiOperation(value = "Updates an existing application identified by its id or title or url", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response updateApplication(@ApiParam(value = "Application to update", required = true) Application application) {
+    try {
+      appCenterService.updateApplication(application, getCurrentUserName());
+    } catch (IllegalAccessException e) {
+      LOG.warn(e.getMessage());
+      return Response.status(HTTPStatus.UNAUTHORIZED).build();
+    } catch (ApplicationAlreadyExistsException e) {
+      LOG.warn(e);
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+    return Response.noContent().build();
+  }
+
+  @DELETE
+  @Path(APPLICATIONS_ENDPOINT + "/{applicationId}")
+  @RolesAllowed("administrators")
+  @ApiOperation(value = "Deletes an existing application identified by its id", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response deleteApplication(@ApiParam(value = "Application technical id to delete", required = true) @PathParam("applicationId") Long applicationId) {
+    try {
+      appCenterService.deleteApplication(applicationId, getCurrentUserName());
+    } catch (IllegalAccessException e) {
+      LOG.warn(e.getMessage());
+      return Response.status(HTTPStatus.UNAUTHORIZED).build();
+    } catch (ApplicationNotFoundException e) {
+      LOG.warn(e.getMessage());
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while deleting application", e);
+      return Response.serverError().build();
+    }
+    return Response.noContent().build();
+  }
+
+  @POST
+  @Path(FAVORITES_APPLICATIONS_ENDPOINT + "/{applicationId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Adds an existing application identified by its id as favorite for current authenticated user", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response addFavoriteApplication(@ApiParam(value = "Application technical id to add as favorite", required = true) @PathParam("applicationId") Long applicationId) {
+    try {
+      appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
+      return Response.noContent().build();
+    } catch (IllegalAccessException e) {
+      LOG.warn(e.getMessage());
+      return Response.status(HTTPStatus.UNAUTHORIZED).build();
+    } catch (ApplicationNotFoundException e) {
+      LOG.warn(e.getMessage());
+      return Response.serverError().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while adding application as favorite", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @DELETE
+  @Path(FAVORITES_APPLICATIONS_ENDPOINT + "/{applicationId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Deletes an existing application identified by its id from current authenticated user favorites", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response deleteFavoriteApplication(@ApiParam(value = "Application technical id to delete from favorite", required = true) @PathParam("applicationId") Long applicationId) {
+    try {
+      appCenterService.deleteFavoriteApplication(applicationId, getCurrentUserName());
+      return Response.noContent().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while deleting application from favorites", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @PATCH
+  @Path(SETTINGS_ENDPOINT + "/maxFavorites")
+  @RolesAllowed("administrators")
+  @ApiOperation(value = "Modifies maximum application count to add as favorites for all users", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response setMaxFavoriteApps(@ApiParam(value = "Max favorites number", required = true) @QueryParam("number") long number) {
+    try {
+      appCenterService.setMaxFavoriteApps(number);
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+    return Response.noContent().build();
+  }
+
+  @PATCH
+  @Path(SETTINGS_ENDPOINT + "/image")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @RolesAllowed("administrators")
+  @ApiOperation(value = "Modifies default application image setting", httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response setDefaultAppImage(@ApiParam(value = "Application image id, body and name", required = true) ApplicationImage defaultAppImage) {
+    try {
+      appCenterService.setDefaultAppImage(defaultAppImage);
+      return Response.noContent().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+
+  @GET
+  @Path(APPLICATIONS_ENDPOINT + "/illustration/{applicationId}")
   @RolesAllowed("users")
   @ApiOperation(value = "Gets an application illustration by application id", httpMethod = "GET", response = Response.class, notes = "This can only be done by the logged in user.")
   @ApiResponses(value = {

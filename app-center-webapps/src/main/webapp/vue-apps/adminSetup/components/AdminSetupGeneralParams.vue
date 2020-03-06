@@ -137,7 +137,7 @@ export default {
   name: "AdminSetupGeneralParams",
   data() {
     return {
-      maxFavoriteApps: "",
+      maxFavoriteApps: 0,
       isMaxFavoriteAppsView: true,
       defaultAppImage: {
         fileBody: "",
@@ -153,9 +153,7 @@ export default {
   },
   methods: {
     getAppGeneralSettings() {
-      const getGeneralSettingsUrl =
-        "/rest/appCenter/applications/getGeneralSettings";
-      return fetch(getGeneralSettingsUrl, {
+      return fetch("/portal/rest/app-center/settings", {
         method: "GET"
       })
         .then(resp => {
@@ -172,13 +170,10 @@ export default {
     },
 
     setMaxFavoriteApps() {
-      let setMaxFavoriteAppsUrl = "/rest/appCenter/applications/setMaxFavorite";
-      if (this.maxFavoriteApps) {
-        setMaxFavoriteAppsUrl += `?number=${this.maxFavoriteApps}`;
-      }
-      return fetch(setMaxFavoriteAppsUrl, {
-        method: "GET"
-      }).then(() => {
+      this.$nextTick()
+      .then(fetch(`/portal/rest/app-center/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
+        method: "PATCH"
+      })).then(() => {
         this.isMaxFavoriteAppsView = true;
       });
     },
@@ -212,10 +207,9 @@ export default {
     },
 
     setDefaultAppImage() {
-      const setDefaultAppImageUrl =
-        "/rest/appCenter/applications/setDefaultImage";
+      const setDefaultAppImageUrl = "/portal/rest/app-center/settings/image";
       return fetch(setDefaultAppImageUrl, {
-        method: "POST",
+        method: "PATCH",
         credentials: "include",
         headers: {
           Accept: "application/json",

@@ -42,7 +42,7 @@
                 :key="index"
                 class="appLauncherItem">
                 <a target="_blank" :href="application.url">
-                  <img class="appLauncherImage" :src="`/portal/rest/appCenter/applications/illustration/${application.id}`">
+                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
                   <span class="appLauncherTitle">{{ application.title }}</span>
                 </a>
               </div>
@@ -84,7 +84,7 @@ export default {
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
     getFavoriteApplicationsList() {
-      return fetch("/rest/appCenter/applications/getFavoriteApplicationsList", {
+      return fetch("/portal/rest/app-center/applications/favorites", {
         method: "GET"
       })
         .then(resp => {
@@ -95,7 +95,7 @@ export default {
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = data || [];
+          return this.favoriteApplicationsList = (data && data.applications) || [];
         });
     }
   }

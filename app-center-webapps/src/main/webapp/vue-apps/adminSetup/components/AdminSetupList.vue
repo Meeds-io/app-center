@@ -51,7 +51,7 @@
       </tr>
       <tr v-for="application in applicationsList" :key="application.id">
         <td>
-          <img :src="`/portal/rest/appCenter/applications/illustration/${application.id}`" />
+          <img :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
         </td>
         <td>
           <h5>{{ application.title }}</h5>
@@ -124,7 +124,7 @@
 
     <transition name="fade">
       <exo-modal
-        v-show="showAddEditApplicationModal"
+        v-show="showAddOrEditApplicationModal"
         :title="
           formArray.viewMode
             ? $t('appCenter.adminSetupForm.createNewApp')
@@ -167,7 +167,7 @@
                           $t('appCenter.adminSetupForm.urlPlaceholder')
                         ">
                       <span class="requiredInput">*</span>
-                      <p v-if="!validUrl(formArray.url)" class="errorInput">
+                      <p v-if="!formArray.system && !validUrl(formArray.url)" class="errorInput">
                         {{ $t("appCenter.adminSetupForm.urlError") }}
                       </p>
                     </td>
@@ -353,7 +353,7 @@ export default {
       },
       editArray: [],
       error: "",
-      showAddEditApplicationModal: false,
+      showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
       currentPage: 1,
       totalApplications: 0,
@@ -369,10 +369,8 @@ export default {
 
   methods: {
     getApplicationsList() {
-      const getApplicationsListUrl = `/rest/appCenter/applications/getApplicationsList?offset=${this
-        .currentPage - 1}&limit=${this.pageSize}&keyword=${this.keyword}`;
-
-      return fetch(getApplicationsListUrl, {
+      const offset = this.currentPage - 1;
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.keyword}`, {
         method: "GET"
       })
         .then(resp => {
@@ -385,9 +383,12 @@ export default {
           }
         })
         .then(data => {
-          this.applicationsList = data.applications;
-          this.totalApplications = data.totalApplications;
-          this.totalPages = Number.parseInt((data.totalApplications + this.pageSize - 1) / this.pageSize);
+          this.applicationsList = [];
+          this.totalApplications = this.applicationsList.size;
+          this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
+
+          // A trick to force retrieving img URL again to update illustration
+          window.setTimeout(() => this.applicationsList = data.applications, 20);
         });
     },
 
@@ -400,7 +401,7 @@ export default {
       if (
         this.formArray.title &&
         this.formArray.url &&
-        this.validUrl(this.formArray.url)
+        (this.formArray.system || this.validUrl(this.formArray.url))
       ) {
         if (this.$refs.file && this.$refs.file.files.length > 0) {
           const reader = new FileReader();
@@ -414,26 +415,23 @@ export default {
               return;
             }
             this.formArray.imageFileBody = e.target.result;
-            this.addEditApplication();
+            this.addOrEditApplication();
           };
           reader.readAsDataURL(this.$refs.file.files[0]);
         } else {
-          this.addEditApplication();
+          this.addOrEditApplication();
         }
       }
     },
 
-    addEditApplication() {
-      const addEditApplication = this.formArray.id
-        ? "/rest/appCenter/applications/editApplication"
-        : "/rest/appCenter/applications/addApplication";
-      return fetch(addEditApplication, {
-        credentials: "include",
+    addOrEditApplication() {
+      return fetch('/portal/rest/app-center/applications', {
+        credentials: 'include',
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json"
         },
-        method: "POST",
+        method: this.formArray.id ? "PUT" : "POST",
         body: JSON.stringify({
           id: this.formArray.id,
           title: this.formArray.title,
@@ -461,12 +459,9 @@ export default {
     },
 
     deleteApplication() {
-      return fetch(
-        `/rest/appCenter/applications/deleteApplication/${this.formArray.id}`,
-        {
-          method: "GET"
-        }
-      )
+      return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
+          method: "DELETE"
+      })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json;
@@ -494,7 +489,7 @@ export default {
       this.formArray.imageFileBody = "";
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
-      this.showAddEditApplicationModal = false;
+      this.showAddOrEditApplicationModal = false;
     },
 
     handleFileUpload() {
@@ -515,13 +510,13 @@ export default {
     },
 
     showAddApplicationModal() {
-      this.showAddEditApplicationModal = true;
+      this.showAddOrEditApplicationModal = true;
       this.formArray.viewMode = true;
       this.initPermissionsSuggester();
     },
 
     showEditApplicationModal(item) {
-      this.showAddEditApplicationModal = true;
+      this.showAddOrEditApplicationModal = true;
       Object.assign(this.formArray, item);
       this.initPermissionsSuggester();
     },

@@ -9,7 +9,7 @@
     <ul class="myToolsList">
       <li v-for="favoriteApp in favoriteApplicationsList" :key="favoriteApp.id">
         <a :href="favoriteApp.url" target="_blank">
-          <img class="myToolImage" :src="`/portal/rest/appCenter/applications/illustration/${favoriteApp.id}`">
+          <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
           <span class="myToolTitle tooltipContent">
             <dot :msg="favoriteApp.title" :line="2" />
             <span class="tooltiptext">{{ favoriteApp.description }}</span>
@@ -50,8 +50,7 @@ export default {
 
   methods: {
     getFavoriteApplicationsList() {
-      const getFavoriteApplicationsListUrl = "/rest/appCenter/applications/getFavoriteApplicationsList";
-      return fetch(getFavoriteApplicationsListUrl, {
+      return fetch('/portal/rest/app-center/applications/favorites', {
         credentials: "include",
         method: "GET"
       })
@@ -65,14 +64,12 @@ export default {
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = data || [];
+          this.favoriteApplicationsList = (data && data.applications) || [];
         });
     },
 
     getMaxFavoriteApps() {
-      const getGeneralSettingsUrl =
-        "/rest/appCenter/applications/getGeneralSettings";
-      return fetch(getGeneralSettingsUrl, {
+      return fetch('/portal/rest/app-center/settings', {
         method: "GET"
       })
         .then(resp => {

@@ -7,7 +7,7 @@
       class="favoriteApplication">
       <div class="favoriteAppImage">
         <a target="_blank" :href="favoriteApp.url">
-          <img class="appImage" :src="`/portal/rest/appCenter/applications/illustration/${favoriteApp.id}`">
+          <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
         </a>
       </div>
       <a
@@ -59,9 +59,7 @@ export default {
 
   methods: {
     getFavoriteApplicationsList() {
-      const getFavoriteApplicationsListUrl =
-        "/rest/appCenter/applications/getFavoriteApplicationsList";
-      return fetch(getFavoriteApplicationsListUrl, {
+      return fetch('/portal/rest/app-center/applications/favorites', {
         method: "GET"
       })
         .then(resp => {
@@ -72,7 +70,7 @@ export default {
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = data || [];
+          this.favoriteApplicationsList = (data && data.applications) || [];
           this.canAddFavorite =
             !this.$parent.$children[0].maxFavoriteApps ||
             this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;
@@ -81,9 +79,8 @@ export default {
     },
 
     deleteFavoriteApplication(appId) {
-      const deleteFavoriteApplicationUrl = `/rest/appCenter/applications/deleteFavoriteApplication/${appId}`;
-      return fetch(deleteFavoriteApplicationUrl, {
-        method: "GET"
+      return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
+        method: 'DELETE'
       })
         .then(() => {
           return this.getFavoriteApplicationsList();
