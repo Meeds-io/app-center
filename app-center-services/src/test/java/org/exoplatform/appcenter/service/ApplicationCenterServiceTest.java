@@ -2,6 +2,8 @@ package org.exoplatform.appcenter.service;
 
 import static org.junit.Assert.*;
 
+import java.io.InputStream;
+
 import org.junit.*;
 import org.picocontainer.Startable;
 
@@ -422,7 +424,9 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
+    assertEquals(0, applicationsList.getOffset());
+    assertEquals(0, applicationsList.getLimit());
 
     Application application = new Application(null,
                                               "title",
@@ -452,31 +456,31 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getTotalApplications());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(1, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getTotalApplications());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(2, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getTotalApplications());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(3, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getTotalApplications());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(0, 10, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getTotalApplications());
+    assertEquals(2, applicationsList.getSize());
   }
 
   @Test
@@ -492,7 +496,7 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     Application application = new Application(null,
                                               "title",
@@ -522,61 +526,147 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getTotalApplications());
+    assertEquals(0, applicationsList.getSize());
+  }
+
+  @Test
+  public void testGetLastUpdated() throws Exception {
+    long currentTimeMillis = System.currentTimeMillis();
+    try {
+      applicationCenterService.getApplicationImageLastUpdated(50000L, null);
+      fail("Shouldn't allow to use null user");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    try {
+      applicationCenterService.getApplicationImageLastUpdated(50000L, SIMPLE_USERNAME);
+      fail("Shouldn't allow to get not found application");
+    } catch (ApplicationNotFoundException e) {
+      // Expected
+    }
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+    application.setImageFileName("name");
+    application.setImageFileBody("content");
+    Application storedApplication = applicationCenterService.createApplication(application);
+
+    try {
+      applicationCenterService.getApplicationImageLastUpdated(storedApplication.getId(), SIMPLE_USERNAME);
+      fail("Shouldn't allow to get illustration of non authorized application");
+    } catch (IllegalAccessException e) {
+      // Expected
+    }
+
+    Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(storedApplication.getId(), ADMIN_USERNAME);
+    assertNotNull(lastUpdated);
+    assertTrue(lastUpdated >= currentTimeMillis);
+  }
+
+  @Test
+  public void testGetImageStream() throws Exception {
+    try {
+      applicationCenterService.getApplicationImageInputStream(50000L, null);
+      fail("Shouldn't allow to use null user");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    try {
+      applicationCenterService.getApplicationImageInputStream(50000L, SIMPLE_USERNAME);
+      fail("Shouldn't allow to get not found application");
+    } catch (ApplicationNotFoundException e) {
+      // Expected
+    }
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+    application.setImageFileName("name");
+    application.setImageFileBody("content");
+    Application storedApplication = applicationCenterService.createApplication(application);
+
+    try {
+      applicationCenterService.getApplicationImageInputStream(storedApplication.getId(), SIMPLE_USERNAME);
+      fail("Shouldn't allow to get illustration of non authorized application");
+    } catch (IllegalAccessException e) {
+      // Expected
+    }
+
+    InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(),
+                                                                                      ADMIN_USERNAME);
+    assertNotNull(inputStream);
+    assertTrue(inputStream.available() > 0);
   }
 
   @Test

@@ -433,7 +433,9 @@ public class ApplicationCenterService implements Startable {
     List<Application> applications = appCenterStorage.getApplications(keyword, offset, limit);
     applicationList.setApplications(applications);
     long totalApplications = appCenterStorage.countApplications();
-    applicationList.setTotalApplications(totalApplications);
+    applicationList.setSize(totalApplications);
+    applicationList.setOffset(offset);
+    applicationList.setLimit(limit);
     return applicationList;
   }
 
@@ -466,8 +468,10 @@ public class ApplicationCenterService implements Startable {
     }).collect(Collectors.toList());
     resultApplicationsList.setApplications(userApplicationsList);
     long countFavorites = appCenterStorage.countFavorites(username);
-    resultApplicationsList.setTotalApplications(countFavorites);
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
+    resultApplicationsList.setOffset(offset);
+    resultApplicationsList.setLimit(limit);
+    resultApplicationsList.setSize(countFavorites);
     return resultApplicationsList;
   }
 
@@ -475,11 +479,20 @@ public class ApplicationCenterService implements Startable {
    * Retrieves all the list of applications for a user
    * 
    * @param username login of user
-   * @return {@link List} of {@link UserApplication}
+   * @return {@link ApplicationList} that contains {@link List} of
+   *         {@link UserApplication}
    */
-  public List<UserApplication> getFavoriteApplicationsList(String username) {
+  public ApplicationList getFavoriteApplicationsList(String username) {
     List<UserApplication> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
-    return favoriteApplications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
+    List<Application> applications = favoriteApplications.stream()
+                                                         .filter(app -> hasPermission(username, app))
+                                                         .collect(Collectors.toList());
+    ApplicationList applicationList = new ApplicationList();
+    applicationList.setApplications(applications);
+    applicationList.setLimit(favoriteApplications.size());
+    applicationList.setSize(favoriteApplications.size());
+    applicationList.setOffset(0);
+    return applicationList;
   }
 
   /**
@@ -498,6 +511,9 @@ public class ApplicationCenterService implements Startable {
   public Long getApplicationImageLastUpdated(long applicationId, String username) throws ApplicationNotFoundException,
                                                                                   IllegalAccessException,
                                                                                   FileStorageException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     Application application = appCenterStorage.getApplicationById(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
@@ -534,6 +550,9 @@ public class ApplicationCenterService implements Startable {
                                                                                          IllegalAccessException,
                                                                                          FileStorageException,
                                                                                          IOException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException("username is mandatory");
+    }
     Application application = appCenterStorage.getApplicationById(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
