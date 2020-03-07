@@ -46,7 +46,7 @@
           </div>
         </div>
       </div>
-      <div v-if="!authorizedApplicationsList || authorizedApplicationsList.length" class="noApp">
+      <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp">
         {{ $t("appCenter.adminSetupForm.noApp") }}
       </div>
     </div>
