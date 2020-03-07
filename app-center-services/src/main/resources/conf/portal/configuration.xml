@@ -21,6 +21,11 @@
         <description>Default administrators of application center</description>
         <value>${exo.appcenter.administrators.expression:*:/platform/administrators}</value>
       </value-param>
+      <value-param>
+        <name>default.favorites</name>
+        <description>Default allowed favorites</description>
+        <value>${exo.appcenter.favorites.count:12}</value>
+      </value-param>
     </init-params>
   </component>
 

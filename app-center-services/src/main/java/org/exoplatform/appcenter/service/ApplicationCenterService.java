@@ -69,6 +69,8 @@ public class ApplicationCenterService implements Startable {
 
   private long                           maxFavoriteApps                   = -1;
 
+  private long                           defaultMaxFavoriteApps            = 0;
+
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
 
   public ApplicationCenterService(ConfigurationManager configurationManager,
@@ -87,6 +89,9 @@ public class ApplicationCenterService implements Startable {
 
     if (params != null && params.containsKey("default.administrators.expression")) {
       this.defaultAdministratorPermission = params.getValueParam("default.administrators.expression").getValue();
+    }
+    if (params != null && params.containsKey("default.favorites")) {
+      this.defaultMaxFavoriteApps = Long.parseLong(params.getValueParam("default.favorites").getValue());
     }
     if (StringUtils.isBlank(this.defaultAdministratorPermission)) {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
@@ -343,7 +348,7 @@ public class ApplicationCenterService implements Startable {
    * @param maxFavoriteApplications max favorite applications count
    */
   public void setMaxFavoriteApps(long maxFavoriteApplications) {
-    if (maxFavoriteApplications > 0) {
+    if (maxFavoriteApplications >= 0) {
       settingService.set(APP_CENTER_CONTEXT,
                          APP_CENTER_SCOPE,
                          MAX_FAVORITE_APPS,
@@ -366,7 +371,7 @@ public class ApplicationCenterService implements Startable {
       if (maxFavoriteAppsValue != null && maxFavoriteAppsValue.getValue() != null) {
         this.maxFavoriteApps = Long.parseLong(maxFavoriteAppsValue.getValue().toString());
       } else {
-        this.maxFavoriteApps = 0;
+        this.maxFavoriteApps = this.defaultMaxFavoriteApps;
       }
     }
     return this.maxFavoriteApps;
