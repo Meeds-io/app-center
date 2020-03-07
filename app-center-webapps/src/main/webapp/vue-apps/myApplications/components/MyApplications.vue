@@ -8,7 +8,7 @@
     </div>
     <ul class="myToolsList">
       <li v-for="favoriteApp in favoriteApplicationsList" :key="favoriteApp.id">
-        <a :href="favoriteApp.url" target="_blank">
+        <a :href="favoriteApp.computedUrl" :target="favoriteApp.target">
           <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
           <span class="myToolTitle tooltipContent">
             <dot :msg="favoriteApp.title" :line="2" />
@@ -65,6 +65,12 @@ export default {
         })
         .then(data => {
           this.favoriteApplicationsList = (data && data.applications) || [];
+          this.favoriteApplicationsList.forEach(app => {
+            app.computedUrl = app.url.replace(/$\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.url.indexOf('/') === 0 ? '_self' : '_blank';
+          });
+          return this.favoriteApplicationsList;
         });
     },
 

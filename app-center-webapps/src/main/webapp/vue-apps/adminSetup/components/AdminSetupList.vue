@@ -149,7 +149,7 @@
                           $t('appCenter.adminSetupForm.titlePlaceholder')
                         ">
                       <span class="requiredInput">*</span>
-                      <p v-if="!formArray.title" class="errorInput">
+                      <p v-if="!formArray.system && !formArray.title" class="errorInput">
                         {{ $t("appCenter.adminSetupForm.titleError") }}
                       </p>
                     </td>
@@ -167,7 +167,7 @@
                           $t('appCenter.adminSetupForm.urlPlaceholder')
                         ">
                       <span class="requiredInput">*</span>
-                      <p v-if="!formArray.system && !validUrl(formArray.url)" class="errorInput">
+                      <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">
                         {{ $t("appCenter.adminSetupForm.urlError") }}
                       </p>
                     </td>
@@ -386,6 +386,11 @@ export default {
           this.applicationsList = [];
           this.totalApplications = this.applicationsList.size;
           this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
+          data.applications.forEach(app => {
+            app.computedUrl = app.url.replace(/$\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.url.indexOf('/') === 0 ? '_self' : '_blank';
+          });
 
           // A trick to force retrieving img URL again to update illustration
           window.setTimeout(() => this.applicationsList = data.applications, 20);
@@ -401,7 +406,7 @@ export default {
       if (
         this.formArray.title &&
         this.formArray.url &&
-        (this.formArray.system || this.validUrl(this.formArray.url))
+        this.validUrl(this.formArray)
       ) {
         if (this.$refs.file && this.$refs.file.files.length > 0) {
           const reader = new FileReader();
@@ -537,8 +542,9 @@ export default {
       this.formArray.title = "";
       this.showDeleteApplicationModal = false;
     },
-    validUrl(url) {
-      return url && url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g);
+    validUrl(app) {
+      const url = app && app.url;
+      return app.system || (url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g)));
     },
     onActiveChange() {
       if (!this.formArray.active) {
