@@ -6,14 +6,14 @@
       :key="favoriteApp.id"
       class="favoriteApplication">
       <div class="favoriteAppImage">
-        <a target="_blank" :href="favoriteApp.url">
+        <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
           <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
         </a>
       </div>
       <a
         class="favoriteAppUrl"
-        target="_blank"
-        :href="favoriteApp.url">
+        :target="favoriteApp.target"
+        :href="favoriteApp.computedUrl">
         <h5 class="tooltipContent">
           <dot :msg="favoriteApp.title" :line="2" />
           <span class="tooltiptext">{{ favoriteApp.title }}</span>
@@ -71,6 +71,11 @@ export default {
         })
         .then(data => {
           this.favoriteApplicationsList = (data && data.applications) || [];
+          this.favoriteApplicationsList.forEach(app => {
+            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
+          });
           this.canAddFavorite =
             !this.$parent.$children[0].maxFavoriteApps ||
             this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;

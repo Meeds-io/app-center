@@ -14,12 +14,12 @@
         <div class="authorisedAppContent">
           <div class="applicationHeader">
             <div class="image">
-              <a target="_blank" :href="authorizedApp.url">
+              <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
               </a>
             </div>
             <div class="title">
-              <a target="_blank" :href="authorizedApp.url">
+              <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <h5 class="tooltipContent">
                   <dot :msg="authorizedApp.title" :line="2" />
                   <span class="tooltiptext">{{ authorizedApp.title }}</span>
@@ -32,7 +32,7 @@
             <span class="tooltiptext">{{ authorizedApp.description }}</span>
           </div>
           <div class="applicationButton">
-            <a target="_blank" :href="authorizedApp.url">{{
+            <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{
               $t("appCenter.userSetup.authorized.access")
             }}</a>
             <button
@@ -111,6 +111,11 @@ export default {
         })
         .then(data => {
           this.authorizedApplicationsList = this.authorizedApplicationsList.concat(data.applications);
+          this.authorizedApplicationsList.forEach(app => {
+            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
+          });
           this.canAddFavorite = data.canAddFavorite;
           if (this.currentPage * this.pageSize < data.size) {
             this.showPaginator = true;
