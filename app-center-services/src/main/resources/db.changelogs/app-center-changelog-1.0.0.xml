@@ -68,4 +68,9 @@
       <column name="IS_SYSTEM" type="BOOLEAN" defaultValueBoolean="false" />
     </addColumn>
   </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-4" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_APPLICATION_ID" startValue="1"/>
+    <createSequence sequenceName="SEQFAVORITE_APPLICATION_ID" startValue="1"/>
+  </changeSet>
 </databaseChangeLog>
