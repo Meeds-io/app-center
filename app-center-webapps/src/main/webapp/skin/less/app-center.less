@@ -1,7 +1,12 @@
 @import "./variables.less";
 
 /* This file contains CSS for admin setup portlet */
-.applicationsAdmin {
+.VuetifyApp .appCenterDrawer {
+  min-height: 100vh;
+  max-height: 100vh;
+  position: fixed;
+}
+.VuetifyApp .applicationsAdmin {
   margin: 20px;
   padding: 10px;
   background: #fff;
@@ -476,7 +481,7 @@
   }
 }
 /* This file contains CSS for user setup portlet */
-.userApplications {
+.VuetifyApp .userApplications {
   margin: 20px;
   padding: 10px;
   background: #fff;
@@ -643,7 +648,7 @@
     }
   }
 }
-.userFavoriteApplications {
+.VuetifyApp .userFavoriteApplications {
   flex: 1 1 23%;
 
   .favoritAppTitle {
@@ -745,7 +750,7 @@
   }
 }
 /* This file contains CSS for my applications portlet on home page */
-.myTools {
+.VuetifyApp .myTools {
   display: flex;
   flex-direction: column;
   min-height: 210px;
@@ -855,10 +860,6 @@
   max-height: 58px;
 }
 
-#app-center-launcher {
-  background: transparent;
-}
-
 .appLauncherDrawerTitle {
   font-size: 18px;
   font-weight: bold;
@@ -874,11 +875,15 @@
 
 .appLauncherItem {
   flex: 0 1 33%;
-}
+  a {
+    display: block;
+    padding: 5px;
 
-.appLauncherItem a {
-  display: block;
-  padding: 5px;
+    &:hover .appLauncherImage {
+      box-shadow: -3px 3px 6px 0px #ececec;
+      transition: all .3s;
+    }
+  }
 }
 
 .appLauncherImage {
@@ -902,11 +907,6 @@
   border-color: #f0f4fe!important;
 }
 
-.appLauncherItem a:hover .appLauncherImage{
-  box-shadow: -3px 3px 6px 0px #ececec;
-  transition: all .3s;
-}
-
 .seeAllApplicationsBtn {
   border: 1px solid #1976d27a!important;
   padding: 8px 15px;
@@ -928,10 +928,6 @@
   width: 100%;
   border-top: 1px solid #f0f4fe!important;
   background: white;
-}
-
-.open-app-drawer {
-  overflow: hidden;
 }
 
 /*---------------------tooltip----------------*/
@@ -986,19 +982,19 @@
 
 /*----------------icons-------------------*/
 
-.uiApplicationIcon {
-  font-size: 20px!important;
-  font-style: normal;
-  height: 58px;
-  padding: 0 5px;
-  color: #578dc9!important;
-
-  &:before {
+#appLauncher {
+  .uiApplicationIcon {
     font-family: 'PLF-FONT-ICONS';
-    content: "\ea95" !important;
+    font-size: 20px!important;
+    font-style: normal;
+    padding: 0 5px;
+    color: @toolbarLightIconColor !important;
+  
+    &:before {
+      content: "\ea95";
+    }
   }
 }
-
 .uiCloseIcon {
   color: #a8b3c5;
   font-size: 20px;

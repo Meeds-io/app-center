@@ -15,7 +15,7 @@
         :target="favoriteApp.target"
         :href="favoriteApp.computedUrl">
         <h5 class="tooltipContent">
-          <dot :msg="favoriteApp.title" :line="2" />
+          <div>{{ favoriteApp.title }}</div>
           <span class="tooltiptext">{{ favoriteApp.title }}</span>
         </h5>
       </a>
@@ -42,11 +42,8 @@
 </template>
 
 <script>
-import dot from "vue-text-dot";
-
 export default {
   name: "UserFavoriteApplications",
-  components: { dot },
   data() {
     return {
       favoriteApplicationsList: []

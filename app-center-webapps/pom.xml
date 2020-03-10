@@ -122,16 +122,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>npm run test</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <phase>test</phase>
-            <configuration>
-              <arguments>test</arguments>
-            </configuration>
-          </execution>
-          <execution>
             <id>npm run build</id>
             <goals>
               <goal>npm</goal>

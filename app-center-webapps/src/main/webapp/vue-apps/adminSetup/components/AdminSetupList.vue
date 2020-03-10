@@ -1,5 +1,5 @@
 <template>
-  <div v-esc="closeModals" class="listApplications">
+  <div class="listApplications">
     <div class="applicationListHeader">
       <a
         class="actionIcon addApplicationButton tooltipContent"
@@ -324,9 +324,6 @@
 
 <script>
 import Paginator from "./Paginator.vue";
-import VueEsc from "vue-esc";
-
-Vue.use(VueEsc);
 
 export default {
   name: "AdminSetup",
@@ -365,6 +362,11 @@ export default {
   created() {
     this.pageSize = Number(this.$parent.pageSize);
     this.getApplicationsList();
+    $(document).on('keydown', (event) => {
+      if (event.key === 'Escape' && this && this.closeModals) {
+        this.closeModals();
+      }
+    });
   },
 
   methods: {

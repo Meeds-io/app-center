@@ -1,21 +1,19 @@
 <div class="VuetifyApp">
-    <div id="appLauncher">
-      <div data-app="true"
-        class="v-application transparent v-application--is-ltr theme--light"
-        id="app-center-launcher" flat="">
-        <div class="v-application--wrap">
-          <div class="container transparent px-0 py-0">
-            <div class="layout transparent">
-              <button type="button" icon=""
-                class="v-icon notranslate text-xs-center uiApplicationIcon v-icon--link material-icons theme--light"></button>
-            </div>
+  <div id="appLauncher">
+    <div data-app="true" class="v-application transparent v-application--is-ltr theme--light" id="app-center-launcher" flat="">
+      <div class="v-application--wrap">
+        <div class="container transparent px-0 py-0">
+          <div class="layout transparent">
+            <button type="button" icon=""
+              class="v-icon notranslate text-xs-center uiApplicationIcon v-icon--link material-icons theme--light"></button>
           </div>
         </div>
       </div>
-      <script>
-        require(['SHARED/appLauncherBundle'], function(appLauncherApp) {
-            appLauncherApp.init();
-        });
-      </script>
     </div>
+    <script>
+      require(['SHARED/appLauncherBundle'], function(appLauncherApp) {
+          appLauncherApp.init();
+      });
+    </script>
+  </div>
 </div>

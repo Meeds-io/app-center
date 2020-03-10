@@ -1,65 +1,62 @@
 <template>
-  <v-app
-    id="app-center-launcher"
-    class="transparent"
-    flat>
-    <v-container
-      px-0
-      py-0
-      class="transparent">
+  <v-app id="appLauncher" flat>
+    <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn icon>
+        <v-btn icon small>
           <v-icon class="text-xs-center uiIcon uiApplicationIcon" @click="toggleDrawer()" />
         </v-btn>
-        <v-navigation-drawer
-          v-model="appLauncherDrawer"
-          right
-          absolute
-          temporary
-          width="420"
-          class="appCenterDrawer">
-          <v-row class="mx-0">
-            <v-list-item class="appLauncherDrawerHeader">
-              <v-list-item-content>
-                <span class="appLauncherDrawerTitle">{{
-                  $t("appCenter.appLauncher.drawer.title")
-                }}</span>
-              </v-list-item-content>
-              <v-list-item-action class="appLauncherDrawerIcons">
-                <i
-                  class="uiCloseIcon appLauncherDrawerClose"
-                  @click="toggleDrawer()"></i>
-              </v-list-item-action>
-            </v-list-item>
-          </v-row>
-          <v-divider :inset="inset" class="my-0 appHeaderBorder" />
-
-          <v-row class="mx-0 px-3">
-            <div class="appLauncherList">
-              <div
-                v-for="(application, index) in favoriteApplicationsList"
-                :key="index"
-                class="appLauncherItem">
-                <a :target="application.target" :href="application.computedUrl">
-                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                  <span class="appLauncherTitle">{{ application.title }}</span>
-                </a>
-              </div>
-            </div>
-          </v-row>
-          <v-row class="seeAllApplications mx-0">
-            <v-card
-              flat
-              tile
-              class="d-flex flex justify-end mx-2">
-              <a
-                class="text-uppercase caption primary--text seeAllApplicationsBtn"
-                :href="appCenterUserSetupLink">{{ $t("appCenter.appLauncher.drawer.viewAll") }}</a>
-            </v-card>
-          </v-row>
-        </v-navigation-drawer>
       </v-layout>
     </v-container>
+    <v-navigation-drawer
+      v-model="appLauncherDrawer"
+      absolute
+      right
+      stateless
+      temporary
+      width="420"
+      max-width="100vw"
+      max-height="100vh"
+      class="appCenterDrawer">
+      <v-row class="mx-0">
+        <v-list-item class="appLauncherDrawerHeader">
+          <v-list-item-content>
+            <span class="appLauncherDrawerTitle">{{
+              $t("appCenter.appLauncher.drawer.title")
+            }}</span>
+          </v-list-item-content>
+          <v-list-item-action class="appLauncherDrawerIcons">
+            <i
+              class="uiCloseIcon appLauncherDrawerClose"
+              @click="toggleDrawer()"></i>
+          </v-list-item-action>
+        </v-list-item>
+      </v-row>
+      <v-divider :inset="inset" class="my-0 appHeaderBorder" />
+
+      <v-row class="mx-0 px-3">
+        <div class="appLauncherList">
+          <div
+            v-for="(application, index) in favoriteApplicationsList"
+            :key="index"
+            class="appLauncherItem">
+            <a :target="application.target" :href="application.computedUrl">
+              <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+              <span class="appLauncherTitle">{{ application.title }}</span>
+            </a>
+          </div>
+        </div>
+      </v-row>
+      <v-row class="seeAllApplications mx-0">
+        <v-card
+          flat
+          tile
+          class="d-flex flex justify-end mx-2">
+          <a
+            class="text-uppercase caption primary--text seeAllApplicationsBtn"
+            :href="appCenterUserSetupLink">{{ $t("appCenter.appLauncher.drawer.viewAll") }}</a>
+        </v-card>
+      </v-row>
+    </v-navigation-drawer>
   </v-app>
 </template>
 <script>
@@ -70,6 +67,25 @@ export default {
       favoriteApplicationsList: [],
       appCenterUserSetupLink: ""
     };
+  },
+  watch: {
+    appLauncherDrawer() {
+      if (this.appLauncherDrawer) {
+        $('body').addClass('hide-scroll');
+      } else {
+        $('body').removeClass('hide-scroll');
+      }
+      this.$nextTick().then(() => {
+        $('#appLauncher .v-overlay').click(() => {
+          this.appLauncherDrawer = false;
+        });
+      });
+      $(document).on('keydown', (event) => {
+        if (event.key === 'Escape') {
+          this.appLauncherDrawer = false;
+        }
+      });
+    },
   },
   created() {
     this.getFavoriteApplicationsList();

@@ -62,6 +62,9 @@
       <module>vue</module>
     </depends>
     <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
       <module>eXoVueI18n</module>
     </depends>
     <depends>
@@ -83,6 +86,9 @@
       <module>vue</module>
     </depends>
     <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
       <module>eXoVueI18n</module>
     </depends>
   </module>
@@ -95,6 +101,9 @@
     </script>
     <depends>
       <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
     </depends>
     <depends>
       <module>eXoVueI18n</module>
@@ -115,6 +124,9 @@
     </depends>
     <depends>
       <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>jquery</module>
     </depends>
   </module>
 

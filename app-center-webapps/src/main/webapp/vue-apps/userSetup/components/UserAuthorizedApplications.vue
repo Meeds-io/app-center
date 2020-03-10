@@ -21,14 +21,14 @@
             <div class="title">
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <h5 class="tooltipContent">
-                  <dot :msg="authorizedApp.title" :line="2" />
+                  <div>{{ authorizedApp.title }}</div>
                   <span class="tooltiptext">{{ authorizedApp.title }}</span>
                 </h5>
               </a>
             </div>
           </div>
           <div class="userAppDescription tooltipContent">
-            <dot :msg="authorizedApp.description" :line="4" />
+            <div>{{ authorizedApp.description }}</div>
             <span class="tooltiptext">{{ authorizedApp.description }}</span>
           </div>
           <div class="applicationButton">
@@ -59,11 +59,8 @@
 </template>
 
 <script>
-import dot from "vue-text-dot";
-
 export default {
   name: "UserAuthorizedApplications",
-  components: { dot },
   data() {
     return {
       authorizedApplicationsList: [],
@@ -76,7 +73,6 @@ export default {
       authorizedApplicationsListMsg: this.$t("appCenter.userSetup.loading")
     };
   },
-
   watch: {
     searchText() {
       if (this.searchText && this.searchText.trim().length) {

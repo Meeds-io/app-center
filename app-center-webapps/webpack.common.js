@@ -2,7 +2,6 @@ const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader')
 
 module.exports = {
-
     context: path.resolve(__dirname, '.'),
     // set the entry point of the application
     // can use multiple entry
@@ -17,7 +16,6 @@ module.exports = {
         filename: 'javascript/vue/[name].bundle.js',
         libraryTarget: 'amd'
     },
-
     module: {
         rules: [
             {

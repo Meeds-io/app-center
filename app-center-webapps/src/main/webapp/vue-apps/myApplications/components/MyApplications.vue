@@ -11,7 +11,7 @@
         <a :href="favoriteApp.computedUrl" :target="favoriteApp.target">
           <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
           <span class="myToolTitle tooltipContent">
-            <dot :msg="favoriteApp.title" :line="2" />
+            <div>{{ favoriteApp.title }}</div>
             <span class="tooltiptext">{{ favoriteApp.description }}</span>
           </span>
         </a>
@@ -30,10 +30,8 @@
 </template>
 
 <script>
-import dot from "vue-text-dot";
 export default {
   name: "MyTools",
-  components: { dot },
   data() {
     return {
       favoriteApplicationsList: [],

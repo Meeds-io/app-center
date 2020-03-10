@@ -6,9 +6,7 @@ const common = require('./webpack.common.js');
 const app = 'app-center';
 
 module.exports = merge(common, {
-
     output: {
     	path: path.resolve(__dirname, `./target/${app}/`)
     },
-
 });
