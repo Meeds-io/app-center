@@ -8,10 +8,9 @@
       py-0
       class="transparent">
       <v-layout class="transparent">
-        <v-icon
-          icon
-          class="text-xs-center uiApplicationIcon"
-          @click="toggleDrawer()" />
+        <v-btn icon>
+          <v-icon class="text-xs-center uiIcon uiApplicationIcon" @click="toggleDrawer()" />
+        </v-btn>
         <v-navigation-drawer
           v-model="appLauncherDrawer"
           right

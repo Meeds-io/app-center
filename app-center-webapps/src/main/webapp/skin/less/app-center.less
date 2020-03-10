@@ -1,3 +1,5 @@
+@import "./variables.less";
+
 /* This file contains CSS for admin setup portlet */
 .applicationsAdmin {
   margin: 20px;
@@ -53,9 +55,9 @@
 }
 .applicationsAdmin .appCenter-form {
 	background: #fff;
-    min-height: 100px;
-    border-radius: 6px;
-    box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
+  min-height: 100px;
+  border-radius: 6px;
+  box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
 }
 .applicationsAdmin .appCenter-form input[type="file"] {
     display: none;
@@ -954,20 +956,16 @@
 /*----------------icons-------------------*/
 
 .uiApplicationIcon {
-  color: white!important;
   font-size: 20px!important;
   font-style: normal;
   height: 58px;
   padding: 0 5px;
-}
-
-.UIToolbarContainerLight .uiApplicationIcon {
   color: #578dc9!important;
-}
 
-.uiApplicationIcon:before {
-  font-family: 'PLF-FONT-ICONS';
-  content: "\ea95" !important;
+  &:before {
+    font-family: 'PLF-FONT-ICONS';
+    content: "\ea95" !important;
+  }
 }
 
 .uiCloseIcon {
