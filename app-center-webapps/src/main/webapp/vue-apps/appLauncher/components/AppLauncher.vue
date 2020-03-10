@@ -72,27 +72,25 @@ export default {
     appLauncherDrawer() {
       if (this.appLauncherDrawer) {
         $('body').addClass('hide-scroll');
+
+        this.$nextTick().then(() => {
+          $('#appLauncher .v-overlay').click(() => {
+            this.appLauncherDrawer = false;
+          });
+        });
       } else {
         $('body').removeClass('hide-scroll');
       }
-      this.$nextTick().then(() => {
-        $('#appLauncher .v-overlay').click(() => {
-          this.appLauncherDrawer = false;
-        });
-      });
-      $(document).on('keydown', (event) => {
-        if (event.key === 'Escape') {
-          this.appLauncherDrawer = false;
-        }
-      });
     },
   },
   created() {
     this.getFavoriteApplicationsList();
-    window.require(["SHARED/appCenterBundle"], function(appCenterBundle) {
-      appCenterBundle.init();
-    });
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
+    $(document).on('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.appLauncherDrawer = false;
+      }
+    });
   },
   methods: {
     toggleDrawer() {

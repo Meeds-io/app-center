@@ -130,16 +130,4 @@
     </depends>
   </module>
 
-  <module>
-    <name>appCenterBundle</name>
-    <script>
-      <minify>false</minify>
-      <path>/javascript/appCenter.js</path>
-    </script>
-    <depends>
-      <module>jquery</module>
-      <as>$</as>
-    </depends>
-  </module>
-
 </gatein-resources>
