@@ -8,13 +8,15 @@
 		pageSize = "";
     }
 %>
-<div id="userSetup">
-	<script>
-		require(['SHARED/userSetupPortletBundle'], function(userSetupPortletApp) {
-			var preferences = {
-				pageSize: "<%=pageSize%>"
-			};
-			userSetupPortletApp.init(preferences);
-	    });
-	</script>
+<div class="VuetifyApp">
+  <div id="userSetup">
+  	<script>
+  		require(['SHARED/userSetupPortletBundle'], function(userSetupPortletApp) {
+  			var preferences = {
+  				pageSize: "<%=pageSize%>"
+  			};
+  			userSetupPortletApp.init(preferences);
+  	    });
+  	</script>
+  </div>
 </div>

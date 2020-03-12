@@ -9,13 +9,15 @@
     }
     
 %>
-<div id="adminSetup">
-	<script>
-		require(['SHARED/adminSetupPortletBundle'], function(adminSetupPortletApp) {
-			var preferences = {
-				pageSize: "<%=pageSize%>"
-			};
-			adminSetupPortletApp.init(preferences);
-	    });
-	</script>
+<div class="VuetifyApp">
+  <div id="adminSetup">
+  	<script>
+  		require(['SHARED/adminSetupPortletBundle'], function(adminSetupPortletApp) {
+  			var preferences = {
+  				pageSize: "<%=pageSize%>"
+  			};
+  			adminSetupPortletApp.init(preferences);
+  	    });
+  	</script>
+  </div>
 </div>
