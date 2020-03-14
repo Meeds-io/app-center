@@ -26,7 +26,7 @@
   }
   .uiTabNormal.uiTabInPage ul.nav.nav-tabs li.active a {
     border-width: 1px;
-    background-color: #578dc9;
+    background-color: @primaryColor;
   }
   .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr th {
     font-weight: normal;
@@ -87,9 +87,9 @@
       margin: 5px auto;
   }
   .appCenter-form .form-submit {
-      background: #578dc9;
+      background: @primaryColor;
       box-shadow: none;
-      border: 1px solid #578dc9;
+      border: 1px solid @primaryColor;
       color: #fff;
       font-size: 14px;
       font-weight: 400;
@@ -150,7 +150,7 @@
     color: #5d5d5d;
   }
   .addApplicationButton:hover span {
-    color: #578dc9;
+    color: @primaryColor;
   }
   .modal-mask {
     top: 0;
@@ -234,16 +234,16 @@
               height: 60px;
             }
             .uploadImage .custom-file-upload {
-              background: #578dc9;
+              background: @primaryColor;
               border-radius: 5px;
-              border: 1px solid #578dc9;
+              border: 1px solid @primaryColor;
               color: #ffffff;
               padding: 5px 6px;
               transition: 0.5s all;
             }
             .uploadImage .custom-file-upload:hover {
               background: #ffffff !important;
-              color: #578dc9;
+              color: @primaryColor;
               transition: 0.5s all;
             }
             td:nth-child(2) {
@@ -312,7 +312,7 @@
             input {
               visibility: hidden;
               &:checked {
-                background: #578dc9;
+                background: @primaryColor;
                 text-indent: 8px;
                  + label {
                   &:after {
@@ -338,7 +338,7 @@
           }
           .form-submit:hover {
             background: #ffffff !important;
-            color: #578dc9;
+            color: @primaryColor;
             transition: 0.5s all;
           }
           .form-reset {
@@ -599,7 +599,7 @@
             margin: 5px 0;
             &:hover {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
             &:hover:disabled {
               color: #797979;
@@ -607,7 +607,7 @@
             }
             &.favorite {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
             &.favorite:hover {
               color: #797979;
@@ -615,7 +615,7 @@
             }
             &.favorite:hover:disabled {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
           }
         }
@@ -629,8 +629,8 @@
       padding-top: 30px;
     }
     .appPaginator button {
-      background: #578dc9;
-      border: 1px solid #578dc9;
+      background: @primaryColor;
+      border: 1px solid @primaryColor;
       color: #fff;
       padding: 5px 10px;
       border-radius: 5px;
@@ -638,7 +638,7 @@
     }
     .appPaginator button:hover {
       background: transparent;
-      color: #578dc9;
+      color: @primaryColor;
     }
     .appSearch {
       text-align: right;
@@ -863,7 +863,7 @@
 .appLauncherDrawerTitle {
   font-size: 18px;
   font-weight: bold;
-  color: #4D5466;
+  color: @darkGrey;
 }
 
 .appLauncherList {
@@ -996,7 +996,7 @@
   }
 }
 .uiCloseIcon {
-  color: #a8b3c5;
+  color: @greyColorLighten1;
   font-size: 20px;
   font-style: normal;
   cursor: pointer;
