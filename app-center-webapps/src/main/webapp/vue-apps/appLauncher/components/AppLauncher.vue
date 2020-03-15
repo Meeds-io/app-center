@@ -2,7 +2,7 @@
   <v-app id="appLauncher" flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn icon small>
+        <v-btn icon small color="transparent" class="uiApplicationIconButton">
           <v-icon class="text-xs-center uiIcon uiApplicationIcon" @click="toggleDrawer()" />
         </v-btn>
       </v-layout>

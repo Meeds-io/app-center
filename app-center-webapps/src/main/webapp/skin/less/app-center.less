@@ -984,15 +984,19 @@
 /*----------------icons-------------------*/
 
 #appLauncher {
-  .uiApplicationIcon {
-    font-family: 'PLF-FONT-ICONS';
-    font-size: 20px!important;
-    font-style: normal;
-    padding: 0 5px;
-    color: @toolbarLightIconColor !important;
-  
-    &:before {
-      content: "\ea95";
+  .uiApplicationIconButton {
+    background-color: transparent !important;
+
+    .uiApplicationIcon {
+      font-family: 'PLF-FONT-ICONS';
+      font-size: 20px!important;
+      font-style: normal;
+      padding: 0 5px;
+      color: @toolbarLightIconColor !important;
+    
+      &:before {
+        content: "\ea95";
+      }
     }
   }
 }
