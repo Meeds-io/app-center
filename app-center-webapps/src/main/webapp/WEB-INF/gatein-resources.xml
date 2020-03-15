@@ -62,7 +62,6 @@
     </depends>
     <depends>
       <module>jquery</module>
-      <as>jq</as>
     </depends>
     <depends>
       <module>suggester</module>

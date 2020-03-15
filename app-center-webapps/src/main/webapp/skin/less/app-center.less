@@ -9,9 +9,10 @@
 .VuetifyApp .applicationsAdmin {
   margin: 20px;
   padding: 10px;
-  background: #fff;
+  background: #fff !important;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
+  display: block;
 
   .uiTabNormal.uiTabInPage ul.nav.nav-tabs {
     border-bottom: 1px solid #f5f5f5;
@@ -49,8 +50,7 @@
   .uiTabNormal.uiTabInPage .noApp {
     text-align: center;
   }
-  .uiTabNormal .tab-content {
-    background: #ffffff;
+  .uiTabNormal .tab-pane {
     border: none;
     display: inline;
   }
@@ -153,14 +153,14 @@
   .addApplicationButton:hover span {
     color: @primaryColor;
   }
-  .modal-mask {
+  .app-center-modal-mask {
     top: 0;
     left: 0;
     z-index: 9999;
     position: fixed;
     overflow-y: scroll;
 
-    .modal-content {
+    .app-center-modal-content {
       width: 420px;
       left: 35%;
       top: 0;
@@ -171,7 +171,6 @@
         font-size: 14px;
         font-weight: normal;
         margin: 0;
-        text-align: center;
       }
       .popupContent {
         .addApplication .form-container.appCenter-form , .editApplication .form-container.appCenter-form {
@@ -281,7 +280,7 @@
               width: 60px;
               &:after {
                 color: #7b7b7b;
-                content: "Non";
+                content: "No";
                 display: block;
                 font-size: 12px;
                 left: 0px;
@@ -313,12 +312,14 @@
             input {
               visibility: hidden;
               &:checked {
-                background: @primaryColor;
+                background: @primaryColor !important;
                 text-indent: 8px;
                  + label {
+                  background: @primaryColorLight;
                   &:after {
                     color: #ffffff;
-                    content: "Oui";
+                    content: "Yes";
+                    left: -16px;
                   }
                   &:before {
                     background: #e3d8e6;
@@ -334,33 +335,6 @@
         }
         .application-buttons {
           text-align: center;
-          .form-submit {
-            padding: 10px 15px;
-          }
-          .form-submit:hover {
-            background: #ffffff !important;
-            color: @primaryColor;
-            transition: 0.5s all;
-          }
-          .form-reset {
-            background: #d4d4d4;
-            border-radius: 3px;
-            border: 1px solid #cccccc;
-            box-shadow: none;
-            color: #4a4a4a;
-            font-size: 14px;
-            font-weight: 400;
-            line-height: 17px;
-            padding: 10px 15px;
-            text-align: center;
-            transition: 0.5s all;
-          }
-          .form-reset:hover {
-            background: transparent;
-            border: 1px solid #cccccc;
-            color: #4a4a4a;
-            padding: 10px 15px;
-          }
         }
       }
       .requiredField {
@@ -575,6 +549,7 @@
           }
         }
         .applicationButton {
+          box-sizing: border-box;
           a {
             background: transparent;
             border-radius: 25px;

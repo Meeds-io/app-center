@@ -1,11 +1,11 @@
-import ExoModal from "./modal/ExoModal.vue";
+import ExoAppCenterModal from "./modal/ExoAppCenterModal.vue";
 import AdminSetupGeneralParams from "./AdminSetupGeneralParams.vue";
 import AdminSetupList from "./AdminSetupList.vue";
 
 const components = {
   "adminSetup-generalParams": AdminSetupGeneralParams,
   "adminSetup-list": AdminSetupList,
-  "exo-modal": ExoModal
+  "exo-app-center-modal": ExoAppCenterModal
 };
 
 for (const key in components) {
