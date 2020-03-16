@@ -3,17 +3,10 @@
   xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
 
   <portal-skin>
-    <skin-name>Default</skin-name>
-    <skin-module>customModuleAppCenter</skin-module>
-    <css-path>/skin/main.css</css-path>
-    <css-priority>11</css-priority>
-  </portal-skin>
-
-  <portal-skin>
     <skin-name>Enterprise</skin-name>
-    <skin-module>customModuleAppCenter</skin-module>
+    <skin-module>appCenter</skin-module>
     <css-path>/skin/css/app-center.css</css-path>
-    <css-priority>11</css-priority>
+    <css-priority>130</css-priority>
   </portal-skin>
 
   <portlet>
@@ -69,7 +62,6 @@
     </depends>
     <depends>
       <module>jquery</module>
-      <as>jq</as>
     </depends>
     <depends>
       <module>suggester</module>

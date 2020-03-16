@@ -30,19 +30,19 @@
         <th>
           {{ $t("appCenter.adminSetupList.application") }}
         </th>
-        <th>
+        <th class="d-none d-md-table-cell">
           {{ $t("appCenter.adminSetupForm.url") }}
         </th>
-        <th>
+        <th class="d-none d-md-table-cell">
           {{ $t("appCenter.adminSetupForm.description") }}
         </th>
-        <th>
+        <th class="d-none d-md-table-cell">
           {{ $t("appCenter.adminSetupForm.permissions") }}
         </th>
-        <th>
+        <th class="d-none d-sm-table-cell">
           {{ $t("appCenter.adminSetupForm.byDefault") }}
         </th>
-        <th>
+        <th class="d-none d-sm-table-cell">
           {{ $t("appCenter.adminSetupForm.active") }}
         </th>
         <th class="actions">
@@ -56,26 +56,26 @@
         <td>
           <h5>{{ application.title }}</h5>
         </td>
-        <td>
+        <td class="d-none d-md-table-cell">
           <h5>{{ application.url }}</h5>
         </td>
-        <td>
+        <td class="d-none d-md-table-cell">
           <h5>{{ application.description }}</h5>
         </td>
-        <td>
+        <td class="d-none d-md-table-cell">
           <h5
             v-for="permission in application.permissions"
             :key="permission">
             {{ permission }}
           </h5>
         </td>
-        <td>
+        <td class="d-none d-sm-table-cell">
           <input
             v-model="application.byDefault"
             disabled="disabled"
             type="checkbox">
         </td>
-        <td>
+        <td class="d-none d-sm-table-cell">
           <input
             v-model="application.active"
             disabled="disabled"
@@ -123,7 +123,7 @@
     </div>
 
     <transition name="fade">
-      <exo-modal
+      <exo-app-center-modal
         v-show="showAddOrEditApplicationModal"
         :title="
           formArray.viewMode
@@ -268,11 +268,11 @@
                   </tr>
                 </table>
 
-                <div class="form-group application-buttons">
-                  <button class="form-submit" @click.stop="submitForm()">
+                <div class="form-group application-buttons pt-2">
+                  <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="submitForm()">
                     {{ $t("appCenter.adminSetupForm.save") }}
                   </button>
-                  <button class="form-reset" @click.stop="resetForm()">
+                  <button class="ignore-vuetify-classes btn form-reset" @click.stop="resetForm()">
                     {{ $t("appCenter.adminSetupForm.cancel") }}
                   </button>
                 </div>
@@ -288,11 +288,11 @@
             </div>
           </div>
         </div>
-      </exo-modal>
+      </exo-app-center-modal>
     </transition>
 
     <transition name="fade">
-      <exo-modal
+      <exo-app-center-modal
         v-show="showDeleteApplicationModal"
         :title="$t('appCenter.adminSetupForm.DeleteApp')"
         @modal-closed="closeDeleteModal()">
@@ -301,13 +301,13 @@
             {{ $t("appCenter.adminSetupForm.confirmDelete")
             }}<span>{{ formArray.title }}</span> ?
           </h3>
-          <div class="form-group application-buttons">
-            <button class="form-submit" @click.stop="deleteApplication()">
+          <div class="form-group application-buttons pt-2">
+            <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
               <i class="uiTrashIcon"></i>
               {{ $t("appCenter.adminSetupForm.delete") }}
             </button>
             <button
-              class="form-reset"
+              class="ignore-vuetify-classes btn form-reset"
               @click.stop="showDeleteApplicationModal = false">
               <i class="uiCloseIcon"></i>
               {{ $t("appCenter.adminSetupForm.cancel") }}
@@ -317,7 +317,7 @@
             <span>{{ error }}</span>
           </div>
         </div>
-      </exo-modal>
+      </exo-app-center-modal>
     </transition>
   </div>
 </template>
@@ -329,6 +329,12 @@ export default {
   name: "AdminSetup",
   components: {
     Paginator
+  },
+  props: {
+    pageSize: {
+      type: Object,
+      default: 10,
+    },
   },
   data() {
     return {
@@ -360,7 +366,6 @@ export default {
   },
 
   created() {
-    this.pageSize = Number(this.$parent.pageSize);
     this.getApplicationsList();
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape' && this && this.closeModals) {
@@ -554,7 +559,7 @@ export default {
       }
     },
     initPermissionsSuggester() {
-      const permissionsSuggester = jq("#permissions-suggester");
+      const permissionsSuggester = $("#permissions-suggester");
       if (permissionsSuggester && permissionsSuggester.length) {
         const component = this;
         const suggesterData = {
@@ -589,7 +594,7 @@ export default {
           }
         };
         permissionsSuggester.suggester(suggesterData);
-        jq("#permissions-suggester")[0].selectize.clear();
+        $("#permissions-suggester")[0].selectize.clear();
         if (this.formArray.permissions && this.formArray.permissions !== null) {
           for (const permission of this.formArray.permissions) {
             permissionsSuggester[0].selectize.addOption({ text: permission });
@@ -601,11 +606,11 @@ export default {
 
     addSuggestedItem(item) {
       if (
-        jq("#permissions-suggester") &&
-        jq("#permissions-suggester").length &&
-        jq("#permissions-suggester")[0].selectize
+        $("#permissions-suggester") &&
+        $("#permissions-suggester").length &&
+        $("#permissions-suggester")[0].selectize
       ) {
-        const selectize = jq("#permissions-suggester")[0].selectize;
+        const selectize = $("#permissions-suggester")[0].selectize;
         item = selectize.options[item];
       }
       if (
@@ -616,7 +621,7 @@ export default {
     },
 
     removeSuggestedItem(item) {
-      const permissionsSuggester = jq("#permissions-suggester");
+      const permissionsSuggester = $("#permissions-suggester");
       for (let i = this.formArray.permissions.length - 1; i >= 0; i--) {
         if (this.formArray.permissions[i] === item) {
           this.formArray.permissions.splice(i, 1);

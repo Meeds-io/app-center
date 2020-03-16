@@ -9,9 +9,10 @@
 .VuetifyApp .applicationsAdmin {
   margin: 20px;
   padding: 10px;
-  background: #fff;
+  background: #fff !important;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
+  display: block;
 
   .uiTabNormal.uiTabInPage ul.nav.nav-tabs {
     border-bottom: 1px solid #f5f5f5;
@@ -26,7 +27,7 @@
   }
   .uiTabNormal.uiTabInPage ul.nav.nav-tabs li.active a {
     border-width: 1px;
-    background-color: #578dc9;
+    background-color: @primaryColor;
   }
   .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr th {
     font-weight: normal;
@@ -49,9 +50,9 @@
   .uiTabNormal.uiTabInPage .noApp {
     text-align: center;
   }
-  .uiTabNormal .tab-content {
-    background: #ffffff;
+  .uiTabNormal .tab-pane {
     border: none;
+    display: inline;
   }
   .uiTabNormal .tab-content .listApplications .applicationListHeader {
     display: flex;
@@ -87,9 +88,9 @@
       margin: 5px auto;
   }
   .appCenter-form .form-submit {
-      background: #578dc9;
+      background: @primaryColor;
       box-shadow: none;
-      border: 1px solid #578dc9;
+      border: 1px solid @primaryColor;
       color: #fff;
       font-size: 14px;
       font-weight: 400;
@@ -150,16 +151,16 @@
     color: #5d5d5d;
   }
   .addApplicationButton:hover span {
-    color: #578dc9;
+    color: @primaryColor;
   }
-  .modal-mask {
+  .app-center-modal-mask {
     top: 0;
     left: 0;
     z-index: 9999;
     position: fixed;
     overflow-y: scroll;
 
-    .modal-content {
+    .app-center-modal-content {
       width: 420px;
       left: 35%;
       top: 0;
@@ -170,7 +171,6 @@
         font-size: 14px;
         font-weight: normal;
         margin: 0;
-        text-align: center;
       }
       .popupContent {
         .addApplication .form-container.appCenter-form , .editApplication .form-container.appCenter-form {
@@ -234,16 +234,16 @@
               height: 60px;
             }
             .uploadImage .custom-file-upload {
-              background: #578dc9;
+              background: @primaryColor;
               border-radius: 5px;
-              border: 1px solid #578dc9;
+              border: 1px solid @primaryColor;
               color: #ffffff;
               padding: 5px 6px;
               transition: 0.5s all;
             }
             .uploadImage .custom-file-upload:hover {
               background: #ffffff !important;
-              color: #578dc9;
+              color: @primaryColor;
               transition: 0.5s all;
             }
             td:nth-child(2) {
@@ -280,7 +280,7 @@
               width: 60px;
               &:after {
                 color: #7b7b7b;
-                content: "Non";
+                content: "No";
                 display: block;
                 font-size: 12px;
                 left: 0px;
@@ -312,12 +312,14 @@
             input {
               visibility: hidden;
               &:checked {
-                background: #578dc9;
+                background: @primaryColor !important;
                 text-indent: 8px;
                  + label {
+                  background: @primaryColorLight;
                   &:after {
                     color: #ffffff;
-                    content: "Oui";
+                    content: "Yes";
+                    left: -16px;
                   }
                   &:before {
                     background: #e3d8e6;
@@ -333,33 +335,6 @@
         }
         .application-buttons {
           text-align: center;
-          .form-submit {
-            padding: 10px 15px;
-          }
-          .form-submit:hover {
-            background: #ffffff !important;
-            color: #578dc9;
-            transition: 0.5s all;
-          }
-          .form-reset {
-            background: #d4d4d4;
-            border-radius: 3px;
-            border: 1px solid #cccccc;
-            box-shadow: none;
-            color: #4a4a4a;
-            font-size: 14px;
-            font-weight: 400;
-            line-height: 17px;
-            padding: 10px 15px;
-            text-align: center;
-            transition: 0.5s all;
-          }
-          .form-reset:hover {
-            background: transparent;
-            border: 1px solid #cccccc;
-            color: #4a4a4a;
-            padding: 10px 15px;
-          }
         }
       }
       .requiredField {
@@ -574,6 +549,7 @@
           }
         }
         .applicationButton {
+          box-sizing: border-box;
           a {
             background: transparent;
             border-radius: 25px;
@@ -599,7 +575,7 @@
             margin: 5px 0;
             &:hover {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
             &:hover:disabled {
               color: #797979;
@@ -607,7 +583,7 @@
             }
             &.favorite {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
             &.favorite:hover {
               color: #797979;
@@ -615,7 +591,7 @@
             }
             &.favorite:hover:disabled {
               color: #ffffff;
-              background: #578dc9;
+              background: @primaryColor;
             }
           }
         }
@@ -629,8 +605,8 @@
       padding-top: 30px;
     }
     .appPaginator button {
-      background: #578dc9;
-      border: 1px solid #578dc9;
+      background: @primaryColor;
+      border: 1px solid @primaryColor;
       color: #fff;
       padding: 5px 10px;
       border-radius: 5px;
@@ -638,7 +614,7 @@
     }
     .appPaginator button:hover {
       background: transparent;
-      color: #578dc9;
+      color: @primaryColor;
     }
     .appSearch {
       text-align: right;
@@ -863,7 +839,7 @@
 .appLauncherDrawerTitle {
   font-size: 18px;
   font-weight: bold;
-  color: #4D5466;
+  color: @darkGrey;
 }
 
 .appLauncherList {
@@ -983,20 +959,24 @@
 /*----------------icons-------------------*/
 
 #appLauncher {
-  .uiApplicationIcon {
-    font-family: 'PLF-FONT-ICONS';
-    font-size: 20px!important;
-    font-style: normal;
-    padding: 0 5px;
-    color: @toolbarLightIconColor !important;
-  
-    &:before {
-      content: "\ea95";
+  .uiApplicationIconButton {
+    background-color: transparent !important;
+
+    .uiApplicationIcon {
+      font-family: 'PLF-FONT-ICONS';
+      font-size: 20px!important;
+      font-style: normal;
+      padding: 0 5px;
+      color: @toolbarLightIconColor !important;
+    
+      &:before {
+        content: "\ea95";
+      }
     }
   }
 }
 .uiCloseIcon {
-  color: #a8b3c5;
+  color: @greyColorLighten1;
   font-size: 20px;
   font-style: normal;
   cursor: pointer;

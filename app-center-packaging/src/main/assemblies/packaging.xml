@@ -30,7 +30,7 @@
     <!-- War -->
     <dependencySet>
       <useProjectArtifact>false</useProjectArtifact>
-      <outputDirectory>/webapps</outputDirectory>
+      <outputDirectory>/</outputDirectory>
       <includes>
         <include>${project.groupId}:app-center-webapps:war</include>
       </includes>
@@ -40,7 +40,7 @@
     <!-- Libraries -->
     <dependencySet>
       <useProjectArtifact>false</useProjectArtifact>
-      <outputDirectory>/lib</outputDirectory>
+      <outputDirectory>/</outputDirectory>
       <includes>
         <include>${project.groupId}:app-center-services:jar</include>
       </includes>
