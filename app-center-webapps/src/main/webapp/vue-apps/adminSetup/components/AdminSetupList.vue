@@ -66,7 +66,8 @@
           <h5
             v-for="permission in application.permissions"
             :key="permission">
-            {{ permission }}
+            <span v-if="permission==='any'">*</span>
+            <span v-else> {{ permission }}</span>
           </h5>
         </td>
         <td class="d-none d-sm-table-cell">
@@ -580,7 +581,11 @@ export default {
             return component.renderMenuItem(item, escape);
           },
           renderItem(item) {
-            return `<div class="item">${item.text}</div>`;
+            if (item.text === 'any') {
+              return `<div class="item">*</div>`;
+            } else {
+              return `<div class="item">${item.text}</div>`;
+            }
           },
           onItemAdd(item) {
             component.addSuggestedItem(item);
