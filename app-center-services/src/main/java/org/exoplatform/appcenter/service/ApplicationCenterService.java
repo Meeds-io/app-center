@@ -151,7 +151,7 @@ public class ApplicationCenterService implements Startable {
         List<String> permissions = application.getPermissions();
         if (permissions == null || permissions.isEmpty()) {
           // Set default permission if empty
-          application.setPermissions(this.defaultAdministratorPermission);
+          application.setPermissions(IdentityConstants.ANY);
         }
 
         String imagePath = applicationPlugin.getImagePath();
