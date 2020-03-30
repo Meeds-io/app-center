@@ -10,8 +10,7 @@
 	with this software; if not, write to the Free Software Foundation, Inc., 
 	51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA, or see the FSF site: 
 	http://www.fsf.org. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>addons-parent-pom</artifactId>
@@ -20,7 +19,7 @@
 	</parent>
 	<groupId>org.exoplatform.addons.app-center</groupId>
 	<artifactId>app-center</artifactId>
-	<version>2.0.x-SNAPSHOT</version>
+	<version>2.0.0-M25</version>
 	<packaging>pom</packaging>
 	<name>Add-on:: Application Center - Parent POM</name>
 	<description>Application Center Addon</description>
@@ -33,7 +32,7 @@
     <connection>scm:git:git://github.com/exoplatform/app-center.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/exoplatform/app-center.git</developerConnection>
     <url>https://github.com/exoplatform/app-center</url>
-    <tag>HEAD</tag>
+    <tag>2.0.0-M25</tag>
   </scm>
 	<properties>
 		<org.exoplatform.social.version>6.0.0-M25</org.exoplatform.social.version>
