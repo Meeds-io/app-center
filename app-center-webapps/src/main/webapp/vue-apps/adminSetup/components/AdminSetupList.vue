@@ -379,7 +379,8 @@ export default {
     getApplicationsList() {
       const offset = this.currentPage - 1;
       return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.keyword}`, {
-        method: "GET"
+        method: "GET",
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -473,7 +474,8 @@ export default {
 
     deleteApplication() {
       return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
-          method: "DELETE"
+          method: "DELETE",
+          credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -639,7 +641,7 @@ export default {
       if (!query.length) {
         return callback();
       }
-      fetch(`/rest/v1/groups?q=${query}`, { credentials: "include" })
+      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: "include" })
         .then(resp => resp.json())
         .then(data => {
           const groups = [];

@@ -154,7 +154,8 @@ export default {
   methods: {
     getAppGeneralSettings() {
       return fetch("/portal/rest/app-center/settings", {
-        method: "GET"
+        method: "GET",
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -172,7 +173,8 @@ export default {
     setMaxFavoriteApps() {
       this.$nextTick()
       .then(fetch(`/portal/rest/app-center/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
-        method: "PATCH"
+        method: "PATCH",
+        credentials: 'include',
       })).then(() => {
         this.isMaxFavoriteAppsView = true;
       });
