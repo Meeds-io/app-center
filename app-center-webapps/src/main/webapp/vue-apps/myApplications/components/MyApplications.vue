@@ -74,7 +74,8 @@ export default {
 
     getMaxFavoriteApps() {
       return fetch('/portal/rest/app-center/settings', {
-        method: "GET"
+        method: "GET",
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {

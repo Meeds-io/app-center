@@ -57,7 +57,8 @@ export default {
   methods: {
     getFavoriteApplicationsList() {
       return fetch('/portal/rest/app-center/applications/favorites', {
-        method: "GET"
+        method: "GET",
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -82,7 +83,8 @@ export default {
 
     deleteFavoriteApplication(appId) {
       return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       })
         .then(() => {
           return this.getFavoriteApplicationsList();

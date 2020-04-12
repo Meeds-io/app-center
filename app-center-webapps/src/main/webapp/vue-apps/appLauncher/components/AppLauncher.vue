@@ -98,7 +98,8 @@ export default {
     },
     getFavoriteApplicationsList() {
       return fetch("/portal/rest/app-center/applications/favorites", {
-        method: "GET"
+        method: "GET",
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {

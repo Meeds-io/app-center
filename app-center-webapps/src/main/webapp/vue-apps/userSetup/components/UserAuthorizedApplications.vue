@@ -96,7 +96,8 @@ export default {
     getAuthorizedApplicationsList() {
       const offset = this.currentPage - 1;
       return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
-        method: 'GET'
+        method: 'GET',
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
@@ -143,7 +144,8 @@ export default {
     },
     getMaxFavoriteApps() {
       return fetch('/portal/rest/app-center/settings', {
-        method: 'GET'
+        method: 'GET',
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
