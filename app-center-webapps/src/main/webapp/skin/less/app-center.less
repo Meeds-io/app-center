@@ -5,6 +5,10 @@
   min-height: 100vh;
   max-height: 100vh;
   position: fixed;
+
+  .v-navigation-drawer__content {
+    overflow-y: hidden !important;
+  }
 }
 .VuetifyApp .applicationsAdmin {
   margin: 20px;
@@ -836,74 +840,114 @@
   max-height: 58px;
 }
 
-.appLauncherDrawerTitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: @darkGrey;
+.appCenterDrawer {
+  .title {
+    .appLauncherDrawerTitle {
+      font-size: 18px;
+      font-weight: bold;
+      color: @darkGrey;
+    }
+  }
+
+  .appHeaderBorder {
+    border-color: #f0f4fe!important;
+  }
+
+  .content {
+    max-height: 84vh;
+    overflow-y: auto;
+
+    .appLauncherList {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+
+    .appLauncherItem {
+      flex: 0 1 33%;
+      a {
+        display: block;
+        padding: 5px;
+
+        &:hover .appLauncherImage {
+          box-shadow: -3px 3px 6px 0px #ececec;
+          transition: all .3s;
+        }
+      }
+    }
+
+    .appLauncherImage {
+      width: 65px;
+      height: 65px;
+      display: block;
+      margin: 8px auto;
+      border: 1px solid #f0f4fe!important;
+      border-radius: 5px;
+      padding: 10px;
+    }
+
+    .appLauncherTitle {
+      display: block;
+      text-align: center;
+      color: #555759;
+      font-size: 16px;
+    }
+  }
+
+  .drawerActions {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    border-top: 1px solid #f0f4fe!important;
+    background: white;
+
+    .seeAllApplicationsBtn {
+      border: 1px solid #1976d27a!important;
+      padding: 8px 15px;
+      border-radius: 3px!important;
+      cursor: pointer!important;
+      letter-spacing: .5px;
+
+      &:hover {
+        background-color: #1976d21c!important;
+      }
+    }
+  }
+  
 }
 
-.appLauncherList {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  padding: 20px 0;
-}
-
-.appLauncherItem {
-  flex: 0 1 33%;
-  a {
-    display: block;
-    padding: 5px;
-
-    &:hover .appLauncherImage {
-      box-shadow: -3px 3px 6px 0px #ececec;
-      transition: all .3s;
+@media screen and (max-height: 748px) {
+  .appCenterDrawer {
+    .content {
+      max-height: 83vh;
     }
   }
 }
-
-.appLauncherImage {
-  width: 65px;
-  height: 65px;
-  display: block;
-  margin: 8px auto;
-  border: 1px solid #f0f4fe!important;
-  border-radius: 5px;
-  padding: 10px;
-}
-
-.appLauncherTitle {
-  display: block;
-  text-align: center;
-  color: #555759;
-  font-size: 16px;
-}
-
-.appHeaderBorder {
-  border-color: #f0f4fe!important;
-}
-
-.seeAllApplicationsBtn {
-  border: 1px solid #1976d27a!important;
-  padding: 8px 15px;
-  border-radius: 3px!important;
-  cursor: pointer!important;
-  letter-spacing: .5px;
-  
-  &:hover {
-    background-color: #1976d21c!important;
+@media screen and (max-height: 708px) {
+  .appCenterDrawer {
+    .content {
+      max-height: 82vh;
+    }
   }
 }
-
-.seeAllApplications {
-  padding-top: 15px;
-  padding-bottom: 15px;
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  width: 100%;
-  border-top: 1px solid #f0f4fe!important;
-  background: white;
+@media screen and (max-height: 668px) {
+  .appCenterDrawer {
+    .content {
+      max-height: 81vh;
+    }
+  }
+}
+@media screen and (max-height: 628px) {
+  .appCenterDrawer {
+    .content {
+      max-height: 80vh;
+    }
+  }
 }
 
 /*---------------------tooltip----------------*/
