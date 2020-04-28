@@ -46,11 +46,12 @@
           </div>
         </div>
       </v-row>
-      <v-row class="seeAllApplications mx-0">
+      
+      <v-row class="seeAllApplications mx-0 py-3">
         <v-card
           flat
           tile
-          class="d-flex flex justify-end mx-2">
+          class="d-flex flex justify-center mx-2">
           <a
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             :href="appCenterUserSetupLink">{{ $t("appCenter.appLauncher.drawer.viewAll") }}</a>
