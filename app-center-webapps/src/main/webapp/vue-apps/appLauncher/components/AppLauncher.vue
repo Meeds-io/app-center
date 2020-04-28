@@ -50,14 +50,18 @@
         </v-layout>
       </div>
       
-      <v-row class="drawerActions mx-0 py-3">
+      <v-row class="drawerActions mx-0 px-3">
         <v-card
           flat
           tile
           class="d-flex flex justify-end mx-2">
-          <a
+          <v-btn
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
-            :href="appCenterUserSetupLink">{{ $t("appCenter.appLauncher.drawer.viewAll") }}</a>
+            outlined
+            small
+            @click="navigateTo('appCenterUserSetup/')">
+            {{ $t("appCenter.appLauncher.drawer.viewAll") }}
+          </v-btn>
         </v-card>
       </v-row>
     </v-navigation-drawer>
@@ -121,7 +125,10 @@ export default {
           });
           return this.favoriteApplicationsList;
         });
-    }
+    },
+    navigateTo(link) {
+      location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
+    },
   }
 };
 </script>
