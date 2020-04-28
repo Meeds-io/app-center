@@ -16,6 +16,7 @@
  */
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader')
+const ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
     context: path.resolve(__dirname, '.'),
@@ -49,6 +50,26 @@ module.exports = {
                     'vue-loader',
                     'eslint-loader',
                 ]
+            },
+            {
+                test: /\.less$/,
+                use: ExtractTextWebpackPlugin.extract({
+                    fallback: 'vue-style-loader',
+                    use: [
+                        {
+                            loader: 'css-loader',
+                            options: {
+                                sourceMap: true
+                            }
+                        },
+                        {
+                            loader: 'less-loader',
+                            options: {
+                                sourceMap: true
+                            }
+                        }
+                    ]
+                })
             }
         ]
     },
@@ -57,6 +78,8 @@ module.exports = {
         vuetify: 'Vuetify',
     },
     plugins: [
+        // we use ExtractTextWebpackPlugin to extract the css code on a css file
+        new ExtractTextWebpackPlugin('skin/css/app-center.css'),
         // make sure to include the plugin for the magic
         new VueLoaderPlugin()
     ],
