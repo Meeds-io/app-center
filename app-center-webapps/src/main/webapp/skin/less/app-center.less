@@ -14,7 +14,28 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-@import "./variables.less";
+// Primary Color
+@primaryColorDefault: #578dc9;
+@primaryColor: var(--allPagesPrimaryColor, @primaryColorDefault);
+@primaryColorLight: var(--allPagesPrimaryColorLight, lighten(@primaryColorDefault, 10%));
+
+// Other base colors
+@darkGrey: var(--allPagesDarkGrey, #4d5466);
+@greyColorLighten1Default: #a8b3c5;
+@greyColorLighten1: var(--allPagesGreyColorLighten1, @greyColorLighten1Default);
+@toolbarLightIconColor: var(--allPagesToolbarLightIconColor, @greyColorLighten1Default);
+// Background color
+@baseBackgroundDefault: #ffffff;
+@textColorDefault: #333333;
+@darkYellowDefault: #ffb441;
+@alertInfoColor: var(--allPagesAlertInfoColor, #193e67);
+@errorColor:        #bc4343;
+// Background color
+@baseBackgroundDefault: #ffffff;
+@baseBackground: var(--allPagesBaseBackground, @baseBackgroundDefault);
+@greyColorDefault: #e1e8ee;
+@greyColor: var(--allPagesGreyColor, @greyColorDefault);
+@borderColor: var(--allPagesBorderColor, @greyColorDefault);
 
 /* This file contains CSS for admin setup portlet */
 .applicationsAdmin {

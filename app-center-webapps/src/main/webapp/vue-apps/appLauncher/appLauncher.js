@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import AppLauncherApp from './components/AppLauncher.vue';
+import '../../skin/less/app-center.less';
 
 Vue.use(Vuetify);
 const vuetify = new Vuetify({
