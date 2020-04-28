@@ -17,7 +17,7 @@
       max-width="100vw"
       max-height="100vh"
       class="appCenterDrawer">
-      <v-row class="mx-0">
+      <v-row class="mx-0 title">
         <v-list-item class="appLauncherDrawerHeader">
           <v-list-item-content>
             <span class="appLauncherDrawerTitle">{{
@@ -31,23 +31,26 @@
           </v-list-item-action>
         </v-list-item>
       </v-row>
+      
       <v-divider :inset="inset" class="my-0 appHeaderBorder" />
 
-      <v-row class="mx-0 px-3">
-        <div class="appLauncherList">
-          <div
-            v-for="(application, index) in favoriteApplicationsList"
-            :key="index"
-            class="appLauncherItem">
-            <a :target="application.target" :href="application.computedUrl">
-              <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-              <span class="appLauncherTitle">{{ application.title }}</span>
-            </a>
+      <div class="content">
+        <v-layout class="mx-0 px-3">
+          <div class="appLauncherList">
+            <div
+              v-for="(application, index) in favoriteApplicationsList"
+              :key="index"
+              class="appLauncherItem">
+              <a :target="application.target" :href="application.computedUrl">
+                <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                <span class="appLauncherTitle">{{ application.title }}</span>
+              </a>
+            </div>
           </div>
-        </div>
-      </v-row>
+        </v-layout>
+      </div>
       
-      <v-row class="seeAllApplications mx-0 py-3">
+      <v-row class="drawerActions mx-0 py-3">
         <v-card
           flat
           tile
