@@ -41,7 +41,7 @@
               v-for="(application, index) in favoriteApplicationsList"
               :key="index"
               class="appLauncherItem">
-              <a :href="application.computedUrl" target="_blank">
+              <a :target="application.target" :href="application.computedUrl">
                 <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
                 <span class="appLauncherTitle">{{ application.title }}</span>
               </a>
@@ -117,6 +117,7 @@ export default {
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           return this.favoriteApplicationsList;
         });
