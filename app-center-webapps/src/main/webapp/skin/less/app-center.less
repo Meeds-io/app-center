@@ -1,4 +1,13 @@
-@import "./variables.less";
+// Primary Color
+@primaryColorDefault: #578dc9;
+@primaryColor: var(--allPagesPrimaryColor, @primaryColorDefault);
+@primaryColorLight: var(--allPagesPrimaryColorLight, lighten(@primaryColorDefault, 10%));
+
+// Other base colors
+@darkGrey: var(--allPagesDarkGrey, #4d5466);
+@greyColorLighten1Default: #a8b3c5;
+@greyColorLighten1: var(--allPagesGreyColorLighten1, @greyColorLighten1Default);
+@toolbarLightIconColor: var(--allPagesToolbarLightIconColor, @greyColorLighten1Default);
 
 /* This file contains CSS for admin setup portlet */
 .VuetifyApp .appCenterDrawer {
