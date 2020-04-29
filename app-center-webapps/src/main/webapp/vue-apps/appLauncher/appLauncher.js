@@ -1,3 +1,4 @@
+import '../../skin/less/app-center.less';
 import AppLauncherApp from "./components/AppLauncher.vue";
 
 Vue.use(Vuetify);
