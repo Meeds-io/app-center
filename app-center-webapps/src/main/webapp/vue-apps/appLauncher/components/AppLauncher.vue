@@ -117,7 +117,18 @@ export default {
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = data.applications;
+          // sort favorite applications alphabetical by default
+          this.favoriteApplicationsList = data.applications.sort((a, b) => {
+            if (a.title < b.title) {
+              return -1;
+            }
+            
+            if (a.title > b.title) {
+              return 1;
+            }
+            
+            return 0;
+          });
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
