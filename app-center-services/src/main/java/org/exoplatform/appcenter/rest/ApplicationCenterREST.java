@@ -33,11 +33,13 @@ public class ApplicationCenterREST implements ResourceContainer {
   private static final String      FAVORITES_APPLICATIONS_ENDPOINT  = "applications/favorites";
 
   private static final String      AUTHORIZED_APPLICATIONS_ENDPOINT = "applications/authorized";
-
+  
+  private static final String      LOG_OPEN_DRAWER_ENDPOINT  = "applications/logOpenDrawer";
+  
   private static final String      ADMINISTRATORS_GROUP             = "/platform/administrators";
-
+  
   private static final Log         LOG                              = ExoLogger.getLogger(ApplicationCenterREST.class);
-
+  
   private ApplicationCenterService appCenterService;
 
   private final String             baseURI;
@@ -134,6 +136,29 @@ public class ApplicationCenterREST implements ResourceContainer {
     try {
       ApplicationList applicationList = appCenterService.getFavoriteApplicationsList(getCurrentUserName());
       return Response.ok(applicationList).build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+  
+  @GET
+  @Path(LOG_OPEN_DRAWER_ENDPOINT)
+  @RolesAllowed("users")
+  @ApiOperation(value = "Log that the currently authenticated user has openend the favorites drawer",
+      httpMethod = "GET", response = Response.class, notes = "empty response")
+  @ApiResponses(value = {
+      @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response logOpenDrawer() {
+    try {
+      LOG.info("service={} operation={} parameters=\"user:{}\" status=ok "
+                   + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_OPEN_FAVORITE_DRAWER,
+               getCurrentUserName(),
+               "0");
+      return Response.ok().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);
       return Response.serverError().build();
