@@ -102,6 +102,14 @@ export default {
   },
   methods: {
     toggleDrawer() {
+      if (!this.appLauncherDrawer) {
+        //only when opening the appLauncherDrawer
+        fetch("/portal/rest/app-center/applications/logOpenDrawer", {
+          method: "GET",
+          credentials: 'include',
+        });
+      }
+
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
     getFavoriteApplicationsList() {

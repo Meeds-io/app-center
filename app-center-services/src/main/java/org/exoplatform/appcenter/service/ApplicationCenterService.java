@@ -72,7 +72,12 @@ public class ApplicationCenterService implements Startable {
   private long                           defaultMaxFavoriteApps            = 0;
 
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
-
+  
+  
+  public static String LOG_SERVICE_NAME          = "application-center";
+  
+  public static String LOG_OPEN_FAVORITE_DRAWER    = "open-favorite-drawer";
+  
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
