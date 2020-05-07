@@ -874,15 +874,20 @@
       overflow-y: auto;
     }
 
-    .appLauncherItem {
+    .appLauncherItemContainer {
+      max-height: 137px;
+      overflow-y: hidden;
       flex: 0 1 33%;
-      a {
-        display: block;
-        padding: 5px;
+      .appLauncherItem {
+        transition: all .3s;        
+        a {
+          display: block;
+          padding: 15px;
 
-        &:hover .appLauncherImage {
-          box-shadow: -3px 3px 6px 0px #ececec;
-          transition: all .3s;
+          &:hover .appLauncherImage {
+            box-shadow: -3px 3px 6px 0px #ececec;
+            transition: all .3s;
+          }
         }
       }
     }
@@ -894,7 +899,6 @@
       margin: 8px auto;
       border: 1px solid #f0f4fe;
       border-radius: 5px;
-      padding: 10px;
     }
 
     .appLauncherTitle {
