@@ -168,7 +168,6 @@ export default {
     onDragStart_handler(event) {
       this.draggedElementIndex = parseInt(event.target.id.substring(4, event.target.id.length));
       event.dataTransfer.setData('text/plain', event.target.id);
-      console.log('******* Drag Start: Dragged elements: ', event.target);
     },
     onDragOver_handler(event) {
       event.preventDefault();      
@@ -184,10 +183,7 @@ export default {
 
         // displace moved element
         const appContainer = document.getElementById(`Pos-${id.substring(4, id.length)}`);
-        // console.log('##### ID: ', `Pos-${id.substring(4, id.length)}`);
-        // console.log('##### App Container: ', appContainer);
         const draggableElement = appContainer.firstElementChild;
-        // console.log('##### Moved element: ', draggableElement);
         const dropZone = event.target;
         draggableElement.setAttribute('id', `App-${index}`);
         dropZone.appendChild(draggableElement);
@@ -202,10 +198,6 @@ export default {
         if (this.draggedElementIndex > index) {
           // shift elements to the right
           for (let i = this.draggedElementIndex; i > index; i--) {
-            // console.log(`*** onDragEnter: Element(${i - 1}) => Position(${i})`);
-            // const element = i - 1 === this.draggedElementIndex ? 
-            //     document.getElementsByClassName('appLauncherItemContainer')[i-1].getElementsByClassName('appLauncherItem')[1] :
-            //     document.getElementById(`Pos-${i - 1}`).firstElementChild;
             const element = document.getElementById(`Pos-${i - 1}`).firstElementChild;
             // update shifted element id
             element.setAttribute('id', `App-${i}`);
@@ -217,7 +209,6 @@ export default {
         if (this.draggedElementIndex < index) {
           // shift elements to the left
           for (let i = this.draggedElementIndex; i < index; i++) {
-            // console.log(`*** onDragEnter: Element(${i + 1}) => Position(${i})`);
             const element = document.getElementById(`Pos-${i + 1}`).firstElementChild;
             // update shifted element id
             element.setAttribute('id', `App-${i}`);
@@ -234,14 +225,10 @@ export default {
         if (this.draggedElementIndex > index) {
           // unshift elements to the right
           for (let i = index; i < this.draggedElementIndex; i++) {
-            // console.log(`******* onDragLeave: Element(${i + 1}) => Position(${i})`);
-            // const element = document.getElementById(`Pos-${i + 1}`).firstElementChild;
             const element = i + 1 === this.draggedElementIndex ?
                 document.getElementsByClassName('appLauncherItemContainer')[i+1].getElementsByClassName('appLauncherItem')[1] :
                 document.getElementById(`Pos-${i + 1}`).firstElementChild;
             // update shifted element id
-            // console.log('Element dragged: ', element);
-            // console.log(`*Element dragged current position*: ${i+1}`);
             if (i + 1 !== this.draggedElementIndex) {
               element.setAttribute('id', `App-${i}`);
             }
@@ -252,14 +239,10 @@ export default {
 
         if (this.draggedElementIndex < index) {
           for (let i = index; i > this.draggedElementIndex; i--) {
-            console.log(`******* onDragLeave: Element(${i - 1}) => Position(${i})`);
-            // const element = document.getElementById(`Pos-${i - 1}`).firstElementChild;
             const element = i - 1 === this.draggedElementIndex ?
                 document.getElementsByClassName('appLauncherItemContainer')[i-1].getElementsByClassName('appLauncherItem')[1] :
                 document.getElementById(`Pos-${i - 1}`).firstElementChild;
             // update shifted element id
-            // console.log('Element dragged: ', element);
-            // console.log(`*Element dragged current position*: ${i-1}`);
             if (i - 1 !== this.draggedElementIndex) {
               element.setAttribute('id', `App-${i}`);
             }
@@ -270,14 +253,9 @@ export default {
       }
     },
     onDragEnd_handler(event) {
-      console.log('####### Drag End #######');
-      console.log('Dragged Element: ', event.target);
     },
     getAppContainerByIndex(index) {
       return document.getElementById(`Pos-${index}`);
-    },
-    getAppElementByIndex(index) {
-      return document.getElementById(`App-${index}`);
     },
   }
 };
