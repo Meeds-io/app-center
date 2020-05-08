@@ -168,6 +168,7 @@ export default {
     onDragStart_handler(event) {
       this.draggedElementIndex = parseInt(event.target.id.substring(4, event.target.id.length));
       event.dataTransfer.setData('text/plain', event.target.id);
+      event.target.setAttribute('class', 'appLauncherItem dragged');
     },
     onDragOver_handler(event) {
       event.preventDefault();      
@@ -253,6 +254,7 @@ export default {
       }
     },
     onDragEnd_handler(event) {
+      event.target.setAttribute('class', 'appLauncherItem');
     },
     getAppContainerByIndex(index) {
       return document.getElementById(`Pos-${index}`);
