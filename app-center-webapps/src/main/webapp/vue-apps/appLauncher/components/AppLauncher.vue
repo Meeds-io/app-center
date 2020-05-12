@@ -36,30 +36,50 @@
 
       <div class="content">
         <v-layout class="mx-0 px-3">
-          <div class="appLauncherList">
-            <div
-              v-for="(application, index) in favoriteApplicationsList"
-              :key="index"
-              :id="'Pos-' + index"
-              class="appLauncherItemContainer"
-              v-on:dragover="onDragOver_handler($event)"
-              v-on:dragenter="onDragEnter_handler($event, index)"
-              v-on:dragleave="onDragLeave_handler($event, index)"
-              v-on:drop="onDrop_handler($event, index)">
+          <div>
+            <div v-if="loading">
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+            </div>
+            <div v-else class="appLauncherList">
               <div
-                :id="'App-' + index"
-                class="appLauncherItem"
-                draggable="true"
-                v-on:dragstart="onDragStart_handler($event)"
-                v-on:dragend="onDragEnd_handler($event)">
-                <a 
-                  :target="application.target"
-                  :href="application.computedUrl"
-                  :id="application.id"
-                  draggable="false">
-                  <img v-if="application.id" class="appLauncherImage" draggable="false" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                  <span class="appLauncherTitle" draggable="false">{{ application.title }}</span>
-                </a>
+                v-for="(application, index) in favoriteApplicationsList"
+                :key="index"
+                :id="'Pos-' + index"
+                class="appLauncherItemContainer"
+                v-on:dragover="onDragOver_handler($event)"
+                v-on:dragenter="onDragEnter_handler($event, index)"
+                v-on:dragleave="onDragLeave_handler($event, index)"
+                v-on:drop="onDrop_handler($event, index)">
+                <div
+                  :id="'App-' + index"
+                  class="appLauncherItem"
+                  draggable="true"
+                  v-on:dragstart="onDragStart_handler($event)"
+                  v-on:dragend="onDragEnd_handler($event)">
+                  <a
+                    :target="application.target"
+                    :href="application.computedUrl"
+                    :id="application.id"
+                    draggable="false">
+                    <img v-if="application.id" class="appLauncherImage" draggable="false" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    <span class="appLauncherTitle" draggable="false">{{ application.title }}</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -91,6 +111,7 @@ export default {
       favoriteApplicationsList: [],
       appCenterUserSetupLink: "",
       draggedElementIndex: null,
+      loading: true,
     };
   },
   watch: {
@@ -109,7 +130,6 @@ export default {
     },
   },
   created() {
-    this.getFavoriteApplicationsList();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -120,6 +140,7 @@ export default {
   methods: {
     toggleDrawer() {
       if (!this.appLauncherDrawer) {
+        this.getFavoriteApplicationsList();
         //only when opening the appLauncherDrawer
         fetch("/portal/rest/app-center/applications/logOpenDrawer", {
           method: "GET",
@@ -160,7 +181,7 @@ export default {
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           return this.favoriteApplicationsList;
-        });
+        }).finally(() => this.loading = false);
     },
     navigateTo(link) {
       location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
