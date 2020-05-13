@@ -35,34 +35,26 @@
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-layout class="mx-0 px-3">
-          <div class="appLauncherList">
+        <v-layout class="mx-0 px-3">          
+          <draggable v-model="favoriteApplicationsList" @start="drag=true" @end="drag=false" class="appLauncherList">
             <div
               v-for="(application, index) in favoriteApplicationsList"
               :key="index"
               :id="'Pos-' + index"
-              class="appLauncherItemContainer"
-              v-on:dragover="onDragOver_handler($event)"
-              v-on:dragenter="onDragEnter_handler($event, index)"
-              v-on:dragleave="onDragLeave_handler($event, index)"
-              v-on:drop="onDrop_handler($event, index)">
+              class="appLauncherItemContainer">
               <div
                 :id="'App-' + index"
-                class="appLauncherItem"
-                draggable="true"
-                v-on:dragstart="onDragStart_handler($event)"
-                v-on:dragend="onDragEnd_handler($event)">
-                <a 
+                class="appLauncherItem">
+                <a
                   :target="application.target"
                   :href="application.computedUrl"
-                  :id="application.id"
-                  draggable="false">
-                  <img v-if="application.id" class="appLauncherImage" draggable="false" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                  <span class="appLauncherTitle" draggable="false">{{ application.title }}</span>
+                  :id="application.id">
+                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <span class="appLauncherTitle" >{{ application.title }}</span>
                 </a>
               </div>
             </div>
-          </div>
+          </draggable>
         </v-layout>
       </div>
       
@@ -165,100 +157,6 @@ export default {
     },
     navigateTo(link) {
       location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
-    },
-    onDragStart_handler(event) {
-      this.draggedElementIndex = parseInt(event.target.id.substring(4, event.target.id.length));
-      event.dataTransfer.setData('text/plain', event.target.id);
-      event.target.setAttribute('class', 'appLauncherItem dragged');
-    },
-    onDragOver_handler(event) {
-      event.preventDefault();      
-    },
-    onDrop_handler(event, index) {
-      const id = event.dataTransfer.getData('text');
-      const target = event.target;
-      if (id.startsWith('App') 
-          && this.draggedElementIndex !== index
-          && target.getAttribute('class')
-          && target.getAttribute('class').startsWith('appLauncherItemContainer') 
-          && !target.hasChildNodes()) {
-
-        // displace moved element
-        const appContainer = document.getElementById(`Pos-${id.substring(4, id.length)}`);
-        const draggableElement = appContainer.firstElementChild;
-        const dropZone = event.target;
-        draggableElement.setAttribute('id', `App-${index}`);
-        dropZone.appendChild(draggableElement);
-
-        event.dataTransfer.clearData();
-        this.draggedElementIndex = null;
-      }
-    },
-    onDragEnter_handler(event, index) {
-      event.preventDefault();
-      if (event.target.tagName === 'IMG' || event.target.tagName === 'SPAN') {
-        if (this.draggedElementIndex > index) {
-          // shift elements to the right
-          for (let i = this.draggedElementIndex; i > index; i--) {
-            const element = document.getElementById(`Pos-${i - 1}`).firstElementChild;
-            // update shifted element id
-            element.setAttribute('id', `App-${i}`);
-            const appContainer = this.getAppContainerByIndex(i);
-            appContainer.appendChild(element);
-          }
-        }
-
-        if (this.draggedElementIndex < index) {
-          // shift elements to the left
-          for (let i = this.draggedElementIndex; i < index; i++) {
-            const element = document.getElementById(`Pos-${i + 1}`).firstElementChild;
-            // update shifted element id
-            element.setAttribute('id', `App-${i}`);
-            const appContainer = this.getAppContainerByIndex(i);
-            appContainer.appendChild(element);
-          }
-        }
-      }
-    },
-    onDragLeave_handler(event, index) {
-      event.preventDefault();
-      if (event.target.getAttribute('id') && event.target.getAttribute('id').startsWith('Pos')) {
-
-        if (this.draggedElementIndex > index) {
-          // unshift elements to the right
-          for (let i = index; i < this.draggedElementIndex; i++) {
-            const element = i + 1 === this.draggedElementIndex ?
-                document.getElementsByClassName('appLauncherItemContainer')[i+1].getElementsByClassName('appLauncherItem')[1] :
-                document.getElementById(`Pos-${i + 1}`).firstElementChild;
-            // update shifted element id
-            if (i + 1 !== this.draggedElementIndex) {
-              element.setAttribute('id', `App-${i}`);
-            }
-            const appContainer = this.getAppContainerByIndex(i);            
-            appContainer.appendChild(element);
-          }
-        }
-
-        if (this.draggedElementIndex < index) {
-          for (let i = index; i > this.draggedElementIndex; i--) {
-            const element = i - 1 === this.draggedElementIndex ?
-                document.getElementsByClassName('appLauncherItemContainer')[i-1].getElementsByClassName('appLauncherItem')[1] :
-                document.getElementById(`Pos-${i - 1}`).firstElementChild;
-            // update shifted element id
-            if (i - 1 !== this.draggedElementIndex) {
-              element.setAttribute('id', `App-${i}`);
-            }
-            const appContainer = this.getAppContainerByIndex(i);
-            appContainer.appendChild(element);
-          }
-        }
-      }
-    },
-    onDragEnd_handler(event) {
-      event.target.setAttribute('class', 'appLauncherItem');
-    },
-    getAppContainerByIndex(index) {
-      return document.getElementById(`Pos-${index}`);
     },
   }
 };
