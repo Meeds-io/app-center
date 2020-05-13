@@ -32,19 +32,47 @@
         </v-list-item>
       </v-row>
       
-      <v-divider :inset="inset" class="my-0 appHeaderBorder" />
+      <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
         <v-layout class="mx-0 px-3">
-          <div class="appLauncherList">
-            <div
-              v-for="(application, index) in favoriteApplicationsList"
-              :key="index"
-              class="appLauncherItem">
-              <a :target="application.target" :href="application.computedUrl">
-                <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                <span class="appLauncherTitle">{{ application.title }}</span>
-              </a>
+          <div>
+            <div v-if="loading">
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="table-cell@3">
+              </v-skeleton-loader>
+            </div>
+            <div v-else class="appLauncherList">
+              <div
+                v-for="(application, index) in favoriteApplicationsList"
+                :key="index"
+                :id="'Pos-' + index"
+                class="appLauncherItemContainer">
+                <div
+                  :id="'App-' + index"
+                  class="appLauncherItem">
+                  <a
+                    :target="application.target"
+                    :href="application.computedUrl"
+                    :id="application.id">
+                    <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    <span class="appLauncherTitle">{{ application.title }}</span>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </v-layout>
@@ -73,7 +101,8 @@ export default {
     return {
       appLauncherDrawer: null,
       favoriteApplicationsList: [],
-      appCenterUserSetupLink: ""
+      appCenterUserSetupLink: "",
+      loading: true,
     };
   },
   watch: {
@@ -92,7 +121,6 @@ export default {
     },
   },
   created() {
-    this.getFavoriteApplicationsList();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -103,6 +131,7 @@ export default {
   methods: {
     toggleDrawer() {
       if (!this.appLauncherDrawer) {
+        this.getFavoriteApplicationsList();
         //only when opening the appLauncherDrawer
         fetch("/portal/rest/app-center/applications/logOpenDrawer", {
           method: "GET",
@@ -143,7 +172,7 @@ export default {
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           return this.favoriteApplicationsList;
-        });
+        }).finally(() => this.loading = false);
     },
     navigateTo(link) {
       location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
