@@ -46,6 +46,31 @@
   </portlet>
 
   <module>
+    <name>sortablejs</name>
+    <script>
+      <adapter>
+        (function() {
+        <include>/javascript/Sortable.min.js</include>
+        })();
+      </adapter>
+    </script>
+  </module>
+
+  <module>
+    <name>vueDraggable</name>
+    <script>
+      <adapter>
+        (function() {
+        <include>/javascript/vueDraggable.min.js</include>
+        })();
+      </adapter>
+    </script>
+    <depends>
+      <module>sortablejs</module>
+    </depends>
+  </module>
+
+  <module>
     <name>adminSetupPortletBundle</name>
     <script>
       <minify>false</minify>
@@ -119,6 +144,12 @@
     </depends>
     <depends>
       <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>sortablejs</module>
+    </depends>
+    <depends>
+      <module>vueDraggable</module>
     </depends>
     <depends>
       <module>eXoVueI18n</module>
