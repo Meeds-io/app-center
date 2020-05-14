@@ -5,7 +5,8 @@
         class="actionIcon addApplicationButton tooltipContent"
         data-placement="bottom"
         data-container="body"
-        @click.stop="showAddApplicationModal()">
+        @click.stop="showAddApplicationModal()"
+      >
         <i class="uiIconPlus uiIconLightGray"></i>
         <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
         <span class="tooltiptext">{{
@@ -19,7 +20,8 @@
         @input="
           currentPage = 1;
           getApplicationsList();
-        ">
+        "
+      >
     </div>
 
     <table class="uiGrid table table-hover table-striped">
@@ -65,7 +67,8 @@
         <td class="d-none d-md-table-cell">
           <h5
             v-for="permission in application.permissions"
-            :key="permission">
+            :key="permission"
+          >
             <span v-if="permission==='any'">*</span>
             <span v-else> {{ permission }}</span>
           </h5>
@@ -74,20 +77,23 @@
           <input
             v-model="application.byDefault"
             disabled="disabled"
-            type="checkbox">
+            type="checkbox"
+          >
         </td>
         <td class="d-none d-sm-table-cell">
           <input
             v-model="application.active"
             disabled="disabled"
-            type="checkbox">
+            type="checkbox"
+          >
         </td>
         <td>
           <a
             class="actionIcon tooltipContent"
             data-placement="bottom"
             data-container="body"
-            @click.stop="showEditApplicationModal(application)">
+            @click.stop="showEditApplicationModal(application)"
+          >
             <i class="uiIconEdit uiIconLightGray"></i>
             <span class="tooltiptext tooltiptextIcon">{{
               $t("appCenter.adminSetupForm.edit")
@@ -99,7 +105,8 @@
             class="actionIcon tooltipContent"
             data-placement="bottom"
             data-container="body"
-            @click.stop="toDeleteApplicationModal(application)">
+            @click.stop="toDeleteApplicationModal(application)"
+          >
             <i class="uiIconRemove uiIconLightGray"></i>
             <span class="tooltiptext tooltiptextIcon">{{
               $t("appCenter.adminSetupList.remove")
@@ -114,13 +121,15 @@
     </div>
     <div
       v-if="totalPages > 1"
-      class="applicationsPaginator">
+      class="applicationsPaginator"
+    >
       <paginator
         :current-page="currentPage"
         :per-page="pageSize"
         :total="totalApplications"
         :total-pages="totalPages"
-        @pagechanged="onPageChange" />
+        @pagechanged="onPageChange"
+      />
     </div>
 
     <transition name="fade">
@@ -131,7 +140,8 @@
             ? $t('appCenter.adminSetupForm.createNewApp')
             : $t('appCenter.adminSetupForm.editApp')
         "
-        @modal-closed="resetForm()">
+        @modal-closed="resetForm()"
+      >
         <div class="addApplication">
           <div class="form-container appCenter-form">
             <div class="row row-form-items">
@@ -148,7 +158,8 @@
                         :readonly="formArray.system"
                         :placeholder="
                           $t('appCenter.adminSetupForm.titlePlaceholder')
-                        ">
+                        "
+                      >
                       <span class="requiredInput">*</span>
                       <p v-if="!formArray.system && !formArray.title" class="errorInput">
                         {{ $t("appCenter.adminSetupForm.titleError") }}
@@ -166,7 +177,8 @@
                         :readonly="formArray.system"
                         :placeholder="
                           $t('appCenter.adminSetupForm.urlPlaceholder')
-                        ">
+                        "
+                      >
                       <span class="requiredInput">*</span>
                       <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">
                         {{ $t("appCenter.adminSetupForm.urlError") }}
@@ -187,13 +199,15 @@
                         ref="file"
                         type="file"
                         accept="image/*"
-                        @change="handleFileUpload()">
+                        @change="handleFileUpload()"
+                      >
                       <div
                         v-if="
                           formArray.imageFileName != undefined &&
                             formArray.imageFileName != ''
                         "
-                        class="file-listing">
+                        class="file-listing"
+                      >
                         {{ formArray.imageFileName }}
                         <span class="remove-file" @click="removeFile()">
                           <i class="uiCloseIcon"></i>
@@ -202,11 +216,13 @@
                       <p
                         :class="
                           'sizeInfo' + (formArray.invalidSize ? ' error' : '')
-                        ">
+                        "
+                      >
                         <img
                           width="13"
                           height="13"
-                          src="/app-center/skin/images/Info tooltip.png">
+                          src="/app-center/skin/images/Info tooltip.png"
+                        >
                         {{ $t("appCenter.adminSetupForm.sizeError") }}
                       </p>
                       <p v-if="formArray.invalidImage" class="errorInput">
@@ -226,7 +242,8 @@
                         type="text"
                         :placeholder="
                           $t('appCenter.adminSetupForm.description')
-                        "></textarea>
+                        "
+                      ></textarea>
                     </td>
                   </tr>
                   <tr class="application-checkbox">
@@ -240,7 +257,8 @@
                         id="byDefault"
                         v-model="formArray.byDefault"
                         :disabled="!formArray.active"
-                        type="checkbox">
+                        type="checkbox"
+                      >
                       <label for="byDefault"></label>
                     </td>
                   </tr>
@@ -253,7 +271,8 @@
                         id="active"
                         v-model="formArray.active"
                         type="checkbox"
-                        @change="onActiveChange()">
+                        @change="onActiveChange()"
+                      >
                       <label for="active"></label>
                     </td>
                   </tr>
@@ -296,7 +315,8 @@
       <exo-app-center-modal
         v-show="showDeleteApplicationModal"
         :title="$t('appCenter.adminSetupForm.DeleteApp')"
-        @modal-closed="closeDeleteModal()">
+        @modal-closed="closeDeleteModal()"
+      >
         <div class="deleteApplication">
           <h3>
             {{ $t("appCenter.adminSetupForm.confirmDelete")
@@ -309,7 +329,8 @@
             </button>
             <button
               class="ignore-vuetify-classes btn form-reset"
-              @click.stop="showDeleteApplicationModal = false">
+              @click.stop="showDeleteApplicationModal = false"
+            >
               <i class="uiCloseIcon"></i>
               {{ $t("appCenter.adminSetupForm.cancel") }}
             </button>
@@ -324,30 +345,30 @@
 </template>
 
 <script>
-import Paginator from "./Paginator.vue";
+import Paginator from './Paginator.vue';
 
 export default {
-  name: "AdminSetup",
+  name: 'AdminSetup',
   components: {
     Paginator
   },
   props: {
     pageSize: {
-      type: Object,
+      type: Number,
       default: 10,
     },
   },
   data() {
     return {
-      keyword: "",
+      keyword: '',
       applicationsList: [],
       formArray: {
         id: 0,
-        title: "",
-        url: "",
-        imageFileBody: "",
-        imageFileName: "",
-        description: "",
+        title: '',
+        url: '',
+        imageFileBody: '',
+        imageFileName: '',
+        description: '',
         byDefault: false,
         active: true,
         permissions: [],
@@ -356,7 +377,7 @@ export default {
         invalidImage: false
       },
       editArray: [],
-      error: "",
+      error: '',
       showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
       currentPage: 1,
@@ -379,7 +400,7 @@ export default {
     getApplicationsList() {
       const offset = this.currentPage - 1;
       return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.keyword}`, {
-        method: "GET",
+        method: 'GET',
         credentials: 'include',
       })
         .then(resp => {
@@ -387,7 +408,7 @@ export default {
             return resp.json();
           } else {
             throw new Error(
-              "Error when getting the favorite applications list"
+              'Error when getting the favorite applications list'
             );
           }
         })
@@ -402,7 +423,8 @@ export default {
           });
 
           // A trick to force retrieving img URL again to update illustration
-          window.setTimeout(() => this.applicationsList = data.applications, 20);
+          const REFRESH_TIMEOUT=20;
+          window.setTimeout(() => this.applicationsList = data.applications, REFRESH_TIMEOUT);
         });
     },
 
@@ -412,6 +434,8 @@ export default {
     },
 
     submitForm() {
+      const MAX_FILE_SIZE = 100000;
+
       if (
         this.formArray.title &&
         this.formArray.url &&
@@ -420,11 +444,11 @@ export default {
         if (this.$refs.file && this.$refs.file.files.length > 0) {
           const reader = new FileReader();
           reader.onload = e => {
-            if (!e.target.result.includes("data:image")) {
+            if (!e.target.result.includes('data:image')) {
               this.formArray.invalidImage = true;
               return;
             }
-            if (this.$refs.file.files[0].size > 100000) {
+            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
               this.formArray.invalidSize = true;
               return;
             }
@@ -442,10 +466,10 @@ export default {
       return fetch('/portal/rest/app-center/applications', {
         credentials: 'include',
         headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
         },
-        method: this.formArray.id ? "PUT" : "POST",
+        method: this.formArray.id ? 'PUT' : 'POST',
         body: JSON.stringify({
           id: this.formArray.id,
           title: this.formArray.title,
@@ -459,29 +483,30 @@ export default {
           imageFileId: this.formArray.imageFileId,
         })
       })
-        .then(response => {
+        .then(() => {
           this.getApplicationsList();
           this.resetForm();
         })
         .catch(e => {
-          if (e.response.status === 401) {
-            this.error = this.$t("appCenter.adminSetupForm.unauthorized");
+          const UNAUTHORIZED_ERROR_CODE = 401;
+          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
+            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
           } else {
-            this.error = this.$t("appCenter.adminSetupForm.error");
+            this.error = this.$t('appCenter.adminSetupForm.error');
           }
         });
     },
 
     deleteApplication() {
       return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
-          method: "DELETE",
-          credentials: 'include',
+        method: 'DELETE',
+        credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json;
           } else {
-            throw new Error("Error when deleting application by id");
+            throw new Error('Error when deleting application by id');
           }
         })
         .then(() => {
@@ -492,16 +517,16 @@ export default {
     },
 
     resetForm() {
-      this.error = "";
-      this.formArray.id = "";
-      this.formArray.title = "";
-      this.formArray.description = "";
-      this.formArray.url = "";
+      this.error = '';
+      this.formArray.id = '';
+      this.formArray.title = '';
+      this.formArray.description = '';
+      this.formArray.url = '';
       this.formArray.permissions = [];
       this.formArray.active = true;
       this.formArray.byDefault = false;
-      this.formArray.imageFileName = "";
-      this.formArray.imageFileBody = "";
+      this.formArray.imageFileName = '';
+      this.formArray.imageFileBody = '';
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
       this.showAddOrEditApplicationModal = false;
@@ -518,8 +543,8 @@ export default {
     },
 
     removeFile() {
-      this.formArray.imageFileName = "";
-      this.formArray.imageFileBody = "";
+      this.formArray.imageFileName = '';
+      this.formArray.imageFileBody = '';
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
     },
@@ -542,19 +567,19 @@ export default {
       this.formArray.title = item.title;
     },
 
-    closeModals(e) {
+    closeModals() {
       this.closeDeleteModal();
       this.resetForm();
     },
 
     closeDeleteModal() {
-      this.formArray.id = "";
-      this.formArray.title = "";
+      this.formArray.id = '';
+      this.formArray.title = '';
       this.showDeleteApplicationModal = false;
     },
     validUrl(app) {
       const url = app && app.url;
-      return app.system || (url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g)));
+      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     onActiveChange() {
       if (!this.formArray.active) {
@@ -562,29 +587,29 @@ export default {
       }
     },
     initPermissionsSuggester() {
-      const permissionsSuggester = $("#permissions-suggester");
+      const permissionsSuggester = $('#permissions-suggester');
       if (permissionsSuggester && permissionsSuggester.length) {
         const component = this;
         const suggesterData = {
-          type: "tag",
-          plugins: ["remove_button", "restore_on_backspace"],
+          type: 'tag',
+          plugins: ['remove_button', 'restore_on_backspace'],
           create: false,
           createOnBlur: false,
           highlight: false,
           openOnFocus: false,
-          sourceProviders: ["adminSetup"],
-          valueField: "text",
-          labelField: "text",
-          searchField: ["text"],
+          sourceProviders: ['adminSetup'],
+          valueField: 'text',
+          labelField: 'text',
+          searchField: ['text'],
           closeAfterSelect: true,
-          dropdownParent: "body",
+          dropdownParent: 'body',
           hideSelected: true,
           renderMenuItem(item, escape) {
             return component.renderMenuItem(item, escape);
           },
           renderItem(item) {
             if (item.text === 'any') {
-              return `<div class="item">*</div>`;
+              return '<div class="item">*</div>';
             } else {
               return `<div class="item">${item.text}</div>`;
             }
@@ -595,13 +620,13 @@ export default {
           onItemRemove(item) {
             component.removeSuggestedItem(item);
           },
-          sortField: [{ field: "order" }, { field: "$score" }],
+          sortField: [{ field: 'order' }, { field: '$score' }],
           providers: {
             adminSetup: component.findGroups
           }
         };
         permissionsSuggester.suggester(suggesterData);
-        $("#permissions-suggester")[0].selectize.clear();
+        $('#permissions-suggester')[0].selectize.clear();
         if (this.formArray.permissions && this.formArray.permissions !== null) {
           for (const permission of this.formArray.permissions) {
             permissionsSuggester[0].selectize.addOption({ text: permission });
@@ -613,11 +638,11 @@ export default {
 
     addSuggestedItem(item) {
       if (
-        $("#permissions-suggester") &&
-        $("#permissions-suggester").length &&
-        $("#permissions-suggester")[0].selectize
+        $('#permissions-suggester') &&
+        $('#permissions-suggester').length &&
+        $('#permissions-suggester')[0].selectize
       ) {
-        const selectize = $("#permissions-suggester")[0].selectize;
+        const selectize = $('#permissions-suggester')[0].selectize;
         item = selectize.options[item];
       }
       if (
@@ -628,7 +653,7 @@ export default {
     },
 
     removeSuggestedItem(item) {
-      const permissionsSuggester = $("#permissions-suggester");
+      const permissionsSuggester = $('#permissions-suggester');
       for (let i = this.formArray.permissions.length - 1; i >= 0; i--) {
         if (this.formArray.permissions[i] === item) {
           this.formArray.permissions.splice(i, 1);
@@ -641,7 +666,7 @@ export default {
       if (!query.length) {
         return callback();
       }
-      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: "include" })
+      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' })
         .then(resp => resp.json())
         .then(data => {
           const groups = [];
@@ -650,7 +675,7 @@ export default {
               avatarUrl: null,
               text: `*:${group.id}`,
               value: `*:${group.id}`,
-              type: "group"
+              type: 'group'
             });
           }
           callback(groups);

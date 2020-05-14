@@ -1,5 +1,5 @@
-import "./components/initComponents.js";
-import UserSetupApp from "./components/UserSetup.vue";
+import './components/initComponents.js';
+import UserSetupApp from './components/UserSetup.vue';
 
 const lang = eXo.env.portal.language;
 const url = `/app-center/vueLocales/locale_${lang}.json`;
@@ -12,6 +12,6 @@ export function init(preferences) {
       },
       render: h => h(UserSetupApp),
       i18n
-    }).$mount("#userSetup");
+    }).$mount('#userSetup');
   });
 }

@@ -4,13 +4,15 @@
       <input
         v-model="searchText"
         :placeholder="$t('appCenter.adminSetupList.search')"
-        type="text">
+        type="text"
+      >
     </div>
     <div class="userAuthorizedApplications">
       <div
-        v-for="(authorizedApp, index) in authorizedApplicationsList"
+        v-for="(authorizedApp) in authorizedApplicationsList"
         :key="authorizedApp.id"
-        class="authorizedApplication">
+        class="authorizedApplication"
+      >
         <div class="authorisedAppContent">
           <div class="applicationHeader">
             <div class="image">
@@ -40,7 +42,8 @@
               :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
               @click.stop="
                 addOrDeleteFavoriteApplication(authorizedApp)
-              ">
+              "
+            >
               {{ $t("appCenter.userSetup.authorized.favorite") }}
             </button>
           </div>
@@ -60,17 +63,17 @@
 
 <script>
 export default {
-  name: "UserAuthorizedApplications",
+  name: 'UserAuthorizedApplications',
   data() {
     return {
       authorizedApplicationsList: [],
       showPaginator: false,
       currentPage: 1,
-      searchText: "",
-      searchApp: "",
+      searchText: '',
+      searchApp: '',
       searchDelay: 300,
-      maxFavoriteApps: "",
-      authorizedApplicationsListMsg: this.$t("appCenter.userSetup.loading")
+      maxFavoriteApps: '',
+      authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
   },
   watch: {
@@ -103,7 +106,7 @@ export default {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error when getting authorized applications list");
+            throw new Error('Error when getting authorized applications list');
           }
         })
         .then(data => {
@@ -130,7 +133,7 @@ export default {
           return this.$parent.$children[1].getFavoriteApplicationsList();
         })
         .then(data => {
-          const applications = (data && data.applications && data.applications.length) || [];
+          const applications = data && data.applications && data.applications.length || [];
           this.canAddFavorite = !this.maxFavoriteApps || applications.length < this.maxFavoriteApps;
           application.favorite = !application.favorite;
           if (!application.favorite) {
@@ -151,7 +154,7 @@ export default {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error when getting the general applications list");
+            throw new Error('Error when getting the general applications list');
           }
         })
         .then(data => {

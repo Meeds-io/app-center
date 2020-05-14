@@ -4,7 +4,8 @@
       <button
         :disabled="isInFirstPage"
         type="button"
-        @click="onClickPreviousPage">
+        @click="onClickPreviousPage"
+      >
         <img src="/app-center/skin/images/paginator/previous-page.svg">
       </button>
     </li>
@@ -12,12 +13,14 @@
     <li
       v-for="page in pages"
       :key="page.name"
-      class="paginator-item">
+      class="paginator-item"
+    >
       <button
         :class="{ isActive: isPageActive(page.name) }"
         :disabled="page.isDisabled"
         type="button"
-        @click="onClickPage(page.name)">
+        @click="onClickPage(page.name)"
+      >
         {{ page.name }}
       </button>
     </li>
@@ -26,7 +29,8 @@
       <button
         :disabled="isInLastPage"
         type="button"
-        @click="onClickNextPage">
+        @click="onClickNextPage"
+      >
         <img src="/app-center/skin/images/paginator/next-page.svg">
       </button>
     </li>
@@ -34,7 +38,7 @@
 </template>
 <script>
 export default {
-  name: "Paginator",
+  name: 'Paginator',
   props: {
     maxVisibleButtons: {
       type: Number,
@@ -107,19 +111,19 @@ export default {
   },
   methods: {
     onClickFirstPage() {
-      this.$emit("pagechanged", 1);
+      this.$emit('pagechanged', 1);
     },
     onClickPreviousPage() {
-      this.$emit("pagechanged", this.currentPage - 1);
+      this.$emit('pagechanged', this.currentPage - 1);
     },
     onClickPage(page) {
-      this.$emit("pagechanged", page);
+      this.$emit('pagechanged', page);
     },
     onClickNextPage() {
-      this.$emit("pagechanged", this.currentPage + 1);
+      this.$emit('pagechanged', this.currentPage + 1);
     },
     onClickLastPage() {
-      this.$emit("pagechanged", this.totalPages);
+      this.$emit('pagechanged', this.totalPages);
     },
     isPageActive(page) {
       return this.currentPage === page;

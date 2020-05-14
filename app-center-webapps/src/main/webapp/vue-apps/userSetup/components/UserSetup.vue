@@ -4,7 +4,8 @@
       {{ $t("appCenter.userSetup.appDirectory") }}
       <a
         v-if="isAdmin"
-        href="/portal/g/:platform:administrators/appCenterAdminSetup">
+        href="/portal/g/:platform:administrators/appCenterAdminSetup"
+      >
         <i class="uiIconPLF24x24Setup"></i>
       </a>
     </div>

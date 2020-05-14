@@ -7,7 +7,8 @@
           <a
             v-if="displayClose"
             class="uiIconClose pull-right"
-            @click.stop="closeModal"></a>
+            @click.stop="closeModal"
+          ></a>
         </div>
         <div class="app-center-modal-content PopupContent popupContent border-box-sizing">
           <slot></slot>
@@ -26,17 +27,17 @@ export default {
     },
     title: {
       type: String,
-      default: ""
+      default: ''
     },
     modalClass: {
       type: String,
-      default: ""
+      default: ''
     }
   },
   methods: {
     closeModal() {
       // Emit the click event of close icon
-      this.$emit("modal-closed");
+      this.$emit('modal-closed');
     }
   }
 };

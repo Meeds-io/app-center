@@ -17,13 +17,15 @@
         <div
           v-if="activeTab === 1"
           id="globalParams"
-          class="tab-pane fade in active">
+          class="tab-pane fade in active"
+        >
           <adminSetup-generalParams />
         </div>
         <div
           v-if="activeTab === 2"
           id="list"
-          class="tab-pane fade in active">
+          class="tab-pane fade in active"
+        >
           <adminSetup-list :page-size="pageSize" />
         </div>
       </div>
@@ -44,7 +46,7 @@ export default {
   },
   mounted() {
     const windowLocationHash = window.location.hash;
-    if (windowLocationHash === "#list") {
+    if (windowLocationHash === '#list') {
       this.activeTab = 2;
     } else {
       this.activeTab = 1;
