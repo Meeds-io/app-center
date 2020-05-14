@@ -874,34 +874,42 @@
       overflow-y: auto;
     }
 
-    .appLauncherItem {
+    .appLauncherItemContainer {
+      max-height: 137px;
+      min-height: 80px;
+      overflow-y: hidden;
       flex: 0 1 33%;
-      a {
-        display: block;
-        padding: 5px;
+      .appLauncherItem {
+        transition: all .3s;
+        padding: 15px;
+        a {
+          display: block;
 
-        &:hover .appLauncherImage {
-          box-shadow: -3px 3px 6px 0px #ececec;
-          transition: all .3s;
+          .appLauncherImage {
+            width: 65px;
+            height: 65px;
+            display: block;
+            margin: 8px auto;
+            border: 1px solid #f0f4fe;
+            border-radius: 5px;
+          }
+          &:hover .appLauncherImage {
+            box-shadow: -3px 3px 6px 0px #ececec;
+            transition: all .3s;
+          }
+          .appLauncherTitle {
+            display: block;
+            text-align: center;
+            color: #555759;
+            font-size: 16px;
+          }
         }
       }
-    }
-
-    .appLauncherImage {
-      width: 65px;
-      height: 65px;
-      display: block;
-      margin: 8px auto;
-      border: 1px solid #f0f4fe;
-      border-radius: 5px;
-      padding: 10px;
-    }
-
-    .appLauncherTitle {
-      display: block;
-      text-align: center;
-      color: #555759;
-      font-size: 16px;
+      .dragged {
+        background-color: @greyColorLighten1Default;
+        border-radius: 8px;
+        opacity: 0.5;
+      }
     }
   }
 

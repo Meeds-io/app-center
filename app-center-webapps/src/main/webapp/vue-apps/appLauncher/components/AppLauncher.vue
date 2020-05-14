@@ -35,46 +35,26 @@
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-layout class="mx-0 px-3">
-          <div>
-            <div v-if="loading">
-              <v-skeleton-loader
-                class="mx-auto"
-                type="table-cell@3">
-              </v-skeleton-loader>
-              <v-skeleton-loader
-                class="mx-auto"
-                type="table-cell@3">
-              </v-skeleton-loader>
-              <v-skeleton-loader
-                class="mx-auto"
-                type="table-cell@3">
-              </v-skeleton-loader>
-              <v-skeleton-loader
-                class="mx-auto"
-                type="table-cell@3">
-              </v-skeleton-loader>
-            </div>
-            <div v-else class="appLauncherList">
+        <v-layout class="mx-0 px-3">          
+          <draggable v-model="favoriteApplicationsList" @start="drag=true" @end="drag=false" class="appLauncherList">
+            <div
+              v-for="(application, index) in favoriteApplicationsList"
+              :key="index"
+              :id="'Pos-' + index"
+              class="appLauncherItemContainer">
               <div
-                v-for="(application, index) in favoriteApplicationsList"
-                :key="index"
-                :id="'Pos-' + index"
-                class="appLauncherItemContainer">
-                <div
-                  :id="'App-' + index"
-                  class="appLauncherItem">
-                  <a
-                    :target="application.target"
-                    :href="application.computedUrl"
-                    :id="application.id">
-                    <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                    <span class="appLauncherTitle">{{ application.title }}</span>
-                  </a>
-                </div>
+                :id="'App-' + index"
+                class="appLauncherItem">
+                <a
+                  :target="application.target"
+                  :href="application.computedUrl"
+                  :id="application.id">
+                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <span class="appLauncherTitle" >{{ application.title }}</span>
+                </a>
               </div>
             </div>
-          </div>
+          </draggable>
         </v-layout>
       </div>
       
@@ -103,6 +83,7 @@ export default {
       favoriteApplicationsList: [],
       appCenterUserSetupLink: "",
       loading: true,
+      draggedElementIndex: null,
     };
   },
   watch: {
