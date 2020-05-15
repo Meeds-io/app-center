@@ -13,6 +13,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @NamedQueries({
     @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppByUserNameAndAppId", query = "SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp "
         + " WHERE favoriteApp.application.id = :applicationId AND favoriteApp.userName = :userName"),
+    @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteApplicationsByUserName", query = "SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp "
+        + " WHERE favoriteApp.userName = :userName"),
     @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppsByAppId", query = "SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp "
         + " WHERE favoriteApp.application.id = :applicationId"),
     @NamedQuery(name = "FavoriteApplicationEntity.countFavoritesByUser", query = "SELECT count(*) FROM FavoriteApplicationEntity favoriteApp "
@@ -25,14 +27,17 @@ public class FavoriteApplicationEntity {
   @SequenceGenerator(name = "SEQ_FAVORITE_APPLICATION_ID", sequenceName = "SEQFAVORITE_APPLICATION_ID")
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_FAVORITE_APPLICATION_ID")
   @Column(name = "ID")
-  private Long        id;
+  private Long              id;
 
   @ManyToOne
   @JoinColumn(name = "APPLICATION_ID")
   private ApplicationEntity application;
 
   @Column(name = "USER_NAME")
-  private String      userName;
+  private String            userName;
+
+  @Column(name = "APPLICATION_ORDER")
+  private Long              order;
 
   public FavoriteApplicationEntity() {
   }
@@ -82,5 +87,19 @@ public class FavoriteApplicationEntity {
    */
   public void setUserName(String userName) {
     this.userName = userName;
+  }
+
+  /**
+   * @return the application's order
+   */
+  public Long getOrder() {
+    return order;
+  }
+
+  /**
+   * @param order the application's order
+   */
+  public void setOrder(Long order) {
+    this.order = order;
   }
 }

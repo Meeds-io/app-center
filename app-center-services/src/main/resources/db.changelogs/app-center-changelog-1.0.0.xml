@@ -55,6 +55,7 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
     </modifySql>
   </changeSet>
+  
   <changeSet author="appCenter" id="1.0.0-2" onValidationFail="MARK_RAN">
     <preConditions onFail="MARK_RAN" onError="MARK_RAN">
       <not>
@@ -63,6 +64,7 @@
     </preConditions>
     <addForeignKeyConstraint constraintName="FK_AC_FAVORITE_APPLICATION_AC_APPLICATION" baseTableName="AC_FAVORITE_APPLICATION" baseColumnNames="APPLICATION_ID" referencedTableName="AC_APPLICATION" referencedColumnNames="ID" onDelete="CASCADE" />
   </changeSet>
+  
   <changeSet author="appCenter" id="1.0.0-3">
     <addColumn tableName="AC_APPLICATION">
       <column name="IS_SYSTEM" type="BOOLEAN" defaultValueBoolean="false" />
@@ -72,5 +74,12 @@
   <changeSet author="appCenter" id="1.0.0-4" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_APPLICATION_ID" startValue="1"/>
     <createSequence sequenceName="SEQFAVORITE_APPLICATION_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-5">
+    <addColumn tableName="AC_FAVORITE_APPLICATION">
+      <column name="APPLICATION_ORDER" type="BIGINT">
+      </column>
+    </addColumn>
   </changeSet>
 </databaseChangeLog>

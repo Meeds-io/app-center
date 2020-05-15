@@ -32,9 +32,16 @@ public class FavoriteApplicationDAO extends GenericDAOJPAImpl<FavoriteApplicatio
     }
   }
 
+  public List<FavoriteApplicationEntity> getFavoriteApplicationsByUserName(String userName) {
+    TypedQuery<FavoriteApplicationEntity> query =
+                                                getEntityManager().createNamedQuery("FavoriteApplicationEntity.getFavoriteApplicationsByUserName",
+                                                                                    FavoriteApplicationEntity.class)
+                                                                  .setParameter("userName", userName);
+    return query.getResultList();
+  }
+
   public long countFavoritesForUser(String username) {
-    TypedQuery<Long> query = getEntityManager().createNamedQuery("FavoriteApplicationEntity.countFavoritesByUser",
-                                                                 Long.class);
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("FavoriteApplicationEntity.countFavoritesByUser", Long.class);
     query.setParameter("userName", username);
     return query.getSingleResult();
   }
