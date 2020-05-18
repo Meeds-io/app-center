@@ -21,7 +21,8 @@
       v-if="
         !maxFavoriteApps || favoriteApplicationsList.length < maxFavoriteApps
       "
-      class="addTool">
+      class="addTool"
+    >
       <a :href="appCenterUserSetupLink">
         <i class="uiIconPlus uiIconLightGray"></i>
       </a>
@@ -31,12 +32,12 @@
 
 <script>
 export default {
-  name: "MyTools",
+  name: 'MyTools',
   data() {
     return {
       favoriteApplicationsList: [],
-      maxFavoriteApps: "",
-      appCenterUserSetupLink: ""
+      maxFavoriteApps: '',
+      appCenterUserSetupLink: ''
     };
   },
 
@@ -49,20 +50,20 @@ export default {
   methods: {
     getFavoriteApplicationsList() {
       return fetch('/portal/rest/app-center/applications/favorites', {
-        credentials: "include",
-        method: "GET"
+        credentials: 'include',
+        method: 'GET'
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json();
           } else {
             throw new Error(
-              "Error when getting the favorite applications list"
+              'Error when getting the favorite applications list'
             );
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = (data && data.applications) || [];
+          this.favoriteApplicationsList = data && data.applications || [];
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -74,14 +75,14 @@ export default {
 
     getMaxFavoriteApps() {
       return fetch('/portal/rest/app-center/settings', {
-        method: "GET",
+        method: 'GET',
         credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error when getting the general applications list");
+            throw new Error('Error when getting the general applications list');
           }
         })
         .then(data => {

@@ -1,4 +1,4 @@
-import MyApplicationsApp from "./components/MyApplications.vue";
+import MyApplicationsApp from './components/MyApplications.vue';
 
 const lang = eXo.env.portal.language;
 const url = `/app-center/vueLocales/locale_${lang}.json`;
@@ -15,6 +15,6 @@ export function init() {
       render: h => h(MyApplicationsApp),
       i18n,
       vuetify,
-    }).$mount("#myApplications");
+    }).$mount('#myApplications');
   });
 }

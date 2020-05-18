@@ -1,13 +1,13 @@
-import AppLauncherApp from "./components/AppLauncher.vue";
+import AppLauncherApp from './components/AppLauncher.vue';
 
 Vue.use(Vuetify);
 const vuetify = new Vuetify({
   dark: true,
-  iconfont: ""
+  iconfont: ''
 });
 
 // getting language of user
-const lang = (eXo && eXo.env && eXo.env.portal && eXo.env.portal.language) || "en";
+const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
 const url = `/app-center/vueLocales/locale_${lang}.json`;
 
 export function init() {
@@ -18,6 +18,6 @@ export function init() {
       render: h => h(AppLauncherApp),
       i18n,
       vuetify
-    }).$mount("#appLauncher");
+    }).$mount('#appLauncher');
   });
 }

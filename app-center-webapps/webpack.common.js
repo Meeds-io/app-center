@@ -22,13 +22,15 @@ module.exports = {
                 test: /\.js$/,
                 exclude: /node_modules/,
                 use: [
-                    'babel-loader'
+                    'babel-loader',
+          	    'eslint-loader',
                 ]
             },
             {
                 test: /\.vue$/,
                 use: [
-                    'vue-loader'
+                    'vue-loader',
+                    'eslint-loader',
                 ]
             }
         ]

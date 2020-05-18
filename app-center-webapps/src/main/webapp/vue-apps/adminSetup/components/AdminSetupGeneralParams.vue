@@ -12,14 +12,16 @@
           v-model="maxFavoriteApps"
           type="number"
           min="0"
-          onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+          onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+        >
 
         <a
           v-if="isMaxFavoriteAppsView"
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="isMaxFavoriteAppsView = false">
+          @click.stop="isMaxFavoriteAppsView = false"
+        >
           <i class="uiIconEdit uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.edit")
@@ -30,7 +32,8 @@
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="setMaxFavoriteApps()">
+          @click.stop="setMaxFavoriteApps()"
+        >
           <i class="uiIconSave uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.save")
@@ -41,7 +44,8 @@
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="isMaxFavoriteAppsView = true">
+          @click.stop="isMaxFavoriteAppsView = true"
+        >
           <i class="uiIconClose uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.cancel")
@@ -54,12 +58,14 @@
         <img
           v-if="defaultAppImage.isView && defaultAppImage.fileBody !== ''"
           class="appImage"
-          :src="`data:image/png;base64,${defaultAppImage.fileBody}`">
+          :src="`data:image/png;base64,${defaultAppImage.fileBody}`"
+        >
 
         <label
           v-if="!defaultAppImage.isView"
           for="defaultAppImageFile"
-          class="custom-file-upload">
+          class="custom-file-upload"
+        >
           <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
         </label>
         <input
@@ -68,14 +74,16 @@
           ref="defaultAppImageFile"
           type="file"
           accept="image/*"
-          @change="handleDefaultAppImageFileUpload()">
+          @change="handleDefaultAppImageFileUpload()"
+        >
         <div
           v-if="
             !defaultAppImage.isView &&
               !defaultAppImage.fileName &&
               !defaultAppImage.fileName
           "
-          class="file-listing">
+          class="file-listing"
+        >
           {{ defaultAppImage.fileName }}
           <span class="remove-file" @click="removeDefaultAppImageFile()">
             <i class="uiCloseIcon"></i>
@@ -86,7 +94,8 @@
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="defaultAppImage.isView = false">
+          @click.stop="defaultAppImage.isView = false"
+        >
           <i class="uiIconEdit uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.edit")
@@ -97,7 +106,8 @@
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="submitDefaultAppImage()">
+          @click.stop="submitDefaultAppImage()"
+        >
           <i class="uiIconSave uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.save")
@@ -108,7 +118,8 @@
           class="actionIcon tooltipContent"
           data-placement="bottom"
           data-container="body"
-          @click.stop="resetDefaultAppImage()">
+          @click.stop="resetDefaultAppImage()"
+        >
           <i class="uiIconClose uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.cancel")
@@ -117,11 +128,13 @@
         <p
           :class="
             'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')
-          ">
+          "
+        >
           <img
             width="13"
             height="13"
-            src="/app-center/skin/images/Info tooltip.png">
+            src="/app-center/skin/images/Info tooltip.png"
+          >
           {{ $t("appCenter.adminSetupForm.sizeError") }}
         </p>
         <p v-if="defaultAppImage.invalidImage" class="errorInput">
@@ -134,14 +147,14 @@
 
 <script>
 export default {
-  name: "AdminSetupGeneralParams",
+  name: 'AdminSetupGeneralParams',
   data() {
     return {
       maxFavoriteApps: 0,
       isMaxFavoriteAppsView: true,
       defaultAppImage: {
-        fileBody: "",
-        fileName: "",
+        fileBody: '',
+        fileName: '',
         isView: true,
         invalidSize: false,
         invalidImage: false
@@ -153,15 +166,15 @@ export default {
   },
   methods: {
     getAppGeneralSettings() {
-      return fetch("/portal/rest/app-center/settings", {
-        method: "GET",
+      return fetch('/portal/rest/app-center/settings', {
+        method: 'GET',
         credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error getting favorite applications list");
+            throw new Error('Error getting favorite applications list');
           }
         })
         .then(data => {
@@ -172,29 +185,31 @@ export default {
 
     setMaxFavoriteApps() {
       this.$nextTick()
-      .then(fetch(`/portal/rest/app-center/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
-        method: "PATCH",
-        credentials: 'include',
-      })).then(() => {
-        this.isMaxFavoriteAppsView = true;
-      });
+        .then(fetch(`/portal/rest/app-center/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
+          method: 'PATCH',
+          credentials: 'include',
+        })).then(() => {
+          this.isMaxFavoriteAppsView = true;
+        });
     },
 
     submitDefaultAppImage() {
+      const MAX_FILE_SIZE = 100000;
+
       if (
-        this.defaultAppImage.fileBody === "" &&
-        this.defaultAppImage.fileName === ""
+        this.defaultAppImage.fileBody === '' &&
+        this.defaultAppImage.fileName === ''
       ) {
         this.setDefaultAppImage();
       } else {
         if (this.$refs.defaultAppImageFile.files.length > 0) {
           const reader = new FileReader();
           reader.onload = e => {
-            if (!e.target.result.includes("data:image")) {
+            if (!e.target.result.includes('data:image')) {
               this.defaultAppImage.invalidImage = true;
               return;
             }
-            if (this.$refs.defaultAppImageFile.files[0].size > 100000) {
+            if (this.$refs.defaultAppImageFile.files[0].size > MAX_FILE_SIZE) {
               this.defaultAppImage.invalidSize = true;
               return;
             }
@@ -209,13 +224,13 @@ export default {
     },
 
     setDefaultAppImage() {
-      const setDefaultAppImageUrl = "/portal/rest/app-center/settings/image";
+      const setDefaultAppImageUrl = '/portal/rest/app-center/settings/image';
       return fetch(setDefaultAppImageUrl, {
-        method: "PATCH",
-        credentials: "include",
+        method: 'PATCH',
+        credentials: 'include',
         headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           id: this.defaultAppImage && this.defaultAppImage.id,
@@ -245,8 +260,8 @@ export default {
     },
 
     removeDefaultAppImageFile() {
-      this.defaultAppImage.fileName = "";
-      this.defaultAppImage.fileBody = "";
+      this.defaultAppImage.fileName = '';
+      this.defaultAppImage.fileBody = '';
       this.defaultAppImage.invalidSize = false;
       this.defaultAppImage.invalidImage = false;
     },

@@ -1,10 +1,13 @@
 <template>
   <div class="userFavoriteApplications">
-    <div class="favoritAppTitle">{{ $t("appCenter.userSetup.favorite") }}</div>
+    <div class="favoritAppTitle">
+      {{ $t("appCenter.userSetup.favorite") }}
+    </div>
     <div
       v-for="favoriteApp in favoriteApplicationsList"
       :key="favoriteApp.id"
-      class="favoriteApplication">
+      class="favoriteApplication"
+    >
       <div class="favoriteAppImage">
         <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
           <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
@@ -13,7 +16,8 @@
       <a
         class="favoriteAppUrl"
         :target="favoriteApp.target"
-        :href="favoriteApp.computedUrl">
+        :href="favoriteApp.computedUrl"
+      >
         <h5 class="tooltipContent">
           <div>{{ favoriteApp.title }}</div>
           <span class="tooltiptext">{{ favoriteApp.title }}</span>
@@ -23,7 +27,8 @@
         <a
           v-if="!favoriteApp.byDefault"
           class="actionIcon tooltipContent"
-          @click.stop="deleteFavoriteApplication(favoriteApp.id)">
+          @click.stop="deleteFavoriteApplication(favoriteApp.id)"
+        >
           <i class="uiIconClose uiIconLightGray"></i>
           <span class="tooltiptext tooltiptextIcon">{{
             $t("appCenter.adminSetupForm.delete")
@@ -35,7 +40,8 @@
       <img
         width="13"
         height="13"
-        src="/app-center/skin/images/Info tooltip.png">
+        src="/app-center/skin/images/Info tooltip.png"
+      >
       {{ $t("appCenter.userSetup.maxFavoriteApps.reached") }}
     </div>
   </div>
@@ -43,7 +49,7 @@
 
 <script>
 export default {
-  name: "UserFavoriteApplications",
+  name: 'UserFavoriteApplications',
   data() {
     return {
       favoriteApplicationsList: []
@@ -57,18 +63,18 @@ export default {
   methods: {
     getFavoriteApplicationsList() {
       return fetch('/portal/rest/app-center/applications/favorites', {
-        method: "GET",
+        method: 'GET',
         credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error when getting the general applications list");
+            throw new Error('Error when getting the general applications list');
           }
         })
         .then(data => {
-          this.favoriteApplicationsList = (data && data.applications) || [];
+          this.favoriteApplicationsList = data && data.applications || [];
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);

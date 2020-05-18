@@ -16,7 +16,8 @@
       width="420"
       max-width="100vw"
       max-height="100vh"
-      class="appCenterDrawer">
+      class="appCenterDrawer"
+    >
       <v-row class="mx-0 title">
         <v-list-item class="appLauncherDrawerHeader">
           <v-list-item-content>
@@ -27,7 +28,8 @@
           <v-list-item-action class="appLauncherDrawerIcons">
             <i
               class="uiCloseIcon appLauncherDrawerClose"
-              @click="toggleDrawer()"></i>
+              @click="toggleDrawer()"
+            ></i>
           </v-list-item-action>
         </v-list-item>
       </v-row>
@@ -62,12 +64,14 @@
         <v-card
           flat
           tile
-          class="d-flex flex justify-end mx-2">
+          class="d-flex flex justify-end mx-2"
+        >
           <v-btn
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
             small
-            @click="navigateTo('appCenterUserSetup/')">
+            @click="navigateTo('appCenterUserSetup/')"
+          >
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
         </v-card>
@@ -81,7 +85,7 @@ export default {
     return {
       appLauncherDrawer: null,
       favoriteApplicationsList: [],
-      appCenterUserSetupLink: "",
+      appCenterUserSetupLink: '',
       loading: true,
       draggedElementIndex: null,
     };
@@ -114,8 +118,8 @@ export default {
       if (!this.appLauncherDrawer) {
         this.getFavoriteApplicationsList();
         //only when opening the appLauncherDrawer
-        fetch("/portal/rest/app-center/applications/logOpenDrawer", {
-          method: "GET",
+        fetch('/portal/rest/app-center/applications/logOpenDrawer', {
+          method: 'GET',
           credentials: 'include',
         });
       }
@@ -123,15 +127,15 @@ export default {
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
     getFavoriteApplicationsList() {
-      return fetch("/portal/rest/app-center/applications/favorites", {
-        method: "GET",
+      return fetch('/portal/rest/app-center/applications/favorites', {
+        method: 'GET',
         credentials: 'include',
       })
         .then(resp => {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error("Error getting favorite applications list");
+            throw new Error('Error getting favorite applications list');
           }
         })
         .then(data => {
