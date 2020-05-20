@@ -1,48 +1,62 @@
 <template>
   <div class="userFavoriteApplications">
-    <div class="favoritAppTitle">
+    <div class="favoriteAppTitle">
       {{ $t("appCenter.userSetup.favorite") }}
     </div>
-    <div
-      v-for="favoriteApp in favoriteApplicationsList"
-      :key="favoriteApp.id"
+
+    <v-card
+      v-for="(favoriteApp, index) in favoriteApplicationsList"
+      :key="index"
       class="favoriteApplication"
+      height="65"
+      max-width="auto"
+      outlined
     >
-      <div class="favoriteAppImage">
-        <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
-          <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
-        </a>
+      <v-list-item>
+        <v-list-item-avatar>
+          <div class="favoriteAppImage">
+            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
+              <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+            </a>
+          </div>
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <a
+            class="favoriteAppUrl"
+            :target="favoriteApp.target"
+            :href="favoriteApp.computedUrl"
+          >
+            <h5 class="tooltipContent">
+              <div>{{ favoriteApp.title }}</div>
+            </h5>
+          </a>
+        </v-list-item-content>
+        <v-spacer></v-spacer>
+        <v-list-item-action class="favoriteAppRemove">
+          <v-btn
+            v-if="!favoriteApp.byDefault"
+            icon
+            color="red"
+            @click.stop="deleteFavoriteApplication(favoriteApp.id)"
+          >
+            <v-icon>mdi-star</v-icon>
+          </v-btn>
+        </v-list-item-action>
+      </v-list-item>
+    </v-card>
+    <div v-show="!loading">
+      <div v-if="canAddFavorite" class="maxFavorite">
+        <v-icon color="#01579B">
+          info
+        </v-icon>
+        <span>{{ $t("appCenter.userSetup.maxFavoriteApps.not.reached", {0: $parent.$children[0].maxFavoriteApps}) }}</span>
       </div>
-      <a
-        class="favoriteAppUrl"
-        :target="favoriteApp.target"
-        :href="favoriteApp.computedUrl"
-      >
-        <h5 class="tooltipContent">
-          <div>{{ favoriteApp.title }}</div>
-          <span class="tooltiptext">{{ favoriteApp.title }}</span>
-        </h5>
-      </a>
-      <div class="favoriteAppRemove">
-        <a
-          v-if="!favoriteApp.byDefault"
-          class="actionIcon tooltipContent"
-          @click.stop="deleteFavoriteApplication(favoriteApp.id)"
-        >
-          <i class="uiIconClose uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.delete")
-          }}</span>
-        </a>
+      <div v-else class="maxFavorite reached">
+        <v-icon color="#D84315">
+          mdi-alert
+        </v-icon>
+        <span>{{ $t("appCenter.userSetup.maxFavoriteApps.reached") }}</span>
       </div>
-    </div>
-    <div v-if="!canAddFavorite" class="maxFavoriteReached">
-      <img
-        width="13"
-        height="13"
-        src="/app-center/skin/images/Info tooltip.png"
-      >
-      {{ $t("appCenter.userSetup.maxFavoriteApps.reached") }}
     </div>
   </div>
 </template>
@@ -52,7 +66,8 @@ export default {
   name: 'UserFavoriteApplications',
   data() {
     return {
-      favoriteApplicationsList: []
+      favoriteApplicationsList: [],
+      loading: true,
     };
   },
 
@@ -84,7 +99,7 @@ export default {
             !this.$parent.$children[0].maxFavoriteApps ||
             this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;
           return this.favoriteApplicationsList;
-        });
+        }).finally(() => this.loading = false);
     },
 
     deleteFavoriteApplication(appId) {

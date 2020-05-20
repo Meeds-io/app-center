@@ -13,7 +13,7 @@
 .VuetifyApp .applicationsAdmin {
   margin: 20px;
   padding: 10px;
-  background: #fff !important;
+  background: @baseBackgroundDefault !important;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
   display: block;
@@ -64,7 +64,7 @@
     justify-content: space-between;
   }
   .appCenter-form {
-  	background: #fff;
+  	background: @baseBackgroundDefault;
     min-height: 100px;
     border-radius: 6px;
     box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
@@ -95,7 +95,7 @@
       background: @primaryColor;
       box-shadow: none;
       border: 1px solid @primaryColor;
-      color: #fff;
+      color: @baseBackgroundDefault;
       font-size: 14px;
       font-weight: 400;
       line-height: 17px;
@@ -116,7 +116,7 @@
     margin-right: 0;
   }
   .generalParams .form-container {
-    background: #ffffff;
+    background: @baseBackgroundDefault;
     padding-bottom: 0;
     min-height: inherit;
     border-radius: 0;
@@ -205,7 +205,7 @@
               width: 260px;
             }
             span.remove-file {
-              background: #ffffff;
+              background: @baseBackgroundDefault;
               color: red;
               position: absolute;
               right: 0;
@@ -241,12 +241,12 @@
               background: @primaryColor;
               border-radius: 5px;
               border: 1px solid @primaryColor;
-              color: #ffffff;
+              color: @baseBackgroundDefault;
               padding: 5px 6px;
               transition: 0.5s all;
             }
             .uploadImage .custom-file-upload:hover {
-              background: #ffffff !important;
+              background: @baseBackgroundDefault !important;
               color: @primaryColor;
               transition: 0.5s all;
             }
@@ -272,7 +272,7 @@
               background: #e8e8e8;
               border-radius: 25px;
               box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
-              color: #ffffff;
+              color: @baseBackgroundDefault;
               cursor: pointer;
               font-weight: bold;
               height: 20px;
@@ -321,7 +321,7 @@
                  + label {
                   background: @primaryColorLight;
                   &:after {
-                    color: #ffffff;
+                    color: @baseBackgroundDefault;
                     content: "Yes";
                     left: -16px;
                   }
@@ -362,7 +362,7 @@
       }
       .deleteApplication .application-buttons .form-submit {
         background: #e20000;
-        color: #fff;
+        color: @baseBackgroundDefault;
         padding: 5px 10px;
         border: 1px solid #e20000;
         border-radius: 5px;
@@ -375,7 +375,7 @@
       }
       .deleteApplication .application-buttons .form-reset {
         background: #b9b9b9;
-        color: #ffffff;
+        color: @baseBackgroundDefault;
         padding: 5px 10px;
         border: 1px solid #b9b9b9;
         border-radius: 5px;
@@ -463,7 +463,6 @@
 .VuetifyApp .userApplications {
   margin: 20px;
   padding: 10px;
-  background: #fff;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
 
@@ -471,13 +470,12 @@
     width: 100%;
     color: #6d6d6d;
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 1px;
-    padding-top: 20px;
+    padding-left: 15px;
 
     .uiIconPLF24x24Setup {
       font-size: 20px;
-      margin-top: -4px;
     }
   }
   .userApplicationContent {
@@ -488,10 +486,13 @@
     width: 100%;
   }
   .authorizedApplications {
+    border-radius: 4px;
+    padding: 10px;
+    background: @baseBackgroundDefault;
     display: inline-flex;
     flex-wrap: wrap;
     flex: 1 1 73%;
-    margin-right: 15px;
+    margin-right: 5px;
     border-right: 1px solid #efefef;
     position: relative;
 
@@ -565,7 +566,7 @@
 
             &:hover {
               background: #797979;
-              color: #ffffff;
+              color: @baseBackgroundDefault;
             }
           }
           button {
@@ -578,7 +579,7 @@
             padding: 5px 7px;
             margin: 5px 0;
             &:hover {
-              color: #ffffff;
+              color: @baseBackgroundDefault;
               background: @primaryColor;
             }
             &:hover:disabled {
@@ -586,7 +587,7 @@
               background: transparent;
             }
             &.favorite {
-              color: #ffffff;
+              color: @baseBackgroundDefault;
               background: @primaryColor;
             }
             &.favorite:hover {
@@ -594,7 +595,7 @@
               background: transparent;
             }
             &.favorite:hover:disabled {
-              color: #ffffff;
+              color: @baseBackgroundDefault;
               background: @primaryColor;
             }
           }
@@ -611,7 +612,7 @@
     .appPaginator button {
       background: @primaryColor;
       border: 1px solid @primaryColor;
-      color: #fff;
+      color: @baseBackgroundDefault;
       padding: 5px 10px;
       border-radius: 5px;
       box-shadow: 0 0 3px #ff7c4061;
@@ -621,36 +622,61 @@
       color: @primaryColor;
     }
     .appSearch {
-      text-align: right;
-      position: absolute;
-      top: -80px;
-      right: 0;
+      .v-input__prepend-inner {
+        margin-top: 6px!important;
+      }
+      .v-text-field {
+        padding-top: 0!important;
+        margin-top: 0!important;
+      }
+      .v-text-field__slot {
+        height: 48px!important;
+        &:focus {
+          outline: none!important;
+        }
+      }
+      .v-input__slot {
+        height: 36px!important;
+      }
+      input:focus {
+        outline: none!important;
+      }
+      i {
+        color: @greyColorLighten1Default!important;
+      }
+    }
+    #appCenterAdminSetup {
+      align-self: center;
+      i {
+        color: @greyColorLighten1Default!important;
+      }
     }
   }
 }
 .VuetifyApp .userFavoriteApplications {
+  padding: 14px;
+  border-radius: 4px;
   flex: 1 1 23%;
+  background: @baseBackgroundDefault;
 
-  .favoritAppTitle {
-    font-size: 15px;
-    font-weight: bold;
-    letter-spacing: .5px;
-    padding-bottom: 25px;
+  .favoriteAppTitle {
+    width: 100%;
+    color: #6d6d6d;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    padding-top: 25px;
+    padding-bottom: 35px;
   }
   .favoriteApplication {
     border-bottom: 1px solid #efefef;
     display: inline-flex;
     margin-bottom: 15px;
-    padding-bottom: 15px;
     width: 100%;
+    border-radius: 8px!important;
     .favoriteAppImage {
-      width: 50px;
-      height: 50px;
       .appImage {
-        border-radius: 5px;
         box-shadow: 0 0 5px darkgrey;
-        width: 50px;
-        height: 50px;
         object-fit: cover;
         overflow: hidden;
       }
@@ -676,11 +702,17 @@
       color: #929292;
     }
   }
-  .maxFavoriteReached {
+  .maxFavorite {
+    color: @greyColorLighten1Default;
     font-style: italic;
-    font-size: 13px;
-    color: #b3b3b3;
+    font-size: 14px;
   }
+  .reached {
+    color: #E53935;
+  }
+}
+.VuetifyApp .v-btn--outlined .v-btn__content .v-icon, .VuetifyApp .v-btn--round .v-btn__content .v-icon {
+  color: @greyColorLighten1Default!important;
 }
 @media screen and (max-width: 1264px) {
   .userApplications .authorizedApplications {
@@ -688,10 +720,6 @@
   }
   .userApplications .authorizedApplications .authorizedApplication {
     padding: 20px 5px!important;
-  }
-  .appSearch {
-    position: relative!important;
-    top: 0!important;
   }
 }
 @media screen and (max-width: 767px) {
@@ -736,7 +764,7 @@
   min-height: 210px;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
-  background-color: #fff;
+  background-color: @baseBackgroundDefault;
   padding: 20px 30px;
   margin-bottom: 20px;
   .myToolsHeader {
@@ -971,7 +999,7 @@
   visibility: hidden;
   width: 100%;
   background-color: #555;
-  color: #fff!important;
+  color: @baseBackgroundDefault!important;
   text-align: center;
   border-radius: 6px;
   padding: 5px 0;
