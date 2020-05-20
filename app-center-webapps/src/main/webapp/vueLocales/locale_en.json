@@ -43,6 +43,7 @@
   "appCenter.userSetup.authorized.displayMore": "Display more",
   "appCenter.userSetup.favorite": "Favorite applications",
   "appCenter.userSetup.shortcuts": "Shortcuts",
+  "appCenter.userSetup.maxFavoriteApps.not.reached": "You are allowed to put maximum {0} of favorites",
   "appCenter.userSetup.maxFavoriteApps.reached": "You have reached the maximum of allowed favorites",
   "appCenter.userSetup.seeAll":"See all",
   "appCenter.userSetup.loading":"Voir tout",
