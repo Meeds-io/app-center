@@ -3,7 +3,7 @@
     <v-row class="authorizedApplicationsHeader">
       <v-col sm="8" class="applicationCenterTitle">
         <div class="userApplicationTitle">
-          {{ $t("appCenter.userSetup.appDirectory") }}
+          {{ $t("appCenter.userSetup.appCenter") }}
         </div>
       </v-col>
       <v-col class="applicationCenterActions">
@@ -33,46 +33,73 @@
       </v-col>
     </v-row>
     <div class="userAuthorizedApplications">
-      <div
+      <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp">
+        {{ $t("appCenter.adminSetupForm.noApp") }}
+      </div>      
+      <v-card
         v-for="(authorizedApp) in authorizedApplicationsList"
         :key="authorizedApp.id"
         class="authorizedApplication"
+        outlined
       >
         <div class="authorisedAppContent">
-          <div class="applicationHeader">
+          <v-list-item class="applicationHeader">
             <div class="image">
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
               </a>
             </div>
-            <div class="title">
+            <v-list-item-content>
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <h5 class="tooltipContent">
-                  <div>{{ authorizedApp.title }}</div>
+                  <div 
+                    v-exo-tooltip.bottom.body="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
+                    class="appTitle"
+                  >
+                    {{ authorizedApp.title }}
+                  </div>
                 </h5>
               </a>
+            </v-list-item-content>
+            <v-list-item-action class="appHelp">
+              <v-btn
+                icon
+              >
+                <v-icon 
+                  x-small
+                >
+                  mdi-help
+                </v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+          <v-card-text class="userAppDescription">
+            <div 
+              v-exo-tooltip.bottom.body="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
+              class="description"
+            >
+              {{ authorizedApp.description }}
             </div>
-          </div>
-          <div class="userAppDescription tooltipContent">
-            <div>{{ authorizedApp.description }}</div>
-          </div>
-          <div class="applicationButton">
-            <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{
-              $t("appCenter.userSetup.authorized.access")
-            }}</a>
-            <button
+          </v-card-text>
+          <v-divider></v-divider>
+          <v-card-actions class="applicationActions">
+            <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+            <v-btn
+              icon
               :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
               :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
               @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
             >
-              {{ $t("appCenter.userSetup.authorized.favorite") }}
-            </button>
-          </div>
+              <v-icon
+                small
+                color="red"
+              >
+                {{ authorizedApp.byDefault || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+              </v-icon>
+            </v-btn>
+          </v-card-actions>
         </div>
-      </div>
-      <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp">
-        {{ $t("appCenter.adminSetupForm.noApp") }}
-      </div>
+      </v-card>
     </div>
     <div class="appPaginator">
       <button v-if="showPaginator" @click="nextPage()">
