@@ -1,29 +1,35 @@
 <template>
   <div class="authorizedApplications">
     <v-row class="authorizedApplicationsHeader">
-      <v-col cols="6">
+      <v-col sm="8" xl="12">
         <div class="userApplicationTitle">
           {{ $t("appCenter.userSetup.appDirectory") }}
         </div>
       </v-col>
-      <v-col class="appSearch">
-        <v-text-field
-          v-model="searchText"
-          :placeholder="`${$t('appCenter.adminSetupList.search')}...`"
-          prepend-inner-icon="search"
-          single-line
-          flat
-          hide-details
-        >
-        </v-text-field>
-      </v-col>
-      <v-col id="appCenterAdminSetup" cols="1">
-        <a
-          v-if="isAdmin"
-          href="/portal/g/:platform:administrators/appCenterAdminSetup"
-        >
-          <i class="uiIconPLF24x24Setup"></i>
-        </a>
+      <v-col>
+        <v-row>
+          <v-col class="appSearch">
+            <v-text-field
+              v-model="searchText"
+              :placeholder="`${$t('appCenter.adminSetupList.search')}...`"
+              prepend-inner-icon="search"
+              single-line
+              flat
+              hide-details
+            >
+            </v-text-field>            
+          </v-col>
+          <v-col cols="1">
+            <div id="appCenterAdminSetup">
+              <a
+                v-if="isAdmin"
+                href="/portal/g/:platform:administrators/appCenterAdminSetup"
+              >
+                <i class="uiIconPLF24x24Setup"></i>
+              </a>
+            </div>            
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
     <div class="userAuthorizedApplications">
