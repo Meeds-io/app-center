@@ -1,12 +1,12 @@
 <template>
   <div class="authorizedApplications">
     <v-row class="authorizedApplicationsHeader">
-      <v-col sm="8" xl="12">
+      <v-col sm="8" class="applicationCenterTitle">
         <div class="userApplicationTitle">
           {{ $t("appCenter.userSetup.appDirectory") }}
         </div>
       </v-col>
-      <v-col>
+      <v-col class="applicationCenterActions">
         <v-row>
           <v-col class="appSearch">
             <v-text-field
