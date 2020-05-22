@@ -1,12 +1,37 @@
 <template>
   <div class="authorizedApplications">
-    <div class="appSearch">
-      <input
-        v-model="searchText"
-        :placeholder="$t('appCenter.adminSetupList.search')"
-        type="text"
-      >
-    </div>
+    <v-row class="authorizedApplicationsHeader">
+      <v-col sm="8" class="applicationCenterTitle">
+        <div class="userApplicationTitle">
+          {{ $t("appCenter.userSetup.appDirectory") }}
+        </div>
+      </v-col>
+      <v-col class="applicationCenterActions">
+        <v-row>
+          <v-col class="appSearch">
+            <v-text-field
+              v-model="searchText"
+              :placeholder="`${$t('appCenter.adminSetupList.search')}...`"
+              prepend-inner-icon="search"
+              single-line
+              flat
+              hide-details
+            >
+            </v-text-field>            
+          </v-col>
+          <v-col cols="1">
+            <div id="appCenterAdminSetup">
+              <a
+                v-if="isAdmin"
+                href="/portal/g/:platform:administrators/appCenterAdminSetup"
+              >
+                <i class="uiIconPLF24x24Setup"></i>
+              </a>
+            </div>            
+          </v-col>
+        </v-row>
+      </v-col>
+    </v-row>
     <div class="userAuthorizedApplications">
       <div
         v-for="(authorizedApp) in authorizedApplicationsList"
@@ -24,14 +49,12 @@
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
                 <h5 class="tooltipContent">
                   <div>{{ authorizedApp.title }}</div>
-                  <span class="tooltiptext">{{ authorizedApp.title }}</span>
                 </h5>
               </a>
             </div>
           </div>
           <div class="userAppDescription tooltipContent">
             <div>{{ authorizedApp.description }}</div>
-            <span class="tooltiptext">{{ authorizedApp.description }}</span>
           </div>
           <div class="applicationButton">
             <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{
@@ -40,9 +63,7 @@
             <button
               :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
               :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
-              @click.stop="
-                addOrDeleteFavoriteApplication(authorizedApp)
-              "
+              @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
             >
               {{ $t("appCenter.userSetup.authorized.favorite") }}
             </button>
@@ -66,6 +87,7 @@ export default {
   name: 'UserAuthorizedApplications',
   data() {
     return {
+      isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
       showPaginator: false,
       currentPage: 1,
