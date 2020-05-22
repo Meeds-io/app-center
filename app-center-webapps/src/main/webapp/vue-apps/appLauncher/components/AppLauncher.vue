@@ -55,7 +55,12 @@
                   :href="application.computedUrl"
                 >
                   <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
-                  <span class="appLauncherTitle">{{ application.title }}</span>
+                  <span 
+                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
+                    class="appLauncherTitle"
+                  >
+                    {{ application.title }}
+                  </span>
                 </a>
               </div>
             </div>
