@@ -468,7 +468,7 @@
 
   .userApplicationTitle {
     width: max-content;
-    color: #6d6d6d;
+    color: @darkGrey;
     font-size: 20px;
     font-weight: 500;
     letter-spacing: 1px;
@@ -500,13 +500,17 @@
       display: inline-flex;
       flex-wrap: wrap;
       flex: 1 1 100%;
+      padding: 12px;
 
       .authorizedApplication {
         padding: 10px;
+        padding-bottom: 5px;
         display: flex;
         flex-direction: column;
-        flex: 0 1 30%;
-        padding: 20px 10px;
+        flex: 0 1 20%;
+        margin-right: 16px;
+        margin-bottom: 17px;
+        border-radius: 6px!important;
         .authorisedAppContent {
           height: 100%;
           display: flex;
@@ -522,17 +526,31 @@
             margin-left: 16px;
           }
           .userAppDescription {
-            flex: 1;
-            cursor: pointer;
-            div p {
-              color: #797979;
-              font-size: 13px;
+            width: initial;
+            padding: 0;
+            color: @greyColorLighten1Default;
+            .description {
+              height: 66px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              display: -webkit-box;
+              -webkit-line-clamp: 3; /* number of lines to show */
+              -webkit-box-orient: vertical;
             }
+          }
+          hr {
+            margin: 5px 0;
           }
           .applicationHeader {
             display: flex;
             width: 100%;
-            margin-bottom: 15px;
+            padding: 0;
+            margin-bottom: 6px;
+            .v-list-item__content {
+              overflow: unset;
+              padding: 0;
+              height: 45px;
+            }
             h5 {
               font-size: 15px;
               font-weight: bold;
@@ -542,8 +560,12 @@
               width: 45px;
               height: 45px;
             }
-            .title {
-              max-width: 128px;
+            .appTitle {
+              max-width: 100px;
+              white-space: nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+              color: @textColorDefault;
             }
             .appImage {
               width: 45px;
@@ -552,51 +574,24 @@
               overflow: hidden;
             }
           }
+          .appHelp {
+            position: relative;
+            left: 5%;
+            bottom: 38%;
+            margin: 0;
+          }
         }
-        .applicationButton {
-          box-sizing: border-box;
+        .applicationActions {
+          height: 22px;
+          justify-content: space-between;
+          padding: 0 0 0 8px;
           a {
-            background: transparent;
-            border-radius: 25px;
-            border: 1px solid #797979;
-            color: #797979;
-            font-size: 12px;
-            padding: 5px 7px;
-            margin: 5px 0;
-
-            &:hover {
-              background: #797979;
-              color: @baseBackgroundDefault;
-            }
+            font-weight: 600;
           }
           button {
-            background: transparent;
-            border: 1px solid #797979;
-            color: #797979;
-            border-radius: 25px;
-            font-size: 12px;
-            line-height: initial;
-            padding: 5px 7px;
-            margin: 5px 0;
-            &:hover {
-              color: @baseBackgroundDefault;
-              background: @primaryColor;
-            }
-            &:hover:disabled {
-              color: #797979;
-              background: transparent;
-            }
-            &.favorite {
-              color: @baseBackgroundDefault;
-              background: @primaryColor;
-            }
-            &.favorite:hover {
-              color: #797979;
-              background: transparent;
-            }
-            &.favorite:hover:disabled {
-              color: @baseBackgroundDefault;
-              background: @primaryColor;
+            padding: 0;
+            .v-icon {
+              color: #edca32!important;
             }
           }
         }
@@ -661,7 +656,7 @@
 
   .favoriteAppTitle {
     width: 100%;
-    color: #6d6d6d;
+    color: @darkGrey;
     font-size: 20px;
     font-weight: 500;
     letter-spacing: 1px;
@@ -690,16 +685,11 @@
     .favoriteAppUrl {
       max-width: 130px;
       h5 {
-        color: #797979;
+        color: @textColorDefault;
         font-size: 15px;
         padding-left: 10px;
         flex: 1;
       }
-    }
-    .favoriteAppRemove a i:before {
-      font-size: 14px;
-      font-weight: normal;
-      color: #929292;
     }
   }
   .maxFavorite {
@@ -759,17 +749,19 @@
         flex: 0 1 100%!important;
       }
     }
-    .applicationButton a, .applicationButton button {
-      text-align: center;
-      line-height: initial;
-      display: block;
-      margin: 5px 0;
-    }
-    .applicationButton a {
-      width: auto;
-    }
-    .applicationButton button {
-      width: 100%;
+    .applicationActions {
+      a, button {
+        text-align: center;
+        line-height: initial;
+        display: block;
+        margin: 5px 0;
+      }
+      a {
+        width: auto;
+      }
+      button {
+        width: 100%;
+      }
     }
   }
 }

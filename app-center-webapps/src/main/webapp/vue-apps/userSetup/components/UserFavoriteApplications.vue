@@ -36,7 +36,6 @@
           <v-btn
             v-if="!favoriteApp.byDefault"
             icon
-            color="red"
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
             <v-icon>mdi-star</v-icon>
