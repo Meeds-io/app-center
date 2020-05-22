@@ -83,7 +83,7 @@
           </v-card-text>
           <v-divider></v-divider>
           <v-card-actions class="applicationActions">
-            <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.access") }}</a>
+            <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
             <v-btn
               icon
               :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"

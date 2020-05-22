@@ -38,7 +38,7 @@
   "appCenter.adminSetupList.remove": "Remove",
   "appCenter.adminSetupList.search": "Search",
   "appCenter.userSetup.appCenter": "Application center",
-  "appCenter.userSetup.authorized.access": "Access",
+  "appCenter.userSetup.authorized.open": "OPEN",
   "appCenter.userSetup.authorized.displayMore": "Display more",
   "appCenter.userSetup.favorite": "Favorite applications",
   "appCenter.userSetup.shortcuts": "Shortcuts",
