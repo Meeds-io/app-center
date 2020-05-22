@@ -748,8 +748,16 @@
 @media screen and (max-width: 481px) {
   .userApplications {
     margin: 0;
-    .authorizedApplications .authorizedApplication {
-      flex: 0 1 100%!important;
+    .authorizedApplications {
+      .authorizedApplicationsHeader {
+        flex-direction: column;
+        .applicationCenterTitle, .applicationCenterActions {
+          width: inherit!important;
+        }
+      }
+      .authorizedApplication {
+        flex: 0 1 100%!important;
+      }
     }
     .applicationButton a, .applicationButton button {
       text-align: center;
