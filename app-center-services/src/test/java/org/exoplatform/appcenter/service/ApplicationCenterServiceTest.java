@@ -44,9 +44,9 @@ public class ApplicationCenterServiceTest {
 
     ExoContainerContext.setCurrentContainer(container);
     RequestLifeCycle.begin(container);
-    applicationCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+    applicationCenterService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterService.class);
 
-    OrganizationService organizationService = ExoContainerContext.getService(OrganizationService.class);
+    OrganizationService organizationService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(OrganizationService.class);
     UserHandler userHandler = organizationService.getUserHandler();
     MembershipHandler membershipHandler = organizationService.getMembershipHandler();
 
@@ -66,17 +66,17 @@ public class ApplicationCenterServiceTest {
     }
 
     // Workaround, the service wasn't started
-    Startable fileNameSpaceService = (Startable) ExoContainerContext.getService(NameSpaceService.class);
+    Startable fileNameSpaceService = (Startable) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NameSpaceService.class);
     assertNotNull(fileNameSpaceService);
     fileNameSpaceService.start();
   }
 
   @After
   public void teardown() {
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     favoriteApplicationDAO.deleteAll();
 
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     applicationDAO.deleteAll();
 
     RequestLifeCycle.end();

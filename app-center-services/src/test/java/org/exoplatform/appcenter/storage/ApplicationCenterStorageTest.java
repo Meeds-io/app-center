@@ -36,17 +36,17 @@ public class ApplicationCenterStorageTest {
     RequestLifeCycle.begin(container);
 
     // Workaround, the service wasn't started
-    NameSpaceService fileNameSpaceService = ExoContainerContext.getService(NameSpaceService.class);
+    NameSpaceService fileNameSpaceService = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(NameSpaceService.class);
     assertNotNull(fileNameSpaceService);
     ((NameSpaceServiceImpl) fileNameSpaceService).start();
   }
 
   @After
   public void teardown() {
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     favoriteApplicationDAO.deleteAll();
 
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     applicationDAO.deleteAll();
 
     RequestLifeCycle.end();
@@ -57,7 +57,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testCreateApplication() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -93,7 +93,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testUpdateApplication() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     Application application = new Application(null,
@@ -133,7 +133,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testDeleteApplication() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -170,7 +170,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testGetApplication() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -209,7 +209,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testGetApplicationByTitleOrURL() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -263,7 +263,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testAddApplicationToUserFavorite() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -298,7 +298,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testDeleteApplicationFavorite() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -329,7 +329,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testGetFavoriteApplicationsByUser() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -362,7 +362,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testGetApplications() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     List<Application> applications = applicationCenterStorage.getApplications(null, 0, 0);
@@ -401,7 +401,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testCountApplications() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     assertEquals(0, applicationCenterStorage.countApplications());
@@ -424,7 +424,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testIsFavoriteApplication() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -477,7 +477,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testCountFavorites() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     try {
@@ -509,7 +509,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testCreateAppImageFileItem() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     assertNull(applicationCenterStorage.createAppImageFileItem(null, null));
@@ -523,7 +523,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   public void testGetAppImageFile() throws Exception {
-    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
     ApplicationImage applicationImage = applicationCenterStorage.createAppImageFileItem("name", "fileContent");

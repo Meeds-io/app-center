@@ -32,10 +32,10 @@ public class FavoriteApplicationDAOTest {
 
   @After
   public void teardown() {
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     favoriteApplicationDAO.deleteAll();
 
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     applicationDAO.deleteAll();
 
     RequestLifeCycle.end();
@@ -46,9 +46,9 @@ public class FavoriteApplicationDAOTest {
 
   @Test
   public void testServiceInitialized() {
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     assertNotNull(applicationDAO);
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     assertNotNull(favoriteApplicationDAO);
 
     ApplicationEntity applicationEntity = new ApplicationEntity(null,
@@ -74,9 +74,9 @@ public class FavoriteApplicationDAOTest {
 
   @Test
   public void testGetFavoriteAppByUserNameAndAppId() {
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     assertNotNull(applicationDAO);
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     assertNotNull(favoriteApplicationDAO);
 
     ApplicationEntity applicationEntity = new ApplicationEntity(null,
@@ -128,9 +128,9 @@ public class FavoriteApplicationDAOTest {
 
   @Test
   public void testCountFavoritesForUser() {
-    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    ApplicationDAO applicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ApplicationDAO.class);
     assertNotNull(applicationDAO);
-    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
+    FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(FavoriteApplicationDAO.class);
     assertNotNull(favoriteApplicationDAO);
 
     ApplicationEntity applicationEntity = new ApplicationEntity(null,

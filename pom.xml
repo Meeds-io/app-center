@@ -16,11 +16,11 @@
 	<parent>
 		<artifactId>addons-parent-pom</artifactId>
 		<groupId>org.exoplatform.addons</groupId>
-		<version>11</version>
+		<version>10</version>
 	</parent>
 	<groupId>org.exoplatform.addons.app-center</groupId>
 	<artifactId>app-center</artifactId>
-	<version>2.0.x-SNAPSHOT</version>
+	<version>1.0.x-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Add-on:: Application Center - Parent POM</name>
 	<description>Application Center Addon</description>
@@ -36,8 +36,8 @@
     <tag>HEAD</tag>
   </scm>
 	<properties>
-		<org.exoplatform.social.version>6.0.x-SNAPSHOT</org.exoplatform.social.version>
-    <org.exoplatform.platform-ui.version>6.0.x-SNAPSHOT</org.exoplatform.platform-ui.version>
+		<org.exoplatform.social.version>5.3.x-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.platform-ui.version>5.3.x-SNAPSHOT</org.exoplatform.platform-ui.version>
 
     <!-- Maven Plugin for JS and CSS bundling and Unit Test execution -->
     <com.github.eirslett.frontend.version>1.6</com.github.eirslett.frontend.version>

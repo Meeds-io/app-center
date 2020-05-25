@@ -21,7 +21,7 @@
       <name>appCenterUserSetup</name>
       <label>#{portal.global.appCenterUserSetup}</label>
       <visibility>SYSTEM</visibility>
-      <page-reference>portal::global::appCenterUserSetup</page-reference>
+      <page-reference>portal::intranet::appCenterUserSetup</page-reference>
     </node>
   </page-nodes>
 </node-navigation>
