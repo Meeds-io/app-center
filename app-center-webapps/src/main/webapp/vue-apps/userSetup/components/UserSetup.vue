@@ -1,10 +1,10 @@
 <template>
   <div class="userApplications">
     <v-row dense>
-      <v-col>
+      <v-col class="authorizedApplicationsContainer">
         <user-authorizedApplications />
       </v-col>
-      <v-col sm="3">
+      <v-col class="userFavoriteApplicationsContainer" sm="3">
         <user-favoriteApplications />
       </v-col>      
     </v-row>
