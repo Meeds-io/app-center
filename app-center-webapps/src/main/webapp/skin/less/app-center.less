@@ -518,7 +518,6 @@
             flex-direction: column;
             img {
               border-radius: 5px;
-              box-shadow: 0 0 5px darkgrey;
             }
             img.default {
               border-radius: unset;
@@ -587,6 +586,7 @@
             padding: 0 0 0 8px;
             a {
               font-weight: 600;
+              text-transform: uppercase;
             }
             button {
               padding: 0;
@@ -600,21 +600,6 @@
       .noApp {
         margin-right: auto;
         margin-left: auto;
-      }
-      .appPaginator {
-        padding-top: 30px;
-      }
-      .appPaginator button {
-        background: @primaryColor;
-        border: 1px solid @primaryColor;
-        color: @baseBackgroundDefault;
-        padding: 5px 10px;
-        border-radius: 5px;
-        box-shadow: 0 0 3px #ff7c4061;
-      }
-      .appPaginator button:hover {
-        background: transparent;
-        color: @primaryColor;
       }
       .appSearch {
         .v-input__prepend-inner {
@@ -673,7 +658,6 @@
       border-radius: 8px!important;
       .favoriteAppImage {
         .appImage {
-          box-shadow: 0 0 5px darkgrey;
           object-fit: cover;
           overflow: hidden;
         }
