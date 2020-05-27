@@ -26,14 +26,12 @@
             :target="favoriteApp.target"
             :href="favoriteApp.computedUrl"
           >
-            <h5>
-              <div
-                v-exo-tooltip.bottom.body="favoriteApp.title.length > 24 ? favoriteApp.title : ''"
-                class="favAppTitle"
-              >
-                {{ favoriteApp.title }}
-              </div>
-            </h5>
+            <div
+              v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
+              class="favAppTitle"
+            >
+              {{ favoriteApp.title }}
+            </div>
           </a>
         </v-list-item-content>
         <v-list-item-action class="favoriteAppRemove">

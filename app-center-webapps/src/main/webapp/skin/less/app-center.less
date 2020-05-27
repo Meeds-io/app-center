@@ -685,18 +685,13 @@
         }
       }
       .favoriteAppUrl {
-        h5 {
+        .favAppTitle {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
           color: @textColorDefault;
           font-size: 15px;
           padding-left: 10px;
-          flex: 1;
-
-          .favAppTitle {
-            max-width: 196px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
         }
       }
     }
@@ -724,7 +719,75 @@
     }
   }
 }
+@media screen and (min-width: 768px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 4vw!important;
+    }
+  }
+}
+@media screen and (min-width: 800px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 5vw!important;
+    }
+  }
+}
+@media screen and (min-width: 844px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 6vw!important;
+    }
+  }
+}
+@media screen and (min-width: 888px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 7vw!important;
+    }
+  }
+}
+@media screen and (min-width: 944px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 8vw!important;
+    }
+  }
+}
+@media screen and (min-width: 1024px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 9vw!important;
+    }
+  }
+}
+@media screen and (min-width: 1200px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 11vw!important;
+    }
+  }
+}
+@media screen and (min-width: 1300px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 12vw!important;
+    }
+  }
+}
+@media screen and (min-width: 1400px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 13vw!important;
+    }
+  }
+}
 @media screen and (max-width: 767px) {
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 25vw!important;
+    }
+  }
   .userApplications {
     .authorizedApplications {
       flex: 1 1 100%;
@@ -748,6 +811,11 @@
   .authorizedApplicationsContainer {
     margin-right: 0!important;
     margin-bottom: 14px;
+  }
+  .userFavoriteApplicationsContainer {
+    .favAppTitle {
+      max-width: 45vw!important;
+    }
   }
   .userApplications {
     margin: 0;
