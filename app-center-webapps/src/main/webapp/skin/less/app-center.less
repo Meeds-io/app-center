@@ -656,7 +656,7 @@
   .userFavoriteApplications {
     padding: 14px;
 
-    .favoriteAppTitle {
+    .favoriteAppsTitle {
       width: 100%;
       color: @darkGrey;
       font-size: 20px;
@@ -685,12 +685,18 @@
         }
       }
       .favoriteAppUrl {
-        max-width: 130px;
         h5 {
           color: @textColorDefault;
           font-size: 15px;
           padding-left: 10px;
           flex: 1;
+
+          .favAppTitle {
+            max-width: 196px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
         }
       }
     }
@@ -920,7 +926,6 @@
     .appLauncherItemContainer {
       max-height: 137px;
       min-height: 80px;
-      overflow-y: hidden;
       flex: 0 1 33%;
       .appLauncherItem {
         transition: all .3s;
@@ -941,10 +946,14 @@
             transition: all .3s;
           }
           .appLauncherTitle {
-            display: block;
+            display: -webkit-box;
             text-align: center;
-            color: #555759;
-            font-size: 16px;
+            color: @textColorDefault;
+            height: 42px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            -webkit-line-clamp: 2; /* number of lines to show */
+            -webkit-box-orient: vertical;
           }
         }
       }
