@@ -1,6 +1,6 @@
 <template>
   <div class="userFavoriteApplications">
-    <div class="favoriteAppTitle">
+    <div class="favoriteAppsTitle">
       {{ $t("appCenter.userSetup.favorite") }}
     </div>
 
@@ -26,17 +26,18 @@
             :target="favoriteApp.target"
             :href="favoriteApp.computedUrl"
           >
-            <h5 class="tooltipContent">
-              <div>{{ favoriteApp.title }}</div>
-            </h5>
+            <div
+              v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
+              class="favAppTitle"
+            >
+              {{ favoriteApp.title }}
+            </div>
           </a>
         </v-list-item-content>
-        <v-spacer></v-spacer>
         <v-list-item-action class="favoriteAppRemove">
           <v-btn
             v-if="!favoriteApp.byDefault"
             icon
-            color="red"
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
             <v-icon>mdi-star</v-icon>
