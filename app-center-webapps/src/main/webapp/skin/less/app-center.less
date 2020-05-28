@@ -492,9 +492,9 @@
     
     .authorizedApplications {
       padding: 14px;
-
-      .applicationCenterTitle {
-        padding-top: 25px;
+      
+      .applicationCenterActions {
+        padding-top: 0;
       }
 
       .userAuthorizedApplications {
@@ -608,9 +608,10 @@
         .v-text-field {
           padding-top: 0!important;
           margin-top: 0!important;
+          color: @primaryColorDefault;
         }
         .v-text-field__slot {
-          height: 48px!important;
+          height: 58px!important;
           &:focus {
             outline: none!important;
           }
@@ -619,16 +620,19 @@
           height: 36px!important;
         }
         input:focus {
-          outline: none!important;
+          box-shadow: none;
         }
         i {
           color: @greyColorLighten1Default!important;
         }
       }
-      #appCenterAdminSetup {
-        align-self: center;
-        i {
-          color: @greyColorLighten1Default!important;
+      .adminIcon {
+        padding-top: 15px;
+        #appCenterAdminSetup {
+          align-self: center;
+          i {
+            color: @greyColorLighten1Default!important;
+          }
         }
       }
     }
@@ -647,7 +651,7 @@
       font-size: 20px;
       font-weight: 500;
       letter-spacing: 1px;
-      padding-top: 25px;
+      padding-top: 16px;
       margin-bottom: 35px;
     }
     .favoriteApplication {
