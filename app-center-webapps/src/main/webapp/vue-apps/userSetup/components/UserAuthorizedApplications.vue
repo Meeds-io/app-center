@@ -60,6 +60,7 @@
             </v-list-item-content>
             <v-list-item-action class="appHelp">
               <v-btn
+                small
                 icon
               >
                 <v-icon 
