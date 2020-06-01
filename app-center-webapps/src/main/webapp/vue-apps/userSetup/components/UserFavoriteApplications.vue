@@ -47,13 +47,13 @@
     </v-card>
     <div v-show="!loading">
       <div v-if="canAddFavorite" class="maxFavorite">
-        <v-icon color="#01579B">
+        <v-icon class="notReached">
           info
         </v-icon>
         <span>{{ $t("appCenter.userSetup.maxFavoriteApps.not.reached", {0: $parent.$children[0].maxFavoriteApps}) }}</span>
       </div>
       <div v-else class="maxFavorite reached">
-        <v-icon color="#D84315">
+        <v-icon>
           mdi-alert
         </v-icon>
         <span>{{ $t("appCenter.userSetup.maxFavoriteApps.reached") }}</span>

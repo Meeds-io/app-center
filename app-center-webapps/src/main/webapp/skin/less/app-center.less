@@ -1,7 +1,7 @@
 @import "./variables.less";
 
 /* This file contains CSS for admin setup portlet */
-.VuetifyApp .appCenterDrawer {
+.appCenterDrawer {
   min-height: 100vh;
   max-height: 100vh;
   position: fixed;
@@ -10,7 +10,7 @@
     overflow-y: hidden !important;
   }
 }
-.VuetifyApp .applicationsAdmin {
+.applicationsAdmin {
   margin: 20px;
   padding: 10px;
   background: @baseBackgroundDefault !important;
@@ -460,7 +460,7 @@
   }
 }
 /* This file contains CSS for user setup portlet */
-.VuetifyApp .userApplications {
+.userApplications {
   margin: 20px;
   padding: 10px;
   border-radius: 6px;
@@ -577,6 +577,10 @@
               left: 6%;
               bottom: 41%;
               margin: 0;
+              
+              .v-icon {
+                color: @greyColorLighten1Default;
+              }
             }
           }
           .applicationActions {
@@ -637,7 +641,7 @@
     }
   }
 }
-.VuetifyApp .userFavoriteApplicationsContainer {
+.userFavoriteApplicationsContainer {
   border-radius: 4px;
   background: @baseBackgroundDefault;
   
@@ -681,20 +685,28 @@
           padding-left: 10px;
         }
       }
+      .favoriteAppRemove .v-icon {
+        color: @greyColorLighten1Default;
+      }
     }
     .maxFavorite {
       color: @greyColorLighten1Default;
       font-style: italic;
       font-size: 14px;
+      
+      .notReached {
+        color: @alertInfoColor;
+      }
     }
     .reached {
-      color: #E53935;
+      color: @errorColor!important;
+      .v-icon {
+        color: @errorColor!important;
+      }
     }
   }
 }
-.VuetifyApp .v-btn--outlined .v-btn__content .v-icon, .VuetifyApp .v-btn--round .v-btn__content .v-icon {
-  color: @greyColorLighten1Default!important;
-}
+
 @media screen and (max-width: 1264px) {
   .userApplications {
     .authorizedApplications {
