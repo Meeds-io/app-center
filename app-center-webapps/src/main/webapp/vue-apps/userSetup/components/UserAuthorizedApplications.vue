@@ -139,6 +139,14 @@ export default {
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
   },
+  computed: {
+    canAddFavorite() {
+      const countFavoriteApps = this.authorizedApplicationsList.filter(app => !app.byDefault && app.favorite).length;
+      const countMandatoryApps = this.authorizedApplicationsList.filter(app => app.byDefault).length;
+      const maxAllowedApps = countFavoriteApps + countMandatoryApps;
+      return maxAllowedApps < this.maxFavoriteApps + countMandatoryApps;
+    }
+  },
   watch: {
     searchText() {
       if (this.searchText && this.searchText.trim().length) {
@@ -151,13 +159,11 @@ export default {
       }
     }
   },
-
   created() {
     this.pageSize = this.$parent.pageSize;
-    this.getAuthorizedApplicationsList();
     this.getMaxFavoriteApps();
+    this.getAuthorizedApplicationsList();
   },
-
   methods: {
     getAuthorizedApplicationsList() {
       const offset = this.currentPage - 1;
@@ -179,7 +185,6 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          this.canAddFavorite = data.canAddFavorite;
           if (this.currentPage * this.pageSize < data.size) {
             this.showPaginator = true;
           } else {
@@ -195,13 +200,12 @@ export default {
         .then(() => {
           return this.$parent.$children[1].getFavoriteApplicationsList();
         })
-        .then(data => {
-          const applications = data && data.applications && data.applications.length || [];
-          this.canAddFavorite = !this.maxFavoriteApps || applications.length < this.maxFavoriteApps;
+        .then(() => {
           application.favorite = !application.favorite;
           if (!application.favorite) {
             this.$parent.$children[1].deleteFavoriteApplication(application.id);
           }
+          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     nextPage() {
