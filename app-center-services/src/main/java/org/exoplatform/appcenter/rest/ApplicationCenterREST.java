@@ -178,7 +178,7 @@ public class ApplicationCenterREST implements ResourceContainer {
       GeneralSettings generalSettings = appCenterService.getAppGeneralSettings();
       return Response.ok(generalSettings).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while updating application", e);
@@ -199,7 +199,7 @@ public class ApplicationCenterREST implements ResourceContainer {
     try {
       appCenterService.createApplication(application);
     } catch (ApplicationAlreadyExistsException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while creating application", e);
@@ -220,7 +220,7 @@ public class ApplicationCenterREST implements ResourceContainer {
     try {
       appCenterService.updateApplication(application, getCurrentUserName());
     } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.status(HTTPStatus.UNAUTHORIZED).build();
     } catch (ApplicationAlreadyExistsException e) {
       LOG.warn(e);
@@ -244,10 +244,10 @@ public class ApplicationCenterREST implements ResourceContainer {
     try {
       appCenterService.deleteApplication(applicationId, getCurrentUserName());
     } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.status(HTTPStatus.UNAUTHORIZED).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while deleting application", e);
@@ -268,10 +268,10 @@ public class ApplicationCenterREST implements ResourceContainer {
       appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
       return Response.noContent().build();
     } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.status(HTTPStatus.UNAUTHORIZED).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while adding application as favorite", e);
@@ -368,10 +368,10 @@ public class ApplicationCenterREST implements ResourceContainer {
       builder.cacheControl(cc);
       return builder.cacheControl(cc).build();
     } catch (IllegalAccessException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.status(HTTPStatus.UNAUTHORIZED).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while getting application illustration", e);
