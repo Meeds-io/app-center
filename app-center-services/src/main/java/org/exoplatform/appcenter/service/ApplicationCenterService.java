@@ -77,6 +77,7 @@ public class ApplicationCenterService implements Startable {
   public static String LOG_SERVICE_NAME          = "application-center";
   
   public static String LOG_OPEN_FAVORITE_DRAWER    = "open-favorite-drawer";
+  public static String LOG_CLICK_ALL_APPLICATIONS    = "click-all-applications";
   
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
