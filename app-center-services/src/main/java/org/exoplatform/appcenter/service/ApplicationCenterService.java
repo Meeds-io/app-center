@@ -122,7 +122,7 @@ public class ApplicationCenterService implements Startable {
             appCenterStorage.deleteApplication(application.getId());
           } catch (Exception e) {
             LOG.warn("An unknown error occurs while deleting not found system application '{}' in store",
-                     application.getTitle());
+                     application.getTitle(),e);
           }
         }
       });
