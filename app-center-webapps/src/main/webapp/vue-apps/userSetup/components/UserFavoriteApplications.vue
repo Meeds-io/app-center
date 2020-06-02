@@ -65,6 +65,12 @@
 <script>
 export default {
   name: 'UserFavoriteApplications',
+  props: {
+    canAddFavorite: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       favoriteApplicationsList: [],
@@ -96,9 +102,6 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          this.canAddFavorite =
-            !this.$parent.$children[0].maxFavoriteApps ||
-            this.favoriteApplicationsList.length < this.$parent.$children[0].maxFavoriteApps;
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
     },
