@@ -11,15 +11,12 @@
           <v-col class="appSearch">
             <v-text-field
               v-model="searchText"
-              :placeholder="`${$t('appCenter.adminSetupList.search')}...`"
-              prepend-inner-icon="search"
-              single-line
-              flat
+              :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
+              prepend-inner-icon="mdi-filter"
               hide-details
-            >
-            </v-text-field>            
+            ></v-text-field>
           </v-col>
-          <v-col cols="1">
+          <v-col class="adminIcon" cols="1">
             <div id="appCenterAdminSetup">
               <a
                 v-if="isAdmin"
@@ -63,6 +60,7 @@
             </v-list-item-content>
             <v-list-item-action class="appHelp">
               <v-btn
+                small
                 icon
               >
                 <v-icon 

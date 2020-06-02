@@ -37,6 +37,7 @@
   "appCenter.adminSetupList.actions": "Actions",
   "appCenter.adminSetupList.remove": "Remove",
   "appCenter.adminSetupList.search": "Search",
+  "appCenter.adminSetupList.filter": "Filter by name",
   "appCenter.userSetup.appCenter": "Application center",
   "appCenter.userSetup.authorized.open": "Open",
   "appCenter.userSetup.authorized.displayMore": "Display more",
