@@ -168,6 +168,12 @@ export default {
         }).finally(() => this.loading = false);
     },
     navigateTo(link) {
+      if (link==='appCenterUserSetup/') {
+        fetch('/portal/rest/app-center/applications/logClickAllApplications', {
+          method: 'GET',
+          credentials: 'include',
+        });
+      }
       location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
     },
   }
