@@ -68,7 +68,7 @@ export default {
   props: {
     canAddFavorite: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   data() {
@@ -77,11 +77,9 @@ export default {
       loading: true,
     };
   },
-
   created() {
     this.getFavoriteApplicationsList();
   },
-
   methods: {
     getFavoriteApplicationsList() {
       return fetch('/portal/rest/app-center/applications/favorites', {
@@ -105,7 +103,6 @@ export default {
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
     },
-
     deleteFavoriteApplication(appId) {
       return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
         method: 'DELETE',
