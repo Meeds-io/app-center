@@ -145,14 +145,6 @@ export default {
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
   },
-  computed: {
-    canAddFavorite() {
-      const countFavoriteApps = this.authorizedApplicationsList.filter(app => !app.byDefault && app.favorite).length;
-      const countMandatoryApps = this.authorizedApplicationsList.filter(app => app.byDefault).length;
-      const maxAllowedApps = countFavoriteApps + countMandatoryApps;
-      return maxAllowedApps < this.maxFavoriteApps + countMandatoryApps;
-    }
-  },
   watch: {
     searchText() {
       if (this.searchText && this.searchText.trim().length) {
@@ -211,7 +203,6 @@ export default {
           if (!application.favorite) {
             this.$parent.$children[1].deleteFavoriteApplication(application.id);
           }
-          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     nextPage() {
