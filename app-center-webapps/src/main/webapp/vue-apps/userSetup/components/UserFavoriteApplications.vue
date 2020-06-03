@@ -29,13 +29,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       outlined
     >
       <v-list-item>
-        <v-list-item-avatar>
-          <div class="favoriteAppImage">
-            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
-              <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
-            </a>
-          </div>
-        </v-list-item-avatar>
+        <div class="favoriteAppImage">
+          <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
+            <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+          </a>
+        </div>
         <v-list-item-content>
           <a
             class="favoriteAppUrl"

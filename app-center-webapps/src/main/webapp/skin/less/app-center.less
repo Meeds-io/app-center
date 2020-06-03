@@ -481,6 +481,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   padding: 10px;
   border-radius: 6px;
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
+  .appImage {
+      width: 45px;
+      height: 45px;
+      object-fit: cover;
+      overflow: hidden;
+      border-radius:5px;
+    }
+
 
   .userApplicationTitle {
     width: max-content;
@@ -532,9 +540,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             height: 100%;
             display: flex;
             flex-direction: column;
-            img {
-              border-radius: 5px;
-            }
             img.default {
               border-radius: unset;
               box-shadow: none;
@@ -571,21 +576,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 font-size: 15px;
                 padding-left: 10px;
               }
-              .image {
-                width: 45px;
-                height: 45px;
-              }
               .appTitle {
                 white-space: nowrap;
                 overflow:hidden;
                 text-overflow:ellipsis;
                 color: @textColorDefault;
-              }
-              .appImage {
-                width: 45px;
-                height: 45px;
-                object-fit: cover;
-                overflow: hidden;
               }
             }
             .appHelp {
@@ -680,10 +675,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       width: 100%;
       border-radius: 8px!important;
       .favoriteAppImage {
-        .appImage {
-          object-fit: cover;
-          overflow: hidden;
-        }
         .default {
           border-radius: unset;
           box-shadow: none;
