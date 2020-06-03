@@ -148,9 +148,7 @@ export default {
   computed: {
     canAddFavorite() {
       const countFavoriteApps = this.authorizedApplicationsList.filter(app => !app.byDefault && app.favorite).length;
-      const countMandatoryApps = this.authorizedApplicationsList.filter(app => app.byDefault).length;
-      const maxAllowedApps = countFavoriteApps + countMandatoryApps;
-      return maxAllowedApps < this.maxFavoriteApps + countMandatoryApps;
+      return countFavoriteApps < this.maxFavoriteApps;
     }
   },
   watch: {
@@ -196,6 +194,7 @@ export default {
           } else {
             this.showPaginator = false;
           }
+          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     addOrDeleteFavoriteApplication(application) {
