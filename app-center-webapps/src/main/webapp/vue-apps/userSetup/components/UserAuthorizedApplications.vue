@@ -126,6 +126,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <script>
 export default {
   name: 'UserAuthorizedApplications',
+  props: {
+    canAddFavorite: {
+      type: Boolean,
+      default: true,
+    },
+  },
   data() {
     return {
       isAdmin: eXo.env.portal.isAdmin,
@@ -138,14 +144,6 @@ export default {
       maxFavoriteApps: '',
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
-  },
-  computed: {
-    canAddFavorite() {
-      const countFavoriteApps = this.authorizedApplicationsList.filter(app => !app.byDefault && app.favorite).length;
-      const countMandatoryApps = this.authorizedApplicationsList.filter(app => app.byDefault).length;
-      const maxAllowedApps = countFavoriteApps + countMandatoryApps;
-      return maxAllowedApps < this.maxFavoriteApps + countMandatoryApps;
-    }
   },
   watch: {
     searchText() {
@@ -205,7 +203,6 @@ export default {
           if (!application.favorite) {
             this.$parent.$children[1].deleteFavoriteApplication(application.id);
           }
-          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     nextPage() {
