@@ -2,10 +2,10 @@
   <div class="userApplications">
     <v-row dense>
       <v-col class="authorizedApplicationsContainer">
-        <user-authorizedApplications @canAddFavorite="setCanAddFavorite"></user-authorizedApplications>
+        <user-authorizedApplications :can-add-favorite="canAddFavorite"></user-authorizedApplications>
       </v-col>
       <v-col class="userFavoriteApplicationsContainer" sm="3">
-        <user-favoriteApplications :can-add-favorite="canAddFavorite"></user-favoriteApplications>
+        <user-favoriteApplications @canAddFavorite="setCanAddFavorite"></user-favoriteApplications>
       </v-col>      
     </v-row>
   </div>

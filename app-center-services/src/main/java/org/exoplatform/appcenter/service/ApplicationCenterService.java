@@ -500,6 +500,8 @@ public class ApplicationCenterService implements Startable {
                                                          .collect(Collectors.toList());
     ApplicationList applicationList = new ApplicationList();
     applicationList.setApplications(applications);
+    long countFavorites = appCenterStorage.countFavorites(username);
+    applicationList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     applicationList.setLimit(favoriteApplications.size());
     applicationList.setSize(favoriteApplications.size());
     applicationList.setOffset(0);
