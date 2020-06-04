@@ -110,6 +110,12 @@
 <script>
 export default {
   name: 'UserAuthorizedApplications',
+  props: {
+    canAddFavorite: {
+      type: Boolean,
+      default: true,
+    },
+  },
   data() {
     return {
       isAdmin: eXo.env.portal.isAdmin,
@@ -122,12 +128,6 @@ export default {
       maxFavoriteApps: '',
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
-  },
-  computed: {
-    canAddFavorite() {
-      const countFavoriteApps = this.authorizedApplicationsList.filter(app => !app.byDefault && app.favorite).length;
-      return countFavoriteApps < this.maxFavoriteApps;
-    }
   },
   watch: {
     searchText() {
@@ -172,7 +172,6 @@ export default {
           } else {
             this.showPaginator = false;
           }
-          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     addOrDeleteFavoriteApplication(application) {
@@ -188,7 +187,6 @@ export default {
           if (!application.favorite) {
             this.$parent.$children[1].deleteFavoriteApplication(application.id);
           }
-          this.$emit('canAddFavorite', this.canAddFavorite);
         });
     },
     nextPage() {

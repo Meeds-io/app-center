@@ -65,16 +65,11 @@
 <script>
 export default {
   name: 'UserFavoriteApplications',
-  props: {
-    canAddFavorite: {
-      type: Boolean,
-      default: true,
-    },
-  },
   data() {
     return {
       favoriteApplicationsList: [],
       loading: true,
+      canAddFavorite: false,
     };
   },
   created() {
@@ -94,12 +89,14 @@ export default {
           }
         })
         .then(data => {
+          this.canAddFavorite = data.canAddFavorite;
           this.favoriteApplicationsList = data && data.applications || [];
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
+          this.$emit('canAddFavorite', this.canAddFavorite);
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
     },
@@ -115,13 +112,7 @@ export default {
           const index = this.$parent.$children[0].authorizedApplicationsList.findIndex(
             app => app.id === appId
           );
-          this.$parent.$children[0].authorizedApplicationsList[
-            index
-          ].favorite = false;
-          this.$parent.$children[0].canAddFavorite =
-            !this.$parent.$children[0].maxFavoriteApps ||
-            data.length <
-              this.$parent.$children[0].maxFavoriteApps;
+          this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
         });
     }
   }
