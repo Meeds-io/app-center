@@ -41,14 +41,17 @@ public class FavoriteApplicationEntity {
   @SequenceGenerator(name = "SEQ_FAVORITE_APPLICATION_ID", sequenceName = "SEQFAVORITE_APPLICATION_ID")
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_FAVORITE_APPLICATION_ID")
   @Column(name = "ID")
-  private Long        id;
+  private Long              id;
 
   @ManyToOne
   @JoinColumn(name = "APPLICATION_ID")
   private ApplicationEntity application;
 
   @Column(name = "USER_NAME")
-  private String      userName;
+  private String            userName;
+
+  @Column(name = "APPLICATION_ORDER")
+  private Long              order;
 
   public FavoriteApplicationEntity() {
   }
@@ -98,5 +101,19 @@ public class FavoriteApplicationEntity {
    */
   public void setUserName(String userName) {
     this.userName = userName;
+  }
+
+  /**
+   * @return the application's order
+   */
+  public Long getOrder() {
+    return order;
+  }
+
+  /**
+   * @param order the application's order
+   */
+  public void setOrder(Long order) {
+    this.order = order;
   }
 }
