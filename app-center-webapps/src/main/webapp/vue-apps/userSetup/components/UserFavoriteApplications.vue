@@ -108,7 +108,7 @@ export default {
         .then(() => {
           return this.getFavoriteApplicationsList();
         })
-        .then(data => {
+        .then(() => {
           const index = this.$parent.$children[0].authorizedApplicationsList.findIndex(
             app => app.id === appId
           );
