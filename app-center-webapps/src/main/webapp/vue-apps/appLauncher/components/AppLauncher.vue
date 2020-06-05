@@ -53,7 +53,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-layout class="mx-0 px-3">          
+        <v-row class="appsContainer">          
           <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
@@ -81,7 +81,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </div>
             </div>
           </draggable>
-        </v-layout>
+        </v-row>
       </div>
       
       <v-row class="drawerActions mx-0 px-3">
@@ -108,6 +108,7 @@ export default {
   data() {
     return {
       appLauncherDrawer: null,
+      mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
       appCenterUserSetupLink: '',
       loading: true,
@@ -140,7 +141,7 @@ export default {
   methods: {
     toggleDrawer() {
       if (!this.appLauncherDrawer) {
-        this.getFavoriteApplicationsList();
+        this.getMandatoryAndFavoriteApplications();
         //only when opening the appLauncherDrawer
         fetch('/portal/rest/app-center/applications/logOpenDrawer', {
           method: 'GET',
@@ -150,7 +151,7 @@ export default {
 
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
-    getFavoriteApplicationsList() {
+    getMandatoryAndFavoriteApplications() {
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',

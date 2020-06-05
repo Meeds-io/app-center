@@ -500,6 +500,130 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
+  public void testGetMandatoryAndFavoriteApplicationsList() throws Exception {
+    Application application1 = new Application(null,
+                                              "title1",
+                                              "url1",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description1",
+                                              true,
+                                              true,
+                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application2 = new Application(null,
+                                               "title2",
+                                               "url2",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description",
+                                               false,
+                                               true,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application3 = new Application(null,
+                                               "title3",
+                                               "url3",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description3",
+                                               true,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application4 = new Application(null,
+                                               "title4",
+                                               "url4",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description4",
+                                               true,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application5 = new Application(null,
+                                               "title5",
+                                               "url5",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description5",
+                                               true,
+                                               false,
+                                               "any");
+    
+    applicationCenterService.createApplication(application1);
+    applicationCenterService.createApplication(application2);
+    Application storedApp3 = applicationCenterService.createApplication(application3);
+    Application storedApp4 = applicationCenterService.createApplication(application4);
+    Application storedApp5 = applicationCenterService.createApplication(application5);
+    
+    applicationCenterService.addFavoriteApplication(storedApp3.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp4.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp5.getId(), "simple");
+    
+    ApplicationList MandatoryAndFavoriteApplications = applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin");
+    assertEquals(3, MandatoryAndFavoriteApplications.getApplications().size());
+    assertEquals(3, MandatoryAndFavoriteApplications.getSize());
+  }
+
+  @Test
+  public void testUpdateFavoriteApplicationOrder() throws Exception {
+    Application application1 = new Application(null,
+                                               "title3",
+                                               "url3",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description3",
+                                               true,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application2 = new Application(null,
+                                               "title5",
+                                               "url5",
+                                               6L,
+                                               null,
+                                               null,
+                                               "description5",
+                                               true,
+                                               false,
+                                               "any");
+    
+    Application storedApp1 = applicationCenterService.createApplication(application1);
+    Application storedApp2 = applicationCenterService.createApplication(application2);
+    
+    applicationCenterService.addFavoriteApplication(storedApp1.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp2.getId(), "simple");
+    
+    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "admin");
+    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp2.getId(), new Long(2)), "simple");
+    
+    try {
+      applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "");
+      fail("Shouldn't retrieve applications with null username");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+    
+    try {
+      applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(0L, new Long(1)), "");
+      fail("Application id can not be negative or equal to zero.");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+    
+    assertEquals(new Long(1), applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+    assertEquals(new Long(1), applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+    
+  }
+
+  @Test
   public void testGetAuthorizedApplicationsList() throws Exception {
     try {
       applicationCenterService.getAuthorizedApplicationsList(0, 0, null, null);

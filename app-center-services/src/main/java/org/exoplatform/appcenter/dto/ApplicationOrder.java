@@ -4,10 +4,15 @@ import java.io.Serializable;
 
 public class ApplicationOrder implements Serializable {
   /** Application id */
-  private Long   id;
+  private Long id;
 
   /** Application order */
-  private Long   order;
+  private Long order;
+
+  public ApplicationOrder(Long id, Long order) {
+    this.id = id;
+    this.order = order;
+  }
 
   public Long getId() {
     return id;
