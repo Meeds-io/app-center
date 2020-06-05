@@ -154,11 +154,9 @@ public class ApplicationCenterStorage {
 
   public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
-    // check if not favorite but a system application
     if (entity != null) {
-      boolean canUpdateOrder = entity.getApplication().isByDefault() || entity.getApplication().isSystem() ? false : true;
-
-      if (canUpdateOrder) {
+      // check if it is a favorite application and not a system application
+      if (!entity.getApplication().isByDefault()) {
         entity.setOrder(order.longValue());
         favoriteApplicationDAO.update(entity);
       }
@@ -321,6 +319,8 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.isByDefault(),
                                                           true,
                                                           permissions);
+    // set UserApplication's order
+    userApplication.setOrder(favoriteApplicationEntity.getOrder());
     userApplication.setSystem(applicationEntity.isSystem());
     return userApplication;
   }

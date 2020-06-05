@@ -33,7 +33,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         + " WHERE favoriteApp.application.id = :applicationId"),
     @NamedQuery(name = "FavoriteApplicationEntity.countFavoritesByUser", query = "SELECT count(*) FROM FavoriteApplicationEntity favoriteApp "
         + " WHERE favoriteApp.userName = :userName"),
-    @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteApps", query = "SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp"
+    @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppsByUser", query = "SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp"
         + " WHERE favoriteApp.userName = :userName ORDER BY favoriteApp.order NULLS LAST"),
 
 })

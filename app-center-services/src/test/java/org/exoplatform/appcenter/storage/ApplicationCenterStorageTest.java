@@ -313,6 +313,31 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
+  public void testUpdateApplicationFavoriteOrder() throws Exception {
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    assertNotNull(applicationCenterStorage);
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              "permissions1",
+                                              "permissions2");
+
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+    applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
+    Long appID = applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getId();
+    applicationCenterStorage.updateFavoriteApplicationOrder(appID, "testuser", new Long(1));
+    
+    assertEquals(new Long(1), applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getOrder());
+  }
+
+  @Test
   public void testDeleteApplicationFavorite() throws Exception {
     ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
