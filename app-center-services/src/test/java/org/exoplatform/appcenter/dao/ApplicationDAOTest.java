@@ -243,18 +243,17 @@ public class ApplicationDAOTest {
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser"));
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser3"));
 
-    List<ApplicationEntity> favorites = applicationDAO.getFavoriteActiveApps("testuser");
-    assertNotNull(favorites);
-    assertEquals(3, favorites.size());
-
-    favorites = applicationDAO.getFavoriteActiveApps("testuser2");
+    List<FavoriteApplicationEntity> favorites = favoriteApplicationDAO.getFavoriteAppsByUser("testuser");
     assertNotNull(favorites);
     assertEquals(2, favorites.size());
 
-    favorites = applicationDAO.getFavoriteActiveApps("fake");
+    favorites = favoriteApplicationDAO.getFavoriteAppsByUser("testuser2");
     assertNotNull(favorites);
     assertEquals(1, favorites.size());
-    assertEquals(applicationEntity3.getId(), favorites.get(0).getId());
+
+    favorites = favoriteApplicationDAO.getFavoriteAppsByUser("fake");
+    assertNotNull(favorites);
+    assertEquals(0, favorites.size());
   }
 
 }
