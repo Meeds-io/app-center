@@ -176,12 +176,20 @@ public class ApplicationCenterStorage {
     }
   }
 
+  public List<UserApplication> getMandatoryApplications() {
+    List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
+    return applications.stream().map(this::toUserApplicationDTO).collect(Collectors.toList());
+  }
+
   public List<UserApplication> getFavoriteApplicationsByUser(String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
-    List<ApplicationEntity> applications = applicationDAO.getFavoriteActiveApps(username);
-    return applications.stream().map(this::toFavoriteDTO).collect(Collectors.toList());
+    List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
+    return applications.stream()
+                       .map(this::toUserApplicationDTO)
+                       .filter(userApplication -> userApplication.isActive())
+                       .collect(Collectors.toList());
   }
 
   public List<Application> getSystemApplications() {
@@ -276,10 +284,31 @@ public class ApplicationCenterStorage {
     return application;
   }
 
-  private UserApplication toFavoriteDTO(ApplicationEntity applicationEntity) {
+  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
     if (applicationEntity == null) {
       return null;
     }
+    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
+    UserApplication userApplication = new UserApplication(applicationEntity.getId(),
+                                                          applicationEntity.getTitle(),
+                                                          applicationEntity.getUrl(),
+                                                          applicationEntity.getImageFileId(),
+                                                          null,
+                                                          null,
+                                                          applicationEntity.getDescription(),
+                                                          applicationEntity.isActive(),
+                                                          applicationEntity.isByDefault(),
+                                                          false,
+                                                          permissions);
+    userApplication.setSystem(applicationEntity.isSystem());
+    return userApplication;
+  }
+
+  private UserApplication toUserApplicationDTO(FavoriteApplicationEntity favoriteApplicationEntity) {
+    if (favoriteApplicationEntity == null) {
+      return null;
+    }
+    ApplicationEntity applicationEntity = favoriteApplicationEntity.getApplication();
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),

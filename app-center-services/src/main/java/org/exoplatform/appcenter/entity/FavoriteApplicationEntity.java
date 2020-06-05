@@ -33,6 +33,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         + " WHERE favoriteApp.application.id = :applicationId"),
     @NamedQuery(name = "FavoriteApplicationEntity.countFavoritesByUser", query = "SELECT count(*) FROM FavoriteApplicationEntity favoriteApp "
         + " WHERE favoriteApp.userName = :userName"),
+    @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteApps", query = "SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp"
+        + " WHERE favoriteApp.userName = :userName ORDER BY favoriteApp.order NULLS LAST"),
 
 })
 public class FavoriteApplicationEntity {
@@ -43,7 +45,7 @@ public class FavoriteApplicationEntity {
   @Column(name = "ID")
   private Long              id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "APPLICATION_ID")
   private ApplicationEntity application;
 

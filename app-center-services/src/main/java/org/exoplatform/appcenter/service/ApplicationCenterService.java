@@ -18,7 +18,10 @@ package org.exoplatform.appcenter.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -495,17 +498,19 @@ public class ApplicationCenterService implements Startable {
    * @return {@link ApplicationList} that contains {@link List} of
    *         {@link UserApplication}
    */
-  public ApplicationList getFavoriteApplicationsList(String username) {
-    List<UserApplication> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
-    List<Application> applications = favoriteApplications.stream()
-                                                         .filter(app -> hasPermission(username, app))
-                                                         .collect(Collectors.toList());
+  public ApplicationList getMandatoryAndFavoriteApplicationsList(String username) {
+    List<UserApplication> mandatoryAndFavoriteApplications = appCenterStorage.getMandatoryApplications();
+    mandatoryAndFavoriteApplications.addAll(appCenterStorage.getFavoriteApplicationsByUser(username));
+    List<Application> applications = mandatoryAndFavoriteApplications.stream()
+                                                                     .filter(app -> hasPermission(username, app))
+                                                                     .collect(Collectors.toList());
+
     ApplicationList applicationList = new ApplicationList();
     applicationList.setApplications(applications);
     long countFavorites = appCenterStorage.countFavorites(username);
     applicationList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
-    applicationList.setLimit(favoriteApplications.size());
-    applicationList.setSize(favoriteApplications.size());
+    applicationList.setLimit(mandatoryAndFavoriteApplications.size());
+    applicationList.setSize(mandatoryAndFavoriteApplications.size());
     applicationList.setOffset(0);
     return applicationList;
   }
