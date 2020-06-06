@@ -53,7 +53,37 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-row class="appsContainer">          
+        <v-row class="mandatory appsContainer">
+          <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
+            <div
+              v-for="(application, index) in mandatoryApplicationsList"
+              :id="'Pos-' + index"
+              :key="index"
+              class="appLauncherItemContainer"
+            >
+              <div
+                :id="'App-' + index"
+                class="appLauncherItem"
+              >
+                <a
+                  :id="application.id"
+                  :target="application.target"
+                  :href="application.computedUrl"
+                >
+                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <span
+                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
+                    class="appLauncherTitle"
+                  >
+                    {{ application.title }}
+                  </span>
+                </a>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+        <v-devider></v-devider>
+        <v-layout class="favorite appsContainer">
           <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
@@ -81,7 +111,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </div>
             </div>
           </draggable>
-        </v-row>
+        </v-layout>
       </div>
       
       <v-row class="drawerActions mx-0 px-3">
@@ -165,7 +195,11 @@ export default {
         })
         .then(data => {
           // sort favorite applications alphabetical by default
-          this.favoriteApplicationsList = data.applications.sort((a, b) => {
+          this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault === true);
+          this.favoriteApplicationsList = data.applications.filter(app => app.favorite === true);
+          console.log('Mandatory:', this.mandatoryApplicationsList);
+          console.log('Favorite:', this.favoriteApplicationsList);
+          this.favoriteApplicationsList = this.favoriteApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
             }
@@ -175,6 +209,11 @@ export default {
             }
             
             return 0;
+          });
+          this.mandatoryApplicationsList.forEach(app => {
+            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
