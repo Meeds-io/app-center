@@ -149,7 +149,7 @@ public class ApplicationCenterStorage {
     if (application == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found in store");
     }
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(application, username));
+    favoriteApplicationDAO.create(new FavoriteApplicationEntity(application, username, countFavorites(username)));
   }
 
   public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) {

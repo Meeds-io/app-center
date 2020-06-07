@@ -63,6 +63,12 @@ public class FavoriteApplicationEntity {
     this.userName = userName;
   }
 
+  public FavoriteApplicationEntity(ApplicationEntity application, String userName, Long order) {
+    this.application = application;
+    this.userName = userName;
+    this.order = order;
+  }
+
   /**
    * @return the id
    */
