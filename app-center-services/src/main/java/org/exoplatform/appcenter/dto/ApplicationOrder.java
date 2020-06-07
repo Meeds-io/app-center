@@ -9,6 +9,9 @@ public class ApplicationOrder implements Serializable {
   /** Application order */
   private Long order;
 
+  public ApplicationOrder() {
+  }
+
   public ApplicationOrder(Long id, Long order) {
     this.id = id;
     this.order = order;

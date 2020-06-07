@@ -82,7 +82,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </v-col>
         </v-row>
-        <v-devider></v-devider>
+        <v-row class="appsContainer">
+          <v-divider></v-divider>
+        </v-row>
         <v-layout class="favorite appsContainer">
           <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
             <div
@@ -140,6 +142,7 @@ export default {
       appLauncherDrawer: null,
       mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
+      applicationsOrder: null,
       appCenterUserSetupLink: '',
       loading: true,
       draggedElementIndex: null,
@@ -157,6 +160,22 @@ export default {
         });
       } else {
         $('body').removeClass('hide-scroll');
+      }
+    },
+    favoriteApplicationsList() {
+      const applicationsToUpdateOrder = [];
+      // check applications order
+      this.favoriteApplicationsList.forEach(app => {
+        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
+          applicationsToUpdateOrder.push(app);
+          this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+        }
+      });
+      if (applicationsToUpdateOrder && applicationsToUpdateOrder.length > 0) {
+        const applicationsOrder = applicationsToUpdateOrder.map(app => {
+          return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
+        });
+        this.updateApplicationsOrder(applicationsOrder);        
       }
     },
   },
@@ -197,9 +216,12 @@ export default {
           // sort favorite applications alphabetical by default
           this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault === true);
           this.favoriteApplicationsList = data.applications.filter(app => app.favorite === true);
-          console.log('Mandatory:', this.mandatoryApplicationsList);
-          console.log('Favorite:', this.favoriteApplicationsList);
-          this.favoriteApplicationsList = this.favoriteApplicationsList.sort((a, b) => {
+          // store applications order
+          this.applicationsOrder = {};
+          this.favoriteApplicationsList.forEach(app => {
+            this.applicationsOrder[`${app.id}`] = app.order;
+          });
+          this.mandatoryApplicationsList = this.mandatoryApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
             }
@@ -220,8 +242,17 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
+    },
+    updateApplicationsOrder(applicationsOrder) {
+      return fetch('/portal/rest/app-center/applications/favorites', {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        method: 'PUT',
+        body: JSON.stringify(applicationsOrder)
+      });
     },
     navigateTo(link) {
       if (link==='appCenterUserSetup/') {
