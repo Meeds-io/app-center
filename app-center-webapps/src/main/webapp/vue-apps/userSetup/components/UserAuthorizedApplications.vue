@@ -89,6 +89,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-card-actions class="applicationActions">
             <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
             <v-btn
+              v-if="authorizedApp.byDefault"
+              icon
+              disabled
+              class="mandatory"
+            >
+              <v-icon
+                small
+                color="red"
+              >
+                mdi-star
+              </v-icon>
+            </v-btn>
+            <v-btn
+              v-else
               icon
               :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
               :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
