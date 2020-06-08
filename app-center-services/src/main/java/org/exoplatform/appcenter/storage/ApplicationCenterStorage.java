@@ -112,6 +112,11 @@ public class ApplicationCenterStorage {
       application.setImageFileId(storedApplicationEntity.getImageFileId());
     }
 
+    // if application is mandatory make sure to remove it from users favorites
+    if (application.isByDefault()) {
+      favoriteApplicationDAO.removeAllFavoritesOfApplication(application.getId());
+    }
+
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity = applicationDAO.update(applicationEntity);
 
@@ -186,7 +191,7 @@ public class ApplicationCenterStorage {
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
     return applications.stream()
                        .map(this::toUserApplicationDTO)
-                       .filter(userApplication -> userApplication.isActive())
+                       .filter(userApplication -> userApplication.isActive() && !userApplication.isByDefault())
                        .collect(Collectors.toList());
   }
 
