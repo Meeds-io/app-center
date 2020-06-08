@@ -48,9 +48,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </a>
         </v-list-item-content>
-        <v-list-item-action class="favoriteAppRemove">
+        <v-list-item-action
+          v-exo-tooltip.bottom.body="favoriteApp.byDefault ? 'Test Tooltip' : ''"
+          class="favoriteAppRemove"
+        >
           <v-btn
-            v-if="!favoriteApp.byDefault"
+            :disabled="favoriteApp.byDefault"
+            :class="favoriteApp.byDefault ? 'mandatory' : ''"
             icon
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
@@ -104,7 +108,36 @@ export default {
         })
         .then(data => {
           this.canAddFavorite = data.canAddFavorite;
-          this.favoriteApplicationsList = data && data.applications || [];
+          const allApplications = data && data.applications || [];
+          const mandatoryApps = allApplications.filter(app => app.byDefault && !app.favorite);
+          const favoriteApps = allApplications.filter(app => app.favorite && !app.byDefault);
+          mandatoryApps.sort((a, b) => {
+            if (a.title < b.title) {
+              return -1;
+            }
+
+            if (a.title > b.title) {
+              return 1;
+            }
+
+            return 0;
+          });
+          if (favoriteApps.some(app => app.order === null)) {
+            favoriteApps.sort((a, b) => {
+              if (a.title < b.title) {
+                return -1;
+              }
+
+              if (a.title > b.title) {
+                return 1;
+              }
+
+              return 0;
+            });
+          }
+          this.favoriteApplicationsList = [];
+          this.favoriteApplicationsList.push(...mandatoryApps);
+          this.favoriteApplicationsList.push(...favoriteApps);
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
