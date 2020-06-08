@@ -213,24 +213,38 @@ export default {
           }
         })
         .then(data => {
-          // sort favorite applications alphabetical by default
-          this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault === true);
-          this.favoriteApplicationsList = data.applications.filter(app => app.favorite === true);
-          // store applications order
-          this.applicationsOrder = {};
-          this.favoriteApplicationsList.forEach(app => {
-            this.applicationsOrder[`${app.id}`] = app.order;
-          });
-          this.mandatoryApplicationsList = this.mandatoryApplicationsList.sort((a, b) => {
+          this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault && !app.favorite);
+          // sort mandatory applications alphabetical
+          this.mandatoryApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
             }
-            
+
             if (a.title > b.title) {
               return 1;
             }
-            
+
             return 0;
+          });
+          this.favoriteApplicationsList = data.applications.filter(app => app.favorite && !app.byDefault);
+          // sort favorite applications alphabetically by default
+          if (this.favoriteApplicationsList.some(app => !app.order)) {
+            this.favoriteApplicationsList.sort((a, b) => {
+              if (a.title < b.title) {
+                return -1;
+              }
+
+              if (a.title > b.title) {
+                return 1;
+              }
+
+              return 0;
+            });
+          }          
+          // store favorite applications order
+          this.applicationsOrder = {};
+          this.favoriteApplicationsList.forEach(app => {
+            this.applicationsOrder[`${app.id}`] = app.order;
           });
           this.mandatoryApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
