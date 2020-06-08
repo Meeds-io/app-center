@@ -47,7 +47,7 @@
   "appCenter.userSetup.maxFavoriteApps.reached": "You have reached the maximum of allowed favorites",
   "appCenter.userSetup.seeAll":"See all",
   "appCenter.userSetup.loading":"Voir tout",
-  "appCenter.userSetup.mandatory":"Mandatory applications",
+  "appCenter.userSetup.mandatory":"Mandatory application",
   "appCenter.appLauncher.drawer.title":"My applications",
   "appCenter.appLauncher.drawer.viewAll":"View all applications"
 }
