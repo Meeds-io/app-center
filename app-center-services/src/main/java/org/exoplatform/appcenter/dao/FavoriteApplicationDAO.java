@@ -59,4 +59,12 @@ public class FavoriteApplicationDAO extends GenericDAOJPAImpl<FavoriteApplicatio
     query.setParameter("userName", username);
     return query.getSingleResult();
   }
+
+  public void removeAllFavoritesOfApplication(Long applicationId) {
+    getEntityManager().getTransaction().begin();
+    getEntityManager().createQuery("DELETE FROM FavoriteApplicationEntity favoriteApp WHERE favoriteApp.application.id = :applicationId ")
+                      .setParameter("applicationId", applicationId)
+                      .executeUpdate();
+    getEntityManager().getTransaction().commit();
+  }
 }
