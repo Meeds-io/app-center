@@ -18,7 +18,10 @@ package org.exoplatform.appcenter.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -88,13 +91,13 @@ public class ApplicationCenterService implements Startable {
   private long                           defaultMaxFavoriteApps            = 0;
 
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
-  
-  
-  public static String LOG_SERVICE_NAME          = "application-center";
-  
-  public static String LOG_OPEN_FAVORITE_DRAWER    = "open-favorite-drawer";
-  public static String LOG_CLICK_ALL_APPLICATIONS    = "click-all-applications";
-  
+
+  public static String                   LOG_SERVICE_NAME                  = "application-center";
+
+  public static String                   LOG_OPEN_FAVORITE_DRAWER          = "open-favorite-drawer";
+
+  public static String                   LOG_CLICK_ALL_APPLICATIONS        = "click-all-applications";
+
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
@@ -122,8 +125,8 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * A method that will be invoked when the server starts (
-   * {@link PortalContainer} starts ) to inject default application and to
-   * delete injected default applications
+   * {@link PortalContainer} starts ) to inject default application and to delete
+   * injected default applications
    */
   @Override
   public void start() {
@@ -139,7 +142,8 @@ public class ApplicationCenterService implements Startable {
             appCenterStorage.deleteApplication(application.getId());
           } catch (Exception e) {
             LOG.warn("An unknown error occurs while deleting not found system application '{}' in store",
-                     application.getTitle(),e);
+                     application.getTitle(),
+                     e);
           }
         }
       });
@@ -193,8 +197,7 @@ public class ApplicationCenterService implements Startable {
 
         if (storedApplication == null) {
           try {
-            LOG.info("Create system application '{}'",
-                     application.getTitle());
+            LOG.info("Create system application '{}'", application.getTitle());
             application.setSystem(true);
             application.setImageFileId(null);
             this.createApplication(application);
@@ -203,8 +206,7 @@ public class ApplicationCenterService implements Startable {
           }
         } else {
           try {
-            LOG.info("Update system application '{}'",
-                     application.getTitle());
+            LOG.info("Update system application '{}'", application.getTitle());
             application.setSystem(true);
             application.setId(storedApplication.getId());
             application.setImageFileId(storedApplication.getImageFileId());
@@ -238,8 +240,7 @@ public class ApplicationCenterService implements Startable {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
-    Application existingApplication = appCenterStorage.getApplicationByTitleOrURL(application.getTitle(),
-                                                                                  application.getUrl());
+    Application existingApplication = appCenterStorage.getApplicationByTitleOrURL(application.getTitle(), application.getUrl());
     if (existingApplication != null) {
       if (StringUtils.equals(existingApplication.getTitle(), application.getTitle())) {
         throw new ApplicationAlreadyExistsException("An application with same title already exists");
@@ -255,8 +256,8 @@ public class ApplicationCenterService implements Startable {
   }
 
   /**
-   * Update an existing application on datasource. If the application doesn't
-   * exit an {@link ApplicationNotFoundException} will be thrown.
+   * Update an existing application on datasource. If the application doesn't exit
+   * an {@link ApplicationNotFoundException} will be thrown.
    * 
    * @param application dto to update on store
    * @param username username storing application
@@ -287,8 +288,8 @@ public class ApplicationCenterService implements Startable {
   }
 
   /**
-   * Delete application identified by its id and check if username has
-   * permission to delete it.
+   * Delete application identified by its id and check if username has permission
+   * to delete it.
    * 
    * @param applicationId technical identifier of application
    * @param username user currently deleting application
@@ -371,15 +372,10 @@ public class ApplicationCenterService implements Startable {
    */
   public void setMaxFavoriteApps(long maxFavoriteApplications) {
     if (maxFavoriteApplications >= 0) {
-      settingService.set(APP_CENTER_CONTEXT,
-                         APP_CENTER_SCOPE,
-                         MAX_FAVORITE_APPS,
-                         SettingValue.create(maxFavoriteApplications));
+      settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS, SettingValue.create(maxFavoriteApplications));
       this.maxFavoriteApps = maxFavoriteApplications;
     } else {
-      settingService.remove(APP_CENTER_CONTEXT,
-                            APP_CENTER_SCOPE,
-                            MAX_FAVORITE_APPS);
+      settingService.remove(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS);
       this.maxFavoriteApps = -1;
     }
   }
@@ -409,9 +405,7 @@ public class ApplicationCenterService implements Startable {
   public ApplicationImage setDefaultAppImage(ApplicationImage defaultAppImage) throws Exception {
     if (defaultAppImage == null
         || (StringUtils.isBlank(defaultAppImage.getFileName()) && StringUtils.isBlank(defaultAppImage.getFileBody()))) {
-      settingService.remove(APP_CENTER_CONTEXT,
-                            APP_CENTER_SCOPE,
-                            DEFAULT_APP_IMAGE_ID);
+      settingService.remove(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, DEFAULT_APP_IMAGE_ID);
     } else {
       ApplicationImage applicationImage = appCenterStorage.saveAppImageFileItem(defaultAppImage);
       if (applicationImage != null && applicationImage.getId() != null && applicationImage.getId() > 0) {
@@ -444,8 +438,8 @@ public class ApplicationCenterService implements Startable {
   }
 
   /**
-   * Retrieves the list of applications with offset, limit and a keyword that
-   * can be empty
+   * Retrieves the list of applications with offset, limit and a keyword that can
+   * be empty
    * 
    * @param offset offset of the query
    * @param limit limit of the query that can be less or equal to 0, which mean,
@@ -453,9 +447,7 @@ public class ApplicationCenterService implements Startable {
    * @param keyword used to search in title and url
    * @return {@link ApplicationList} that contains the list of applications
    */
-  public ApplicationList getApplicationsList(int offset,
-                                             int limit,
-                                             String keyword) {
+  public ApplicationList getApplicationsList(int offset, int limit, String keyword) {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword, offset, limit);
     applicationList.setApplications(applications);
@@ -468,21 +460,18 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Retrieves the list of applications switch offset and limit of the query, a
-   * keyword to filter on title and url of {@link Application} and the username
-   * to filter on authorized applications
+   * keyword to filter on title and url of {@link Application} and the username to
+   * filter on authorized applications
    * 
    * @param offset offset of the query
    * @param limit limit of the query that can be less or equal to 0, which mean,
    *          getting all available applications
    * @param keyword used to search in title and url
    * @param username login of user to use to filter on authorized applications
-   * @return {@link ApplicationList} that contains the {@link List} of
-   *         authorized {@link UserApplication}
+   * @return {@link ApplicationList} that contains the {@link List} of authorized
+   *         {@link UserApplication}
    */
-  public ApplicationList getAuthorizedApplicationsList(int offset,
-                                                       int limit,
-                                                       String keyword,
-                                                       String username) {
+  public ApplicationList getAuthorizedApplicationsList(int offset, int limit, String keyword, String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -509,19 +498,43 @@ public class ApplicationCenterService implements Startable {
    * @return {@link ApplicationList} that contains {@link List} of
    *         {@link UserApplication}
    */
-  public ApplicationList getFavoriteApplicationsList(String username) {
-    List<UserApplication> favoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
-    List<Application> applications = favoriteApplications.stream()
-                                                         .filter(app -> hasPermission(username, app))
-                                                         .collect(Collectors.toList());
+  public ApplicationList getMandatoryAndFavoriteApplicationsList(String username) {
+    List<UserApplication> mandatoryAndFavoriteApplications = appCenterStorage.getMandatoryApplications();
+    mandatoryAndFavoriteApplications.addAll(appCenterStorage.getFavoriteApplicationsByUser(username));
+    List<Application> applications = mandatoryAndFavoriteApplications.stream()
+                                                                     .filter(app -> hasPermission(username, app))
+                                                                     .collect(Collectors.toList());
+
     ApplicationList applicationList = new ApplicationList();
     applicationList.setApplications(applications);
     long countFavorites = appCenterStorage.countFavorites(username);
     applicationList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
-    applicationList.setLimit(favoriteApplications.size());
-    applicationList.setSize(favoriteApplications.size());
+    applicationList.setLimit(mandatoryAndFavoriteApplications.size());
+    applicationList.setSize(mandatoryAndFavoriteApplications.size());
     applicationList.setOffset(0);
     return applicationList;
+  }
+
+  /**
+   * Update favorite applications order for a user
+   * 
+   * @param applicationOrder
+   * @param userName
+   */
+  public void updateFavoriteApplicationOrder(ApplicationOrder applicationOrder,
+                                             String userName) throws ApplicationNotFoundException {
+    if (StringUtils.isBlank(userName)) {
+      throw new IllegalArgumentException("userName is mandatory");
+    }
+    if (applicationOrder.getId() <= 0) {
+      throw new IllegalArgumentException("applicationId must be a positive integer");
+    }
+    Application application = appCenterStorage.getApplicationById(applicationOrder.getId());
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationOrder.getId().toString()
+          + " wasn't found in store");
+    }
+    appCenterStorage.updateFavoriteApplicationOrder(applicationOrder.getId(), userName, applicationOrder.getOrder());
   }
 
   /**
@@ -707,9 +720,7 @@ public class ApplicationCenterService implements Startable {
   }
 
   private Long getDefaultImageId() {
-    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT,
-                                                                  APP_CENTER_SCOPE,
-                                                                  DEFAULT_APP_IMAGE_ID);
+    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, DEFAULT_APP_IMAGE_ID);
     Long defaultAppImageId = null;
     if (defaultAppImageIdSetting != null && defaultAppImageIdSetting.getValue() != null) {
       defaultAppImageId = Long.parseLong(defaultAppImageIdSetting.getValue().toString());

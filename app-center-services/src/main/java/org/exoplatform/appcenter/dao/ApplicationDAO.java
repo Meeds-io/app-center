@@ -33,20 +33,17 @@ import org.exoplatform.services.log.Log;
 public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
   private static final Log LOG = ExoLogger.getLogger(ApplicationDAO.class);
 
-  public List<ApplicationEntity> getFavoriteActiveApps(String userName) {
-    return getEntityManager().createNamedQuery("ApplicationEntity.getFavoriteActiveApps", ApplicationEntity.class)
-                             .setParameter("userName", userName)
+  public List<ApplicationEntity> getMandatoryActiveApps() {
+    return getEntityManager().createNamedQuery("ApplicationEntity.getMandatoryActiveApps", ApplicationEntity.class)
                              .getResultList();
   }
 
   public List<ApplicationEntity> getApplications(String keyword, int offset, int limit) {
     TypedQuery<ApplicationEntity> query = null;
     if (StringUtils.isBlank(keyword)) {
-      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications",
-                                                  ApplicationEntity.class);
+      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications", ApplicationEntity.class);
     } else {
-      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword",
-                                                  ApplicationEntity.class);
+      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword", ApplicationEntity.class);
       keyword = "%" + keyword.replaceAll("%", "").replaceAll("\\*", "%") + "%";
       query.setParameter("title", keyword);
       query.setParameter("url", keyword);

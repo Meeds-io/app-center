@@ -313,6 +313,31 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
+  public void testUpdateApplicationFavoriteOrder() throws Exception {
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    assertNotNull(applicationCenterStorage);
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              "permissions1",
+                                              "permissions2");
+
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+    applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
+    Long appID = applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getId();
+    applicationCenterStorage.updateFavoriteApplicationOrder(appID, "testuser", new Long(1));
+    
+    assertEquals(new Long(1), applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getOrder());
+  }
+
+  @Test
   public void testDeleteApplicationFavorite() throws Exception {
     ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
@@ -374,6 +399,52 @@ public class ApplicationCenterStorageTest {
     Application storedApplication = applicationCenterStorage.createApplication(application);
     applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
     assertEquals(1, applicationCenterStorage.getFavoriteApplicationsByUser("testuser").size());
+  }
+
+  @Test
+  public void testGetMandatoryApplicationsByUser() throws Exception {
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    assertNotNull(applicationCenterStorage);
+
+    try {
+      applicationCenterStorage.getFavoriteApplicationsByUser(null);
+      fail("Shouldn't allow to get favorite of null user");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    List<UserApplication> mandatoryApplications = applicationCenterStorage.getMandatoryApplications();
+    assertNotNull(mandatoryApplications);
+    assertEquals(0, mandatoryApplications.size());
+
+    Application application1 = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              true,
+                                              "permissions1",
+                                              "permissions2");
+
+    Application application2 = new Application(null,
+                                              "title",
+                                              "url",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              false,
+                                              true,
+                                              "permissions1",
+                                              "permissions2");
+
+    applicationCenterStorage.createApplication(application1);
+    applicationCenterStorage.createApplication(application2);
+    
+    assertEquals(1, applicationCenterStorage.getMandatoryApplications().size());
   }
 
   @Test
