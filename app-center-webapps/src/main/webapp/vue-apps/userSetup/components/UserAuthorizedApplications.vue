@@ -32,16 +32,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               hide-details
             ></v-text-field>
           </v-col>
-          <v-col class="adminIcon" cols="1">
-            <div id="appCenterAdminSetup">
-              <a
-                v-if="isAdmin"
-                href="/portal/g/:platform:administrators/appCenterAdminSetup"
-              >
-                <i class="uiIconPLF24x24Setup"></i>
-              </a>
-            </div>            
-          </v-col>
         </v-row>
       </v-col>
     </v-row>
