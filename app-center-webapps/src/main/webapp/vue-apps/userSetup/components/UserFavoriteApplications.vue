@@ -49,7 +49,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </a>
         </v-list-item-content>
         <v-list-item-action
-          v-exo-tooltip.bottom.body="favoriteApp.byDefault ? 'Test Tooltip' : ''"
+          v-exo-tooltip.bottom.body="favoriteApp.byDefault ? $t('appCenter.userSetup.mandatory') : ''"
           class="favoriteAppRemove"
         >
           <v-btn
