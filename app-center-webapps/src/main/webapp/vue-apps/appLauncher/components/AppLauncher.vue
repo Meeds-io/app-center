@@ -228,7 +228,7 @@ export default {
           });
           this.favoriteApplicationsList = data.applications.filter(app => app.favorite && !app.byDefault);
           // sort favorite applications alphabetically by default
-          if (this.favoriteApplicationsList.some(app => !app.order)) {
+          if (this.favoriteApplicationsList.some(app => app.order === null)) {
             this.favoriteApplicationsList.sort((a, b) => {
               if (a.title < b.title) {
                 return -1;

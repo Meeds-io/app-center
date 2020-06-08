@@ -48,9 +48,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </a>
         </v-list-item-content>
-        <v-list-item-action class="favoriteAppRemove">
+        <v-list-item-action
+          v-exo-tooltip.bottom.body="favoriteApp.byDefault ? 'Test Tooltip' : ''"
+          class="favoriteAppRemove"
+        >
           <v-btn
-            v-if="!favoriteApp.byDefault"
+            :disabled="favoriteApp.byDefault"
+            :class="favoriteApp.byDefault ? 'mandatory' : ''"
             icon
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
@@ -118,7 +122,7 @@ export default {
 
             return 0;
           });
-          if (favoriteApps.some(app => !app.order)) {
+          if (favoriteApps.some(app => app.order === null)) {
             favoriteApps.sort((a, b) => {
               if (a.title < b.title) {
                 return -1;
