@@ -49,6 +49,8 @@ public class Application implements Serializable {
 
   private Long              imageFileId;
 
+  private Long              order;
+
   public Application() {
   }
 
@@ -186,6 +188,14 @@ public class Application implements Serializable {
 
   public void setSystem(boolean system) {
     this.system = system;
+  }
+
+  public Long getOrder() {
+    return order;
+  }
+
+  public void setOrder(Long order) {
+    this.order = order;
   }
 
   @Override

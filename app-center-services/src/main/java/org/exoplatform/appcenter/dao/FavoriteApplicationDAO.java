@@ -31,6 +31,12 @@ import org.exoplatform.services.log.Log;
 public class FavoriteApplicationDAO extends GenericDAOJPAImpl<FavoriteApplicationEntity, Long> {
   private static final Log LOG = ExoLogger.getLogger(FavoriteApplicationDAO.class);
 
+  public List<FavoriteApplicationEntity> getFavoriteAppsByUser(String userName) {
+    return getEntityManager().createNamedQuery("FavoriteApplicationEntity.getFavoriteAppsByUser", FavoriteApplicationEntity.class)
+                             .setParameter("userName", userName)
+                             .getResultList();
+  }
+
   public FavoriteApplicationEntity getFavoriteAppByUserNameAndAppId(Long applicationId, String userName) {
     TypedQuery<FavoriteApplicationEntity> query =
                                                 getEntityManager().createNamedQuery("FavoriteApplicationEntity.getFavoriteAppByUserNameAndAppId",
@@ -49,9 +55,16 @@ public class FavoriteApplicationDAO extends GenericDAOJPAImpl<FavoriteApplicatio
   }
 
   public long countFavoritesForUser(String username) {
-    TypedQuery<Long> query = getEntityManager().createNamedQuery("FavoriteApplicationEntity.countFavoritesByUser",
-                                                                 Long.class);
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("FavoriteApplicationEntity.countFavoritesByUser", Long.class);
     query.setParameter("userName", username);
     return query.getSingleResult();
+  }
+
+  public void removeAllFavoritesOfApplication(Long applicationId) {
+    getEntityManager().getTransaction().begin();
+    getEntityManager().createQuery("DELETE FROM FavoriteApplicationEntity favoriteApp WHERE favoriteApp.application.id = :applicationId ")
+                      .setParameter("applicationId", applicationId)
+                      .executeUpdate();
+    getEntityManager().getTransaction().commit();
   }
 }

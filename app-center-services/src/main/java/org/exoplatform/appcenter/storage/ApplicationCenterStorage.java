@@ -16,7 +16,9 @@
  */
 package org.exoplatform.appcenter.storage;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +29,9 @@ import org.apache.xmlbeans.impl.util.Base64;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
-import org.exoplatform.appcenter.dto.*;
+import org.exoplatform.appcenter.dto.Application;
+import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.dto.UserApplication;
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.appcenter.entity.FavoriteApplicationEntity;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
@@ -108,6 +112,11 @@ public class ApplicationCenterStorage {
       application.setImageFileId(storedApplicationEntity.getImageFileId());
     }
 
+    // if application is mandatory make sure to remove it from users favorites
+    if (application.isByDefault()) {
+      favoriteApplicationDAO.removeAllFavoritesOfApplication(application.getId());
+    }
+
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity = applicationDAO.update(applicationEntity);
 
@@ -145,7 +154,18 @@ public class ApplicationCenterStorage {
     if (application == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found in store");
     }
-    favoriteApplicationDAO.create(new FavoriteApplicationEntity(application, username));
+    favoriteApplicationDAO.create(new FavoriteApplicationEntity(application, username, countFavorites(username)));
+  }
+
+  public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) {
+    FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
+    if (entity != null) {
+      // check if it is a favorite application and not a system application
+      if (!entity.getApplication().isByDefault()) {
+        entity.setOrder(order.longValue());
+        favoriteApplicationDAO.update(entity);
+      }
+    }
   }
 
   public void deleteApplicationFavorite(Long applicationId, String username) {
@@ -159,21 +179,25 @@ public class ApplicationCenterStorage {
     }
   }
 
+  public List<UserApplication> getMandatoryApplications() {
+    List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
+    return applications.stream().map(this::toUserApplicationDTO).collect(Collectors.toList());
+  }
+
   public List<UserApplication> getFavoriteApplicationsByUser(String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
-    List<ApplicationEntity> applications = applicationDAO.getFavoriteActiveApps(username);
+    List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
     return applications.stream()
-                       .map(this::toFavoriteDTO)
+                       .map(this::toUserApplicationDTO)
+                       .filter(userApplication -> userApplication.isActive() && !userApplication.isByDefault())
                        .collect(Collectors.toList());
   }
 
   public List<Application> getSystemApplications() {
     List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
-    return applications.stream()
-                       .map(this::toDTO)
-                       .collect(Collectors.toList());
+    return applications.stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public boolean isFavoriteApplication(Long applicationId, String username) {
@@ -236,8 +260,8 @@ public class ApplicationCenterStorage {
   }
 
   public List<Application> getApplications(String keyword, int offset, int limit) {
-    List<ApplicationEntity> applicatiions = applicationDAO.getApplications(keyword, offset, limit);
-    return applicatiions.stream().map(this::toDTO).collect(Collectors.toList());
+    List<ApplicationEntity> applications = applicationDAO.getApplications(keyword, offset, limit);
+    return applications.stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public long countApplications() {
@@ -263,7 +287,7 @@ public class ApplicationCenterStorage {
     return application;
   }
 
-  private UserApplication toFavoriteDTO(ApplicationEntity applicationEntity) {
+  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
     if (applicationEntity == null) {
       return null;
     }
@@ -277,8 +301,31 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isByDefault(),
+                                                          false,
+                                                          permissions);
+    userApplication.setSystem(applicationEntity.isSystem());
+    return userApplication;
+  }
+
+  private UserApplication toUserApplicationDTO(FavoriteApplicationEntity favoriteApplicationEntity) {
+    if (favoriteApplicationEntity == null) {
+      return null;
+    }
+    ApplicationEntity applicationEntity = favoriteApplicationEntity.getApplication();
+    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
+    UserApplication userApplication = new UserApplication(applicationEntity.getId(),
+                                                          applicationEntity.getTitle(),
+                                                          applicationEntity.getUrl(),
+                                                          applicationEntity.getImageFileId(),
+                                                          null,
+                                                          null,
+                                                          applicationEntity.getDescription(),
+                                                          applicationEntity.isActive(),
+                                                          applicationEntity.isByDefault(),
                                                           true,
                                                           permissions);
+    // set UserApplication's order
+    userApplication.setOrder(favoriteApplicationEntity.getOrder());
     userApplication.setSystem(applicationEntity.isSystem());
     return userApplication;
   }

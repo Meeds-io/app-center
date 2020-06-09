@@ -35,10 +35,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         + "WHERE app.title like :title OR app.url like :url"),
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
     @NamedQuery(name = "ApplicationEntity.getSystemApplications", query = "SELECT app FROM ApplicationEntity app WHERE app.system = TRUE"),
-    @NamedQuery(name = "ApplicationEntity.getFavoriteActiveApps", query = "SELECT distinct(app) FROM ApplicationEntity app "
-        + " LEFT JOIN app.favorites as favoriteApp "
-        + " WHERE app.active = TRUE AND (app.byDefault = TRUE OR favoriteApp.userName = :userName)"),
-})
+    @NamedQuery(name = "ApplicationEntity.getMandatoryActiveApps", query = "SELECT app FROM ApplicationEntity app "
+        + " WHERE app.active = TRUE AND app.byDefault = TRUE "), })
 public class ApplicationEntity {
 
   @Id

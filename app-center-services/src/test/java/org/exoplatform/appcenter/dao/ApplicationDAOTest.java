@@ -243,18 +243,57 @@ public class ApplicationDAOTest {
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser"));
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity2, "testuser3"));
 
-    List<ApplicationEntity> favorites = applicationDAO.getFavoriteActiveApps("testuser");
-    assertNotNull(favorites);
-    assertEquals(3, favorites.size());
-
-    favorites = applicationDAO.getFavoriteActiveApps("testuser2");
+    List<FavoriteApplicationEntity> favorites = favoriteApplicationDAO.getFavoriteAppsByUser("testuser");
     assertNotNull(favorites);
     assertEquals(2, favorites.size());
 
-    favorites = applicationDAO.getFavoriteActiveApps("fake");
+    favorites = favoriteApplicationDAO.getFavoriteAppsByUser("testuser2");
     assertNotNull(favorites);
     assertEquals(1, favorites.size());
-    assertEquals(applicationEntity3.getId(), favorites.get(0).getId());
+
+    favorites = favoriteApplicationDAO.getFavoriteAppsByUser("fake");
+    assertNotNull(favorites);
+    assertEquals(0, favorites.size());
+  }
+
+  @Test
+  public void testGetMandatoryApps() {
+    ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
+    assertNotNull(applicationDAO);
+
+    ApplicationEntity applicationEntity1 = new ApplicationEntity(null,
+                                                                "title1",
+                                                                "url1",
+                                                                5L,
+                                                                "description1",
+                                                                true,
+                                                                true,
+                                                                "permissions");
+    applicationDAO.create(applicationEntity1);
+
+    ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
+                                                                 "title2",
+                                                                 "url2",
+                                                                 5L,
+                                                                 "description2",
+                                                                 true,
+                                                                 true,
+                                                                 "permissions");
+    applicationDAO.create(applicationEntity2);
+
+    ApplicationEntity applicationEntity3 = new ApplicationEntity(null,
+                                                                 "title3",
+                                                                 "url3",
+                                                                 5L,
+                                                                 "description3",
+                                                                 false,
+                                                                 true,
+                                                                 "permissions");
+    applicationDAO.create(applicationEntity3);
+
+    List<ApplicationEntity> mandatoryApps = applicationDAO.getMandatoryActiveApps();
+    assertNotNull(mandatoryApps);
+    assertEquals(2, mandatoryApps.size());
   }
 
 }

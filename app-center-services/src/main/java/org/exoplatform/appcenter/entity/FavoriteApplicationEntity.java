@@ -33,6 +33,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         + " WHERE favoriteApp.application.id = :applicationId"),
     @NamedQuery(name = "FavoriteApplicationEntity.countFavoritesByUser", query = "SELECT count(*) FROM FavoriteApplicationEntity favoriteApp "
         + " WHERE favoriteApp.userName = :userName"),
+    @NamedQuery(name = "FavoriteApplicationEntity.getFavoriteAppsByUser", query = "SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp"
+        + " WHERE favoriteApp.userName = :userName ORDER BY favoriteApp.order NULLS LAST"),
 
 })
 public class FavoriteApplicationEntity {
@@ -41,14 +43,17 @@ public class FavoriteApplicationEntity {
   @SequenceGenerator(name = "SEQ_FAVORITE_APPLICATION_ID", sequenceName = "SEQFAVORITE_APPLICATION_ID")
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_FAVORITE_APPLICATION_ID")
   @Column(name = "ID")
-  private Long        id;
+  private Long              id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "APPLICATION_ID")
   private ApplicationEntity application;
 
   @Column(name = "USER_NAME")
-  private String      userName;
+  private String            userName;
+
+  @Column(name = "APPLICATION_ORDER")
+  private Long              order;
 
   public FavoriteApplicationEntity() {
   }
@@ -56,6 +61,12 @@ public class FavoriteApplicationEntity {
   public FavoriteApplicationEntity(ApplicationEntity application, String userName) {
     this.application = application;
     this.userName = userName;
+  }
+
+  public FavoriteApplicationEntity(ApplicationEntity application, String userName, Long order) {
+    this.application = application;
+    this.userName = userName;
+    this.order = order;
   }
 
   /**
@@ -98,5 +109,19 @@ public class FavoriteApplicationEntity {
    */
   public void setUserName(String userName) {
     this.userName = userName;
+  }
+
+  /**
+   * @return the application's order
+   */
+  public Long getOrder() {
+    return order;
+  }
+
+  /**
+   * @param order the application's order
+   */
+  public void setOrder(Long order) {
+    this.order = order;
   }
 }

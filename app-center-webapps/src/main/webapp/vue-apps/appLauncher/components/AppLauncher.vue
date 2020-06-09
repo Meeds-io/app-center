@@ -53,7 +53,39 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-layout class="mx-0 px-3">          
+        <v-row class="mandatory appsContainer">
+          <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
+            <div
+              v-for="(application, index) in mandatoryApplicationsList"
+              :id="'Pos-' + index"
+              :key="index"
+              class="appLauncherItemContainer"
+            >
+              <div
+                :id="'App-' + index"
+                class="appLauncherItem"
+              >
+                <a
+                  :id="application.id"
+                  :target="application.target"
+                  :href="application.computedUrl"
+                >
+                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <span
+                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
+                    class="appLauncherTitle"
+                  >
+                    {{ application.title }}
+                  </span>
+                </a>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+        <v-row class="appsContainer">
+          <v-divider></v-divider>
+        </v-row>
+        <v-layout class="favorite appsContainer">
           <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
@@ -108,7 +140,9 @@ export default {
   data() {
     return {
       appLauncherDrawer: null,
+      mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
+      applicationsOrder: null,
       appCenterUserSetupLink: '',
       loading: true,
       draggedElementIndex: null,
@@ -128,6 +162,22 @@ export default {
         $('body').removeClass('hide-scroll');
       }
     },
+    favoriteApplicationsList() {
+      const applicationsToUpdateOrder = [];
+      // check applications order
+      this.favoriteApplicationsList.forEach(app => {
+        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
+          applicationsToUpdateOrder.push(app);
+          this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+        }
+      });
+      if (applicationsToUpdateOrder && applicationsToUpdateOrder.length > 0) {
+        const applicationsOrder = applicationsToUpdateOrder.map(app => {
+          return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
+        });
+        this.updateApplicationsOrder(applicationsOrder);        
+      }
+    },
   },
   created() {
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
@@ -140,7 +190,7 @@ export default {
   methods: {
     toggleDrawer() {
       if (!this.appLauncherDrawer) {
-        this.getFavoriteApplicationsList();
+        this.getMandatoryAndFavoriteApplications();
         //only when opening the appLauncherDrawer
         fetch('/portal/rest/app-center/applications/logOpenDrawer', {
           method: 'GET',
@@ -150,7 +200,7 @@ export default {
 
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
-    getFavoriteApplicationsList() {
+    getMandatoryAndFavoriteApplications() {
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',
@@ -163,25 +213,60 @@ export default {
           }
         })
         .then(data => {
-          // sort favorite applications alphabetical by default
-          this.favoriteApplicationsList = data.applications.sort((a, b) => {
+          this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault && !app.favorite);
+          // sort mandatory applications alphabetical
+          this.mandatoryApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
             }
-            
+
             if (a.title > b.title) {
               return 1;
             }
-            
+
             return 0;
+          });
+          this.favoriteApplicationsList = data.applications.filter(app => app.favorite && !app.byDefault);
+          // sort favorite applications alphabetically by default
+          if (this.favoriteApplicationsList.some(app => app.order === null)) {
+            this.favoriteApplicationsList.sort((a, b) => {
+              if (a.title < b.title) {
+                return -1;
+              }
+
+              if (a.title > b.title) {
+                return 1;
+              }
+
+              return 0;
+            });
+          }          
+          // store favorite applications order
+          this.applicationsOrder = {};
+          this.favoriteApplicationsList.forEach(app => {
+            this.applicationsOrder[`${app.id}`] = app.order;
+          });
+          this.mandatoryApplicationsList.forEach(app => {
+            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
+    },
+    updateApplicationsOrder(applicationsOrder) {
+      return fetch('/portal/rest/app-center/applications/favorites', {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        method: 'PUT',
+        body: JSON.stringify(applicationsOrder)
+      });
     },
     navigateTo(link) {
       if (link==='appCenterUserSetup/') {
