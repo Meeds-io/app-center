@@ -146,6 +146,7 @@ export default {
       appCenterUserSetupLink: '',
       loading: true,
       draggedElementIndex: null,
+      alphabeticalOrder: true,
     };
   },
   watch: {
@@ -163,19 +164,32 @@ export default {
       }
     },
     favoriteApplicationsList() {
-      const applicationsToUpdateOrder = [];
-      // check applications order
-      this.favoriteApplicationsList.forEach(app => {
-        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
-          applicationsToUpdateOrder.push(app);
-          this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
-        }
-      });
-      if (applicationsToUpdateOrder && applicationsToUpdateOrder.length > 0) {
-        const applicationsOrder = applicationsToUpdateOrder.map(app => {
-          return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
+      // check if still alphabetically ordered
+      if (this.alphabeticalOrder) {
+        const alphabeticalOrder = {};
+        this.favoriteApplicationsList.forEach(app => {
+          alphabeticalOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
         });
-        this.updateApplicationsOrder(applicationsOrder);        
+        if (JSON.stringify(this.applicationsOrder) !== JSON.stringify(alphabeticalOrder)) {
+          this.alphabeticalOrder = false;
+        }        
+      }
+      // update an store applications order if no more alphabetically ordered
+      if (!this.alphabeticalOrder) {
+        const applicationsToUpdateOrder = [];
+        // check applications order
+        this.favoriteApplicationsList.forEach(app => {
+          if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
+            applicationsToUpdateOrder.push(app);
+            this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+          }
+        });
+        if (applicationsToUpdateOrder && applicationsToUpdateOrder.length > 0) {
+          const applicationsOrder = applicationsToUpdateOrder.map(app => {
+            return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
+          });
+          this.updateApplicationsOrder(applicationsOrder);
+        }
       }
     },
   },
@@ -228,7 +242,9 @@ export default {
           });
           this.favoriteApplicationsList = data.applications.filter(app => app.favorite && !app.byDefault);
           // sort favorite applications alphabetically by default
-          if (this.favoriteApplicationsList.some(app => app.order === null)) {
+          if (this.favoriteApplicationsList.some(app => app.order !== null)) {
+            this.alphabeticalOrder = false;
+          } else {
             this.favoriteApplicationsList.sort((a, b) => {
               if (a.title < b.title) {
                 return -1;
@@ -239,13 +255,14 @@ export default {
               }
 
               return 0;
-            });
-          }          
+            });            
+          }
           // store favorite applications order
           this.applicationsOrder = {};
           this.favoriteApplicationsList.forEach(app => {
-            this.applicationsOrder[`${app.id}`] = app.order;
+            this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
           });
+          
           this.mandatoryApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
