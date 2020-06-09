@@ -53,7 +53,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-divider class="my-0 appHeaderBorder" />
 
       <div class="content">
-        <v-row class="mandatory appsContainer">
+        <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
           <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
             <div
               v-for="(application, index) in mandatoryApplicationsList"
@@ -82,7 +82,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </v-col>
         </v-row>
-        <v-row class="appsContainer">
+        <v-row v-if="favoriteApplicationsList.length > 0 && mandatoryApplicationsList.length > 0" class="appsContainer">
           <v-divider></v-divider>
         </v-row>
         <v-layout class="favorite appsContainer">
