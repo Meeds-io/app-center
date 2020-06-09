@@ -122,7 +122,8 @@ export default {
 
             return 0;
           });
-          if (favoriteApps.some(app => app.order === null)) {
+          // check if favorite applications are alphabetically ordered
+          if (!favoriteApps.some(app => app.order !== null)) {
             favoriteApps.sort((a, b) => {
               if (a.title < b.title) {
                 return -1;
