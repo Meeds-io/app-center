@@ -295,7 +295,7 @@ public class ApplicationCenterREST implements ResourceContainer {
       LOG.warn(e);
       return Response.status(HTTPStatus.UNAUTHORIZED).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e);
       return Response.serverError().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while adding application as favorite", e);
