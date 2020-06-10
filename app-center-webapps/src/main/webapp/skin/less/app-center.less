@@ -522,19 +522,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       }
 
       .userAuthorizedApplications {
-        display: inline-flex;
+        display: flex;
         flex-wrap: wrap;
-        flex: 1 1 100%;
         padding: 12px;
 
         .authorizedApplication {
           padding: 10px;
           padding-bottom: 5px;
-          display: flex;
-          flex-direction: column;
-          flex: 0 1 20%;
-          margin-right: 16px;
-          margin-bottom: 17px;
+          flex: 0 1 ~"calc(25% - 38px)";
+          margin: 8px;
           border-radius: 6px!important;
           .authorisedAppContent {
             height: 100%;
@@ -1209,34 +1205,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 /*----------------icons-------------------*/
 
 #appLauncher {
-  .uiApplicationIconButton {
-    background-color: transparent !important;
 
-    .uiApplicationIcon {
-      font-family: 'PLF-FONT-ICONS';
-      font-size: 20px!important;
-      font-style: normal;
-      padding: 0 5px;
-      color: @toolbarLightIconColor !important;
-    
-      &:before {
-        content: "\ea95";
-      }
-    }
+  .uiCloseIcon {
+    color: @greyColorLighten1;
+    font-size: 20px;
+    font-style: normal;
+    cursor: pointer;
   }
-}
-.uiCloseIcon {
-  color: @greyColorLighten1;
-  font-size: 20px;
-  font-style: normal;
-  cursor: pointer;
-}
 
-.uiCloseIcon:before {
-  font-family: 'PLF-FONT-ICONS';
-  content: "\e937" !important;
-}
+  .uiCloseIcon:before {
+    font-family: 'PLF-FONT-ICONS';
+    content: "\e937" !important;
+  }
 
+}
 .uiDownloadIcon {
   color: #333333;
   font-size: 20px;
