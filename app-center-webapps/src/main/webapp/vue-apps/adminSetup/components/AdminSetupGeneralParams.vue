@@ -17,146 +17,167 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <div class="generalParams">
     <div class="form-container appCenter-form">
-      <div class="maxFavoriteApps">
-        <span>{{ $t("appCenter.adminSetupForm.maxFavoriteApps") }}</span>
-        <span v-if="isMaxFavoriteAppsView && maxFavoriteApps !== ''">
-          {{ maxFavoriteApps }}
-        </span>
-
-        <input
-          v-if="!isMaxFavoriteAppsView"
-          v-model="maxFavoriteApps"
-          type="number"
-          min="0"
-          onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-        >
-
-        <a
-          v-if="isMaxFavoriteAppsView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="isMaxFavoriteAppsView = false"
-        >
-          <i class="uiIconEdit uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.edit")
-          }}</span>
-        </a>
-        <a
-          v-if="!isMaxFavoriteAppsView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="setMaxFavoriteApps()"
-        >
-          <i class="uiIconSave uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.save")
-          }}</span>
-        </a>
-        <a
-          v-if="!isMaxFavoriteAppsView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="isMaxFavoriteAppsView = true"
-        >
-          <i class="uiIconClose uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.cancel")
-          }}</span>
-        </a>
-      </div>
-
-      <div class="defaultAppImage">
-        <span>{{ $t("appCenter.adminSetupForm.defaultAppImage") }}</span>
-        <img
-          v-if="defaultAppImage.isView && defaultAppImage.fileBody !== ''"
-          class="appImage"
-          :src="`data:image/png;base64,${defaultAppImage.fileBody}`"
-        >
-
-        <label
-          v-if="!defaultAppImage.isView"
-          for="defaultAppImageFile"
-          class="custom-file-upload"
-        >
-          <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
-        </label>
-        <input
-          v-if="!defaultAppImage.isView"
-          id="defaultAppImageFile"
-          ref="defaultAppImageFile"
-          type="file"
-          accept="image/*"
-          @change="handleDefaultAppImageFileUpload()"
-        >
-        <div
-          v-if="
-            !defaultAppImage.isView &&
-              !defaultAppImage.fileName &&
-              !defaultAppImage.fileName
-          "
-          class="file-listing"
-        >
-          {{ defaultAppImage.fileName }}
-          <span class="remove-file" @click="removeDefaultAppImageFile()">
-            <i class="uiCloseIcon"></i>
-          </span>
-        </div>
-        <a
-          v-if="defaultAppImage.isView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="defaultAppImage.isView = false"
-        >
-          <i class="uiIconEdit uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.edit")
-          }}</span>
-        </a>
-        <a
-          v-if="!defaultAppImage.isView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="submitDefaultAppImage()"
-        >
-          <i class="uiIconSave uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.save")
-          }}</span>
-        </a>
-        <a
-          v-if="!defaultAppImage.isView"
-          class="actionIcon tooltipContent"
-          data-placement="bottom"
-          data-container="body"
-          @click.stop="resetDefaultAppImage()"
-        >
-          <i class="uiIconClose uiIconLightGray"></i>
-          <span class="tooltiptext tooltiptextIcon">{{
-            $t("appCenter.adminSetupForm.cancel")
-          }}</span>
-        </a>
-        <p
-          :class="
-            'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')
-          "
-        >
-          <img
-            width="13"
-            height="13"
-            src="/app-center/skin/images/Info tooltip.png"
-          >
-          {{ $t("appCenter.adminSetupForm.sizeError") }}
-        </p>
-        <p v-if="defaultAppImage.invalidImage" class="errorInput">
-          {{ $t("appCenter.adminSetupForm.imageError") }}
-        </p>
-      </div>
+      <v-row class="px-12 py-0">
+        <v-list-item dense>
+          <v-list-item-content>
+            <span>
+              {{ `${$t("appCenter.adminSetupForm.maxFavoriteApps")} : ${maxFavoriteApps}` }}
+            </span>
+          </v-list-item-content>
+          <v-spacer></v-spacer>
+          <v-list-item-action class="setMaxFavorite">
+            <v-slider
+              v-if="!isMaxFavoriteAppsView"
+              v-model="maxFavoriteApps"
+              color="blue"
+              track-color="grey"
+              always-dirty
+              min="0"
+              max="50"
+            >
+              <template v-slot:prepend>
+                <v-icon
+                  color="blue"
+                  @click="decrement"
+                >
+                  mdi-minus
+                </v-icon>
+              </template>
+              <template v-slot:append>
+                <v-icon
+                  color="blue"
+                  @click="increment"
+                >
+                  mdi-plus
+                </v-icon>
+              </template>
+            </v-slider>
+          </v-list-item-action>
+          <v-list-item-action class="editMaxFavorite">
+            <a
+              v-if="!isMaxFavoriteAppsView"
+              class="actionIcon tooltipContent"
+              data-placement="bottom"
+              data-container="body"
+              @click.stop="setMaxFavoriteApps()"
+            >
+              <i class="uiIconSave uiIconLightGray"></i>
+              <span class="tooltiptext tooltiptextIcon">
+                {{ $t("appCenter.adminSetupForm.save") }}
+              </span>
+            </a>
+            <a
+              v-if="!isMaxFavoriteAppsView"
+              class="actionIcon tooltipContent"
+              data-placement="bottom"
+              data-container="body"
+              @click.stop="isMaxFavoriteAppsView = true"
+            >
+              <i class="uiIconClose uiIconLightGray"></i>
+              <span class="tooltiptext tooltiptextIcon">
+                {{ $t("appCenter.adminSetupForm.cancel") }}
+              </span>
+            </a>
+            <v-btn
+              v-if="isMaxFavoriteAppsView"
+              icon
+              @click.stop="isMaxFavoriteAppsView = false"
+            >
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>        
+      </v-row>
+      <v-row class="px-6">
+        <v-divider></v-divider>
+      </v-row>
+      <v-row class="px-12 py-0">
+        <v-list-item dense>
+          <v-list-item-content class="defaultAppImage">
+            <span>
+              {{ $t("appCenter.adminSetupForm.defaultAppImage") }}
+              <img
+                v-if="defaultAppImage.isView && defaultAppImage.fileBody !== ''"
+                class="appImage"
+                :src="`data:image/png;base64,${defaultAppImage.fileBody}`"
+              >
+            </span>
+            <span :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
+              <img
+                width="13"
+                height="13"
+                src="/app-center/skin/images/Info tooltip.png"
+              >
+              {{ $t("appCenter.adminSetupForm.sizeError") }}
+            </span>
+            <p v-if="defaultAppImage.invalidImage" class="errorInput">
+              {{ $t("appCenter.adminSetupForm.imageError") }}
+            </p>
+          </v-list-item-content>
+          <v-spacer></v-spacer>
+          <v-list-item-action class="setDefaultAppImage">
+            <label
+              v-if="!defaultAppImage.isView"
+              for="defaultAppImageFile"
+              class="custom-file-upload"
+            >
+              <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
+            </label>
+            <input
+              v-if="!defaultAppImage.isView"
+              id="defaultAppImageFile"
+              ref="defaultAppImageFile"
+              type="file"
+              accept="image/*"
+              @change="handleDefaultAppImageFileUpload()"
+            >
+            <div
+              v-if="!defaultAppImage.isView &&
+                !defaultAppImage.fileName &&
+                !defaultAppImage.fileName"
+              class="file-listing"
+            >
+              {{ defaultAppImage.fileName }}
+              <span class="remove-file" @click="removeDefaultAppImageFile()">
+                <i class="uiCloseIcon"></i>
+              </span>
+            </div>
+          </v-list-item-action>
+          <v-list-item-action class="editDefaultImage">
+            <a
+              v-if="!defaultAppImage.isView"
+              class="actionIcon tooltipContent"
+              data-placement="bottom"
+              data-container="body"
+              @click.stop="submitDefaultAppImage()"
+            >
+              <i class="uiIconSave uiIconLightGray"></i>
+              <span class="tooltiptext tooltiptextIcon">
+                {{ $t("appCenter.adminSetupForm.save") }}
+              </span>
+            </a>
+            <a
+              v-if="!defaultAppImage.isView"
+              class="actionIcon tooltipContent"
+              data-placement="bottom"
+              data-container="body"
+              @click.stop="resetDefaultAppImage()"
+            >
+              <i class="uiIconClose uiIconLightGray"></i>
+              <span class="tooltiptext tooltiptextIcon">
+                {{ $t("appCenter.adminSetupForm.cancel") }}
+              </span>
+            </a>
+            <v-btn
+              v-if="defaultAppImage.isView"
+              icon
+              @click.stop="defaultAppImage.isView = false"
+            >
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>        
+      </v-row>
     </div>
   </div>
 </template>
@@ -287,7 +308,13 @@ export default {
       this.defaultAppImage.invalidSize = false;
       this.defaultAppImage.invalidImage = false;
       this.getAppGeneralSettings();
-    }
+    },
+    increment() {
+      this.maxFavoriteApps++;
+    },
+    decrement() {
+      this.maxFavoriteApps--;
+    },
   }
 };
 </script>
