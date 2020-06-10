@@ -17,6 +17,46 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <div class="generalParams">
     <div class="form-container appCenter-form">
+      <v-row class="px-12 py-0">
+        <v-list-item dense>
+          <v-list-item-content>
+            <span>
+              {{ `${$t("appCenter.adminSetupForm.maxFavoriteApps")} : ${maxFavoriteApps}` }}
+            </span>
+          </v-list-item-content>
+          <v-spacer></v-spacer>
+          <v-list-item-action class="editMaxFavorite">
+            <v-btn
+              icon
+            >
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>        
+      </v-row>
+      <v-row class="px-6">
+        <v-divider></v-divider>
+      </v-row>
+      <v-row class="px-12 py-0">
+        <v-list-item dense>
+          <v-list-item-content>
+            <span>
+              {{ $t("appCenter.adminSetupForm.defaultAppImage") }}
+            </span>
+          </v-list-item-content>
+          <v-spacer></v-spacer>
+          <v-list-item-action class="editDefaultImage">
+            <v-btn
+              icon
+            >
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>        
+      </v-row>
+      
+      <!--   Old   -->
+      
       <div class="maxFavoriteApps">
         <span>{{ $t("appCenter.adminSetupForm.maxFavoriteApps") }}</span>
         <span v-if="isMaxFavoriteAppsView && maxFavoriteApps !== ''">
