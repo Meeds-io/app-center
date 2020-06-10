@@ -1,7 +1,7 @@
 {
-  "appCenter.adminSetupForm.generalSettings": "Paramètres généraux",
+  "appCenter.adminSetupForm.generalSettings": "Paramètres",
   "appCenter.adminSetupForm.maxFavoriteApps": "Nombre de favoris autorisés",
-  "appCenter.adminSetupForm.defaultAppImage": "Image par défaut",
+  "appCenter.adminSetupForm.defaultAppImage": "Icône de l'application par défaut",
   "appCenter.adminSetupForm.applications": "Applications",
   "appCenter.adminSetupForm.addNewApp": "Ajouter une application",
   "appCenter.adminSetupForm.editApp": "Modifier une application",
