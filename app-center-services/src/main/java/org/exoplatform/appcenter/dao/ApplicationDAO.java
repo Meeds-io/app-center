@@ -50,7 +50,7 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
     }
 
     if (offset > 0) {
-      query.setFirstResult(offset);
+      query.setFirstResult(offset + 1);
     }
     if (limit > 0) {
       query.setMaxResults(limit);
