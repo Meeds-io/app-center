@@ -477,7 +477,7 @@ public class ApplicationCenterServiceTest {
     applicationsList = applicationCenterService.getApplicationsList(1, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
-    assertEquals(1, applicationsList.getApplications().size());
+    assertEquals(0, applicationsList.getApplications().size());
     assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(2, 0, null);
@@ -666,19 +666,19 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
@@ -714,13 +714,13 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
   }
 
   @Test
