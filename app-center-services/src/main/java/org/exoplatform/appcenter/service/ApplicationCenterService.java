@@ -487,7 +487,7 @@ public class ApplicationCenterService implements Startable {
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
-    resultApplicationsList.setSize(countFavorites);
+    resultApplicationsList.setSize(userApplicationsList.size());
     return resultApplicationsList;
   }
 
