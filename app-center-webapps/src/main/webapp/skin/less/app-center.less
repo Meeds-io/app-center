@@ -40,7 +40,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         margin-bottom: 10px;
       }
       .v-tab {
-        font-size: 18px;
+        font-size: 14px;
         text-transform: none;
       }
     }
@@ -95,6 +95,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     min-height: 100px;
     border-radius: 6px;
     box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
+    .iconClose {
+      color: @greyColorLighten1Default!important;
+    }
+    .saveChanges {
+      margin-right: 15px;
+    }
   }
   .appCenter-form input[type="file"] {
       display: none;
@@ -153,10 +159,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       flex-direction: row;
       margin: 0;
       padding: 0;
+      align-self: center;
       
       .v-icon {
         color: @primaryColor;
       }
+    }
+    .setDefaultAppImage {
+      margin-right: 56px;
     }
     .setMaxFavorite {
       width: 400px;
@@ -166,23 +176,26 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       font-size: 16px;
     }
   }
-  .generalParams .form-container .defaultAppImage .file-listing {
-    width: 15%;
-  }
-  .generalParams .form-container .defaultAppImage .errorInput {
-    color: red;
-    font-size: 11px;
-    font-style: italic;
-  }
-  .generalParams .form-container .defaultAppImage .sizeInfo {
-    color: #b3b3b3;
-  }
-  .generalParams .form-container .defaultAppImage .appImage {
-    width: 50px;
-    height: 50px;
-    margin-left: 10px;
-    object-fit: cover;
-    overflow: hidden;
+  .generalParams .form-container .defaultAppImage {
+    min-height: 50px;
+    .file-listing {
+      width: 15%;
+    }
+    .errorInput {
+      color: red;
+      font-size: 11px;
+      font-style: italic;
+    }
+    .sizeInfo {
+      color: #b3b3b3;
+    }
+    .appImage {
+      width: 50px;
+      height: 50px;
+      margin-left: 10px;
+      object-fit: cover;
+      overflow: hidden;
+    }
   }
   .addApplicationButton {
     margin: 10px 0 20px 0;
@@ -1200,7 +1213,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   opacity: 0;
   transition: opacity 0.3s;
   font-size: 13px!important;
-
 }
 
 .tooltiptextIcon {

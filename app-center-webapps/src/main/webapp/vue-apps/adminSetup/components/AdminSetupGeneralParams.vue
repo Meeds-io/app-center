@@ -54,30 +54,34 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-slider>
           </v-list-item-action>
           <v-list-item-action class="editMaxFavorite">
-            <a
-              v-if="!isMaxFavoriteAppsView"
-              class="actionIcon tooltipContent"
-              data-placement="bottom"
-              data-container="body"
-              @click.stop="setMaxFavoriteApps()"
+            <div
+              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
+              class="saveChanges"
             >
-              <i class="uiIconSave uiIconLightGray"></i>
-              <span class="tooltiptext tooltiptextIcon">
-                {{ $t("appCenter.adminSetupForm.save") }}
-              </span>
-            </a>
-            <a
-              v-if="!isMaxFavoriteAppsView"
-              class="actionIcon tooltipContent"
-              data-placement="bottom"
-              data-container="body"
-              @click.stop="isMaxFavoriteAppsView = true"
+              <a
+                v-if="!isMaxFavoriteAppsView"
+                data-placement="bottom"
+                data-container="body"
+                @click.stop="setMaxFavoriteApps()"
+              >
+                <i class="uiIconSave uiIconLightGray"></i>
+              </a>
+            </div>
+            <div
+              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
+              class="cancelEdit"
             >
-              <i class="uiIconClose uiIconLightGray"></i>
-              <span class="tooltiptext tooltiptextIcon">
-                {{ $t("appCenter.adminSetupForm.cancel") }}
-              </span>
-            </a>
+              <a
+                v-if="!isMaxFavoriteAppsView"
+                data-placement="bottom"
+                data-container="body"
+                @click.stop="isMaxFavoriteAppsView = true"
+              >
+                <v-icon class="iconClose">
+                  close
+                </v-icon>
+              </a>
+            </div>
             <v-btn
               v-if="isMaxFavoriteAppsView"
               icon
@@ -88,7 +92,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-list-item-action>
         </v-list-item>        
       </v-row>
-      <v-row class="px-6">
+      <v-row class="px-6 my-2">
         <v-divider></v-divider>
       </v-row>
       <v-row class="px-12 py-0">
@@ -97,18 +101,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <span>
               {{ $t("appCenter.adminSetupForm.defaultAppImage") }}
               <img
-                v-if="defaultAppImage.isView && defaultAppImage.fileBody !== ''"
                 class="appImage"
                 :src="`data:image/png;base64,${defaultAppImage.fileBody}`"
               >
-            </span>
-            <span :class="'errorInput' + (defaultAppImage.invalidSize ? '' : ' sizeInfo')">
-              <img
-                width="13"
-                height="13"
-                src="/app-center/skin/images/Info tooltip.png"
-              >
-              {{ $t("appCenter.adminSetupForm.sizeError") }}
             </span>
             <p v-if="defaultAppImage.invalidImage" class="errorInput">
               {{ $t("appCenter.adminSetupForm.imageError") }}
@@ -117,14 +112,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-spacer></v-spacer>
           <v-list-item-action class="setDefaultAppImage">
             <label
-              v-if="!defaultAppImage.isView"
+              v-if="!defaultAppImageViewMode"
               for="defaultAppImageFile"
               class="custom-file-upload"
             >
               <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
             </label>
             <input
-              v-if="!defaultAppImage.isView"
+              v-if="!defaultAppImageViewMode"
               id="defaultAppImageFile"
               ref="defaultAppImageFile"
               type="file"
@@ -132,7 +127,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               @change="handleDefaultAppImageFileUpload()"
             >
             <div
-              v-if="!defaultAppImage.isView &&
+              v-if="!defaultAppImageViewMode &&
                 !defaultAppImage.fileName &&
                 !defaultAppImage.fileName"
               class="file-listing"
@@ -144,34 +139,38 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </v-list-item-action>
           <v-list-item-action class="editDefaultImage">
-            <a
-              v-if="!defaultAppImage.isView"
-              class="actionIcon tooltipContent"
-              data-placement="bottom"
-              data-container="body"
-              @click.stop="submitDefaultAppImage()"
+            <div
+              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
+              class="saveChanges"
             >
-              <i class="uiIconSave uiIconLightGray"></i>
-              <span class="tooltiptext tooltiptextIcon">
-                {{ $t("appCenter.adminSetupForm.save") }}
-              </span>
-            </a>
-            <a
-              v-if="!defaultAppImage.isView"
-              class="actionIcon tooltipContent"
-              data-placement="bottom"
-              data-container="body"
-              @click.stop="resetDefaultAppImage()"
+              <a
+                v-if="!defaultAppImageViewMode"
+                data-placement="bottom"
+                data-container="body"
+                @click.stop="submitDefaultAppImage()"
+              >
+                <i class="uiIconSave uiIconLightGray"></i>
+              </a>
+            </div>
+            <div
+              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
+              class="cancelEdit"
             >
-              <i class="uiIconClose uiIconLightGray"></i>
-              <span class="tooltiptext tooltiptextIcon">
-                {{ $t("appCenter.adminSetupForm.cancel") }}
-              </span>
-            </a>
+              <a
+                v-if="!defaultAppImageViewMode"
+                data-placement="bottom"
+                data-container="body"
+                @click.stop="resetDefaultAppImage()"
+              >
+                <v-icon class="iconClose">
+                  close
+                </v-icon>
+              </a>
+            </div>
             <v-btn
-              v-if="defaultAppImage.isView"
+              v-if="defaultAppImageViewMode"
               icon
-              @click.stop="defaultAppImage.isView = false"
+              @click.stop="defaultAppImageViewMode = false"
             >
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
@@ -189,14 +188,26 @@ export default {
     return {
       maxFavoriteApps: 0,
       isMaxFavoriteAppsView: true,
+      defaultAppImageViewMode: true,
       defaultAppImage: {
         fileBody: '',
         fileName: '',
-        isView: true,
         invalidSize: false,
         invalidImage: false
       }
     };
+  },
+  watch: {
+    isMaxFavoriteAppsView() {
+      if (this.isMaxFavoriteAppsView) {
+        document.getElementsByClassName('tooltip')[0].remove();
+      }
+    },
+    defaultAppImageViewMode() {
+      if (this.defaultAppImageViewMode) {
+        document.getElementsByClassName('tooltip')[0].remove();
+      }
+    }
   },
   created() {
     this.getAppGeneralSettings();
@@ -276,7 +287,7 @@ export default {
         })
       })
         .then(() => {
-          this.defaultAppImage.isView = true;
+          this.defaultAppImageViewMode = true;
           this.getAppGeneralSettings();
         })
         .catch(e => {
@@ -304,7 +315,7 @@ export default {
     },
 
     resetDefaultAppImage() {
-      this.defaultAppImage.isView = true;
+      this.defaultAppImageViewMode = true;
       this.defaultAppImage.invalidSize = false;
       this.defaultAppImage.invalidImage = false;
       this.getAppGeneralSettings();
