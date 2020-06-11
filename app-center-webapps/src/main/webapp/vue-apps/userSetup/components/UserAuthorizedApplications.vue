@@ -119,11 +119,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </div>
       </v-card>
     </div>
-    <div class="appPaginator">
-      <button v-if="showPaginator" @click="nextPage()">
-        {{ $t("appCenter.userSetup.authorized.displayMore") }}
-      </button>
-    </div>
+    <v-row class="loadMoreContainer" align="center">
+      <v-col>
+        <v-btn
+          v-if="showPaginator"
+          class="loadMoreApplicationsBtn"
+          :loading="loadingApplications"
+          :disabled="loadingApplications"
+          block
+          @click="loadNextPage"
+        >
+          {{ $t('appCenter.userSetup.authorized.showMore') }}
+        </v-btn>
+      </v-col>
+    </v-row>
   </div>
 </template>
 
@@ -140,14 +149,21 @@ export default {
     return {
       isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
-      showPaginator: false,
-      currentPage: 1,
+      applicationsListSize: null,
+      pageSize: 12,
+      offset: 0,
+      loadingApplications: true,
       searchText: '',
       searchApp: '',
       searchDelay: 300,
       maxFavoriteApps: '',
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
+  },
+  computed: {
+    showPaginator() {
+      return parseInt(this.pageSize) === this.applicationsListSize;
+    }
   },
   watch: {
     searchText() {
@@ -162,14 +178,19 @@ export default {
     }
   },
   created() {
-    this.pageSize = this.$parent.pageSize;
     this.getMaxFavoriteApps();
     this.getAuthorizedApplicationsList();
   },
   methods: {
-    getAuthorizedApplicationsList() {
-      const offset = this.currentPage - 1;
-      return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
+    getAuthorizedApplicationsList(searchMode) {
+      this.loadingApplications = true;
+      let offset = this.offset;
+      let limit = this.pageSize;
+      if (searchMode) {
+        offset = 0;
+        limit = 0;
+      }
+      return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -187,12 +208,9 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          if (this.currentPage * this.pageSize < data.size) {
-            this.showPaginator = true;
-          } else {
-            this.showPaginator = false;
-          }
-        });
+          this.applicationsListSize = data.size;
+          this.offset += data.size;
+        }).finally(() => this.loadingApplications = false);
     },
     addOrDeleteFavoriteApplication(application) {
       return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
@@ -209,8 +227,7 @@ export default {
           }
         });
     },
-    nextPage() {
-      this.currentPage++;
+    loadNextPage() {
       this.getAuthorizedApplicationsList();
     },
     getMaxFavoriteApps() {
@@ -231,8 +248,7 @@ export default {
     },
     searchAuthorizedApplicationsList() {
       this.authorizedApplicationsList = [];
-      this.getAuthorizedApplicationsList();
-      this.currentPage = 1;
+      this.getAuthorizedApplicationsList(true);
     }
   }
 };

@@ -40,7 +40,7 @@
   "appCenter.adminSetupList.filter": "Filtrer par nom",
   "appCenter.userSetup.appCenter": "Annuaire des applications",
   "appCenter.userSetup.authorized.open": "Ouvrir",
-  "appCenter.userSetup.authorized.displayMore": "Afficher plus",
+  "appCenter.userSetup.authorized.showMore": "Afficher plus",
   "appCenter.userSetup.favorite": "Applications en favoris",
   "appCenter.userSetup.shortcuts": "Raccourcis",
   "appCenter.userSetup.maxFavoriteApps.reached": "Vous avez atteint le maximum de favoris autorisé",

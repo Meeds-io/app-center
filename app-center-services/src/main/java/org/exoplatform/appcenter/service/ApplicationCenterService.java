@@ -66,7 +66,7 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
 
-  public static final int                DEFAULT_LIMIT                     = 1000;
+  public static final int                DEFAULT_LIMIT                     = 10;
 
   private static final Context           APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
 
@@ -449,10 +449,13 @@ public class ApplicationCenterService implements Startable {
    */
   public ApplicationList getApplicationsList(int offset, int limit, String keyword) {
     ApplicationList applicationList = new ApplicationList();
-    List<Application> applications = appCenterStorage.getApplications(keyword, offset, limit);
+    List<Application> applications = appCenterStorage.getApplications(keyword);
+    if (limit <= 0) {
+      limit = applications.size();
+    }
+    applications = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
     applicationList.setApplications(applications);
-    long totalApplications = appCenterStorage.countApplications();
-    applicationList.setSize(totalApplications);
+    applicationList.setSize(applications.size());
     applicationList.setOffset(offset);
     applicationList.setLimit(limit);
     return applicationList;
@@ -487,7 +490,7 @@ public class ApplicationCenterService implements Startable {
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
-    resultApplicationsList.setSize(countFavorites);
+    resultApplicationsList.setSize(userApplicationsList.size());
     return resultApplicationsList;
   }
 
@@ -732,29 +735,15 @@ public class ApplicationCenterService implements Startable {
     if (offset < 0) {
       offset = 0;
     }
-    if (limit <= 0) {
-      limit = DEFAULT_LIMIT;
-    }
     List<Application> userApplicationsList = new ArrayList<>();
-    int limitToRetrieve = offset + limit;
-    int offsetOfSearch = 0;
-    do {
-      List<Application> applications = appCenterStorage.getApplications(keyword, offsetOfSearch, offset + limit);
-      applications = applications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
-      userApplicationsList.addAll(applications);
-      limitToRetrieve = applications.isEmpty() ? 0 : limitToRetrieve - userApplicationsList.size();
-      offsetOfSearch += limit;
-    } while (limitToRetrieve > 0);
-    if (offset > 0) {
-      if (userApplicationsList.size() > offset) {
-        userApplicationsList = userApplicationsList.subList(offset, userApplicationsList.size());
-      } else {
-        userApplicationsList.clear();
-      }
+
+    List<Application> applications = appCenterStorage.getApplications(keyword);
+    applications = applications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
+    if (limit <= 0) {
+      limit = applications.size();
     }
-    if (userApplicationsList.size() > limit) {
-      userApplicationsList = userApplicationsList.subList(0, limit);
-    }
+    userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
+
     return userApplicationsList;
   }
 
