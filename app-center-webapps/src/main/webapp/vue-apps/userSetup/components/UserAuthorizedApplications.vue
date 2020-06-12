@@ -124,9 +124,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-btn
           v-if="showPaginator"
           class="lodMoreApplicationsBtn"
+          :loading="loadingApplications"
+          :disabled="loadingApplications"
           block
-          @click="nextPage">
-        {{ $t('appCenter.userSetup.authorized.loadMore') }}
+          @click="loadNextPage"
+        >
+          {{ $t('appCenter.userSetup.authorized.loadMore') }}
         </v-btn>
       </v-col>
     </v-row>
@@ -149,6 +152,7 @@ export default {
       applicationsListSize: null,
       pageSize: 12,
       offset: 0,
+      loadingApplications: true,
       searchText: '',
       searchApp: '',
       searchDelay: 300,
@@ -179,6 +183,7 @@ export default {
   },
   methods: {
     getAuthorizedApplicationsList(searchMode) {
+      this.loadingApplications = true;
       let offset = this.offset;
       let limit = this.pageSize;
       if (searchMode) {
@@ -205,7 +210,7 @@ export default {
           });
           this.applicationsListSize = data.size;
           this.offset += data.size;
-        });
+        }).finally(() => this.loadingApplications = false);
     },
     addOrDeleteFavoriteApplication(application) {
       return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
@@ -222,7 +227,7 @@ export default {
           }
         });
     },
-    nextPage() {
+    loadNextPage() {
       this.getAuthorizedApplicationsList();
     },
     getMaxFavoriteApps() {
