@@ -16,16 +16,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 @import "./variables.less";
 
+@borderColor: var(--allPagesBorderColor, @greyColorDefault);
 /* This file contains CSS for admin setup portlet */
-.appCenterDrawer {
-  min-height: 100vh;
-  max-height: 100vh;
-  position: fixed;
-
-  .v-navigation-drawer__content {
-    overflow-y: hidden !important;
-  }
-}
 .applicationsAdmin {
   margin: 20px;
   padding: 10px;
@@ -1076,6 +1068,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 }
 
 .appCenterDrawer {
+  min-height: 100vh;
+  max-height: 100vh;
+  position: fixed;
+  
+  .applicationsDrawerIcons .closeIcon {
+    color: @borderColor!important;
+  }
   .title {
     max-height: 57px;
     .appLauncherDrawerTitle {
@@ -1093,6 +1092,77 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     max-height: 84vh;
     overflow-y: auto;
 
+    .applicationForm {
+      width: 420px;
+      
+      .v-textarea {
+        padding-top: 12px;
+      }
+      textarea {
+        resize: none;
+      }
+      .uploadImageTitle {
+        align-self: center;
+      }
+      .uploadImage {
+        input {
+          display: none;
+        }
+        .custom-file-upload {
+          padding: 6px;
+          border-radius: 5px;
+          border: 1px solid @primaryColor;
+          color: @primaryColor;
+          
+          i {
+            margin-right: 6px;
+          }
+        }
+      }
+      .imageSet {
+        padding: 12px 8px;
+        .file-listing {
+          padding: 0;
+          .v-list-item__action {
+            margin-left: 0;
+            .remove-file {
+              .v-icon {
+               color: @greyColorLighten1Default; 
+              }
+            }
+          }
+          .v-list-item__content {
+            .imageTitle {
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+          }
+        }
+      }
+      .uploadImageInfo {
+        align-self: center;
+        
+        p {
+          margin: 0;
+        }
+      }
+      .v-label {
+        font-weight: bold;
+        color: @darkGrey;
+        cursor: default;
+      }
+      .applicationProperties {
+        .v-input__slot {
+          flex-direction: row-reverse;
+          
+          .v-input--selection-controls__input {
+            margin-right: 0;
+            margin-left: 8px;
+          }
+        }
+      }
+    }
     .v-skeleton-loader {
       display: inline-flex;
       margin: 15px 0;
@@ -1166,7 +1236,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     border-top: 1px solid #f0f4fe;
     background: white;
 
-    .seeAllApplicationsBtn {
+    .seeAllApplicationsBtn, .applicationsActionBtn {
       margin-bottom: 13px;
       margin-top: 13px;
       border: 1px solid @primaryColor;

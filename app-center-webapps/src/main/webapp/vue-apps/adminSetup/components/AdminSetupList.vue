@@ -147,6 +147,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         @pagechanged="onPageChange"
       />
     </div>
+    
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" @closeDrawer="openAppDrawer = false">
+      <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
+      <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
+    </exo-app-center-drawer>
 
     <transition name="fade">
       <exo-app-center-modal
@@ -399,7 +404,9 @@ export default {
       currentPage: 1,
       totalApplications: 0,
       totalPages: 0,
-      groups: []
+      groups: [],
+      openAppDrawer: false,
+      addApplication: true,
     };
   },
 
@@ -566,13 +573,15 @@ export default {
     },
 
     showAddApplicationModal() {
-      this.showAddOrEditApplicationModal = true;
+      this.openAppDrawer = true;
+      this.addApplication = true;
       this.formArray.viewMode = true;
       this.initPermissionsSuggester();
     },
 
     showEditApplicationModal(item) {
-      this.showAddOrEditApplicationModal = true;
+      this.openAppDrawer = true;
+      this.addApplication = false;
       Object.assign(this.formArray, item);
       this.initPermissionsSuggester();
     },
