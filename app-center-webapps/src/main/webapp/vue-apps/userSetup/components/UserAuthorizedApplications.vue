@@ -129,7 +129,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           block
           @click="loadNextPage"
         >
-          {{ $t('appCenter.userSetup.authorized.loadMore') }}
+          {{ $t('appCenter.userSetup.authorized.showMore') }}
         </v-btn>
       </v-col>
     </v-row>

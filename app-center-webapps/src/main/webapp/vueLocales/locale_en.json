@@ -40,7 +40,7 @@
   "appCenter.adminSetupList.filter": "Filter by name",
   "appCenter.userSetup.appCenter": "Application center",
   "appCenter.userSetup.authorized.open": "Open",
-  "appCenter.userSetup.authorized.loadMore": "Load more",
+  "appCenter.userSetup.authorized.showMore": "Show more",
   "appCenter.userSetup.favorite": "Favorite applications",
   "appCenter.userSetup.shortcuts": "Shortcuts",
   "appCenter.userSetup.maxFavoriteApps.not.reached": "You are allowed to put maximum {0} of favorites",
