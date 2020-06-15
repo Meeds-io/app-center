@@ -736,7 +736,7 @@ public class ApplicationCenterService implements Startable {
       limit = DEFAULT_LIMIT;
     }
     List<Application> userApplicationsList = new ArrayList<>();
-    int limitToRetrieve = offset + limit;
+    int limitToRetrieve = limit - offset;
     int offsetOfSearch = 0;
     do {
       List<Application> applications = appCenterStorage.getApplications(keyword, offsetOfSearch, offset + limit);
