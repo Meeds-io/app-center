@@ -50,8 +50,96 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
     <v-divider class="my-0 appHeaderBorder" />
 
-    <div class="content">
-    </div>
+    <v-col class="content">
+      <v-row class="applicationForm">
+        <v-col>
+          <v-label for="title">
+            {{ $t('appCenter.adminSetupForm.title') }}
+          </v-label>
+          <input
+            :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
+            type="text"
+            name="name"
+            class="input-block-level ignore-vuetify-classes my-3"
+            maxlength="200"
+            required
+          />
+          <v-label for="url">
+            {{ $t('appCenter.adminSetupForm.url') }}
+          </v-label>
+          <input
+            :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+            type="text"
+            name="name"
+            class="input-block-level ignore-vuetify-classes my-3"
+            maxlength="200"
+            required
+          />
+          <v-row>
+            <v-col>
+              {{ $t('appCenter.adminSetupForm.image') }}
+            </v-col>
+            <v-col>
+              <v-btn
+                class="text-uppercase caption primary--text seeAllApplicationsBtn"
+                outlined
+                small
+                @click="navigateTo('appCenterUserSetup/')"
+              >
+                {{ $t('appCenter.appLauncher.drawer.viewAll') }}
+              </v-btn>
+            </v-col>
+            <v-col>
+              Image
+            </v-col>
+          </v-row>
+          <v-label for="url">
+            {{ $t('appCenter.adminSetupForm.description') }}
+          </v-label>
+          <v-textarea
+            :placeholder="$t('appCenter.adminSetupForm.description')"
+            name="description"
+            rows="20"
+            maxlength="2000"
+            no-resize
+          >
+          </v-textarea>
+          <v-row class="applicationProperties">
+            <v-col>
+              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+            </v-col>
+            <v-col>
+              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
+            </v-col>
+            <v-col>
+              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
+            </v-col>
+          </v-row>
+          <v-label for="title">
+            {{ $t('appCenter.adminSetupForm.permissions') }}
+          </v-label>
+          <input
+            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
+            type="text"
+            name="name"
+            class="input-block-level ignore-vuetify-classes my-3"
+            maxlength="200"
+            required
+          />
+          <v-label for="title">
+            {{ $t('appCenter.adminSetupForm.helpPage') }}
+          </v-label>
+          <input
+            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+            type="text"
+            name="name"
+            class="input-block-level ignore-vuetify-classes my-3"
+            maxlength="200"
+            required
+          />
+        </v-col>
+      </v-row>
+    </v-col>
 
     <v-row class="drawerActions mx-0 px-3">
       <v-card
@@ -77,14 +165,11 @@ export default {
       type: Boolean,
       default: false
     },
-    title: {
-      type: String,
-      default: ''
-    },
-    modalClass: {
-      type: String,
-      default: ''
-    }
+  },
+  data() {
+    return {
+      isAppMandatory: false,
+    };
   },
   watch: {
     applicationsDrawer() {
