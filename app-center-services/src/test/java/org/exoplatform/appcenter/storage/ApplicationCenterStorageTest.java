@@ -452,11 +452,11 @@ public class ApplicationCenterStorageTest {
     ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
-    List<Application> applications = applicationCenterStorage.getApplications(null, 0, 0);
+    List<Application> applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(0, applications.size());
 
-    applications = applicationCenterStorage.getApplications("title", 0, 0);
+    applications = applicationCenterStorage.getApplications("title");
     assertNotNull(applications);
     assertEquals(0, applications.size());
 
@@ -473,15 +473,15 @@ public class ApplicationCenterStorageTest {
                                               "permissions2");
 
     applicationCenterStorage.createApplication(application);
-    applications = applicationCenterStorage.getApplications(null, 0, 0);
+    applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(1, applications.size());
 
-    applications = applicationCenterStorage.getApplications("title", 0, 0);
+    applications = applicationCenterStorage.getApplications("title");
     assertNotNull(applications);
     assertEquals(1, applications.size());
 
-    applications = applicationCenterStorage.getApplications("url", 0, 0);
+    applications = applicationCenterStorage.getApplications("url");
     assertNotNull(applications);
     assertEquals(1, applications.size());
   }
