@@ -477,7 +477,7 @@ public class ApplicationCenterServiceTest {
     applicationsList = applicationCenterService.getApplicationsList(1, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
-    assertEquals(0, applicationsList.getApplications().size());
+    assertEquals(1, applicationsList.getApplications().size());
     assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(2, 0, null);
@@ -594,6 +594,13 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                "any");
+
+    try {
+      applicationCenterService.getMandatoryAndFavoriteApplicationsList("");
+      fail("Shouldn't retrieve applications with null username");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
     
     Application storedApp1 = applicationCenterService.createApplication(application1);
     Application storedApp2 = applicationCenterService.createApplication(application2);

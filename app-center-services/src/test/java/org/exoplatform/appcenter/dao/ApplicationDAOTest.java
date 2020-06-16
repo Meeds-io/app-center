@@ -143,7 +143,7 @@ public class ApplicationDAOTest {
 
     applications = service.getApplications("title*");
     assertNotNull(applications);
-    assertEquals(0, applications.size());
+    assertEquals(2, applications.size());
 
     applications = service.getApplications("title2");
     assertNotNull(applications);

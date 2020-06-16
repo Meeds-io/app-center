@@ -450,7 +450,10 @@ public class ApplicationCenterService implements Startable {
   public ApplicationList getApplicationsList(int offset, int limit, String keyword) {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword);
-    applications = applications.subList(offset, limit);
+    if (limit <= 0) {
+      limit = applications.size();
+    }
+    applications = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
     applicationList.setApplications(applications);
     long totalApplications = appCenterStorage.countApplications();
     applicationList.setSize(totalApplications);
