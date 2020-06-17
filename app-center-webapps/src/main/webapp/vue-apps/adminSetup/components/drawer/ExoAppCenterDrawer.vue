@@ -54,7 +54,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-row class="applicationForm">
         <v-col>
           <v-label for="title">
-            {{ $t('appCenter.adminSetupForm.title') }}
+            {{ `${this.$t('appCenter.adminSetupForm.title')}*` }}
           </v-label>
           <input
             v-model="formArray.title"
@@ -71,7 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <!--            {{ $t("appCenter.adminSetupForm.titleError") }}-->
           <!--          </p>-->
           <v-label for="url">
-            {{ $t('appCenter.adminSetupForm.url') }}
+            {{ `${$t('appCenter.adminSetupForm.url')}*` }}
           </v-label>
           <input
             v-model="formArray.url"
@@ -88,22 +88,64 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
           <!--          </p>-->
           <v-row>
-            <v-col>
+            <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
                 {{ $t('appCenter.adminSetupForm.image') }}
               </v-label>
             </v-col>
-            <v-col>
-              <v-btn
-                class="text-uppercase caption primary--text seeAllApplicationsBtn"
-                outlined
-                small
+            <v-col v-if="!formArray.imageFileName" class="uploadImage" cols="3">
+              <label for="file" class="custom-file-upload">
+                <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
+                <span>
+                  {{ $t("appCenter.adminSetupForm.browse") }}
+                </span>
+              </label>
+              <input
+                id="file"
+                ref="file"
+                type="file"
+                accept="image/*"
+                @change="handleFileUpload()"
               >
-                {{ $t('appCenter.appLauncher.drawer.viewAll') }}
-              </v-btn>
             </v-col>
-            <v-col>
-              Image
+            <v-col v-else class="imageSet" cols="4">
+              <v-list-item
+                v-if="formArray.imageFileName != undefined &&
+                  formArray.imageFileName != ''"
+                class="file-listing"
+              >
+                <v-list-item-content>
+                  <div class="imageTitle">
+                    {{ formArray.imageFileName }}
+                  </div>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn
+                    class="remove-file"
+                    icon
+                    @click="removeFile"
+                  >
+                    <v-icon small>
+                      mdi-close
+                    </v-icon>
+                  </v-btn>
+                </v-list-item-action>
+              </v-list-item>
+              <p v-if="formArray.invalidImage" class="errorInput">
+                {{ $t("appCenter.adminSetupForm.imageError") }}
+              </p>              
+            </v-col>
+            <v-col class="uploadImageInfo">
+              <p
+                :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')"
+              >
+                <img
+                  width="13"
+                  height="13"
+                  src="/app-center/skin/images/Info tooltip.png"
+                >
+                {{ $t("appCenter.adminSetupForm.sizeError") }}
+              </p>
             </v-col>
           </v-row>
           <v-label for="description">
@@ -163,7 +205,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <button type="button" class="btn ml-2 applicationsActionBtn" @click="resetForm">
           {{ $t('appCenter.adminSetupForm.cancel') }}
         </button>
-        <button type="button" class="btn btn-primary ml-6 applicationsActionBtn" @click="submitForm">
+        <button type="button" class="btn btn-primary ml-6 applicationsActionBtn" :disabled="!canSaveApplication" @click="submitForm">
           {{ $t('appCenter.adminSetupForm.save') }}
         </button>
       </v-card>
@@ -188,6 +230,11 @@ export default {
       isAppMandatory: false,
     };
   },
+  computed: {
+    canSaveApplication() {
+      return this.formArray.title && this.formArray.title !== '' && this.validUrl(this.formArray);
+    }
+  },
   watch: {
     applicationsDrawer() {
       if (this.applicationsDrawer) {
@@ -206,6 +253,21 @@ export default {
     validUrl(app) {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
+    },
+    handleFileUpload() {
+      if (this.$refs.file.files.length > 0) {
+        this.formArray.imageFileName = this.$refs.file.files[0].name;
+        this.formArray.invalidSize = false;
+        this.formArray.invalidImage = false;
+      } else {
+        this.removeFile();
+      }
+    },
+    removeFile() {
+      this.formArray.imageFileName = '';
+      this.formArray.imageFileBody = '';
+      this.formArray.invalidSize = false;
+      this.formArray.invalidImage = false;
     },
     addOrEditApplication() {
       return fetch('/portal/rest/app-center/applications', {
@@ -229,6 +291,7 @@ export default {
         })
       })
         .then(() => {
+          this.$emit('closeDrawer');
           this.$emit('initApps');
           this.resetForm();
         })
