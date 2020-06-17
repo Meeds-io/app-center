@@ -21,7 +21,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         class="actionIcon addApplicationButton tooltipContent"
         data-placement="bottom"
         data-container="body"
-        @click.stop="showAddApplicationModal()"
+        @click.stop="showAddApplicationDrawer"
       >
         <i class="uiIconPlus uiIconLightGray"></i>
         <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
@@ -108,7 +108,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="actionIcon tooltipContent"
             data-placement="bottom"
             data-container="body"
-            @click.stop="showEditApplicationModal(application)"
+            @click.stop="showEditApplicationDrawer(application)"
           >
             <i class="uiIconEdit uiIconLightGray"></i>
             <span class="tooltiptext tooltiptextIcon">{{
@@ -148,7 +148,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       />
     </div>
     
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @closeDrawer="openAppDrawer = false">
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="resetForm" @closeDrawer="closeDrawer">
       <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
       <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
     </exo-app-center-drawer>
@@ -394,6 +394,7 @@ export default {
         isMandatory: false,
         active: true,
         mobile: true,
+        system: false,
         permissions: [],
         viewMode: true,
         invalidSize: false,
@@ -544,13 +545,16 @@ export default {
       this.error = '';
       this.formArray.id = '';
       this.formArray.title = '';
-      this.formArray.description = '';
       this.formArray.url = '';
-      this.formArray.permissions = [];
-      this.formArray.active = true;
-      this.formArray.byDefault = false;
+      this.formArray.helpPage = '';
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
+      this.formArray.description = '';
+      this.formArray.isMandatory = false;
+      this.formArray.system = false;
+      this.formArray.active = true;
+      this.formArray.mobile = true;
+      this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
       this.showAddOrEditApplicationModal = false;
@@ -573,19 +577,18 @@ export default {
       this.formArray.invalidImage = false;
     },
 
-    showAddApplicationModal() {
+    showAddApplicationDrawer() {
       this.openAppDrawer = true;
       this.addApplication = true;
       this.formArray.viewMode = true;
       this.initPermissionsSuggester();
     },
 
-    showEditApplicationModal(item) {
+    showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
       this.addApplication = false;
       Object.assign(this.formArray, item);
       this.initPermissionsSuggester();
-      console.log('showEditApplicationModal !!!: ', this.formArray);
     },
 
     toDeleteApplicationModal(item) {
@@ -612,6 +615,10 @@ export default {
       if (!this.formArray.active) {
         this.formArray.byDefault = false;
       }
+    },
+    closeDrawer() {
+      this.resetForm();
+      this.openAppDrawer = false;
     },
     initPermissionsSuggester() {
       const permissionsSuggester = $('#permissions-suggester');

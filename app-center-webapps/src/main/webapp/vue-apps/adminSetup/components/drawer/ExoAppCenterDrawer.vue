@@ -242,7 +242,6 @@ export default {
         });
     },
     submitForm() {
-      console.log('App: ', this.formArray);
       const MAX_FILE_SIZE = 100000;
 
       if (
@@ -272,21 +271,7 @@ export default {
       }
     },
     resetForm() {
-      this.error = '';
-      this.formArray.id = '';
-      this.formArray.title = '';
-      this.formArray.url = '';
-      this.formArray.helpPage = '';
-      this.formArray.imageFileName = '';
-      this.formArray.imageFileBody = '';
-      this.formArray.description = '';
-      this.formArray.isMandatory = false;
-      this.formArray.active = true;
-      this.formArray.mobile = true;
-      this.formArray.permissions = [];
-      this.formArray.invalidSize = false;
-      this.formArray.invalidImage = false;
-      this.showAddOrEditApplicationModal = false;
+      this.$emit('resetForm');
     },
   },
 };
