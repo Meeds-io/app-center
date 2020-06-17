@@ -57,6 +57,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             {{ $t('appCenter.adminSetupForm.title') }}
           </v-label>
           <input
+            v-model="formArray.title"
+            :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
             type="text"
             name="name"
@@ -64,27 +66,38 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             maxlength="200"
             required
           />
+          <!--          <span class="requiredInput">*</span>-->
+          <!--          <p v-if="!formArray.system && !formArray.title" class="errorInput">-->
+          <!--            {{ $t("appCenter.adminSetupForm.titleError") }}-->
+          <!--          </p>-->
           <v-label for="url">
             {{ $t('appCenter.adminSetupForm.url') }}
           </v-label>
           <input
+            v-model="formArray.url"
+            type="url"
+            :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-            type="text"
             name="name"
             class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
             required
           />
+          <!--          <span class="requiredInput">*</span>-->
+          <!--          <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">-->
+          <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
+          <!--          </p>-->
           <v-row>
             <v-col>
-              {{ $t('appCenter.adminSetupForm.image') }}
+              <v-label for="image">
+                {{ $t('appCenter.adminSetupForm.image') }}
+              </v-label>
             </v-col>
             <v-col>
               <v-btn
                 class="text-uppercase caption primary--text seeAllApplicationsBtn"
                 outlined
                 small
-                @click="navigateTo('appCenterUserSetup/')"
               >
                 {{ $t('appCenter.appLauncher.drawer.viewAll') }}
               </v-btn>
@@ -93,10 +106,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               Image
             </v-col>
           </v-row>
-          <v-label for="url">
+          <v-label for="description">
             {{ $t('appCenter.adminSetupForm.description') }}
           </v-label>
           <v-textarea
+            v-model="formArray.description"
             :placeholder="$t('appCenter.adminSetupForm.description')"
             name="description"
             rows="20"
@@ -106,16 +120,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-textarea>
           <v-row class="applicationProperties">
             <v-col>
-              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+              <v-switch v-model="formArray.isMandatory" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
             </v-col>
             <v-col>
-              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
+              <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
             </v-col>
             <v-col>
-              <v-switch v-model="isAppMandatory" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
+              <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
             </v-col>
           </v-row>
-          <v-label for="title">
+          <v-label for="permissions">
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
           <input
@@ -124,18 +138,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             name="name"
             class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
-            required
           />
-          <v-label for="title">
+          <v-label for="helpPage">
             {{ $t('appCenter.adminSetupForm.helpPage') }}
           </v-label>
           <input
+            v-model="formArray.helpPage"
             :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
-            type="text"
+            type="url"
             name="name"
             class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
-            required
           />
         </v-col>
       </v-row>
@@ -147,10 +160,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         tile
         class="d-flex flex justify-end mx-2"
       >
-        <button type="button" class="btn ml-2 applicationsActionBtn">
+        <button type="button" class="btn ml-2 applicationsActionBtn" @click="resetForm">
           {{ $t('appCenter.adminSetupForm.cancel') }}
         </button>
-        <button type="button" class="btn btn-primary ml-6 applicationsActionBtn">
+        <button type="button" class="btn btn-primary ml-6 applicationsActionBtn" @click="submitForm">
           {{ $t('appCenter.adminSetupForm.save') }}
         </button>
       </v-card>
@@ -164,6 +177,10 @@ export default {
     applicationsDrawer: {
       type: Boolean,
       default: false
+    },
+    formArray: {
+      type: Object,
+      default: null
     },
   },
   data() {
@@ -186,6 +203,91 @@ export default {
     }, 
   },
   methods: {
+    validUrl(app) {
+      const url = app && app.url;
+      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
+    },
+    addOrEditApplication() {
+      return fetch('/portal/rest/app-center/applications', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: this.formArray.id ? 'PUT' : 'POST',
+        body: JSON.stringify({
+          id: this.formArray.id,
+          title: this.formArray.title,
+          url: this.formArray.url,
+          description: this.formArray.description,
+          active: this.formArray.active,
+          byDefault: this.formArray.byDefault,
+          permissions: this.formArray.permissions,
+          imageFileBody: this.formArray.imageFileBody,
+          imageFileName: this.formArray.imageFileName,
+          imageFileId: this.formArray.imageFileId,
+        })
+      })
+        .then(() => {
+          this.$emit('initApps');
+          this.resetForm();
+        })
+        .catch(e => {
+          const UNAUTHORIZED_ERROR_CODE = 401;
+          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
+            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
+          } else {
+            this.error = this.$t('appCenter.adminSetupForm.error');
+          }
+        });
+    },
+    submitForm() {
+      console.log('App: ', this.formArray);
+      const MAX_FILE_SIZE = 100000;
+
+      if (
+        this.formArray.title &&
+        this.formArray.url &&
+        this.validUrl(this.formArray)
+      ) {
+        if (this.$refs.file && this.$refs.file.files.length > 0) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            if (!e.target.result.includes('data:image')) {
+              this.formArray.invalidImage = true;
+              return;
+            }
+            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
+              this.formArray.invalidSize = true;
+              return;
+            }
+            this.formArray.imageFileBody = e.target.result;
+            this.addOrEditApplication();
+          };
+          reader.readAsDataURL(this.$refs.file.files[0]);
+        } else {
+          this.addOrEditApplication();
+          this.$emit('closeDrawer');
+        }
+      }
+    },
+    resetForm() {
+      this.error = '';
+      this.formArray.id = '';
+      this.formArray.title = '';
+      this.formArray.url = '';
+      this.formArray.helpPage = '';
+      this.formArray.imageFileName = '';
+      this.formArray.imageFileBody = '';
+      this.formArray.description = '';
+      this.formArray.isMandatory = false;
+      this.formArray.active = true;
+      this.formArray.mobile = true;
+      this.formArray.permissions = [];
+      this.formArray.invalidSize = false;
+      this.formArray.invalidImage = false;
+      this.showAddOrEditApplicationModal = false;
+    },
   },
 };
 </script>

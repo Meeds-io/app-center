@@ -148,7 +148,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       />
     </div>
     
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" @closeDrawer="openAppDrawer = false">
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @closeDrawer="openAppDrawer = false">
       <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
       <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
     </exo-app-center-drawer>
@@ -387,17 +387,18 @@ export default {
         id: 0,
         title: '',
         url: '',
+        helpPage: '',
         imageFileBody: '',
         imageFileName: '',
         description: '',
-        byDefault: false,
+        isMandatory: false,
         active: true,
+        mobile: true,
         permissions: [],
         viewMode: true,
         invalidSize: false,
         invalidImage: false
       },
-      editArray: [],
       error: '',
       showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
@@ -584,6 +585,7 @@ export default {
       this.addApplication = false;
       Object.assign(this.formArray, item);
       this.initPermissionsSuggester();
+      console.log('showEditApplicationModal !!!: ', this.formArray);
     },
 
     toDeleteApplicationModal(item) {
