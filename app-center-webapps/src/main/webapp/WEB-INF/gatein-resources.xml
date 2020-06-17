@@ -176,4 +176,24 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </depends>
   </module>
 
+  <module>
+    <name>AppCenterSearch</name>
+    <script>
+      <minify>false</minify>
+      <path>/javascript/vue/applicationSearch.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>jquery</module>
+    </depends>
+  </module>
+
 </gatein-resources>
