@@ -42,7 +42,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 			<div class="form-horizontal">
 				<div class="control-group">
 					<label class="control-label portlet-form-label">
-						<%=resource.getString("editpref.form.pageSize")%>
+						<%=resource.getString("appCenter.editpref.form.pageSize")%>
 					</label>
 					<div class="controls portlet-input-field">
 						<input name="pageSize" type="text" value="<%=pageSize%>">
@@ -50,7 +50,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 				</div>
 			</div>
 			<div class="uiAction uiActionBorder">
-				<button type="submit" class="btn"><%=resource.getString("editpref.form.save")%></button>
+				<button type="submit" class="btn"><%=resource.getString("appCenter.editpref.form.save")%></button>
 			</div>
 		</div>
 	</form>

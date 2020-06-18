@@ -17,8 +17,10 @@
 import './components/initComponents.js';
 import UserSetupApp from './components/UserSetup.vue';
 
-const lang = eXo.env.portal.language;
-const url = `/app-center/vueLocales/locale_${lang}.json`;
+
+//should expose the locale ressources as REST API
+const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
+const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
 
 export function init(preferences) {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
