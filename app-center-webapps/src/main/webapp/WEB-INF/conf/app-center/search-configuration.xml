@@ -45,7 +45,7 @@
               <string>SHARED/AppCenterSearch</string>
             </field>
             <field name="i18nBundle">
-              <string>locale.portlets.appCenterPortlets</string>
+              <string>locale.addon.appcenter</string>
             </field>
             <field name="uiComponent">
               <string>application-search-card</string>
