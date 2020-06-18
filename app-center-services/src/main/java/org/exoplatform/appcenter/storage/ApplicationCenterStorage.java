@@ -259,8 +259,8 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  public List<Application> getApplications(String keyword, int offset, int limit) {
-    List<ApplicationEntity> applications = applicationDAO.getApplications(keyword, offset, limit);
+  public List<Application> getApplications(String keyword) {
+    List<ApplicationEntity> applications = applicationDAO.getApplications(keyword);
     return applications.stream().map(this::toDTO).collect(Collectors.toList());
   }
 

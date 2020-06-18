@@ -34,41 +34,52 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   box-shadow: 0 2px 9px 0 rgba(0, 0, 0, 0.02);
   display: block;
 
-  .uiTabNormal.uiTabInPage ul.nav.nav-tabs {
-    border-bottom: 1px solid #f5f5f5;
-  }
-  .uiTabNormal.uiTabInPage ul.nav.nav-tabs li {
-    margin-bottom: -1px;
-  }
-  .uiTabNormal.uiTabInPage ul.nav.nav-tabs li a {
-    border: 1px solid #f5f5f5;
-    background: transparent;
-    cursor: pointer;
-  }
-  .uiTabNormal.uiTabInPage ul.nav.nav-tabs li.active a {
-    border-width: 1px;
-    background-color: @primaryColor;
-  }
-  .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr th {
-    font-weight: normal;
-    font-size: 15px;
-    color: #424242;
-  }
-  .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr td img {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    overflow: hidden;
-  }
-  .uiTabNormal.uiTabInPage .uiGrid.table.table-hover.table-striped tr td:first-child {
-    width: 50px;
-  }
-  .uiTabNormal.uiTabInPage .applicationsPaginator {
-    margin-top: 15px;
-    float: right;
-  }
-  .uiTabNormal.uiTabInPage .noApp {
-    text-align: center;
+  .uiTabNormal.uiTabInPage {
+    .appAdminTabs {
+      .v-item-group {
+        margin-bottom: 10px;
+      }
+      .v-tab {
+        font-size: 14px;
+        text-transform: none;
+      }
+    }
+    ul.nav.nav-tabs {
+      border-bottom: 1px solid #f5f5f5;
+    }
+    ul.nav.nav-tabs li {
+      margin-bottom: -1px;
+    }
+    ul.nav.nav-tabs li a {
+      border: 1px solid #f5f5f5;
+      background: transparent;
+      cursor: pointer;
+    }
+    ul.nav.nav-tabs li.active a {
+      border-width: 1px;
+      background-color: @primaryColor;
+    }
+    .uiGrid.table.table-hover.table-striped tr th {
+      font-weight: normal;
+      font-size: 15px;
+      color: #424242;
+    }
+    .uiGrid.table.table-hover.table-striped tr td img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      overflow: hidden;
+    }
+    .uiGrid.table.table-hover.table-striped tr td:first-child {
+      width: 50px;
+    }
+    .applicationsPaginator {
+      margin-top: 15px;
+      float: right;
+    }
+    .noApp {
+      text-align: center;
+    }
   }
   .uiTabNormal .tab-pane {
     border: none;
@@ -84,6 +95,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     min-height: 100px;
     border-radius: 6px;
     box-shadow: 0 2px 9px 0 rgba(0,0,0,0.02);
+    .iconClose {
+      color: @greyColorLighten1Default!important;
+    }
+    .saveChanges {
+      margin-right: 15px;
+    }
   }
   .appCenter-form input[type="file"] {
       display: none;
@@ -137,26 +154,48 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     min-height: inherit;
     border-radius: 0;
     box-shadow: initial;
+    
+    .editMaxFavorite, .setMaxFavorite, .editDefaultImage, .setDefaultAppImage {
+      flex-direction: row;
+      margin: 0;
+      padding: 0;
+      align-self: center;
+      
+      .v-icon {
+        color: @primaryColor;
+      }
+    }
+    .setDefaultAppImage {
+      margin-right: 56px;
+    }
+    .setMaxFavorite {
+      width: 400px;
+    }
+    span {
+      color: @darkGrey;
+      font-size: 16px;
+    }
   }
-  .generalParams .form-container div {
-    padding: 10px 0;
-  }
-  .generalParams .form-container .defaultAppImage .file-listing {
-    width: 15%;
-  }
-  .generalParams .form-container .defaultAppImage .errorInput {
-    color: red;
-    font-size: 11px;
-    font-style: italic;
-  }
-  .generalParams .form-container .defaultAppImage .sizeInfo {
-    color: #b3b3b3;
-  }
-  .generalParams .form-container .defaultAppImage .appImage {
-    width: 30px;
-    height: 30px;
-    object-fit: cover;
-    overflow: hidden;
+  .generalParams .form-container .defaultAppImage {
+    min-height: 50px;
+    .file-listing {
+      width: 15%;
+    }
+    .errorInput {
+      color: red;
+      font-size: 11px;
+      font-style: italic;
+    }
+    .sizeInfo {
+      color: #b3b3b3;
+    }
+    .appImage {
+      width: 50px;
+      height: 50px;
+      margin-left: 10px;
+      object-fit: cover;
+      overflow: hidden;
+    }
   }
   .addApplicationButton {
     margin: 10px 0 20px 0;
@@ -517,6 +556,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .authorizedApplications {
       padding: 14px;
       
+      .loadMoreContainer {
+        margin: 0;
+        padding: 10px;
+        
+        .loadMoreApplicationsBtn {
+          padding: 0;
+          border: 1px solid @greyColor;
+          color: @darkGrey;
+          background-color: @baseBackground!important;
+          box-shadow: none;
+          text-shadow: none;
+        }
+      }
       .applicationCenterActions {
         padding-top: 0;
       }
@@ -1174,7 +1226,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   opacity: 0;
   transition: opacity 0.3s;
   font-size: 13px!important;
-
 }
 
 .tooltiptextIcon {

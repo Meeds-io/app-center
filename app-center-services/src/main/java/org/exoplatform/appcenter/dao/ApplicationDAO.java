@@ -38,7 +38,7 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
                              .getResultList();
   }
 
-  public List<ApplicationEntity> getApplications(String keyword, int offset, int limit) {
+  public List<ApplicationEntity> getApplications(String keyword) {
     TypedQuery<ApplicationEntity> query = null;
     if (StringUtils.isBlank(keyword)) {
       query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications", ApplicationEntity.class);
@@ -47,13 +47,6 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
       keyword = "%" + keyword.replaceAll("%", "").replaceAll("\\*", "%") + "%";
       query.setParameter("title", keyword);
       query.setParameter("url", keyword);
-    }
-
-    if (offset > 0) {
-      query.setFirstResult(offset);
-    }
-    if (limit > 0) {
-      query.setMaxResults(limit);
     }
     return query.getResultList();
   }

@@ -1,7 +1,7 @@
 {
-  "appCenter.adminSetupForm.generalSettings": "Paramètres généraux",
+  "appCenter.adminSetupForm.generalSettings": "Paramètres",
   "appCenter.adminSetupForm.maxFavoriteApps": "Nombre de favoris autorisés",
-  "appCenter.adminSetupForm.defaultAppImage": "Image par défaut",
+  "appCenter.adminSetupForm.defaultAppImage": "Icône de l'application par défaut",
   "appCenter.adminSetupForm.applications": "Applications",
   "appCenter.adminSetupForm.addNewApp": "Ajouter une application",
   "appCenter.adminSetupForm.editApp": "Modifier une application",
@@ -40,7 +40,7 @@
   "appCenter.adminSetupList.filter": "Filtrer par nom",
   "appCenter.userSetup.appCenter": "Annuaire des applications",
   "appCenter.userSetup.authorized.open": "Ouvrir",
-  "appCenter.userSetup.authorized.displayMore": "Afficher plus",
+  "appCenter.userSetup.authorized.showMore": "Afficher plus",
   "appCenter.userSetup.favorite": "Applications en favoris",
   "appCenter.userSetup.shortcuts": "Raccourcis",
   "appCenter.userSetup.maxFavoriteApps.reached": "Vous avez atteint le maximum de favoris autorisé",

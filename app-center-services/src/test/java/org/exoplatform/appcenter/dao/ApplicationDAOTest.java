@@ -130,23 +130,22 @@ public class ApplicationDAOTest {
                                                                  "permissions");
     applicationEntity2 = service.create(applicationEntity2);
 
-    List<ApplicationEntity> applications = service.getApplications("title", 0, 10);
+    List<ApplicationEntity> applications = service.getApplications("title");
     assertNotNull(applications);
     assertEquals(2, applications.size());
     assertEquals(applicationEntity.getId(), applications.get(0).getId());
 
-    applications = service.getApplications("title*", 0, 10);
+    applications = service.getApplications("title*");
     assertNotNull(applications);
     assertEquals(2, applications.size());
     assertEquals(applicationEntity.getId(), applications.get(0).getId());
     assertEquals(applicationEntity2.getId(), applications.get(1).getId());
 
-    applications = service.getApplications("title*", 1, 2);
+    applications = service.getApplications("title*");
     assertNotNull(applications);
-    assertEquals(1, applications.size());
-    assertEquals(applicationEntity2.getId(), applications.get(0).getId());
+    assertEquals(2, applications.size());
 
-    applications = service.getApplications("title2", 0, 10);
+    applications = service.getApplications("title2");
     assertNotNull(applications);
     assertEquals(1, applications.size());
     assertEquals(applicationEntity2.getId(), applications.get(0).getId());
