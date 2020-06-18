@@ -162,7 +162,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-textarea>
           <v-row class="applicationProperties">
             <v-col>
-              <v-switch v-model="formArray.isMandatory" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+              <v-switch v-model="formArray.isMandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
             </v-col>
             <v-col>
               <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
