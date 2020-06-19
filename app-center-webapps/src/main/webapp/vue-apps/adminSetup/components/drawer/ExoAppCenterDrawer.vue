@@ -155,7 +155,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             name="description"
             rows="20"
             maxlength="2000"
-            :placeholder="$t('appCenter.adminSetupForm.description')"
+            :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
             no-resize
           >
           </v-textarea>
