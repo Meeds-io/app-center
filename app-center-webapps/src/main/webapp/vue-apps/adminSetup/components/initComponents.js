@@ -19,12 +19,14 @@ import ExoAppCenterModal from './modal/ExoAppCenterModal.vue';
 import AdminSetupGeneralParams from './AdminSetupGeneralParams.vue';
 import AdminSetupList from './AdminSetupList.vue';
 import ExoAppCenterDrawer from './drawer/ExoAppCenterDrawer.vue';
+import ExoSuggester from './suggester/ExoSuggester.vue';
 
 const components = {
   'adminSetup-generalParams': AdminSetupGeneralParams,
   'adminSetup-list': AdminSetupList,
   'exo-app-center-modal': ExoAppCenterModal,
   'exo-app-center-drawer': ExoAppCenterDrawer,
+  'exo-suggester': ExoSuggester,
 };
 
 for (const key in components) {

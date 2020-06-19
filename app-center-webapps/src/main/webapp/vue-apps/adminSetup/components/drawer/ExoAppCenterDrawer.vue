@@ -58,12 +58,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <input
             v-model="formArray.title"
+            type="text"
+            name="title"
+            class="input-block-level ignore-vuetify-classes my-3 required"
+            maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
-            type="text"
-            name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
-            maxlength="200"
             required
           />
           <!--          <span class="requiredInput">*</span>-->
@@ -76,18 +76,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <input
             v-model="formArray.url"
             type="url"
+            name="url"
+            class="input-block-level ignore-vuetify-classes my-3 required"
+            maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-            name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
-            maxlength="200"
             required
           />
           <!--          <span class="requiredInput">*</span>-->
           <!--          <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">-->
           <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
           <!--          </p>-->
-          <v-row>
+          <v-row class="uploadImageContainer">
             <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
                 {{ $t('appCenter.adminSetupForm.image') }}
@@ -139,11 +139,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <p
                 :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')"
               >
-                <img
-                  width="13"
-                  height="13"
-                  src="/app-center/skin/images/Info tooltip.png"
-                >
+                <v-icon small>
+                  mdi-information
+                </v-icon>
                 {{ $t("appCenter.adminSetupForm.sizeError") }}
               </p>
             </v-col>
@@ -153,10 +151,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <v-textarea
             v-model="formArray.description"
-            :placeholder="$t('appCenter.adminSetupForm.description')"
+            class="appDescription"
             name="description"
             rows="20"
             maxlength="2000"
+            :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
             no-resize
           >
           </v-textarea>
@@ -174,23 +173,25 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-label for="permissions">
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
-          <input
-            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
-            type="text"
-            name="name"
+          <exo-suggester
+            v-model="formArray.permissions"
             class="input-block-level ignore-vuetify-classes my-3"
+            name="permissions"
             maxlength="200"
+            :options="suggesterOptions"
+            :source-providers="[findGroups]"
+            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
           />
           <v-label for="helpPage">
             {{ $t('appCenter.adminSetupForm.helpPage') }}
           </v-label>
           <input
             v-model="formArray.helpPageURL"
-            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+            class="input-block-level ignore-vuetify-classes my-3"
             type="url"
             name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
+            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
           />
         </v-col>
       </v-row>
@@ -226,8 +227,27 @@ export default {
     },
   },
   data() {
+    const component = this;
     return {
       isAppMandatory: false,
+      suggesterOptions: {
+        type: 'tag',
+        plugins: ['remove_button', 'restore_on_backspace'],
+        create: false,
+        createOnBlur: false,
+        highlight: false,
+        openOnFocus: false,
+        valueField: 'value',
+        labelField: 'text',
+        searchField: ['text'],
+        closeAfterSelect: false,
+        dropdownParent: 'body',
+        hideSelected: true,
+        renderMenuItem (item, escape) {
+          return component.renderMenuItem(item, escape);
+        },
+        sortField: [{field: 'order'}, {field: '$score'}],
+      },
     };
   },
   computed: {
@@ -342,6 +362,33 @@ export default {
     },
     resetForm() {
       this.$emit('resetForm');
+    },
+    findGroups (query, callback) {
+      if (!query.length) {
+        return callback();
+      }
+      this.getGroups(query).then(data => {
+        const groups = [];
+        for(const group of data) {
+          if (!group.id.startsWith('/spaces')) {
+            groups.push({
+              avatarUrl: null,
+              text: group.label,
+              value: group.id,
+              type: 'group'
+            });
+          }
+        }
+        callback(groups);
+      });
+    },
+    getGroups(query) {
+      return fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' }).then(resp => resp.json());
+    },
+    renderMenuItem (item, escape) {
+      return `
+        <div class="item">${escape(item.value)}</div>
+      `;
     },
   },
 };
