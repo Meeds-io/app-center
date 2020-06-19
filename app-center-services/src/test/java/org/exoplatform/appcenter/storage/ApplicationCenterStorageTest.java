@@ -20,15 +20,22 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
-import org.exoplatform.appcenter.dto.*;
+import org.exoplatform.appcenter.dto.Application;
+import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.dto.UserApplication;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.commons.file.services.impl.NameSpaceServiceImpl;
-import org.exoplatform.container.*;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.RootContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.naming.InitialContextInitializer;
 
@@ -86,6 +93,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -114,6 +122,7 @@ public class ApplicationCenterStorageTest {
 
     Application application = new Application(null,
                                               "title",
+                                              "url",
                                               "url",
                                               5L,
                                               null,
@@ -169,6 +178,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -201,6 +211,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -254,6 +265,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -299,6 +311,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -320,6 +333,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -333,7 +347,7 @@ public class ApplicationCenterStorageTest {
     applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
     Long appID = applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getId();
     applicationCenterStorage.updateFavoriteApplicationOrder(appID, "testuser", new Long(1));
-    
+
     assertEquals(new Long(1), applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getOrder());
   }
 
@@ -354,6 +368,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -387,6 +402,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -418,32 +434,34 @@ public class ApplicationCenterStorageTest {
     assertEquals(0, mandatoryApplications.size());
 
     Application application1 = new Application(null,
-                                              "title",
-                                              "url",
-                                              5L,
-                                              null,
-                                              null,
-                                              "description",
-                                              true,
-                                              true,
-                                              "permissions1",
-                                              "permissions2");
+                                               "title",
+                                               "url",
+                                               "",
+                                               5L,
+                                               null,
+                                               null,
+                                               "description",
+                                               true,
+                                               true,
+                                               "permissions1",
+                                               "permissions2");
 
     Application application2 = new Application(null,
-                                              "title",
-                                              "url",
-                                              5L,
-                                              null,
-                                              null,
-                                              "description",
-                                              false,
-                                              true,
-                                              "permissions1",
-                                              "permissions2");
+                                               "title",
+                                               "url",
+                                               "",
+                                               5L,
+                                               null,
+                                               null,
+                                               "description",
+                                               false,
+                                               true,
+                                               "permissions1",
+                                               "permissions2");
 
     applicationCenterStorage.createApplication(application1);
     applicationCenterStorage.createApplication(application2);
-    
+
     assertEquals(1, applicationCenterStorage.getMandatoryApplications().size());
   }
 
@@ -463,6 +481,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -496,6 +515,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -547,6 +567,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -579,6 +600,7 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,

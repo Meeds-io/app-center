@@ -185,7 +185,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             {{ $t('appCenter.adminSetupForm.helpPage') }}
           </v-label>
           <input
-            v-model="formArray.helpPage"
+            v-model="formArray.helpPageURL"
             :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
             type="url"
             name="name"
@@ -232,7 +232,8 @@ export default {
   },
   computed: {
     canSaveApplication() {
-      return this.formArray.title && this.formArray.title !== '' && this.validUrl(this.formArray);
+      return this.formArray.title && this.formArray.title !== '' &&
+        this.validUrl(this.formArray) && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
   watch: {
@@ -252,6 +253,10 @@ export default {
   methods: {
     validUrl(app) {
       const url = app && app.url;
+      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
+    },
+    validHelpPageUrl(app) {
+      const url = app && app.helpPageURL;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     handleFileUpload() {
@@ -281,9 +286,11 @@ export default {
           id: this.formArray.id,
           title: this.formArray.title,
           url: this.formArray.url,
+          helpPageURL: this.formArray.helpPageURL,
           description: this.formArray.description,
           active: this.formArray.active,
-          byDefault: this.formArray.byDefault,
+          byDefault: this.formArray.isMandatory,
+          system: this.formArray.system,
           permissions: this.formArray.permissions,
           imageFileBody: this.formArray.imageFileBody,
           imageFileName: this.formArray.imageFileName,

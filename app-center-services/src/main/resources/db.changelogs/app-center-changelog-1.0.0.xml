@@ -99,4 +99,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </column>
     </addColumn>
   </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-6">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="HELP_PAGE_URL" type="VARCHAR(500)">
+      </column>
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

@@ -387,15 +387,15 @@ export default {
         id: 0,
         title: '',
         url: '',
-        helpPage: '',
-        imageFileBody: '',
-        imageFileName: '',
+        helpPageURL: '',
         description: '',
-        isMandatory: false,
         active: true,
-        mobile: true,
+        isMandatory: false,
         system: false,
         permissions: [],
+        imageFileBody: '',
+        imageFileName: '',
+        mobile: true,
         viewMode: true,
         invalidSize: false,
         invalidImage: false
@@ -546,7 +546,7 @@ export default {
       this.formArray.id = '';
       this.formArray.title = '';
       this.formArray.url = '';
-      this.formArray.helpPage = '';
+      this.formArray.helpPageURL = '';
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
       this.formArray.description = '';
