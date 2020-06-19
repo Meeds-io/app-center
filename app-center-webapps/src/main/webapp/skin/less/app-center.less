@@ -1095,14 +1095,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .applicationForm {
       width: 420px;
       
+      .required:focus {
+        border-color: #e9322d;
+      }
       ::placeholder {
-        color: @greyColorLighten1Default!important;
+        color: @greyColorLighten1!important;
       }
       input, .selectize-input {
-        border: Solid 2px @greyColorLighten1Default;
+        border: Solid 2px @greyColorLighten1;
       }
       textarea {
-        border-color: @greyColorLighten1Default!important;
+        border-color: @greyColorLighten1!important;
       }
       .appDescription {
         padding-top: 12px;

@@ -58,12 +58,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <input
             v-model="formArray.title"
+            type="text"
+            name="title"
+            class="input-block-level ignore-vuetify-classes my-3 required"
+            maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
-            type="text"
-            name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
-            maxlength="200"
             required
           />
           <!--          <span class="requiredInput">*</span>-->
@@ -76,11 +76,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <input
             v-model="formArray.url"
             type="url"
+            name="url"
+            class="input-block-level ignore-vuetify-classes my-3 required"
+            maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-            name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
-            maxlength="200"
             required
           />
           <!--          <span class="requiredInput">*</span>-->
@@ -175,8 +175,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <exo-suggester
             v-model="formArray.permissions"
-            name="permissions"
             class="input-block-level ignore-vuetify-classes my-3"
+            name="permissions"
             maxlength="200"
             :options="suggesterOptions"
             :source-providers="[findGroups]"
@@ -187,11 +187,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <input
             v-model="formArray.helpPageURL"
-            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+            class="input-block-level ignore-vuetify-classes my-3"
             type="url"
             name="name"
-            class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
+            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
           />
         </v-col>
       </v-row>
