@@ -87,7 +87,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <!--          <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">-->
           <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
           <!--          </p>-->
-          <v-row>
+          <v-row class="uploadImageContainer">
             <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
                 {{ $t('appCenter.adminSetupForm.image') }}
