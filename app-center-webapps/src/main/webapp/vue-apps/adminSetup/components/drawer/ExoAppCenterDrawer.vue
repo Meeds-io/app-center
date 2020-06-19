@@ -139,11 +139,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <p
                 :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')"
               >
-                <img
-                  width="13"
-                  height="13"
-                  src="/app-center/skin/images/Info tooltip.png"
-                >
+                <v-icon small>
+                  mdi-information
+                </v-icon>
                 {{ $t("appCenter.adminSetupForm.sizeError") }}
               </p>
             </v-col>
@@ -153,10 +151,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-label>
           <v-textarea
             v-model="formArray.description"
-            :placeholder="$t('appCenter.adminSetupForm.description')"
+            class="appDescription"
             name="description"
             rows="20"
             maxlength="2000"
+            :placeholder="$t('appCenter.adminSetupForm.description')"
             no-resize
           >
           </v-textarea>
