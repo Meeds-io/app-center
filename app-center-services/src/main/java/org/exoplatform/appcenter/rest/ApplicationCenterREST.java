@@ -53,7 +53,10 @@ public class ApplicationCenterREST implements ResourceContainer {
   private static final String      LOG_OPEN_DRAWER_ENDPOINT            = "applications/logOpenDrawer";
 
   private static final String      LOG_CLICK_ALL_APPLICATIONS_ENDPOINT = "applications/logClickAllApplications";
-
+  
+  private static final String      LOG_CLICK_ONE_APPLICATION_ENDPOINT = "applications/logClickApplication";
+  
+  
   private static final String      ADMINISTRATORS_GROUP                = "/platform/administrators";
 
   private static final Log         LOG                                 = ExoLogger.getLogger(ApplicationCenterREST.class);
@@ -166,6 +169,32 @@ public class ApplicationCenterREST implements ResourceContainer {
                ApplicationCenterService.LOG_SERVICE_NAME,
                ApplicationCenterService.LOG_CLICK_ALL_APPLICATIONS,
                getCurrentUserName(),
+               "0");
+      return Response.ok().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+  
+  
+  @GET
+  @Path(LOG_CLICK_ONE_APPLICATION_ENDPOINT+ "/{applicationId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Log that the currently authenticated user clicked on one Application", httpMethod = "GET",
+      response = Response.class, notes = "empty response")
+  @ApiResponses(value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response logClickOneApplications(@ApiParam(value = "Application technical id to log", required = true) @PathParam("applicationId") Long applicationId) {
+    try {
+      Application application = appCenterService.findApplication(applicationId);
+      
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_OPEN_APPLICATION,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
                "0");
       return Response.ok().build();
     } catch (Exception e) {
