@@ -174,12 +174,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-label for="permissions">
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
-          <input
-            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
-            type="text"
-            name="name"
+          <exo-suggester
+            v-model="formArray.permissions"
+            name="permissions"
             class="input-block-level ignore-vuetify-classes my-3"
             maxlength="200"
+            :options="suggesterOptions"
+            :source-providers="[findGroups]"
+            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
           />
           <v-label for="helpPage">
             {{ $t('appCenter.adminSetupForm.helpPage') }}
@@ -226,8 +228,27 @@ export default {
     },
   },
   data() {
+    const component = this;
     return {
       isAppMandatory: false,
+      suggesterOptions: {
+        type: 'tag',
+        plugins: ['remove_button', 'restore_on_backspace'],
+        create: false,
+        createOnBlur: false,
+        highlight: false,
+        openOnFocus: false,
+        valueField: 'value',
+        labelField: 'text',
+        searchField: ['text'],
+        closeAfterSelect: false,
+        dropdownParent: 'body',
+        hideSelected: true,
+        renderMenuItem (item, escape) {
+          return component.renderMenuItem(item, escape);
+        },
+        sortField: [{field: 'order'}, {field: '$score'}],
+      },
     };
   },
   computed: {
@@ -342,6 +363,33 @@ export default {
     },
     resetForm() {
       this.$emit('resetForm');
+    },
+    findGroups (query, callback) {
+      if (!query.length) {
+        return callback();
+      }
+      this.getGroups(query).then(data => {
+        const groups = [];
+        for(const group of data) {
+          if (!group.id.startsWith('/spaces')) {
+            groups.push({
+              avatarUrl: null,
+              text: group.label,
+              value: group.id,
+              type: 'group'
+            });
+          }
+        }
+        callback(groups);
+      });
+    },
+    getGroups(query) {
+      return fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' }).then(resp => resp.json());
+    },
+    renderMenuItem (item, escape) {
+      return `
+        <div class="item">${escape(item.value)}</div>
+      `;
     },
   },
 };
