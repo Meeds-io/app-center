@@ -387,7 +387,7 @@ export default {
         id: 0,
         title: '',
         url: '',
-        helpPage: '',
+        helpPageURL: '',
         imageFileBody: '',
         imageFileName: '',
         description: '',
@@ -546,7 +546,7 @@ export default {
       this.formArray.id = '';
       this.formArray.title = '';
       this.formArray.url = '';
-      this.formArray.helpPage = '';
+      this.formArray.helpPageURL = '';
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
       this.formArray.description = '';

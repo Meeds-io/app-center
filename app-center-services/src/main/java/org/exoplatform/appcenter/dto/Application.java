@@ -33,6 +33,8 @@ public class Application implements Serializable {
 
   private String            url;
 
+  private String            helpPageURL;
+
   private String            description;
 
   private boolean           active;
@@ -120,6 +122,14 @@ public class Application implements Serializable {
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public String getHelpPageURL() {
+    return helpPageURL;
+  }
+
+  public void setHelpPageURL(String helpPageURL) {
+    this.helpPageURL = helpPageURL;
   }
 
   public String getDescription() {
