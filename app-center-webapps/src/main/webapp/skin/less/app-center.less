@@ -16,7 +16,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 @import "./variables.less";
 
-@borderColor: var(--allPagesBorderColor, @greyColorDefault);
 /* This file contains CSS for admin setup portlet */
 .applicationsAdmin {
   margin: 20px;
@@ -1283,12 +1282,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .content {
       max-height: 83vh;
     }
+    .formContent {
+      max-height: 78vh;
+    }
   }
 }
 @media screen and (max-height: 708px) {
   .appCenterDrawer {
     .content {
       max-height: 82vh;
+    }
+    .formContent {
+      max-height: 77vh;
     }
   }
 }
@@ -1297,12 +1302,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .content {
       max-height: 81vh;
     }
+    .formContent {
+      max-height: 76vh;      
+    }
   }
 }
 @media screen and (max-height: 628px) {
   .appCenterDrawer {
     .content {
       max-height: 80vh;
+    }
+    .formContent {
+      max-height: 75vh;
     }
   }
 }

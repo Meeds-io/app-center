@@ -50,7 +50,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
     <v-divider class="my-0 appHeaderBorder" />
 
-    <v-col class="content">
+    <v-col class="content  formContent">
       <v-row class="applicationForm">
         <v-col>
           <v-label for="title">
@@ -197,11 +197,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </v-row>
     </v-col>
 
-    <v-row class="drawerActions mx-0 px-3">
+    <v-row class="drawerActions mx-0">
       <v-card
         flat
         tile
-        class="d-flex flex justify-end mx-2"
+        class="d-flex flex justify-end mx-2 px-1"
       >
         <button type="button" class="btn ml-2 applicationsActionBtn" @click="resetForm">
           {{ $t('appCenter.adminSetupForm.cancel') }}
@@ -269,6 +269,13 @@ export default {
         $('body').removeClass('hide-scroll');
       }
     }, 
+  },
+  created() {
+    $(document).on('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.$emit('closeDrawer');
+      }
+    });
   },
   methods: {
     validUrl(app) {
