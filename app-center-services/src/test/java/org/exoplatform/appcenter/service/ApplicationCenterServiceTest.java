@@ -20,7 +20,10 @@ import static org.junit.Assert.*;
 
 import java.io.InputStream;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
@@ -28,9 +31,13 @@ import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.plugin.ApplicationPlugin;
 import org.exoplatform.commons.file.services.NameSpaceService;
-import org.exoplatform.container.*;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.RootContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
-import org.exoplatform.container.xml.*;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.ObjectParameter;
+import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.naming.InitialContextInitializer;
 import org.exoplatform.services.organization.*;
 import org.exoplatform.services.organization.idm.MembershipImpl;
@@ -111,6 +118,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -158,6 +166,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -254,6 +263,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -267,6 +277,7 @@ public class ApplicationCenterServiceTest {
     application = new Application(null,
                                   "title",
                                   "url",
+                                  "",
                                   5L,
                                   null,
                                   null,
@@ -371,6 +382,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -413,6 +425,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -447,6 +460,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -459,6 +473,7 @@ public class ApplicationCenterServiceTest {
     Application application2 = new Application(null,
                                                "title2",
                                                "url2",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -502,19 +517,21 @@ public class ApplicationCenterServiceTest {
   @Test
   public void testGetMandatoryAndFavoriteApplicationsList() throws Exception {
     Application application1 = new Application(null,
-                                              "title1",
-                                              "url1",
-                                              5L,
-                                              null,
-                                              null,
-                                              "description1",
-                                              true,
-                                              true,
-                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+                                               "title1",
+                                               "url1",
+                                               "",
+                                               5L,
+                                               null,
+                                               null,
+                                               "description1",
+                                               true,
+                                               true,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application2 = new Application(null,
                                                "title2",
                                                "url2",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -526,6 +543,7 @@ public class ApplicationCenterServiceTest {
     Application application3 = new Application(null,
                                                "title3",
                                                "url3",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -537,6 +555,7 @@ public class ApplicationCenterServiceTest {
     Application application4 = new Application(null,
                                                "title4",
                                                "url4",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -545,27 +564,18 @@ public class ApplicationCenterServiceTest {
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
-    Application application5 = new Application(null,
-                                               "title5",
-                                               "url5",
-                                               6L,
-                                               null,
-                                               null,
-                                               "description5",
-                                               true,
-                                               false,
-                                               "any");
-    
+    Application application5 = new Application(null, "title5", "url5", "", 6L, null, null, "description5", true, false, "any");
+
     applicationCenterService.createApplication(application1);
     applicationCenterService.createApplication(application2);
     Application storedApp3 = applicationCenterService.createApplication(application3);
     Application storedApp4 = applicationCenterService.createApplication(application4);
     Application storedApp5 = applicationCenterService.createApplication(application5);
-    
+
     applicationCenterService.addFavoriteApplication(storedApp3.getId(), "admin");
     applicationCenterService.addFavoriteApplication(storedApp4.getId(), "admin");
     applicationCenterService.addFavoriteApplication(storedApp5.getId(), "simple");
-    
+
     ApplicationList MandatoryAndFavoriteApplications = applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin");
     assertEquals(3, MandatoryAndFavoriteApplications.getApplications().size());
     assertEquals(3, MandatoryAndFavoriteApplications.getSize());
@@ -576,6 +586,7 @@ public class ApplicationCenterServiceTest {
     Application application1 = new Application(null,
                                                "title3",
                                                "url3",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -584,16 +595,7 @@ public class ApplicationCenterServiceTest {
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
-    Application application2 = new Application(null,
-                                               "title5",
-                                               "url5",
-                                               6L,
-                                               null,
-                                               null,
-                                               "description5",
-                                               true,
-                                               false,
-                                               "any");
+    Application application2 = new Application(null, "title5", "url5", "", 6L, null, null, "description5", true, false, "any");
 
     try {
       applicationCenterService.getMandatoryAndFavoriteApplicationsList("");
@@ -601,33 +603,35 @@ public class ApplicationCenterServiceTest {
     } catch (IllegalArgumentException e) {
       // Expected
     }
-    
+
     Application storedApp1 = applicationCenterService.createApplication(application1);
     Application storedApp2 = applicationCenterService.createApplication(application2);
-    
+
     applicationCenterService.addFavoriteApplication(storedApp1.getId(), "admin");
     applicationCenterService.addFavoriteApplication(storedApp2.getId(), "simple");
-    
+
     applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "admin");
     applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp2.getId(), new Long(2)), "simple");
-    
+
     try {
       applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "");
       fail("Shouldn't retrieve applications with null username");
     } catch (IllegalArgumentException e) {
       // Expected
     }
-    
+
     try {
       applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(0L, new Long(1)), "");
       fail("Application id can not be negative or equal to zero.");
     } catch (IllegalArgumentException e) {
       // Expected
     }
-    
-    assertEquals(new Long(1), applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
-    assertEquals(new Long(1), applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
-    
+
+    assertEquals(new Long(1),
+                 applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+    assertEquals(new Long(1),
+                 applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+
   }
 
   @Test
@@ -648,6 +652,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -660,6 +665,7 @@ public class ApplicationCenterServiceTest {
     Application application2 = new Application(null,
                                                "title2",
                                                "url2",
+                                               "",
                                                6L,
                                                null,
                                                null,
@@ -750,6 +756,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -792,6 +799,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
@@ -810,8 +818,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
-    InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(),
-                                                                                      ADMIN_USERNAME);
+    InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(), ADMIN_USERNAME);
     assertNotNull(inputStream);
     assertTrue(inputStream.available() > 0);
   }
@@ -843,6 +850,7 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,

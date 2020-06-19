@@ -51,6 +51,9 @@ public class ApplicationEntity {
   @Column(name = "URL")
   private String                                url;
 
+  @Column(name = "HELP_PAGE_URL")
+  private String                                helpPageUrl;
+
   @Column(name = "IMAGE_FILE_ID")
   private Long                                  imageFileId;
 
@@ -133,6 +136,20 @@ public class ApplicationEntity {
    */
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  /**
+   * @return the help page url
+   */
+  public String getHelpPageUrl() {
+    return helpPageUrl;
+  }
+
+  /**
+   * @param helpPageUrl the help page url to set
+   */
+  public void setHelpPageUrl(String helpPageUrl) {
+    this.helpPageUrl = helpPageUrl;
   }
 
   /**

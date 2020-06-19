@@ -66,8 +66,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-list-item-content>
             <v-list-item-action class="appHelp">
               <v-btn
+                v-if="authorizedApp.helpPageURL"
                 small
                 icon
+                @click="navigateTo(authorizedApp.helpPageURL)"
               >
                 <v-icon 
                   x-small
@@ -249,7 +251,10 @@ export default {
     searchAuthorizedApplicationsList() {
       this.authorizedApplicationsList = [];
       this.getAuthorizedApplicationsList(true);
-    }
+    },
+    navigateTo(link) {
+      window.open(link);
+    },
   }
 };
 </script>

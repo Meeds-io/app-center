@@ -26,6 +26,7 @@ public class UserApplication extends Application {
     super(app.getId(),
           app.getTitle(),
           app.getUrl(),
+          app.getHelpPageURL(),
           app.getImageFileId(),
           app.getImageFileBody(),
           app.getImageFileName(),
@@ -36,17 +37,18 @@ public class UserApplication extends Application {
   }
 
   public UserApplication(Long id,
-                             String title,
-                             String url,
-                             Long imageFileId,
-                             String imageFileBody,
-                             String imageFileName,
-                             String description,
-                             boolean active,
-                             boolean byDefault,
-                             boolean favorite,
-                             String... permissions) {
-    super(id, title, url, imageFileId, imageFileBody, imageFileName, description, active, byDefault, permissions);
+                         String title,
+                         String url,
+                         String helpPageURL,
+                         Long imageFileId,
+                         String imageFileBody,
+                         String imageFileName,
+                         String description,
+                         boolean active,
+                         boolean byDefault,
+                         boolean favorite,
+                         String... permissions) {
+    super(id, title, url, helpPageURL, imageFileId, imageFileBody, imageFileName, description, active, byDefault, permissions);
     this.favorite = favorite;
   }
 
