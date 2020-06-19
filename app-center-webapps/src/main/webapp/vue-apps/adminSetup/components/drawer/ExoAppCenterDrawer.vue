@@ -270,6 +270,13 @@ export default {
       }
     }, 
   },
+  created() {
+    $(document).on('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.$emit('closeDrawer');
+      }
+    });
+  },
   methods: {
     validUrl(app) {
       const url = app && app.url;
