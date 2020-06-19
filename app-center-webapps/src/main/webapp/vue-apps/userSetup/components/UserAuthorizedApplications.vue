@@ -90,33 +90,35 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-divider></v-divider>
           <v-card-actions class="applicationActions">
             <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-            <v-btn
-              v-if="authorizedApp.byDefault"
-              icon
-              disabled
-              class="mandatory"
-            >
-              <v-icon
-                small
-                color="red"
+            <div v-exo-tooltip.bottom.body="authorizedApp.byDefault ? $t('appCenter.userSetup.mandatory') : ''">
+              <v-btn
+                v-if="authorizedApp.byDefault"
+                icon
+                disabled
+                class="mandatory"
               >
-                mdi-star
-              </v-icon>
-            </v-btn>
-            <v-btn
-              v-else
-              icon
-              :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
-              :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
-              @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
-            >
-              <v-icon
-                small
-                color="red"
+                <v-icon
+                  small
+                  color="red"
+                >
+                  mdi-star
+                </v-icon>
+              </v-btn>
+              <v-btn
+                v-else
+                icon
+                :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
+                :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
+                @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
               >
-                {{ authorizedApp.byDefault || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
-              </v-icon>
-            </v-btn>
+                <v-icon
+                  small
+                  color="red"
+                >
+                  {{ authorizedApp.byDefault || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                </v-icon>
+              </v-btn>
+            </div>
           </v-card-actions>
         </div>
       </v-card>
