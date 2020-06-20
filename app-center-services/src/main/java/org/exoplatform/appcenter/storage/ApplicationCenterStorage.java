@@ -306,8 +306,8 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isByDefault(),
-                                                          false,
                                                           applicationEntity.isMobile(),
+                                                          false,
                                                           permissions);
     userApplication.setSystem(applicationEntity.isSystem());
     userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
@@ -331,8 +331,8 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isByDefault(),
-                                                          true,
                                                           applicationEntity.isMobile(),
+                                                          true,
                                                           permissions);
     // set UserApplication's order
     userApplication.setOrder(favoriteApplicationEntity.getOrder());
