@@ -66,6 +66,9 @@ public class ApplicationEntity {
   @Column(name = "BY_DEFAULT")
   private boolean                               byDefault;
 
+  @Column(name = "IS_MOBILE")
+  private boolean                               isMobile;
+
   @Column(name = "IS_SYSTEM")
   private Boolean                               system;
 
@@ -206,6 +209,20 @@ public class ApplicationEntity {
    */
   public void setByDefault(boolean byDefault) {
     this.byDefault = byDefault;
+  }
+
+  /**
+   * @return the isMobile
+   */
+  public boolean isMobile() {
+    return isMobile;
+  }
+
+  /**
+   * @param isMobile the byDefault to set
+   */
+  public void setIsMobile(boolean isMobile) {
+    this.isMobile = isMobile;
   }
 
   /**

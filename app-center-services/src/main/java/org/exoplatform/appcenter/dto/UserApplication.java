@@ -33,6 +33,7 @@ public class UserApplication extends Application {
           app.getDescription(),
           app.isActive(),
           app.isByDefault(),
+          app.isMobile(),
           app.getPermissions());
   }
 
@@ -46,9 +47,10 @@ public class UserApplication extends Application {
                          String description,
                          boolean active,
                          boolean byDefault,
+                         boolean isMobile,
                          boolean favorite,
                          String... permissions) {
-    super(id, title, url, helpPageURL, imageFileId, imageFileBody, imageFileName, description, active, byDefault, permissions);
+    super(id, title, url, helpPageURL, imageFileId, imageFileBody, imageFileName, description, active, byDefault, isMobile, permissions);
     this.favorite = favorite;
   }
 

@@ -106,4 +106,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </column>
     </addColumn>
   </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-7">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_MOBILE" type="BOOLEAN">
+        <constraints nullable="false" />
+      </column>
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

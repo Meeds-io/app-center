@@ -283,9 +283,11 @@ public class ApplicationCenterStorage {
                                               applicationEntity.getDescription(),
                                               applicationEntity.isActive(),
                                               applicationEntity.isByDefault(),
+                                              applicationEntity.isMobile(),
                                               permissions);
     application.setSystem(applicationEntity.isSystem());
     application.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    application.setIsMobile(applicationEntity.isMobile());
     return application;
   }
 
@@ -305,8 +307,11 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isByDefault(),
                                                           false,
+                                                          applicationEntity.isMobile(),
                                                           permissions);
     userApplication.setSystem(applicationEntity.isSystem());
+    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    userApplication.setIsMobile(applicationEntity.isMobile());
     return userApplication;
   }
 
@@ -327,10 +332,13 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isByDefault(),
                                                           true,
+                                                          applicationEntity.isMobile(),
                                                           permissions);
     // set UserApplication's order
     userApplication.setOrder(favoriteApplicationEntity.getOrder());
     userApplication.setSystem(applicationEntity.isSystem());
+    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    userApplication.setIsMobile(applicationEntity.isMobile());
     return userApplication;
   }
 
@@ -348,6 +356,7 @@ public class ApplicationCenterStorage {
                                                                 StringUtils.join(application.getPermissions(), ","));
     applicationEntity.setSystem(application.isSystem());
     applicationEntity.setHelpPageUrl(application.getHelpPageURL());
+    applicationEntity.setIsMobile(application.isMobile());
     return applicationEntity;
   }
 
