@@ -198,6 +198,7 @@ export default {
   },
   created() {
     this.isMobileDevice = this.detectMobile();
+    console.log('From created !!!');
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -234,6 +235,7 @@ export default {
       this.appLauncherDrawer = !this.appLauncherDrawer;
     },
     getMandatoryAndFavoriteApplications() {
+      console.log('From get method');
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',

@@ -167,7 +167,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
             </v-col>
             <v-col>
-              <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
+              <v-switch v-model="formArray.isMobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
             </v-col>
           </v-row>
           <v-label for="permissions">
@@ -317,6 +317,7 @@ export default {
           description: this.formArray.description,
           active: this.formArray.active,
           byDefault: this.formArray.isMandatory,
+          isMobile: this.formArray.isMobile,
           system: this.formArray.system,
           permissions: this.formArray.permissions,
           imageFileBody: this.formArray.imageFileBody,
