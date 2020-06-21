@@ -93,7 +93,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 {{ $t('appCenter.adminSetupForm.image') }}
               </v-label>
             </v-col>
-            <v-col v-if="!formArray.imageFileName" class="uploadImage" cols="3">
+            <v-col v-show="!formArray.imageFileName" class="uploadImage" cols="3">
               <label for="file" class="custom-file-upload">
                 <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
                 <span>
@@ -102,13 +102,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </label>
               <input
                 id="file"
-                ref="file"
+                ref="image"
                 type="file"
                 accept="image/*"
                 @change="handleFileUpload()"
               >
             </v-col>
-            <v-col v-else class="imageSet" cols="4">
+            <v-col v-show="formArray.imageFileName" class="imageSet" cols="4">
               <v-list-item
                 v-if="formArray.imageFileName != undefined &&
                   formArray.imageFileName != ''"
@@ -287,8 +287,8 @@ export default {
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     handleFileUpload() {
-      if (this.$refs.file.files.length > 0) {
-        this.formArray.imageFileName = this.$refs.file.files[0].name;
+      if (this.$refs.image.files.length > 0) {
+        this.formArray.imageFileName = this.$refs.image.files[0].name;
         this.formArray.invalidSize = false;
         this.formArray.invalidImage = false;
       } else {
@@ -342,30 +342,25 @@ export default {
     submitForm() {
       const MAX_FILE_SIZE = 100000;
 
-      if (
-        this.formArray.title &&
-        this.formArray.url &&
-        this.validUrl(this.formArray)
-      ) {
-        if (this.$refs.file && this.$refs.file.files.length > 0) {
-          const reader = new FileReader();
-          reader.onload = e => {
-            if (!e.target.result.includes('data:image')) {
-              this.formArray.invalidImage = true;
-              return;
-            }
-            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
-              this.formArray.invalidSize = true;
-              return;
-            }
-            this.formArray.imageFileBody = e.target.result;
-            this.addOrEditApplication();
-          };
-          reader.readAsDataURL(this.$refs.file.files[0]);
-        } else {
+      if (this.$refs.image && this.$refs.image.files.length > 0) {
+        this.formArray.imageFileName = this.$refs.image.files[0].name;
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (!e.target.result.includes('data:image')) {
+            this.formArray.invalidImage = true;
+            return;
+          }
+          if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
+            this.formArray.invalidSize = true;
+            return;
+          }
+          this.formArray.imageFileBody = e.target.result;
           this.addOrEditApplication();
-          this.$emit('closeDrawer');
-        }
+        };
+        reader.readAsDataURL(this.$refs.image.files[0]);
+      } else {
+        this.addOrEditApplication();
+        this.$emit('closeDrawer');
       }
     },
     resetForm() {
