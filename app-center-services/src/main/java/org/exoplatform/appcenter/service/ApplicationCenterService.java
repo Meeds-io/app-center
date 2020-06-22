@@ -111,6 +111,9 @@ public class ApplicationCenterService implements Startable {
   
   public static final String LOG_REORGANIZE_FAVORITES = "reorganize-favorites";
   
+  public static final String LOG_ADD_FAVORITE = "add-favorite";
+  public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
+  
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,

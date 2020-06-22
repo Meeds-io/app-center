@@ -318,7 +318,18 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response addFavoriteApplication(@ApiParam(value = "Application technical id to add as favorite", required = true) @PathParam("applicationId") Long applicationId) {
     try {
+      long startTime = System.currentTimeMillis();
+      Application application = appCenterService.findApplication(applicationId);
       appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_ADD_FAVORITE,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
+               totalTime);
       return Response.noContent().build();
     } catch (IllegalAccessException e) {
       LOG.warn(e);
@@ -370,7 +381,18 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response deleteFavoriteApplication(@ApiParam(value = "Application technical id to delete from favorite", required = true) @PathParam("applicationId") Long applicationId) {
     try {
+      long startTime = System.currentTimeMillis();
+      Application application = appCenterService.findApplication(applicationId);
       appCenterService.deleteFavoriteApplication(applicationId, getCurrentUserName());
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_REMOVE_FAVORITE,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
+               totalTime);
       return Response.noContent().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while deleting application from favorites", e);

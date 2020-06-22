@@ -295,19 +295,17 @@ export default {
         });
     },
     addOrDeleteFavoriteApplication(application) {
-      return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
-        credentials: 'include',
-        method: application.favorite ? 'DELETE' : 'POST',
-      })
-        .then(() => {
+      if (!application.favorite) {
+        return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
+          credentials: 'include',
+          method: application.favorite ? 'DELETE' : 'POST',
+        }).then(() => {
+          application.favorite=!application.favorite;
           return this.$parent.$children[1].getFavoriteApplicationsList();
-        })
-        .then(() => {
-          application.favorite = !application.favorite;
-          if (!application.favorite) {
-            this.$parent.$children[1].deleteFavoriteApplication(application.id);
-          }
         });
+      } else {
+        this.$parent.$children[1].deleteFavoriteApplication(application.id);
+      }
     },
     loadNextPage() {
       this.getAuthorizedApplicationsList();
