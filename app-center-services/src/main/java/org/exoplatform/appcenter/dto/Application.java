@@ -33,6 +33,8 @@ public class Application implements Serializable {
 
   private String            url;
 
+  private String            helpPageURL;
+
   private String            description;
 
   private boolean           active;
@@ -57,6 +59,7 @@ public class Application implements Serializable {
   public Application(Long id,
                      String title,
                      String url,
+                     String helpPageURL,
                      Long imageFileId,
                      String imageFileBody,
                      String imageFileName,
@@ -67,6 +70,7 @@ public class Application implements Serializable {
     this(id,
          title,
          url,
+         helpPageURL,
          imageFileId,
          imageFileBody,
          imageFileName,
@@ -79,6 +83,7 @@ public class Application implements Serializable {
   public Application(Long id,
                      String title,
                      String url,
+                     String helpPageURL,
                      Long imageFileId,
                      String imageFileBody,
                      String imageFileName,
@@ -89,6 +94,7 @@ public class Application implements Serializable {
     this.id = id;
     this.title = title;
     this.url = url;
+    this.helpPageURL = helpPageURL;
     this.description = description;
     this.active = active;
     this.byDefault = byDefault;
@@ -120,6 +126,14 @@ public class Application implements Serializable {
 
   public void setUrl(String url) {
     this.url = url;
+  }
+
+  public String getHelpPageURL() {
+    return helpPageURL;
+  }
+
+  public void setHelpPageURL(String helpPageURL) {
+    this.helpPageURL = helpPageURL;
   }
 
   public String getDescription() {

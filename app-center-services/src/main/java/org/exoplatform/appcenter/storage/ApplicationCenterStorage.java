@@ -76,15 +76,15 @@ public class ApplicationCenterStorage {
     if (applicationForm == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
-    ApplicationEntity application = toEntity(applicationForm);
-    application.setId(null);
+    ApplicationEntity applicationEntity = toEntity(applicationForm);
+    applicationEntity.setId(null);
     ApplicationImage applicationImage = createAppImageFileItem(applicationForm.getImageFileName(),
                                                                applicationForm.getImageFileBody());
     if (applicationImage != null) {
-      application.setImageFileId(applicationImage.getId());
+      applicationEntity.setImageFileId(applicationImage.getId());
     }
-    application = applicationDAO.create(application);
-    return toDTO(application);
+    applicationEntity = applicationDAO.create(applicationEntity);
+    return toDTO(applicationEntity);
   }
 
   public Application updateApplication(Application application) throws Exception {
@@ -276,6 +276,7 @@ public class ApplicationCenterStorage {
     Application application = new Application(applicationEntity.getId(),
                                               applicationEntity.getTitle(),
                                               applicationEntity.getUrl(),
+                                              applicationEntity.getHelpPageUrl(),
                                               applicationEntity.getImageFileId(),
                                               null,
                                               null,
@@ -284,6 +285,7 @@ public class ApplicationCenterStorage {
                                               applicationEntity.isByDefault(),
                                               permissions);
     application.setSystem(applicationEntity.isSystem());
+    application.setHelpPageURL(applicationEntity.getHelpPageUrl());
     return application;
   }
 
@@ -295,6 +297,7 @@ public class ApplicationCenterStorage {
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
                                                           applicationEntity.getUrl(),
+                                                          applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
                                                           null,
                                                           null,
@@ -316,6 +319,7 @@ public class ApplicationCenterStorage {
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
                                                           applicationEntity.getUrl(),
+                                                          applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
                                                           null,
                                                           null,
@@ -343,6 +347,7 @@ public class ApplicationCenterStorage {
                                                                 application.isByDefault(),
                                                                 StringUtils.join(application.getPermissions(), ","));
     applicationEntity.setSystem(application.isSystem());
+    applicationEntity.setHelpPageUrl(application.getHelpPageURL());
     return applicationEntity;
   }
 

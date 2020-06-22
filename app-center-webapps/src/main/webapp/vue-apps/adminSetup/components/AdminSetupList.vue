@@ -21,7 +21,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         class="actionIcon addApplicationButton tooltipContent"
         data-placement="bottom"
         data-container="body"
-        @click.stop="showAddApplicationModal()"
+        @click.stop="showAddApplicationDrawer"
       >
         <i class="uiIconPlus uiIconLightGray"></i>
         <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
@@ -108,7 +108,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="actionIcon tooltipContent"
             data-placement="bottom"
             data-container="body"
-            @click.stop="showEditApplicationModal(application)"
+            @click.stop="showEditApplicationDrawer(application)"
           >
             <i class="uiIconEdit uiIconLightGray"></i>
             <span class="tooltiptext tooltiptextIcon">{{
@@ -147,6 +147,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         @pagechanged="onPageChange"
       />
     </div>
+    
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
+      <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
+      <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
+    </exo-app-center-drawer>
 
     <transition name="fade">
       <exo-app-center-modal
@@ -382,24 +387,28 @@ export default {
         id: 0,
         title: '',
         url: '',
+        helpPageURL: '',
+        description: '',
+        active: true,
+        isMandatory: false,
+        system: false,
+        permissions: [],
         imageFileBody: '',
         imageFileName: '',
-        description: '',
-        byDefault: false,
-        active: true,
-        permissions: [],
+        mobile: true,
         viewMode: true,
         invalidSize: false,
         invalidImage: false
       },
-      editArray: [],
       error: '',
       showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
       currentPage: 1,
       totalApplications: 0,
       totalPages: 0,
-      groups: []
+      groups: [],
+      openAppDrawer: false,
+      addApplication: true,
     };
   },
 
@@ -536,13 +545,16 @@ export default {
       this.error = '';
       this.formArray.id = '';
       this.formArray.title = '';
-      this.formArray.description = '';
       this.formArray.url = '';
-      this.formArray.permissions = [];
-      this.formArray.active = true;
-      this.formArray.byDefault = false;
+      this.formArray.helpPageURL = '';
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
+      this.formArray.description = '';
+      this.formArray.isMandatory = false;
+      this.formArray.system = false;
+      this.formArray.active = true;
+      this.formArray.mobile = true;
+      this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
       this.showAddOrEditApplicationModal = false;
@@ -565,14 +577,16 @@ export default {
       this.formArray.invalidImage = false;
     },
 
-    showAddApplicationModal() {
-      this.showAddOrEditApplicationModal = true;
+    showAddApplicationDrawer() {
+      this.openAppDrawer = true;
+      this.addApplication = true;
       this.formArray.viewMode = true;
       this.initPermissionsSuggester();
     },
 
-    showEditApplicationModal(item) {
-      this.showAddOrEditApplicationModal = true;
+    showEditApplicationDrawer(item) {
+      this.openAppDrawer = true;
+      this.addApplication = false;
       Object.assign(this.formArray, item);
       this.initPermissionsSuggester();
     },
@@ -601,6 +615,10 @@ export default {
       if (!this.formArray.active) {
         this.formArray.byDefault = false;
       }
+    },
+    closeDrawer() {
+      this.resetForm();
+      this.openAppDrawer = false;
     },
     initPermissionsSuggester() {
       const permissionsSuggester = $('#permissions-suggester');

@@ -118,11 +118,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </v-layout>
       </div>
       
-      <v-row class="drawerActions mx-0 px-3">
+      <v-row class="drawerActions mx-0">
         <v-card
           flat
           tile
-          class="d-flex flex justify-end mx-2"
+          class="d-flex flex justify-end mx-2 px-1"
         >
           <v-btn
             class="text-uppercase caption primary--text seeAllApplicationsBtn"

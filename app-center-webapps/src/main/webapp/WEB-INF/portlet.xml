@@ -30,8 +30,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
     </supports>
-    <supported-locale>fr</supported-locale>
-    <resource-bundle>locale.portlets.appCenterPortlets</resource-bundle>
     <portlet-info>
       <title>App center admin setup portlet</title>
       <keywords>App center portlets</keywords>
@@ -55,8 +53,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
     </supports>
-    <supported-locale>fr</supported-locale>
-    <resource-bundle>locale.portlets.appCenterPortlets</resource-bundle>
     <portlet-info>
       <title>App center user setup portlet</title>
       <keywords>App center portlets</keywords>

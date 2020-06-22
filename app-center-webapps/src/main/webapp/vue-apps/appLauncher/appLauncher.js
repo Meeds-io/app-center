@@ -23,9 +23,10 @@ const vuetify = new Vuetify({
   iconfont: ''
 });
 
-// getting language of user
+
+//should expose the locale ressources as REST API
 const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `/app-center/vueLocales/locale_${lang}.json`;
+const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
 
 export function init() {
   //getting locale ressources
