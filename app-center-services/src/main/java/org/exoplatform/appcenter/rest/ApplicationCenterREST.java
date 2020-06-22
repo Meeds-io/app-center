@@ -341,9 +341,17 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response updateApplicationsOrder(@ApiParam(value = "Application to update", required = true) List<ApplicationOrder> applicationOrders) {
     try {
+      long startTime = System.currentTimeMillis();
       for (ApplicationOrder applicationOrder : applicationOrders) {
         appCenterService.updateFavoriteApplicationOrder(applicationOrder, getCurrentUserName());
       }
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_REORGANIZE_FAVORITES,
+               getCurrentUserName(),
+               totalTime);
     } catch (ApplicationNotFoundException e) {
       LOG.warn(e);
       return Response.serverError().build();
