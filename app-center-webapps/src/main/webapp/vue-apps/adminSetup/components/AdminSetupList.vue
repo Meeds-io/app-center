@@ -395,7 +395,7 @@ export default {
         permissions: [],
         imageFileBody: '',
         imageFileName: '',
-        mobile: true,
+        isMobile: true,
         viewMode: true,
         invalidSize: false,
         invalidImage: false
@@ -553,7 +553,7 @@ export default {
       this.formArray.isMandatory = false;
       this.formArray.system = false;
       this.formArray.active = true;
-      this.formArray.mobile = true;
+      this.formArray.isMobile = true;
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
