@@ -148,7 +148,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       />
     </div>
     
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="resetForm" @closeDrawer="closeDrawer">
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
       <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
       <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
     </exo-app-center-drawer>
