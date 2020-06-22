@@ -109,7 +109,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
   <changeSet author="appCenter" id="1.0.0-7">
     <addColumn tableName="AC_APPLICATION">
-      <column name="IS_MOBILE" type="BOOLEAN">
+      <column name="IS_MOBILE" type="BOOLEAN" defaultValueBoolean="true">
         <constraints nullable="false" />
       </column>
     </addColumn>
