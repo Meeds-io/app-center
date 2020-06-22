@@ -141,6 +141,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 export default {
   data() {
     return {
+      isMobileDevice: false,
       appLauncherDrawer: null,
       mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
@@ -196,6 +197,7 @@ export default {
     },
   },
   created() {
+    this.isMobileDevice = this.detectMobile();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -204,6 +206,21 @@ export default {
     });
   },
   methods: {
+    detectMobile() {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    },
     toggleDrawer() {
       if (!this.appLauncherDrawer) {
         this.getMandatoryAndFavoriteApplications();
@@ -229,7 +246,13 @@ export default {
           }
         })
         .then(data => {
-          this.mandatoryApplicationsList = data.applications.filter(app => app.byDefault && !app.favorite);
+          const applications = [];
+          if (this.isMobileDevice) {
+            applications.push(...data.applications.filter(app => app.mobile));
+          } else {
+            applications.push(...data.applications);
+          }
+          this.mandatoryApplicationsList = applications.filter(app => app.byDefault && !app.favorite);
           // sort mandatory applications alphabetical
           this.mandatoryApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
@@ -242,7 +265,7 @@ export default {
 
             return 0;
           });
-          this.favoriteApplicationsList = data.applications.filter(app => app.favorite && !app.byDefault);
+          this.favoriteApplicationsList = applications.filter(app => app.favorite && !app.byDefault);
           // sort favorite applications alphabetically by default
           if (this.favoriteApplicationsList.some(app => app.order !== null)) {
             this.alphabeticalOrder = false;

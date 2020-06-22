@@ -41,6 +41,8 @@ public class Application implements Serializable {
 
   private boolean           byDefault;
 
+  private boolean           isMobile;
+
   private boolean           system;
 
   private List<String>      permissions;
@@ -66,6 +68,7 @@ public class Application implements Serializable {
                      String description,
                      boolean active,
                      boolean byDefault,
+                     boolean isMobile,
                      String... permissions) {
     this(id,
          title,
@@ -77,6 +80,7 @@ public class Application implements Serializable {
          description,
          active,
          byDefault,
+         isMobile,
          permissions == null ? null : Arrays.asList(permissions));
   }
 
@@ -90,6 +94,7 @@ public class Application implements Serializable {
                      String description,
                      boolean active,
                      boolean byDefault,
+                     boolean isMobile,
                      List<String> permissions) {
     this.id = id;
     this.title = title;
@@ -98,6 +103,7 @@ public class Application implements Serializable {
     this.description = description;
     this.active = active;
     this.byDefault = byDefault;
+    this.isMobile = isMobile;
     this.permissions = permissions;
     this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
@@ -158,6 +164,14 @@ public class Application implements Serializable {
 
   public void setByDefault(boolean byDefault) {
     this.byDefault = byDefault;
+  }
+
+  public boolean isMobile() {
+    return isMobile;
+  }
+
+  public void setIsMobile(boolean mobile) {
+    isMobile = mobile;
   }
 
   public List<String> getPermissions() {

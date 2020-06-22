@@ -151,6 +151,7 @@ export default {
   },
   data() {
     return {
+      isMobileDevice: false,
       isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
       applicationsListSize: null,
@@ -182,10 +183,26 @@ export default {
     }
   },
   created() {
+    this.isMobileDevice = this.detectMobile();
     this.getMaxFavoriteApps();
     this.getAuthorizedApplicationsList();
   },
   methods: {
+    detectMobile() {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    },
     getAuthorizedApplicationsList(searchMode) {
       this.loadingApplications = true;
       let offset = this.offset;
@@ -206,7 +223,15 @@ export default {
           }
         })
         .then(data => {
-          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(data.applications);
+          const allApplications = [];
+          if (data) {
+            if (this.isMobileDevice) {
+              allApplications.push(...data.applications.filter(app => app.mobile));
+            } else {
+              allApplications.push(...data.applications);
+            }
+          }
+          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
           this.authorizedApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);

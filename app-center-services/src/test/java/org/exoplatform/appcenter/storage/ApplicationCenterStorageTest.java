@@ -100,6 +100,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -129,6 +130,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -185,6 +187,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -217,6 +220,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -272,6 +276,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -318,6 +323,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -339,6 +345,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -375,6 +382,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -408,6 +416,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -443,6 +452,7 @@ public class ApplicationCenterStorageTest {
                                                "description",
                                                true,
                                                true,
+                                               true,
                                                "permissions1",
                                                "permissions2");
 
@@ -455,6 +465,7 @@ public class ApplicationCenterStorageTest {
                                                null,
                                                "description",
                                                false,
+                                               true,
                                                true,
                                                "permissions1",
                                                "permissions2");
@@ -487,6 +498,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -521,6 +533,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -574,6 +587,7 @@ public class ApplicationCenterStorageTest {
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -606,6 +620,7 @@ public class ApplicationCenterStorageTest {
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
