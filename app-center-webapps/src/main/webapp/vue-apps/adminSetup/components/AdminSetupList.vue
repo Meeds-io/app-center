@@ -580,14 +580,12 @@ export default {
       this.openAppDrawer = true;
       this.addApplication = true;
       this.formArray.viewMode = true;
-      this.initPermissionsSuggester();
     },
 
     showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
       this.addApplication = false;
       Object.assign(this.formArray, item);
-      this.initPermissionsSuggester();
     },
 
     toDeleteApplicationModal(item) {
@@ -619,104 +617,6 @@ export default {
       this.resetForm();
       this.openAppDrawer = false;
     },
-    initPermissionsSuggester() {
-      const permissionsSuggester = $('#permissions-suggester');
-      if (permissionsSuggester && permissionsSuggester.length) {
-        const component = this;
-        const suggesterData = {
-          type: 'tag',
-          plugins: ['remove_button', 'restore_on_backspace'],
-          create: false,
-          createOnBlur: false,
-          highlight: false,
-          openOnFocus: false,
-          sourceProviders: ['adminSetup'],
-          valueField: 'text',
-          labelField: 'text',
-          searchField: ['text'],
-          closeAfterSelect: true,
-          dropdownParent: 'body',
-          hideSelected: true,
-          renderMenuItem(item, escape) {
-            return component.renderMenuItem(item, escape);
-          },
-          renderItem(item) {
-            if (item.text === 'any') {
-              return '<div class="item">*</div>';
-            } else {
-              return `<div class="item">${item.text}</div>`;
-            }
-          },
-          onItemAdd(item) {
-            component.addSuggestedItem(item);
-          },
-          onItemRemove(item) {
-            component.removeSuggestedItem(item);
-          },
-          sortField: [{ field: 'order' }, { field: '$score' }],
-          providers: {
-            adminSetup: component.findGroups
-          }
-        };
-        permissionsSuggester.suggester(suggesterData);
-        $('#permissions-suggester')[0].selectize.clear();
-        if (this.formArray.permissions && this.formArray.permissions !== null) {
-          for (const permission of this.formArray.permissions) {
-            permissionsSuggester[0].selectize.addOption({ text: permission });
-            permissionsSuggester[0].selectize.addItem(permission);
-          }
-        }
-      }
-    },
-
-    addSuggestedItem(item) {
-      if (
-        $('#permissions-suggester') &&
-        $('#permissions-suggester').length &&
-        $('#permissions-suggester')[0].selectize
-      ) {
-        const selectize = $('#permissions-suggester')[0].selectize;
-        item = selectize.options[item];
-      }
-      if (
-        !this.formArray.permissions.find(permission => permission === item.text)
-      ) {
-        this.formArray.permissions.push(item.text);
-      }
-    },
-
-    removeSuggestedItem(item) {
-      const permissionsSuggester = $('#permissions-suggester');
-      for (let i = this.formArray.permissions.length - 1; i >= 0; i--) {
-        if (this.formArray.permissions[i] === item) {
-          this.formArray.permissions.splice(i, 1);
-          permissionsSuggester[0].selectize.removeOption(item);
-          permissionsSuggester[0].selectize.removeItem(item);
-        }
-      }
-    },
-    findGroups(query, callback) {
-      if (!query.length) {
-        return callback();
-      }
-      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' })
-        .then(resp => resp.json())
-        .then(data => {
-          const groups = [];
-          for (const group of data) {
-            groups.push({
-              avatarUrl: null,
-              text: `*:${group.id}`,
-              value: `*:${group.id}`,
-              type: 'group'
-            });
-          }
-          callback(groups);
-        });
-    },
-    renderMenuItem(item, escape) {
-      return `<div class="item">${escape(item.value)}</div>`;
-    }
   }
 };
 </script>
