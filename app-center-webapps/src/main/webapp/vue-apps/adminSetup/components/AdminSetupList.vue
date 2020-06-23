@@ -58,7 +58,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           {{ $t("appCenter.adminSetupForm.permissions") }}
         </th>
         <th class="d-none d-sm-table-cell">
-          {{ $t("appCenter.adminSetupForm.byDefault") }}
+          {{ $t("appCenter.adminSetupForm.isMandatory") }}
         </th>
         <th class="d-none d-sm-table-cell">
           {{ $t("appCenter.adminSetupForm.active") }}
@@ -91,7 +91,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </td>
         <td class="d-none d-sm-table-cell">
           <input
-            v-model="application.byDefault"
+            v-model="application.isMandatory"
             disabled="disabled"
             type="checkbox"
           >
@@ -270,13 +270,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <tr class="application-checkbox">
                     <td>
                       <span>{{
-                        $t("appCenter.adminSetupForm.byDefault")
+                        $t("appCenter.adminSetupForm.isMandatory")
                       }}</span>
                     </td>
                     <td>
                       <input
                         id="byDefault"
-                        v-model="formArray.byDefault"
+                        v-model="formArray.isMandatory"
                         :disabled="!formArray.active"
                         type="checkbox"
                       >
@@ -500,7 +500,7 @@ export default {
           url: this.formArray.url,
           description: this.formArray.description,
           active: this.formArray.active,
-          byDefault: this.formArray.byDefault,
+          isMandatory: this.formArray.isMandatory,
           permissions: this.formArray.permissions,
           imageFileBody: this.formArray.imageFileBody,
           imageFileName: this.formArray.imageFileName,
@@ -612,7 +612,7 @@ export default {
     },
     onActiveChange() {
       if (!this.formArray.active) {
-        this.formArray.byDefault = false;
+        this.formArray.isMandatory = false;
       }
     },
     closeDrawer() {

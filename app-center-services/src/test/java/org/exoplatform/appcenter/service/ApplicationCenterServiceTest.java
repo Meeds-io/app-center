@@ -137,7 +137,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -214,7 +214,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -934,7 +934,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
@@ -969,7 +969,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
@@ -1004,7 +1004,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNotNull(application.getImageFileId());

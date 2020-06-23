@@ -316,7 +316,7 @@ export default {
           helpPageURL: this.formArray.helpPageURL,
           description: this.formArray.description,
           active: this.formArray.active,
-          byDefault: this.formArray.isMandatory,
+          isMandatory: this.formArray.isMandatory,
           isMobile: this.formArray.isMobile,
           system: this.formArray.system,
           permissions: this.formArray.permissions,

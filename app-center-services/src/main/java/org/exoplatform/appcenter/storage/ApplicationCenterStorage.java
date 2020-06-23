@@ -113,7 +113,7 @@ public class ApplicationCenterStorage {
     }
 
     // if application is mandatory make sure to remove it from users favorites
-    if (application.isByDefault()) {
+    if (application.isMandatory()) {
       favoriteApplicationDAO.removeAllFavoritesOfApplication(application.getId());
     }
 
@@ -161,7 +161,7 @@ public class ApplicationCenterStorage {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     if (entity != null) {
       // check if it is a favorite application and not a system application
-      if (!entity.getApplication().isByDefault()) {
+      if (!entity.getApplication().isMandatory()) {
         entity.setOrder(order.longValue());
         favoriteApplicationDAO.update(entity);
       }
@@ -191,7 +191,7 @@ public class ApplicationCenterStorage {
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
     return applications.stream()
                        .map(this::toUserApplicationDTO)
-                       .filter(userApplication -> userApplication.isActive() && !userApplication.isByDefault())
+                       .filter(userApplication -> userApplication.isActive() && !userApplication.isMandatory())
                        .collect(Collectors.toList());
   }
 
@@ -282,7 +282,7 @@ public class ApplicationCenterStorage {
                                               null,
                                               applicationEntity.getDescription(),
                                               applicationEntity.isActive(),
-                                              applicationEntity.isByDefault(),
+                                              applicationEntity.isMandatory(),
                                               applicationEntity.isMobile(),
                                               permissions);
     application.setSystem(applicationEntity.isSystem());
@@ -305,7 +305,7 @@ public class ApplicationCenterStorage {
                                                           null,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
-                                                          applicationEntity.isByDefault(),
+                                                          applicationEntity.isMandatory(),
                                                           applicationEntity.isMobile(),
                                                           false,
                                                           permissions);
@@ -330,7 +330,7 @@ public class ApplicationCenterStorage {
                                                           null,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
-                                                          applicationEntity.isByDefault(),
+                                                          applicationEntity.isMandatory(),
                                                           applicationEntity.isMobile(),
                                                           true,
                                                           permissions);
@@ -352,7 +352,7 @@ public class ApplicationCenterStorage {
                                                                 application.getImageFileId(),
                                                                 application.getDescription(),
                                                                 application.isActive(),
-                                                                application.isByDefault(),
+                                                                application.isMandatory(),
                                                                 StringUtils.join(application.getPermissions(), ","));
     applicationEntity.setSystem(application.isSystem());
     applicationEntity.setHelpPageUrl(application.getHelpPageURL());
