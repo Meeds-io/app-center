@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,7 +62,7 @@ public class ApplicationCenterStorage {
     this.fileService = fileService;
   }
 
-  public Application getApplicationByTitleOrURL(String title, String url) {
+  public Application getApplicationByTitleOrURL(String title, String url) throws FileStorageException {
     if (StringUtils.isBlank(title)) {
       throw new IllegalArgumentException("title is mandatory");
     }
@@ -138,7 +139,7 @@ public class ApplicationCenterStorage {
     applicationDAO.delete(applicationEntity);
   }
 
-  public Application getApplicationById(long applicationId) {
+  public Application getApplicationById(long applicationId) throws FileStorageException {
     if (applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -181,7 +182,17 @@ public class ApplicationCenterStorage {
 
   public List<UserApplication> getMandatoryApplications() {
     List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
-    return applications.stream().map(this::toUserApplicationDTO).collect(Collectors.toList());
+    List<UserApplication> list = new ArrayList<>();
+    for (ApplicationEntity application : applications) {
+      UserApplication userApplication = null;
+      try {
+        userApplication = toUserApplicationDTO(application);
+      } catch (FileStorageException e) {
+        e.printStackTrace();
+      }
+      list.add(userApplication);
+    }
+    return list;
   }
 
   public List<UserApplication> getFavoriteApplicationsByUser(String username) {
@@ -195,9 +206,15 @@ public class ApplicationCenterStorage {
                        .collect(Collectors.toList());
   }
 
-  public List<Application> getSystemApplications() {
+  public List<Application> getSystemApplications() throws FileStorageException {
     List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
-    return applications.stream().map(this::toDTO).collect(Collectors.toList());
+    List<Application> list = new ArrayList<>();
+    Application application = null;
+    for (ApplicationEntity entity : applications) {
+      application = toDTO(entity);
+      list.add(application);
+    }
+    return list;
   }
 
   public boolean isFavoriteApplication(Long applicationId, String username) {
@@ -259,19 +276,26 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  public List<Application> getApplications(String keyword) {
+  public List<Application> getApplications(String keyword) throws FileStorageException {
     List<ApplicationEntity> applications = applicationDAO.getApplications(keyword);
-    return applications.stream().map(this::toDTO).collect(Collectors.toList());
+    List<Application> list = new ArrayList<>();
+    for (ApplicationEntity entity : applications) {
+      Application application = toDTO(entity);
+      list.add(application);
+    }
+    return list;
   }
 
   public long countApplications() {
     return applicationDAO.count();
   }
 
-  private Application toDTO(ApplicationEntity applicationEntity) {
+  private Application toDTO(ApplicationEntity applicationEntity) throws FileStorageException {
     if (applicationEntity == null) {
       return null;
     }
+    String imageFileName = applicationEntity.getImageFileId() != null
+        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     Application application = new Application(applicationEntity.getId(),
                                               applicationEntity.getTitle(),
@@ -279,7 +303,7 @@ public class ApplicationCenterStorage {
                                               applicationEntity.getHelpPageUrl(),
                                               applicationEntity.getImageFileId(),
                                               null,
-                                              null,
+                                              imageFileName,
                                               applicationEntity.getDescription(),
                                               applicationEntity.isActive(),
                                               applicationEntity.isMandatory(),
@@ -291,10 +315,12 @@ public class ApplicationCenterStorage {
     return application;
   }
 
-  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
+  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) throws FileStorageException {
     if (applicationEntity == null) {
       return null;
     }
+    String imageFileName = applicationEntity.getImageFileId() != null
+        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
@@ -302,7 +328,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
                                                           null,
-                                                          null,
+                                                          imageFileName,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
                                                           applicationEntity.isMandatory(),
