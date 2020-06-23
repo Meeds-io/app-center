@@ -439,7 +439,6 @@ export default {
           }
         })
         .then(data => {
-          console.log('Apps: ', data.applications);
           this.applicationsList = [];
           this.totalApplications = this.applicationsList.size;
           this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);

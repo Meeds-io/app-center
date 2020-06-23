@@ -94,14 +94,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </v-label>
             </v-col>
             <v-col v-show="!formArray.imageFileName" class="uploadImage" cols="3">
-              <label for="file" class="custom-file-upload">
+              <label for="imageFile" class="custom-file-upload">
                 <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
                 <span>
                   {{ $t("appCenter.adminSetupForm.browse") }}
                 </span>
               </label>
               <input
-                id="file"
+                id="imageFile"
                 ref="image"
                 type="file"
                 accept="image/*"
@@ -126,7 +126,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     @click="removeFile"
                   >
                     <v-icon small>
-                      mdi-close
+                      mdi-delete
                     </v-icon>
                   </v-btn>
                 </v-list-item-action>
@@ -298,8 +298,13 @@ export default {
     removeFile() {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
+      this.formArray.imageFileId = '';
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      if (this.$refs.image.files.length > 0) {
+        // remove file from the input
+        document.getElementById('imageFile').value = '';
+      }
     },
     addOrEditApplication() {
       return fetch('/portal/rest/app-center/applications', {
@@ -326,9 +331,7 @@ export default {
         })
       })
         .then(() => {
-          this.$emit('closeDrawer');
           this.$emit('initApps');
-          this.resetForm();
         })
         .catch(e => {
           const UNAUTHORIZED_ERROR_CODE = 401;
@@ -356,6 +359,7 @@ export default {
           }
           this.formArray.imageFileBody = e.target.result;
           this.addOrEditApplication();
+          this.$emit('closeDrawer');
         };
         reader.readAsDataURL(this.$refs.image.files[0]);
       } else {

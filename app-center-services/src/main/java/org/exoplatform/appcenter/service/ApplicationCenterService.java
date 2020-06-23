@@ -58,6 +58,10 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
+  public static final String             DEFAULT_USERS_GROUP               = "/platform/users";
+
+  public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
+
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
@@ -257,7 +261,7 @@ public class ApplicationCenterService implements Startable {
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(this.defaultAdministratorPermission);
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
     return appCenterStorage.createApplication(application);
   }
@@ -291,6 +295,10 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
+    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
+    }
+
     return appCenterStorage.updateApplication(application);
   }
 
@@ -303,7 +311,9 @@ public class ApplicationCenterService implements Startable {
    * @throws ApplicationNotFoundException if application wasn't found
    * @throws IllegalAccessException if user is not allowed to delete application
    */
-  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException, IllegalAccessException, FileStorageException {
+  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException,
+                                                                     IllegalAccessException,
+                                                                     FileStorageException {
     if (applicationId == null || applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -337,7 +347,8 @@ public class ApplicationCenterService implements Startable {
    *           application
    */
   public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException,
-          IllegalAccessException, FileStorageException {
+                                                                          IllegalAccessException,
+                                                                          FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -481,7 +492,10 @@ public class ApplicationCenterService implements Startable {
    * @return {@link ApplicationList} that contains the {@link List} of authorized
    *         {@link UserApplication}
    */
-  public ApplicationList getAuthorizedApplicationsList(int offset, int limit, String keyword, String username) throws FileStorageException {
+  public ApplicationList getAuthorizedApplicationsList(int offset,
+                                                       int limit,
+                                                       String keyword,
+                                                       String username) throws FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }

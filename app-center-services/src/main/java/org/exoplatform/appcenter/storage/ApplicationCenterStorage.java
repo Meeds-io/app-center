@@ -102,15 +102,30 @@ public class ApplicationCenterStorage {
     application.setSystem(storedApplicationEntity.isSystem());
 
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
-    boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
-        && StringUtils.isNotBlank(application.getImageFileName());
-    if (newImageAttached) {
-      ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
-      if (applicationImage != null) {
-        application.setImageFileId(applicationImage.getId());
-      }
+
+    // if image was unset remove it
+    if (StringUtils.isBlank(application.getImageFileBody()) && StringUtils.isBlank(application.getImageFileName())
+        && oldImageFileId != null && oldImageFileId > 0) {
+      application.setImageFileId(null);
+      // Cleanup old useless image
+      fileService.deleteFile(oldImageFileId);
     } else {
-      application.setImageFileId(storedApplicationEntity.getImageFileId());
+      boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
+          && StringUtils.isNotBlank(application.getImageFileName());
+      // if new image make sure to update it
+      if (newImageAttached) {
+        ApplicationImage applicationImage =
+                                          createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
+        if (applicationImage != null) {
+          application.setImageFileId(applicationImage.getId());
+          if (oldImageFileId != null) {
+            // Cleanup old useless image
+            fileService.deleteFile(oldImageFileId);
+          }
+        }
+      } else {
+        application.setImageFileId(oldImageFileId);
+      }
     }
 
     // if application is mandatory make sure to remove it from users favorites
@@ -121,10 +136,6 @@ public class ApplicationCenterStorage {
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity = applicationDAO.update(applicationEntity);
 
-    // Cleanup old useless image
-    if (newImageAttached && oldImageFileId != null) {
-      fileService.deleteFile(oldImageFileId);
-    }
     return toDTO(applicationEntity);
   }
 
