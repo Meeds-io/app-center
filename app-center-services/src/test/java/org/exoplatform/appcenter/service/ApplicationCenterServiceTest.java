@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.io.InputStream;
 
+import org.exoplatform.commons.file.services.FileStorageException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -119,7 +120,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -137,7 +138,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -168,7 +169,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -214,7 +215,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -266,7 +267,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -281,7 +282,7 @@ public class ApplicationCenterServiceTest {
                                   "title",
                                   "url",
                                   "",
-                                  5L,
+                                  0L,
                                   null,
                                   null,
                                   "description",
@@ -387,7 +388,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -431,7 +432,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -467,7 +468,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -481,7 +482,7 @@ public class ApplicationCenterServiceTest {
                                                "title2",
                                                "url2",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description",
@@ -528,7 +529,7 @@ public class ApplicationCenterServiceTest {
                                                "title1",
                                                "url1",
                                                "",
-                                               5L,
+                                               0L,
                                                null,
                                                null,
                                                "description1",
@@ -541,7 +542,7 @@ public class ApplicationCenterServiceTest {
                                                "title2",
                                                "url2",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description",
@@ -554,7 +555,7 @@ public class ApplicationCenterServiceTest {
                                                "title3",
                                                "url3",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description3",
@@ -567,7 +568,7 @@ public class ApplicationCenterServiceTest {
                                                "title4",
                                                "url4",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description4",
@@ -580,7 +581,7 @@ public class ApplicationCenterServiceTest {
                                                "title5",
                                                "url5",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description5",
@@ -610,7 +611,7 @@ public class ApplicationCenterServiceTest {
                                                "title3",
                                                "url3",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description3",
@@ -623,7 +624,7 @@ public class ApplicationCenterServiceTest {
                                                "title5",
                                                "url5",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description5",
@@ -688,7 +689,7 @@ public class ApplicationCenterServiceTest {
                                               "title",
                                               "url",
                                               "",
-                                              5L,
+                                              0L,
                                               null,
                                               null,
                                               "description",
@@ -702,7 +703,7 @@ public class ApplicationCenterServiceTest {
                                                "title2",
                                                "url2",
                                                "",
-                                               6L,
+                                               0L,
                                                null,
                                                null,
                                                "description",
@@ -863,7 +864,7 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
-  public void testAddApplicationPlugin() {
+  public void testAddApplicationPlugin() throws FileStorageException {
     try {
       applicationCenterService.addApplicationPlugin(null);
       fail("Shouldn't be able to add null plugin");
@@ -934,10 +935,12 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
@@ -969,10 +972,12 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
@@ -1004,7 +1009,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNotNull(application.getImageFileId());
