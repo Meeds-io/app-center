@@ -58,7 +58,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           {{ $t("appCenter.adminSetupForm.permissions") }}
         </th>
         <th class="d-none d-sm-table-cell">
-          {{ $t("appCenter.adminSetupForm.byDefault") }}
+          {{ $t("appCenter.adminSetupForm.isMandatory") }}
         </th>
         <th class="d-none d-sm-table-cell">
           {{ $t("appCenter.adminSetupForm.active") }}
@@ -69,7 +69,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </tr>
       <tr v-for="application in applicationsList" :key="application.id">
         <td>
-          <img :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-if="application.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-else width="13" height="13" src="/app-center/skin/images/defaultApp.png" />
         </td>
         <td>
           <h5>{{ application.title }}</h5>
@@ -91,7 +92,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </td>
         <td class="d-none d-sm-table-cell">
           <input
-            v-model="application.byDefault"
+            v-model="application.isMandatory"
             disabled="disabled"
             type="checkbox"
           >
@@ -242,7 +243,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         <img
                           width="13"
                           height="13"
-                          src="/app-center/skin/images/Info tooltip.png"
+                          src="/app-center/skin/images/defaultApp.png"
                         >
                         {{ $t("appCenter.adminSetupForm.sizeError") }}
                       </p>
@@ -270,13 +271,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <tr class="application-checkbox">
                     <td>
                       <span>{{
-                        $t("appCenter.adminSetupForm.byDefault")
+                        $t("appCenter.adminSetupForm.isMandatory")
                       }}</span>
                     </td>
                     <td>
                       <input
                         id="byDefault"
-                        v-model="formArray.byDefault"
+                        v-model="formArray.isMandatory"
                         :disabled="!formArray.active"
                         type="checkbox"
                       >
@@ -390,11 +391,12 @@ export default {
         description: '',
         active: true,
         isMandatory: false,
+        isMobile: true,
         system: false,
         permissions: [],
         imageFileBody: '',
         imageFileName: '',
-        isMobile: true,
+        imageFileId: '',
         viewMode: true,
         invalidSize: false,
         invalidImage: false
@@ -500,7 +502,7 @@ export default {
           url: this.formArray.url,
           description: this.formArray.description,
           active: this.formArray.active,
-          byDefault: this.formArray.byDefault,
+          isMandatory: this.formArray.isMandatory,
           permissions: this.formArray.permissions,
           imageFileBody: this.formArray.imageFileBody,
           imageFileName: this.formArray.imageFileName,
@@ -580,14 +582,12 @@ export default {
       this.openAppDrawer = true;
       this.addApplication = true;
       this.formArray.viewMode = true;
-      this.initPermissionsSuggester();
     },
 
     showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
       this.addApplication = false;
       Object.assign(this.formArray, item);
-      this.initPermissionsSuggester();
     },
 
     toDeleteApplicationModal(item) {
@@ -612,111 +612,13 @@ export default {
     },
     onActiveChange() {
       if (!this.formArray.active) {
-        this.formArray.byDefault = false;
+        this.formArray.isMandatory = false;
       }
     },
     closeDrawer() {
       this.resetForm();
       this.openAppDrawer = false;
     },
-    initPermissionsSuggester() {
-      const permissionsSuggester = $('#permissions-suggester');
-      if (permissionsSuggester && permissionsSuggester.length) {
-        const component = this;
-        const suggesterData = {
-          type: 'tag',
-          plugins: ['remove_button', 'restore_on_backspace'],
-          create: false,
-          createOnBlur: false,
-          highlight: false,
-          openOnFocus: false,
-          sourceProviders: ['adminSetup'],
-          valueField: 'text',
-          labelField: 'text',
-          searchField: ['text'],
-          closeAfterSelect: true,
-          dropdownParent: 'body',
-          hideSelected: true,
-          renderMenuItem(item, escape) {
-            return component.renderMenuItem(item, escape);
-          },
-          renderItem(item) {
-            if (item.text === 'any') {
-              return '<div class="item">*</div>';
-            } else {
-              return `<div class="item">${item.text}</div>`;
-            }
-          },
-          onItemAdd(item) {
-            component.addSuggestedItem(item);
-          },
-          onItemRemove(item) {
-            component.removeSuggestedItem(item);
-          },
-          sortField: [{ field: 'order' }, { field: '$score' }],
-          providers: {
-            adminSetup: component.findGroups
-          }
-        };
-        permissionsSuggester.suggester(suggesterData);
-        $('#permissions-suggester')[0].selectize.clear();
-        if (this.formArray.permissions && this.formArray.permissions !== null) {
-          for (const permission of this.formArray.permissions) {
-            permissionsSuggester[0].selectize.addOption({ text: permission });
-            permissionsSuggester[0].selectize.addItem(permission);
-          }
-        }
-      }
-    },
-
-    addSuggestedItem(item) {
-      if (
-        $('#permissions-suggester') &&
-        $('#permissions-suggester').length &&
-        $('#permissions-suggester')[0].selectize
-      ) {
-        const selectize = $('#permissions-suggester')[0].selectize;
-        item = selectize.options[item];
-      }
-      if (
-        !this.formArray.permissions.find(permission => permission === item.text)
-      ) {
-        this.formArray.permissions.push(item.text);
-      }
-    },
-
-    removeSuggestedItem(item) {
-      const permissionsSuggester = $('#permissions-suggester');
-      for (let i = this.formArray.permissions.length - 1; i >= 0; i--) {
-        if (this.formArray.permissions[i] === item) {
-          this.formArray.permissions.splice(i, 1);
-          permissionsSuggester[0].selectize.removeOption(item);
-          permissionsSuggester[0].selectize.removeItem(item);
-        }
-      }
-    },
-    findGroups(query, callback) {
-      if (!query.length) {
-        return callback();
-      }
-      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' })
-        .then(resp => resp.json())
-        .then(data => {
-          const groups = [];
-          for (const group of data) {
-            groups.push({
-              avatarUrl: null,
-              text: `*:${group.id}`,
-              value: `*:${group.id}`,
-              type: 'group'
-            });
-          }
-          callback(groups);
-        });
-    },
-    renderMenuItem(item, escape) {
-      return `<div class="item">${escape(item.value)}</div>`;
-    }
   }
 };
 </script>

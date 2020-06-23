@@ -112,7 +112,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -138,7 +138,7 @@ public class ApplicationCenterStorageTest {
     Application storedApplication = applicationCenterStorage.createApplication(application);
     application.setId(storedApplication.getId());
     application.setActive(!storedApplication.isActive());
-    application.setByDefault(!storedApplication.isByDefault());
+    application.setMandatory(!storedApplication.isMandatory());
     application.setDescription("description2");
     application.setUrl("url2");
     application.setUrl("title2");
@@ -154,7 +154,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -234,7 +234,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -290,7 +290,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 

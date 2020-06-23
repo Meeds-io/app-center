@@ -36,7 +36,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
     @NamedQuery(name = "ApplicationEntity.getSystemApplications", query = "SELECT app FROM ApplicationEntity app WHERE app.system = TRUE"),
     @NamedQuery(name = "ApplicationEntity.getMandatoryActiveApps", query = "SELECT app FROM ApplicationEntity app "
-        + " WHERE app.active = TRUE AND app.byDefault = TRUE "), })
+        + " WHERE app.active = TRUE AND app.isMandatory = TRUE "), })
 public class ApplicationEntity {
 
   @Id
@@ -64,7 +64,7 @@ public class ApplicationEntity {
   private boolean                               active;
 
   @Column(name = "BY_DEFAULT")
-  private boolean                               byDefault;
+  private boolean                               isMandatory;
 
   @Column(name = "IS_MOBILE")
   private boolean                               isMobile;
@@ -87,7 +87,7 @@ public class ApplicationEntity {
                            Long imageFileId,
                            String description,
                            boolean active,
-                           boolean byDefault,
+                           boolean isMandatory,
                            String permissions) {
     this.id = id;
     this.title = title;
@@ -95,7 +95,7 @@ public class ApplicationEntity {
     this.imageFileId = imageFileId;
     this.description = description;
     this.active = active;
-    this.byDefault = byDefault;
+    this.isMandatory = isMandatory;
     this.permissions = permissions;
   }
 
@@ -198,17 +198,17 @@ public class ApplicationEntity {
   }
 
   /**
-   * @return the byDefault
+   * @return the isMandatory
    */
-  public boolean isByDefault() {
-    return byDefault;
+  public boolean isMandatory() {
+    return isMandatory;
   }
 
   /**
-   * @param byDefault the byDefault to set
+   * @param mandatory the isMandatory to set
    */
-  public void setByDefault(boolean byDefault) {
-    this.byDefault = byDefault;
+  public void setMandatory(boolean mandatory) {
+    this.isMandatory = mandatory;
   }
 
   /**
@@ -219,7 +219,7 @@ public class ApplicationEntity {
   }
 
   /**
-   * @param isMobile the byDefault to set
+   * @param isMobile the isMobile to set
    */
   public void setIsMobile(boolean isMobile) {
     this.isMobile = isMobile;

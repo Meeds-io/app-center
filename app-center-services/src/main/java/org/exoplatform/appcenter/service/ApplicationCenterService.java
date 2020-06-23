@@ -58,6 +58,10 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
+  public static final String             DEFAULT_USERS_GROUP               = "/platform/users";
+
+  public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
+
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
@@ -168,7 +172,12 @@ public class ApplicationCenterService implements Startable {
           return;
         }
 
-        Application storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+        Application storedApplication = null;
+        try {
+          storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+        } catch (FileStorageException e) {
+          LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
+        }
         if (storedApplication != null && !applicationPlugin.isOverride()) {
           LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
           return;
@@ -216,6 +225,8 @@ public class ApplicationCenterService implements Startable {
           }
         }
       });
+    } catch (FileStorageException e) {
+      LOG.warn("An unknown error occurs while retrieving system applications images", e);
     } finally {
       RequestLifeCycle.end();
     }
@@ -250,7 +261,7 @@ public class ApplicationCenterService implements Startable {
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(this.defaultAdministratorPermission);
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
     return appCenterStorage.createApplication(application);
   }
@@ -284,6 +295,10 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
+    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
+    }
+
     return appCenterStorage.updateApplication(application);
   }
 
@@ -296,7 +311,9 @@ public class ApplicationCenterService implements Startable {
    * @throws ApplicationNotFoundException if application wasn't found
    * @throws IllegalAccessException if user is not allowed to delete application
    */
-  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException, IllegalAccessException {
+  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException,
+                                                                     IllegalAccessException,
+                                                                     FileStorageException {
     if (applicationId == null || applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -330,7 +347,8 @@ public class ApplicationCenterService implements Startable {
    *           application
    */
   public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                          IllegalAccessException {
+                                                                          IllegalAccessException,
+                                                                          FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -447,7 +465,7 @@ public class ApplicationCenterService implements Startable {
    * @param keyword used to search in title and url
    * @return {@link ApplicationList} that contains the list of applications
    */
-  public ApplicationList getApplicationsList(int offset, int limit, String keyword) {
+  public ApplicationList getApplicationsList(int offset, int limit, String keyword) throws FileStorageException {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword);
     if (limit <= 0) {
@@ -474,7 +492,10 @@ public class ApplicationCenterService implements Startable {
    * @return {@link ApplicationList} that contains the {@link List} of authorized
    *         {@link UserApplication}
    */
-  public ApplicationList getAuthorizedApplicationsList(int offset, int limit, String keyword, String username) {
+  public ApplicationList getAuthorizedApplicationsList(int offset,
+                                                       int limit,
+                                                       String keyword,
+                                                       String username) throws FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -530,7 +551,7 @@ public class ApplicationCenterService implements Startable {
    * @param userName
    */
   public void updateFavoriteApplicationOrder(ApplicationOrder applicationOrder,
-                                             String userName) throws ApplicationNotFoundException {
+                                             String userName) throws ApplicationNotFoundException, FileStorageException {
     if (StringUtils.isBlank(userName)) {
       throw new IllegalArgumentException("userName is mandatory");
     }
@@ -736,7 +757,7 @@ public class ApplicationCenterService implements Startable {
     return defaultAppImageId;
   }
 
-  private List<Application> getApplications(int offset, int limit, String keyword, String username) {
+  private List<Application> getApplications(int offset, int limit, String keyword, String username) throws FileStorageException {
     if (offset < 0) {
       offset = 0;
     }

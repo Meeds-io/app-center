@@ -20,11 +20,16 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.appcenter.entity.FavoriteApplicationEntity;
-import org.exoplatform.container.*;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.RootContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.naming.InitialContextInitializer;
 
@@ -80,7 +85,7 @@ public class ApplicationDAOTest {
     assertEquals(applicationEntity.getImageFileId(), storedEntity.getImageFileId());
     assertEquals(applicationEntity.getDescription(), storedEntity.getDescription());
     assertEquals(applicationEntity.isActive(), storedEntity.isActive());
-    assertEquals(applicationEntity.isByDefault(), storedEntity.isByDefault());
+    assertEquals(applicationEntity.isMandatory(), storedEntity.isMandatory());
     assertEquals(applicationEntity.getPermissions(), storedEntity.getPermissions());
 
     // Test setters
@@ -91,7 +96,7 @@ public class ApplicationDAOTest {
     applicationEntity.setImageFileId(5L);
     applicationEntity.setDescription("description");
     applicationEntity.setActive(false);
-    applicationEntity.setByDefault(true);
+    applicationEntity.setMandatory(true);
     applicationEntity.setPermissions("permissions");
 
     storedEntity = service.create(applicationEntity);
@@ -102,7 +107,7 @@ public class ApplicationDAOTest {
     assertEquals(applicationEntity.getImageFileId(), storedEntity.getImageFileId());
     assertEquals(applicationEntity.getDescription(), storedEntity.getDescription());
     assertEquals(applicationEntity.isActive(), storedEntity.isActive());
-    assertEquals(applicationEntity.isByDefault(), storedEntity.isByDefault());
+    assertEquals(applicationEntity.isMandatory(), storedEntity.isMandatory());
     assertEquals(applicationEntity.getPermissions(), storedEntity.getPermissions());
   }
 
@@ -261,13 +266,13 @@ public class ApplicationDAOTest {
     assertNotNull(applicationDAO);
 
     ApplicationEntity applicationEntity1 = new ApplicationEntity(null,
-                                                                "title1",
-                                                                "url1",
-                                                                5L,
-                                                                "description1",
-                                                                true,
-                                                                true,
-                                                                "permissions");
+                                                                 "title1",
+                                                                 "url1",
+                                                                 5L,
+                                                                 "description1",
+                                                                 true,
+                                                                 true,
+                                                                 "permissions");
     applicationDAO.create(applicationEntity1);
 
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
