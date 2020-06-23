@@ -340,8 +340,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       >
         <div class="deleteApplication">
           <h3>
-            {{ $t("appCenter.adminSetupForm.confirmDelete")
-            }}<span>{{ formArray.title }}</span> ?
+            {{ $t("appCenter.adminSetupForm.confirmDelete", {0: formArray.title}) }}
           </h3>
           <div class="form-group application-buttons pt-2">
             <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
