@@ -376,7 +376,6 @@ export default {
       }
       this.getGroups(query).then(data => {
         const groups = [];
-        console.log(data.entities);
         for(const group of data.entities) {
           if (!group.id.startsWith('/spaces')) {
             groups.push({

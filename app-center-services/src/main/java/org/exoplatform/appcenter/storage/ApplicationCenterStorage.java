@@ -103,29 +103,30 @@ public class ApplicationCenterStorage {
 
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
 
+    boolean imageRemoved = StringUtils.isBlank(application.getImageFileBody())
+        && StringUtils.isBlank(application.getImageFileName()) && oldImageFileId != null && oldImageFileId > 0;
+
+    boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
+        && StringUtils.isNotBlank(application.getImageFileName());
+    // if new image make sure to update it
+    if (newImageAttached) {
+      ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
+      if (applicationImage != null) {
+        application.setImageFileId(applicationImage.getId());
+        if (oldImageFileId != null && oldImageFileId > 0) {
+          // Cleanup old useless image
+          fileService.deleteFile(oldImageFileId);
+        }
+      }
+    } else {
+      application.setImageFileId(oldImageFileId);
+    }
+
     // if image was unset remove it
-    if (StringUtils.isBlank(application.getImageFileBody()) && StringUtils.isBlank(application.getImageFileName())
-        && oldImageFileId != null && oldImageFileId > 0) {
+    if (imageRemoved) {
       application.setImageFileId(null);
       // Cleanup old useless image
       fileService.deleteFile(oldImageFileId);
-    } else {
-      boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
-          && StringUtils.isNotBlank(application.getImageFileName());
-      // if new image make sure to update it
-      if (newImageAttached) {
-        ApplicationImage applicationImage =
-                                          createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
-        if (applicationImage != null) {
-          application.setImageFileId(applicationImage.getId());
-          if (oldImageFileId != null) {
-            // Cleanup old useless image
-            fileService.deleteFile(oldImageFileId);
-          }
-        }
-      } else {
-        application.setImageFileId(oldImageFileId);
-      }
     }
 
     // if application is mandatory make sure to remove it from users favorites
