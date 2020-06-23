@@ -252,7 +252,7 @@ export default {
   },
   computed: {
     canSaveApplication() {
-      return this.formArray.title && this.formArray.title !== '' &&
+      return this.formArray.title && this.formArray.title !== '' && !this.formArray.invalidSize && !this.formArray.invalidImage &&
         this.validUrl(this.formArray) && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
@@ -287,9 +287,13 @@ export default {
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     handleFileUpload() {
+      const MAX_FILE_SIZE = 100000;
       if (this.$refs.image.files.length > 0) {
         this.formArray.imageFileName = this.$refs.image.files[0].name;
-        this.formArray.invalidSize = false;
+        if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
+          this.formArray.invalidSize = true;
+          return;
+        }
         this.formArray.invalidImage = false;
       } else {
         this.removeFile();
@@ -343,18 +347,12 @@ export default {
         });
     },
     submitForm() {
-      const MAX_FILE_SIZE = 100000;
-
       if (this.$refs.image && this.$refs.image.files.length > 0) {
         this.formArray.imageFileName = this.$refs.image.files[0].name;
         const reader = new FileReader();
         reader.onload = e => {
           if (!e.target.result.includes('data:image')) {
             this.formArray.invalidImage = true;
-            return;
-          }
-          if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
-            this.formArray.invalidSize = true;
             return;
           }
           this.formArray.imageFileBody = e.target.result;
