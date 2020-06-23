@@ -31,7 +31,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-list-item>
         <div class="favoriteAppImage">
           <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
-            <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+            <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+            <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+            <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
           </a>
         </div>
         <v-list-item-content>
@@ -83,6 +85,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <script>
 export default {
   name: 'UserFavoriteApplications',
+  props: {
+    defaultAppImage: {
+      type: Object,
+      default: function() { return {}; }
+    },
+  },
   data() {
     return {
       isMobileDevice: false,
@@ -186,7 +194,7 @@ export default {
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
         });
-    }
+    },
   }
 };
 </script>

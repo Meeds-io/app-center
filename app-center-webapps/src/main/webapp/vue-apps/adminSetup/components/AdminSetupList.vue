@@ -70,7 +70,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <tr v-for="application in applicationsList" :key="application.id">
         <td>
           <img v-if="application.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-          <img v-else width="13" height="13" src="/app-center/skin/images/defaultApp.png" />
+          <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-else src="/app-center/skin/images/defaultApp.png" />
         </td>
         <td>
           <h5>{{ application.title }}</h5>
@@ -381,6 +382,12 @@ export default {
   },
   data() {
     return {
+      defaultAppImage: {
+        fileBody: '',
+        fileName: '',
+        invalidSize: false,
+        invalidImage: false
+      },
       keyword: '',
       applicationsList: [],
       formArray: {
@@ -415,6 +422,7 @@ export default {
 
   created() {
     this.getApplicationsList();
+    this.getAppGeneralSettings();
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape' && this && this.closeModals) {
         this.closeModals();
@@ -618,6 +626,22 @@ export default {
     closeDrawer() {
       this.resetForm();
       this.openAppDrawer = false;
+    },
+    getAppGeneralSettings() {
+      return fetch('/portal/rest/app-center/settings', {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(resp => {
+          if (resp && resp.ok) {
+            return resp.json();
+          } else {
+            throw new Error('Error getting favorite applications list');
+          }
+        })
+        .then(data => {
+          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
+        });
     },
   }
 };
