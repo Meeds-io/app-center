@@ -479,7 +479,12 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalArgumentException("username is mandatory");
     }
     ApplicationList resultApplicationsList = new ApplicationList();
-    List<Application> userApplicationsList = getApplications(offset, limit, keyword, username);
+    List<Application> userApplicationsList = getApplications(offset,
+                                                             limit,
+                                                             keyword,
+                                                             username).stream()
+                                                                      .filter(application -> application.isActive())
+                                                                      .collect(Collectors.toList());
     userApplicationsList = userApplicationsList.stream().map(app -> {
       UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
