@@ -69,7 +69,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </tr>
       <tr v-for="application in applicationsList" :key="application.id">
         <td>
-          <img :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-if="application.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-else width="13" height="13" src="/app-center/skin/images/defaultApp.png" />
         </td>
         <td>
           <h5>{{ application.title }}</h5>
@@ -242,7 +243,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         <img
                           width="13"
                           height="13"
-                          src="/app-center/skin/images/Info tooltip.png"
+                          src="/app-center/skin/images/defaultApp.png"
                         >
                         {{ $t("appCenter.adminSetupForm.sizeError") }}
                       </p>
@@ -390,11 +391,12 @@ export default {
         description: '',
         active: true,
         isMandatory: false,
+        isMobile: true,
         system: false,
         permissions: [],
         imageFileBody: '',
         imageFileName: '',
-        isMobile: true,
+        imageFileId: '',
         viewMode: true,
         invalidSize: false,
         invalidImage: false
@@ -437,6 +439,7 @@ export default {
           }
         })
         .then(data => {
+          console.log('Apps: ', data.applications);
           this.applicationsList = [];
           this.totalApplications = this.applicationsList.size;
           this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
