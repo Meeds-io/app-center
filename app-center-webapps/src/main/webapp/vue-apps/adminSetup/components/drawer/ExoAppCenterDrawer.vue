@@ -123,6 +123,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <v-btn
                     class="remove-file"
                     icon
+                    :disabled="formArray.system"
                     @click="removeFile"
                   >
                     <v-icon small>
@@ -167,19 +168,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
             </v-col>
             <v-col>
-              <v-switch v-model="formArray.isMobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
+              <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
             </v-col>
           </v-row>
           <v-label for="permissions">
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
           <exo-suggester
-            v-model="formArray.permissions"
+            v-model="permissions"
             class="input-block-level ignore-vuetify-classes my-3"
             name="permissions"
             maxlength="200"
             :options="suggesterOptions"
             :source-providers="[findGroups]"
+            :application-permissions="appPermissions"
             :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
           />
           <v-label for="helpPage">
@@ -225,6 +227,10 @@ export default {
       type: Object,
       default: null
     },
+    appPermissions: {
+      type: Array,
+      default: () => []
+    },
   },
   data() {
     const component = this;
@@ -248,6 +254,7 @@ export default {
         },
         sortField: [{field: 'order'}, {field: '$score'}],
       },
+      permissions: [],
     };
   },
   computed: {
@@ -262,13 +269,19 @@ export default {
         $('body').addClass('hide-scroll');
         this.$nextTick().then(() => {
           $('#app .v-overlay').click(() => {
+            this.permissions = [];
             this.$emit('closeDrawer');
           });
         });
       } else {
         $('body').removeClass('hide-scroll');
       }
-    }, 
+    },
+    appPermissions() {
+      this.permissions = [];
+      const groups = this.appPermissions.map(permission => permission.id);
+      this.permissions.push(...groups);
+    },
   },
   created() {
     $(document).on('keydown', (event) => {
@@ -326,9 +339,9 @@ export default {
           description: this.formArray.description,
           active: this.formArray.active,
           mandatory: this.formArray.mandatory,
-          isMobile: this.formArray.isMobile,
+          isMobile: this.formArray.mobile,
           system: this.formArray.system,
-          permissions: this.formArray.permissions,
+          permissions: this.permissions.map(group => `*:${group}`),
           imageFileBody: this.formArray.imageFileBody,
           imageFileName: this.formArray.imageFileName,
           imageFileId: this.formArray.imageFileId,
@@ -366,6 +379,7 @@ export default {
       }
     },
     resetForm() {
+      this.permissions = [];
       this.$emit('resetForm');
     },
     findGroups (query, callback) {
@@ -378,7 +392,7 @@ export default {
           if (!group.id.startsWith('/spaces')) {
             groups.push({
               avatarUrl: null,
-              text: group.label,
+              text: `*:${group.id}`,
               value: group.id,
               type: 'group'
             });
@@ -392,7 +406,7 @@ export default {
     },
     renderMenuItem (item, escape) {
       return `
-        <div class="item">${escape(item.value)}</div>
+        <div class="item">*:${escape(item.value)}</div>
       `;
     },
   },

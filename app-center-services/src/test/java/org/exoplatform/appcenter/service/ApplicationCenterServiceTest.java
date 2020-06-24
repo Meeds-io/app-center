@@ -227,10 +227,11 @@ public class ApplicationCenterServiceTest {
 
     application.setPermissions(IdentityConstants.ANY);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals(IdentityConstants.ANY, storedApplication.getPermissions().get(0));
 
     application.setUrl("url2");
-    storedApplication = applicationCenterService.updateApplication(application, SIMPLE_USERNAME);
-    assertNotNull("simple user should be able to modify application after an admin changed its permissions", storedApplication);
+    storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals("url2", storedApplication.getUrl());
   }
 
   @Test
@@ -302,7 +303,7 @@ public class ApplicationCenterServiceTest {
     application.setPermissions(IdentityConstants.ANY);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
 
-    applicationCenterService.deleteApplication(storedApplication.getId(), SIMPLE_USERNAME);
+    applicationCenterService.deleteApplication(storedApplication.getId(), ADMIN_USERNAME);
   }
 
   @Test

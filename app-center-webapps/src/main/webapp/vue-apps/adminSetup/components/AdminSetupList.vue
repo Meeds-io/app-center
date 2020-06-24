@@ -150,7 +150,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       />
     </div>
     
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" :app-permissions="appPermissions" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
       <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
       <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
     </exo-app-center-drawer>
@@ -398,7 +398,7 @@ export default {
         description: '',
         active: true,
         mandatory: false,
-        isMobile: true,
+        mobile: true,
         system: false,
         permissions: [],
         imageFileBody: '',
@@ -417,6 +417,7 @@ export default {
       groups: [],
       openAppDrawer: false,
       addApplication: true,
+      appPermissions: [],
     };
   },
 
@@ -498,7 +499,7 @@ export default {
       this.formArray.mandatory = false;
       this.formArray.system = false;
       this.formArray.active = true;
-      this.formArray.isMobile = true;
+      this.formArray.mobile = true;
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
@@ -515,6 +516,15 @@ export default {
       this.openAppDrawer = true;
       this.addApplication = false;
       Object.assign(this.formArray, item);
+      this.appPermissions = [];
+      const allOffset = 2;
+      for (const permission of this.formArray.permissions) {
+        const groupId = permission.startsWith('*:') ? permission.substr(allOffset, permission.length - allOffset) : permission;
+        this.appPermissions.push({
+          id: groupId,
+          name: groupId,
+        });
+      }
     },
 
     toDeleteApplicationModal(item) {

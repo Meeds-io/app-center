@@ -58,6 +58,8 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
+  public static final String             ANY_PERMISSION                    = "any";
+
   public static final String             DEFAULT_USERS_GROUP               = "/platform/users";
 
   public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
@@ -263,6 +265,7 @@ public class ApplicationCenterService implements Startable {
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
+
     return appCenterStorage.createApplication(application);
   }
 
@@ -291,15 +294,43 @@ public class ApplicationCenterService implements Startable {
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-    if (!hasPermission(username, storedApplication)) {
+    if (!isAdmin(username)) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
+
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
 
     return appCenterStorage.updateApplication(application);
+  }
+
+  private boolean isAdmin(String username) {
+    // Ingeneral case, the user is already loggedin, thus we will get the
+    // Identity from registry without having to compute it again from
+    // OrganisationService, thus the condition (identity == null) will be false
+    // most of the time for better performances
+    Identity identity = identityRegistry.getIdentity(username);
+    if (identity == null) {
+      try {
+        identity = authenticator.createIdentity(username);
+      } catch (Exception e) {
+        LOG.warn("Error getting memberships of user {}", username, e);
+        return false;
+      }
+
+      // Check null again after building identity
+      if (identity == null) {
+        return false;
+      }
+    }
+
+    MembershipEntry membership = null;
+    String[] permissionExpressionParts = DEFAULT_ADMINISTRATORS_PERMISSION.split(":");
+    membership = new MembershipEntry(permissionExpressionParts[1], permissionExpressionParts[0]);
+
+    return identity.isMemberOf(membership);
   }
 
   /**
@@ -330,10 +361,11 @@ public class ApplicationCenterService implements Startable {
           + " is a system application, thus it can't be deleted");
     }
 
-    if (!hasPermission(username, storedApplication.getPermissions())) {
-      throw new IllegalAccessException("User " + username + " doesn't have enough permissions to delete application "
-          + storedApplication.getTitle());
+    if (!isAdmin(username)) {
+      throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
+              + storedApplication.getTitle());
     }
+    
     appCenterStorage.deleteApplication(applicationId);
   }
 
