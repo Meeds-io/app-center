@@ -123,6 +123,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <v-btn
                     class="remove-file"
                     icon
+                    :disabled="formArray.system"
                     @click="removeFile"
                   >
                     <v-icon small>
