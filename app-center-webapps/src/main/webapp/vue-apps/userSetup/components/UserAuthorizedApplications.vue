@@ -92,9 +92,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-divider></v-divider>
           <v-card-actions class="applicationActions">
             <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-            <div v-exo-tooltip.bottom.body="authorizedApp.isMandatory ? $t('appCenter.userSetup.mandatory') : ''">
+            <div v-exo-tooltip.bottom.body="authorizedApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''">
               <v-btn
-                v-if="authorizedApp.isMandatory"
+                v-if="authorizedApp.mandatory"
                 icon
                 disabled
                 class="mandatory"
@@ -109,15 +109,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <v-btn
                 v-else
                 icon
-                :disabled="authorizedApp.isMandatory || (!authorizedApp.favorite && !canAddFavorite)"
-                :class="authorizedApp.isMandatory || authorizedApp.favorite ? 'favorite' : ''"
+                :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
+                :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
                 @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
               >
                 <v-icon
                   small
                   color="red"
                 >
-                  {{ authorizedApp.isMandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                  {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
                 </v-icon>
               </v-btn>
             </div>

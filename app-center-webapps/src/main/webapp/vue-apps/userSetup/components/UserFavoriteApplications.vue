@@ -51,12 +51,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </a>
         </v-list-item-content>
         <v-list-item-action
-          v-exo-tooltip.bottom.body="favoriteApp.isMandatory ? $t('appCenter.userSetup.mandatory') : ''"
+          v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''"
           class="favoriteAppRemove"
         >
           <v-btn
-            :disabled="favoriteApp.isMandatory"
-            :class="favoriteApp.isMandatory ? 'mandatory' : ''"
+            :disabled="favoriteApp.mandatory"
+            :class="favoriteApp.mandatory ? 'mandatory' : ''"
             icon
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
@@ -141,8 +141,8 @@ export default {
               allApplications.push(...data.applications);
             }
           }
-          const mandatoryApps = allApplications.filter(app => app.isMandatory && !app.favorite);
-          const favoriteApps = allApplications.filter(app => app.favorite && !app.isMandatory);
+          const mandatoryApps = allApplications.filter(app => app.mandatory && !app.favorite);
+          const favoriteApps = allApplications.filter(app => app.favorite && !app.mandatory);
           mandatoryApps.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
