@@ -398,7 +398,7 @@ export default {
         description: '',
         active: true,
         mandatory: false,
-        isMobile: true,
+        mobile: true,
         system: false,
         permissions: [],
         imageFileBody: '',
@@ -455,6 +455,7 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
+          console.log('Apps: ', data.applications);
 
           // A trick to force retrieving img URL again to update illustration
           const REFRESH_TIMEOUT=20;
@@ -498,7 +499,7 @@ export default {
       this.formArray.mandatory = false;
       this.formArray.system = false;
       this.formArray.active = true;
-      this.formArray.isMobile = true;
+      this.formArray.mobile = true;
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
