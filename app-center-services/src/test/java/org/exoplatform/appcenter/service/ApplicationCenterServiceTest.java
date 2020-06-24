@@ -20,7 +20,6 @@ import static org.junit.Assert.*;
 
 import java.io.InputStream;
 
-import org.exoplatform.commons.file.services.FileStorageException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -31,6 +30,7 @@ import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.plugin.ApplicationPlugin;
+import org.exoplatform.commons.file.services.FileStorageException;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
@@ -42,7 +42,6 @@ import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.naming.InitialContextInitializer;
 import org.exoplatform.services.organization.*;
 import org.exoplatform.services.organization.idm.MembershipImpl;
-import org.exoplatform.services.security.IdentityConstants;
 
 public class ApplicationCenterServiceTest {
 
@@ -225,12 +224,13 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
-    application.setPermissions(IdentityConstants.ANY);
+    application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals(ApplicationCenterService.DEFAULT_USERS_PERMISSION, storedApplication.getPermissions().get(0));
 
     application.setUrl("url2");
-    storedApplication = applicationCenterService.updateApplication(application, SIMPLE_USERNAME);
-    assertNotNull("simple user should be able to modify application after an admin changed its permissions", storedApplication);
+    storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals("url2", storedApplication.getUrl());
   }
 
   @Test
@@ -299,10 +299,10 @@ public class ApplicationCenterServiceTest {
     }
 
     application.setId(storedApplication.getId());
-    application.setPermissions(IdentityConstants.ANY);
+    application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
 
-    applicationCenterService.deleteApplication(storedApplication.getId(), SIMPLE_USERNAME);
+    applicationCenterService.deleteApplication(storedApplication.getId(), ADMIN_USERNAME);
   }
 
   @Test
@@ -405,7 +405,7 @@ public class ApplicationCenterServiceTest {
     }
 
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
-    storedApplication.setPermissions(IdentityConstants.ANY);
+    storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
   }
@@ -447,7 +447,7 @@ public class ApplicationCenterServiceTest {
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
 
-    storedApplication.setPermissions(IdentityConstants.ANY);
+    storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
 
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
@@ -588,7 +588,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
-                                               "any");
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
 
     applicationCenterService.createApplication(application1);
     applicationCenterService.createApplication(application2);
@@ -631,7 +631,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
-                                               "any");
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
 
     try {
       applicationCenterService.getMandatoryAndFavoriteApplicationsList("");
@@ -710,7 +710,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
-                                               IdentityConstants.ANY);
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     applicationCenterService.createApplication(application2);
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, ADMIN_USERNAME);
