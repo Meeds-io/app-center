@@ -72,7 +72,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :target="application.target"
                   :href="application.computedUrl"
                 >
-                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
                   <span
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
                     class="appLauncherTitle"
@@ -104,7 +106,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :target="application.target"
                   :href="application.computedUrl"
                 >
-                  <img v-if="application.id" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
                     class="appLauncherTitle"
@@ -141,6 +145,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 export default {
   data() {
     return {
+      defaultAppImage: {
+        fileBody: '',
+        fileName: '',
+        invalidSize: false,
+        invalidImage: false
+      },
       isMobileDevice: false,
       appLauncherDrawer: null,
       mandatoryApplicationsList: [],
@@ -198,6 +208,7 @@ export default {
   },
   created() {
     this.isMobileDevice = this.detectMobile();
+    this.getAppGeneralSettings();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -318,6 +329,22 @@ export default {
         });
       }
       location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
+    },
+    getAppGeneralSettings() {
+      return fetch('/portal/rest/app-center/settings', {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(resp => {
+          if (resp && resp.ok) {
+            return resp.json();
+          } else {
+            throw new Error('Error getting favorite applications list');
+          }
+        })
+        .then(data => {
+          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
+        });
     },
   }
 };
