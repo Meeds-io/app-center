@@ -58,6 +58,8 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
+  public static final String             ANY_PERMISSION                    = "any";
+
   public static final String             DEFAULT_USERS_GROUP               = "/platform/users";
 
   public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
@@ -261,7 +263,16 @@ public class ApplicationCenterService implements Startable {
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(DEFAULT_USERS_PERMISSION);
+      List<String> permissions = new ArrayList<>();
+      permissions.add(DEFAULT_ADMINISTRATORS_PERMISSION);
+      permissions.add(DEFAULT_USERS_PERMISSION);
+      application.setPermissions(permissions);
+    } else if (!application.getPermissions().contains(DEFAULT_ADMINISTRATORS_PERMISSION)
+        && !application.getPermissions().contains(ANY_PERMISSION)) {
+      List<String> permissions = new ArrayList<>();
+      permissions.addAll(application.getPermissions());
+      permissions.add(defaultAdministratorPermission);
+      application.setPermissions(permissions);
     }
     return appCenterStorage.createApplication(application);
   }
@@ -295,8 +306,18 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
+
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(DEFAULT_USERS_PERMISSION);
+      List<String> permissions = new ArrayList<>();
+      permissions.add(DEFAULT_ADMINISTRATORS_PERMISSION);
+      permissions.add(DEFAULT_USERS_PERMISSION);
+      application.setPermissions(permissions);
+    } else if (!application.getPermissions().contains(DEFAULT_ADMINISTRATORS_PERMISSION)
+        && !application.getPermissions().contains(ANY_PERMISSION)) {
+      List<String> permissions = new ArrayList<>();
+      permissions.addAll(application.getPermissions());
+      permissions.add(defaultAdministratorPermission);
+      application.setPermissions(permissions);
     }
 
     return appCenterStorage.updateApplication(application);
