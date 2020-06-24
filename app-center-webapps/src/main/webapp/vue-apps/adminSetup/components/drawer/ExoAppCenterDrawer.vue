@@ -105,7 +105,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 ref="image"
                 type="file"
                 accept="image/*"
-                @change="handleFileUpload()"
+                @change="handleFileUpload"
               >
             </v-col>
             <v-col v-show="formArray.imageFileName" class="imageSet" cols="4">
@@ -161,7 +161,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-textarea>
           <v-row class="applicationProperties">
             <v-col>
-              <v-switch v-model="formArray.isMandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+              <v-switch v-model="formArray.mandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
             </v-col>
             <v-col>
               <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
@@ -325,7 +325,7 @@ export default {
           helpPageURL: this.formArray.helpPageURL,
           description: this.formArray.description,
           active: this.formArray.active,
-          isMandatory: this.formArray.isMandatory,
+          mandatory: this.formArray.mandatory,
           isMobile: this.formArray.isMobile,
           system: this.formArray.system,
           permissions: this.formArray.permissions,

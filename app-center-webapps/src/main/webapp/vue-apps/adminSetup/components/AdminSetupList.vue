@@ -93,7 +93,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </td>
         <td class="d-none d-sm-table-cell">
           <input
-            v-model="application.isMandatory"
+            v-model="application.mandatory"
             disabled="disabled"
             type="checkbox"
           >
@@ -278,7 +278,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     <td>
                       <input
                         id="byDefault"
-                        v-model="formArray.isMandatory"
+                        v-model="formArray.mandatory"
                         :disabled="!formArray.active"
                         type="checkbox"
                       >
@@ -397,7 +397,7 @@ export default {
         helpPageURL: '',
         description: '',
         active: true,
-        isMandatory: false,
+        mandatory: false,
         isMobile: true,
         system: false,
         permissions: [],
@@ -467,70 +467,6 @@ export default {
       this.getApplicationsList();
     },
 
-    submitForm() {
-      const MAX_FILE_SIZE = 100000;
-
-      if (
-        this.formArray.title &&
-        this.formArray.url &&
-        this.validUrl(this.formArray)
-      ) {
-        if (this.$refs.file && this.$refs.file.files.length > 0) {
-          const reader = new FileReader();
-          reader.onload = e => {
-            if (!e.target.result.includes('data:image')) {
-              this.formArray.invalidImage = true;
-              return;
-            }
-            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
-              this.formArray.invalidSize = true;
-              return;
-            }
-            this.formArray.imageFileBody = e.target.result;
-            this.addOrEditApplication();
-          };
-          reader.readAsDataURL(this.$refs.file.files[0]);
-        } else {
-          this.addOrEditApplication();
-        }
-      }
-    },
-
-    addOrEditApplication() {
-      return fetch('/portal/rest/app-center/applications', {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: this.formArray.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          id: this.formArray.id,
-          title: this.formArray.title,
-          url: this.formArray.url,
-          description: this.formArray.description,
-          active: this.formArray.active,
-          isMandatory: this.formArray.isMandatory,
-          permissions: this.formArray.permissions,
-          imageFileBody: this.formArray.imageFileBody,
-          imageFileName: this.formArray.imageFileName,
-          imageFileId: this.formArray.imageFileId,
-        })
-      })
-        .then(() => {
-          this.getApplicationsList();
-          this.resetForm();
-        })
-        .catch(e => {
-          const UNAUTHORIZED_ERROR_CODE = 401;
-          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
-            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
-          } else {
-            this.error = this.$t('appCenter.adminSetupForm.error');
-          }
-        });
-    },
-
     deleteApplication() {
       return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
         method: 'DELETE',
@@ -559,7 +495,7 @@ export default {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
       this.formArray.description = '';
-      this.formArray.isMandatory = false;
+      this.formArray.mandatory = false;
       this.formArray.system = false;
       this.formArray.active = true;
       this.formArray.isMobile = true;
@@ -567,23 +503,6 @@ export default {
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
       this.showAddOrEditApplicationModal = false;
-    },
-
-    handleFileUpload() {
-      if (this.$refs.file.files.length > 0) {
-        this.formArray.imageFileName = this.$refs.file.files[0].name;
-        this.formArray.invalidSize = false;
-        this.formArray.invalidImage = false;
-      } else {
-        this.removeFile();
-      }
-    },
-
-    removeFile() {
-      this.formArray.imageFileName = '';
-      this.formArray.imageFileBody = '';
-      this.formArray.invalidSize = false;
-      this.formArray.invalidImage = false;
     },
 
     showAddApplicationDrawer() {
@@ -620,7 +539,7 @@ export default {
     },
     onActiveChange() {
       if (!this.formArray.active) {
-        this.formArray.isMandatory = false;
+        this.formArray.mandatory = false;
       }
     },
     closeDrawer() {

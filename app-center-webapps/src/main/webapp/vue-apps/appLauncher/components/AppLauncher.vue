@@ -263,7 +263,7 @@ export default {
           } else {
             applications.push(...data.applications);
           }
-          this.mandatoryApplicationsList = applications.filter(app => app.isMandatory && !app.favorite);
+          this.mandatoryApplicationsList = applications.filter(app => app.mandatory && !app.favorite);
           // sort mandatory applications alphabetical
           this.mandatoryApplicationsList.sort((a, b) => {
             if (a.title < b.title) {
@@ -276,7 +276,7 @@ export default {
 
             return 0;
           });
-          this.favoriteApplicationsList = applications.filter(app => app.favorite && !app.isMandatory);
+          this.favoriteApplicationsList = applications.filter(app => app.favorite && !app.mandatory);
           // sort favorite applications alphabetically by default
           if (this.favoriteApplicationsList.some(app => app.order !== null)) {
             this.alphabeticalOrder = false;
