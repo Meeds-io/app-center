@@ -22,6 +22,14 @@ export default {
       type: Array,
       default: () => []
     },
+    boundGroups: {
+      type: Array,
+      default: () => []
+    },
+    applicationPermissions: {
+      type: Array,
+      default: () => []
+    }
   },
   watch: {
     selectedItems() {
@@ -64,6 +72,7 @@ export default {
       }
       //
       const removeItems = [];
+      const  addedItems = [];
       selectize.items.forEach(item => {
         if (!this.selectedItems.includes(item)) {
           removeItems.push(item);
@@ -72,6 +81,42 @@ export default {
       removeItems.forEach(item => {
         selectize.removeItem(item, true);
       });
+
+      // add newly added items
+      this.selectedItems.forEach(item => {
+        if (item && item.startsWith('/') && !selectize.items.includes(item)) {
+          addedItems.push(item);
+        }
+      });
+
+      if (addedItems && addedItems.length > 0) {
+        addedItems.forEach(item => {
+          this.addItem(item);
+        });
+      }
+    },
+    addItem(item) {
+      if (item) {
+        const boundGroups = this.boundGroups.map(binding => binding.group);
+        if (!boundGroups.includes(item)) {
+          const selectize = $(this.$el)[0].selectize;
+          // if selectize options doesn't contain the option of this item add it
+          if (!selectize.options[`${item}`]) {
+            const group = this.getGroup(item);
+            selectize.options[`${item}`] = {
+              avatarUrl: null,
+              text: `*:${group.id}`,
+              value: group.id,
+              type: 'group'
+            };
+          }
+          // add item
+          selectize.addItem(item);
+        }
+      }
+    },
+    getGroup(groupId) {
+      return this.applicationPermissions.filter(group => group.id === groupId)[0];
     },
   }
 };
