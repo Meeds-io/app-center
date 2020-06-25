@@ -17,7 +17,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <div class="listApplications">
     <v-row>
-      <v-col>
+      <v-col cols="2">
         <a
           class="actionIcon addApplicationButton tooltipContent"
           data-placement="bottom"
@@ -26,12 +26,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         >
           <i class="uiIconPlus uiIconLightGray"></i>
           <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
-          <span class="tooltiptext">{{
-          $t("appCenter.adminSetupForm.addNewApp")
-        }}</span>
+          <span class="tooltiptext">
+            {{ $t("appCenter.adminSetupForm.addNewApp") }}
+          </span>
         </a>
       </v-col>
-      <v-col>
+      <v-spacer></v-spacer>
+      <v-col class="appSearch" cols="3">
         <v-text-field
           v-model="search"
           :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
