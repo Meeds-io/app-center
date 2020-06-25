@@ -188,7 +188,7 @@ public class ApplicationCenterService implements Startable {
         List<String> permissions = application.getPermissions();
         if (permissions == null || permissions.isEmpty()) {
           // Set default permission if empty
-          application.setPermissions(IdentityConstants.ANY);
+          application.setPermissions(DEFAULT_USERS_PERMISSION);
         }
 
         String imagePath = applicationPlugin.getImagePath();
@@ -745,7 +745,7 @@ public class ApplicationCenterService implements Startable {
       return false;
     }
 
-    if (StringUtils.equals(IdentityConstants.ANY, permissionExpression)) {
+    if (StringUtils.equals(DEFAULT_USERS_PERMISSION, permissionExpression)) {
       return true;
     }
 
