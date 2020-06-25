@@ -269,6 +269,7 @@ export default {
         $('body').addClass('hide-scroll');
         this.$nextTick().then(() => {
           $('#app .v-overlay').click(() => {
+            this.permissions = [];
             this.$emit('closeDrawer');
           });
         });
@@ -378,6 +379,7 @@ export default {
       }
     },
     resetForm() {
+      this.permissions = [];
       this.$emit('resetForm');
     },
     findGroups (query, callback) {
