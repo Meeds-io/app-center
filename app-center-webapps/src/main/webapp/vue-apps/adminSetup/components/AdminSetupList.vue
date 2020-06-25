@@ -35,6 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         type="text"
       >
     </div>
+    <v-divider></v-divider>
     <v-data-table
       :headers="headers"
       :items="applicationsList"
@@ -67,19 +68,25 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </h5>
           </td>
           <td class="text-md-center">
-            <v-switch v-model="props.item.mandatory" @change="updateOption(props.item)"></v-switch>
+            <v-row justify="center">
+              <v-switch v-model="props.item.mandatory" @change="updateOption(props.item)"></v-switch>              
+            </v-row>
           </td>
           <td class="text-md-center">
-            <v-switch v-model="props.item.active" @change="updateOption(props.item)"></v-switch>
+            <v-row justify="center">
+              <v-switch v-model="props.item.active" @change="updateOption(props.item)"></v-switch>
+            </v-row>
           </td>
           <td class="text-md-center">
-            <v-switch v-model="props.item.mobile" @change="updateOption(props.item)"></v-switch>
+            <v-row justify="center">
+              <v-switch v-model="props.item.mobile" @change="updateOption(props.item)"></v-switch>
+            </v-row>
           </td>
           <td class="text-md-center">
-            <v-row>
+            <v-row justify="center">
               <v-btn
                 icon
-                class="rightIcon"
+                class="actionsBtn"
                 @click="showEditApplicationDrawer(props.item)"
               >
                 <v-icon
@@ -90,7 +97,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </v-btn>
               <v-btn
                 icon
-                class="rightIcon"
+                class="actionsBtn"
                 @click="toDeleteApplicationModal(props.item)"
               >
                 <v-icon
@@ -166,7 +173,7 @@ export default {
   data() {
     return {
       headers: [
-        { text: `${this.$t('appCenter.adminSetupList.picto')}`, align: 'center', filterable: false },
+        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center', filterable: false },
         { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center', filterable: false },
         { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center', filterable: false },
         { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center', filterable: false },
