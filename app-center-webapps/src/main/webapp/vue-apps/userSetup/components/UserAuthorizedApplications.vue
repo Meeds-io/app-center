@@ -183,7 +183,7 @@ export default {
         this.searchApp = setTimeout(() => {
           this.searchAuthorizedApplicationsList();
         }, this.searchDelay);
-      } else {
+      } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
         this.searchAuthorizedApplicationsList();
       }
     }

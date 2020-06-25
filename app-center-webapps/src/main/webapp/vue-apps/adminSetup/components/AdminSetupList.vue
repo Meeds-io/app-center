@@ -28,7 +28,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-spacer></v-spacer>
       <v-col class="appSearch pb-5" cols="3">
         <v-text-field
-          v-model="search"
+          v-model="searchText"
           :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
           prepend-inner-icon="mdi-filter"
           hide-details
@@ -39,7 +39,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <v-data-table
       :headers="headers"
       :items="applicationsList"
-      :search="search"
       disable-sort
     >
       <template slot="item" slot-scope="props">
@@ -189,7 +188,9 @@ export default {
         invalidSize: false,
         invalidImage: false
       },
-      search: '',
+      searchText: '',
+      searchApp: '',
+      searchDelay: 300,
       applicationsList: [],
       formArray: {
         id: 0,
@@ -220,6 +221,18 @@ export default {
       appPermissions: [],
     };
   },
+  watch: {
+    searchText() {
+      if (this.searchText && this.searchText.trim().length) {
+        clearTimeout(this.searchApp);
+        this.searchApp = setTimeout(() => {
+          this.getApplicationsList();
+        }, this.searchDelay);
+      } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
+        this.getApplicationsList();
+      }
+    }
+  },
 
   created() {
     this.getApplicationsList();
@@ -234,7 +247,7 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${''}`, {
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
