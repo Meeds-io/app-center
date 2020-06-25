@@ -132,7 +132,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
             small
+            :href="appCenterLink"
             @click="navigateTo('appCenterUserSetup/')"
+            @click.middle="navigateTo('appCenterUserSetup/')"
+            @click.right="navigateTo('appCenterUserSetup/')"
           >
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
@@ -160,6 +163,7 @@ export default {
       loading: true,
       draggedElementIndex: null,
       alphabeticalOrder: true,
+      appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
   },
   watch: {
@@ -328,7 +332,6 @@ export default {
           credentials: 'include',
         });
       }
-      location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
     },
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
