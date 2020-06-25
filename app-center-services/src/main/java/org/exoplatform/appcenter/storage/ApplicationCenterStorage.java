@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,7 +62,7 @@ public class ApplicationCenterStorage {
     this.fileService = fileService;
   }
 
-  public Application getApplicationByTitleOrURL(String title, String url) {
+  public Application getApplicationByTitleOrURL(String title, String url) throws FileStorageException {
     if (StringUtils.isBlank(title)) {
       throw new IllegalArgumentException("title is mandatory");
     }
@@ -101,29 +102,41 @@ public class ApplicationCenterStorage {
     application.setSystem(storedApplicationEntity.isSystem());
 
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
+
+    boolean imageRemoved = StringUtils.isBlank(application.getImageFileBody())
+        && StringUtils.isBlank(application.getImageFileName()) && oldImageFileId != null && oldImageFileId > 0;
+
     boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
         && StringUtils.isNotBlank(application.getImageFileName());
+    // if new image make sure to update it
     if (newImageAttached) {
       ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
       if (applicationImage != null) {
         application.setImageFileId(applicationImage.getId());
+        if (oldImageFileId != null && oldImageFileId > 0) {
+          // Cleanup old useless image
+          fileService.deleteFile(oldImageFileId);
+        }
       }
     } else {
-      application.setImageFileId(storedApplicationEntity.getImageFileId());
+      application.setImageFileId(oldImageFileId);
+    }
+
+    // if image was unset remove it
+    if (imageRemoved) {
+      application.setImageFileId(null);
+      // Cleanup old useless image
+      fileService.deleteFile(oldImageFileId);
     }
 
     // if application is mandatory make sure to remove it from users favorites
-    if (application.isByDefault()) {
+    if (application.isMandatory()) {
       favoriteApplicationDAO.removeAllFavoritesOfApplication(application.getId());
     }
 
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity = applicationDAO.update(applicationEntity);
 
-    // Cleanup old useless image
-    if (newImageAttached && oldImageFileId != null) {
-      fileService.deleteFile(oldImageFileId);
-    }
     return toDTO(applicationEntity);
   }
 
@@ -138,7 +151,7 @@ public class ApplicationCenterStorage {
     applicationDAO.delete(applicationEntity);
   }
 
-  public Application getApplicationById(long applicationId) {
+  public Application getApplicationById(long applicationId) throws FileStorageException {
     if (applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -161,7 +174,7 @@ public class ApplicationCenterStorage {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     if (entity != null) {
       // check if it is a favorite application and not a system application
-      if (!entity.getApplication().isByDefault()) {
+      if (!entity.getApplication().isMandatory()) {
         entity.setOrder(order.longValue());
         favoriteApplicationDAO.update(entity);
       }
@@ -181,7 +194,17 @@ public class ApplicationCenterStorage {
 
   public List<UserApplication> getMandatoryApplications() {
     List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
-    return applications.stream().map(this::toUserApplicationDTO).collect(Collectors.toList());
+    List<UserApplication> list = new ArrayList<>();
+    for (ApplicationEntity application : applications) {
+      UserApplication userApplication = null;
+      try {
+        userApplication = toUserApplicationDTO(application);
+      } catch (FileStorageException e) {
+        e.printStackTrace();
+      }
+      list.add(userApplication);
+    }
+    return list;
   }
 
   public List<UserApplication> getFavoriteApplicationsByUser(String username) {
@@ -191,13 +214,19 @@ public class ApplicationCenterStorage {
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
     return applications.stream()
                        .map(this::toUserApplicationDTO)
-                       .filter(userApplication -> userApplication.isActive() && !userApplication.isByDefault())
+                       .filter(userApplication -> userApplication.isActive() && !userApplication.isMandatory())
                        .collect(Collectors.toList());
   }
 
-  public List<Application> getSystemApplications() {
+  public List<Application> getSystemApplications() throws FileStorageException {
     List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
-    return applications.stream().map(this::toDTO).collect(Collectors.toList());
+    List<Application> list = new ArrayList<>();
+    Application application = null;
+    for (ApplicationEntity entity : applications) {
+      application = toDTO(entity);
+      list.add(application);
+    }
+    return list;
   }
 
   public boolean isFavoriteApplication(Long applicationId, String username) {
@@ -259,19 +288,26 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  public List<Application> getApplications(String keyword) {
+  public List<Application> getApplications(String keyword) throws FileStorageException {
     List<ApplicationEntity> applications = applicationDAO.getApplications(keyword);
-    return applications.stream().map(this::toDTO).collect(Collectors.toList());
+    List<Application> list = new ArrayList<>();
+    for (ApplicationEntity entity : applications) {
+      Application application = toDTO(entity);
+      list.add(application);
+    }
+    return list;
   }
 
   public long countApplications() {
     return applicationDAO.count();
   }
 
-  private Application toDTO(ApplicationEntity applicationEntity) {
+  private Application toDTO(ApplicationEntity applicationEntity) throws FileStorageException {
     if (applicationEntity == null) {
       return null;
     }
+    String imageFileName = applicationEntity.getImageFileId() != null
+        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     Application application = new Application(applicationEntity.getId(),
                                               applicationEntity.getTitle(),
@@ -279,20 +315,24 @@ public class ApplicationCenterStorage {
                                               applicationEntity.getHelpPageUrl(),
                                               applicationEntity.getImageFileId(),
                                               null,
-                                              null,
+                                              imageFileName,
                                               applicationEntity.getDescription(),
                                               applicationEntity.isActive(),
-                                              applicationEntity.isByDefault(),
+                                              applicationEntity.isMandatory(),
+                                              applicationEntity.isMobile(),
                                               permissions);
     application.setSystem(applicationEntity.isSystem());
     application.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    application.setIsMobile(applicationEntity.isMobile());
     return application;
   }
 
-  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
+  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) throws FileStorageException {
     if (applicationEntity == null) {
       return null;
     }
+    String imageFileName = applicationEntity.getImageFileId() != null
+        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
@@ -300,13 +340,16 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
                                                           null,
-                                                          null,
+                                                          imageFileName,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
-                                                          applicationEntity.isByDefault(),
+                                                          applicationEntity.isMandatory(),
+                                                          applicationEntity.isMobile(),
                                                           false,
                                                           permissions);
     userApplication.setSystem(applicationEntity.isSystem());
+    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    userApplication.setIsMobile(applicationEntity.isMobile());
     return userApplication;
   }
 
@@ -325,12 +368,15 @@ public class ApplicationCenterStorage {
                                                           null,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isActive(),
-                                                          applicationEntity.isByDefault(),
+                                                          applicationEntity.isMandatory(),
+                                                          applicationEntity.isMobile(),
                                                           true,
                                                           permissions);
     // set UserApplication's order
     userApplication.setOrder(favoriteApplicationEntity.getOrder());
     userApplication.setSystem(applicationEntity.isSystem());
+    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
+    userApplication.setIsMobile(applicationEntity.isMobile());
     return userApplication;
   }
 
@@ -344,10 +390,11 @@ public class ApplicationCenterStorage {
                                                                 application.getImageFileId(),
                                                                 application.getDescription(),
                                                                 application.isActive(),
-                                                                application.isByDefault(),
+                                                                application.isMandatory(),
                                                                 StringUtils.join(application.getPermissions(), ","));
     applicationEntity.setSystem(application.isSystem());
     applicationEntity.setHelpPageUrl(application.getHelpPageURL());
+    applicationEntity.setIsMobile(application.isMobile());
     return applicationEntity;
   }
 

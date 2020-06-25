@@ -32,7 +32,8 @@ public class UserApplication extends Application {
           app.getImageFileName(),
           app.getDescription(),
           app.isActive(),
-          app.isByDefault(),
+          app.isMandatory(),
+          app.isMobile(),
           app.getPermissions());
   }
 
@@ -45,10 +46,22 @@ public class UserApplication extends Application {
                          String imageFileName,
                          String description,
                          boolean active,
-                         boolean byDefault,
+                         boolean isMandatory,
+                         boolean isMobile,
                          boolean favorite,
                          String... permissions) {
-    super(id, title, url, helpPageURL, imageFileId, imageFileBody, imageFileName, description, active, byDefault, permissions);
+    super(id,
+          title,
+          url,
+          helpPageURL,
+          imageFileId,
+          imageFileBody,
+          imageFileName,
+          description,
+          active,
+          isMandatory,
+          isMobile,
+          permissions);
     this.favorite = favorite;
   }
 

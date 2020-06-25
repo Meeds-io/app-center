@@ -39,7 +39,9 @@ public class Application implements Serializable {
 
   private boolean           active;
 
-  private boolean           byDefault;
+  private boolean           isMandatory;
+
+  private boolean           isMobile;
 
   private boolean           system;
 
@@ -65,7 +67,8 @@ public class Application implements Serializable {
                      String imageFileName,
                      String description,
                      boolean active,
-                     boolean byDefault,
+                     boolean isMandatory,
+                     boolean isMobile,
                      String... permissions) {
     this(id,
          title,
@@ -76,7 +79,8 @@ public class Application implements Serializable {
          imageFileName,
          description,
          active,
-         byDefault,
+         isMandatory,
+         isMobile,
          permissions == null ? null : Arrays.asList(permissions));
   }
 
@@ -89,7 +93,8 @@ public class Application implements Serializable {
                      String imageFileName,
                      String description,
                      boolean active,
-                     boolean byDefault,
+                     boolean isMandatory,
+                     boolean isMobile,
                      List<String> permissions) {
     this.id = id;
     this.title = title;
@@ -97,7 +102,8 @@ public class Application implements Serializable {
     this.helpPageURL = helpPageURL;
     this.description = description;
     this.active = active;
-    this.byDefault = byDefault;
+    this.isMandatory = isMandatory;
+    this.isMobile = isMobile;
     this.permissions = permissions;
     this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
@@ -152,12 +158,20 @@ public class Application implements Serializable {
     this.active = active;
   }
 
-  public boolean isByDefault() {
-    return byDefault;
+  public boolean isMandatory() {
+    return isMandatory;
   }
 
-  public void setByDefault(boolean byDefault) {
-    this.byDefault = byDefault;
+  public void setMandatory(boolean mandatory) {
+    this.isMandatory = mandatory;
+  }
+
+  public boolean isMobile() {
+    return isMobile;
+  }
+
+  public void setIsMobile(boolean mobile) {
+    isMobile = mobile;
   }
 
   public List<String> getPermissions() {

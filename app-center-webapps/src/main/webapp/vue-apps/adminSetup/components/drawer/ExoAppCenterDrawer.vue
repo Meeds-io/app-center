@@ -93,22 +93,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 {{ $t('appCenter.adminSetupForm.image') }}
               </v-label>
             </v-col>
-            <v-col v-if="!formArray.imageFileName" class="uploadImage" cols="3">
-              <label for="file" class="custom-file-upload">
+            <v-col v-show="!formArray.imageFileName" class="uploadImage" cols="3">
+              <label for="imageFile" class="custom-file-upload">
                 <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
                 <span>
                   {{ $t("appCenter.adminSetupForm.browse") }}
                 </span>
               </label>
               <input
-                id="file"
-                ref="file"
+                id="imageFile"
+                ref="image"
                 type="file"
                 accept="image/*"
-                @change="handleFileUpload()"
+                @change="handleFileUpload"
               >
             </v-col>
-            <v-col v-else class="imageSet" cols="4">
+            <v-col v-show="formArray.imageFileName" class="imageSet" cols="4">
               <v-list-item
                 v-if="formArray.imageFileName != undefined &&
                   formArray.imageFileName != ''"
@@ -123,10 +123,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <v-btn
                     class="remove-file"
                     icon
+                    :disabled="formArray.system"
                     @click="removeFile"
                   >
                     <v-icon small>
-                      mdi-close
+                      mdi-delete
                     </v-icon>
                   </v-btn>
                 </v-list-item-action>
@@ -161,7 +162,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-textarea>
           <v-row class="applicationProperties">
             <v-col>
-              <v-switch v-model="formArray.isMandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+              <v-switch v-model="formArray.mandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
             </v-col>
             <v-col>
               <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
@@ -174,12 +175,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
           <exo-suggester
-            v-model="formArray.permissions"
+            v-model="permissions"
             class="input-block-level ignore-vuetify-classes my-3"
             name="permissions"
             maxlength="200"
             :options="suggesterOptions"
             :source-providers="[findGroups]"
+            :application-permissions="appPermissions"
             :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
           />
           <v-label for="helpPage">
@@ -225,6 +227,10 @@ export default {
       type: Object,
       default: null
     },
+    appPermissions: {
+      type: Array,
+      default: () => []
+    },
   },
   data() {
     const component = this;
@@ -248,11 +254,12 @@ export default {
         },
         sortField: [{field: 'order'}, {field: '$score'}],
       },
+      permissions: [],
     };
   },
   computed: {
     canSaveApplication() {
-      return this.formArray.title && this.formArray.title !== '' &&
+      return this.formArray.title && this.formArray.title !== '' && !this.formArray.invalidSize && !this.formArray.invalidImage &&
         this.validUrl(this.formArray) && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
@@ -262,13 +269,19 @@ export default {
         $('body').addClass('hide-scroll');
         this.$nextTick().then(() => {
           $('#app .v-overlay').click(() => {
+            this.permissions = [];
             this.$emit('closeDrawer');
           });
         });
       } else {
         $('body').removeClass('hide-scroll');
       }
-    }, 
+    },
+    appPermissions() {
+      this.permissions = [];
+      const groups = this.appPermissions.map(permission => permission.id);
+      this.permissions.push(...groups);
+    },
   },
   created() {
     $(document).on('keydown', (event) => {
@@ -287,9 +300,13 @@ export default {
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     handleFileUpload() {
-      if (this.$refs.file.files.length > 0) {
-        this.formArray.imageFileName = this.$refs.file.files[0].name;
-        this.formArray.invalidSize = false;
+      const MAX_FILE_SIZE = 100000;
+      if (this.$refs.image.files.length > 0) {
+        this.formArray.imageFileName = this.$refs.image.files[0].name;
+        if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
+          this.formArray.invalidSize = true;
+          return;
+        }
         this.formArray.invalidImage = false;
       } else {
         this.removeFile();
@@ -298,8 +315,13 @@ export default {
     removeFile() {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
+      this.formArray.imageFileId = '';
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      if (this.$refs.image.files.length > 0) {
+        // remove file from the input
+        document.getElementById('imageFile').value = '';
+      }
     },
     addOrEditApplication() {
       return fetch('/portal/rest/app-center/applications', {
@@ -316,18 +338,17 @@ export default {
           helpPageURL: this.formArray.helpPageURL,
           description: this.formArray.description,
           active: this.formArray.active,
-          byDefault: this.formArray.isMandatory,
+          mandatory: this.formArray.mandatory,
+          isMobile: this.formArray.mobile,
           system: this.formArray.system,
-          permissions: this.formArray.permissions,
+          permissions: this.permissions.map(group => `*:${group}`),
           imageFileBody: this.formArray.imageFileBody,
           imageFileName: this.formArray.imageFileName,
           imageFileId: this.formArray.imageFileId,
         })
       })
         .then(() => {
-          this.$emit('closeDrawer');
           this.$emit('initApps');
-          this.resetForm();
         })
         .catch(e => {
           const UNAUTHORIZED_ERROR_CODE = 401;
@@ -339,35 +360,26 @@ export default {
         });
     },
     submitForm() {
-      const MAX_FILE_SIZE = 100000;
-
-      if (
-        this.formArray.title &&
-        this.formArray.url &&
-        this.validUrl(this.formArray)
-      ) {
-        if (this.$refs.file && this.$refs.file.files.length > 0) {
-          const reader = new FileReader();
-          reader.onload = e => {
-            if (!e.target.result.includes('data:image')) {
-              this.formArray.invalidImage = true;
-              return;
-            }
-            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
-              this.formArray.invalidSize = true;
-              return;
-            }
-            this.formArray.imageFileBody = e.target.result;
-            this.addOrEditApplication();
-          };
-          reader.readAsDataURL(this.$refs.file.files[0]);
-        } else {
+      if (this.$refs.image && this.$refs.image.files.length > 0) {
+        this.formArray.imageFileName = this.$refs.image.files[0].name;
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (!e.target.result.includes('data:image')) {
+            this.formArray.invalidImage = true;
+            return;
+          }
+          this.formArray.imageFileBody = e.target.result;
           this.addOrEditApplication();
           this.$emit('closeDrawer');
-        }
+        };
+        reader.readAsDataURL(this.$refs.image.files[0]);
+      } else {
+        this.addOrEditApplication();
+        this.$emit('closeDrawer');
       }
     },
     resetForm() {
+      this.permissions = [];
       this.$emit('resetForm');
     },
     findGroups (query, callback) {
@@ -376,11 +388,11 @@ export default {
       }
       this.getGroups(query).then(data => {
         const groups = [];
-        for(const group of data) {
+        for(const group of data.entities) {
           if (!group.id.startsWith('/spaces')) {
             groups.push({
               avatarUrl: null,
-              text: group.label,
+              text: `*:${group.id}`,
               value: group.id,
               type: 'group'
             });
@@ -394,7 +406,7 @@ export default {
     },
     renderMenuItem (item, escape) {
       return `
-        <div class="item">${escape(item.value)}</div>
+        <div class="item">*:${escape(item.value)}</div>
       `;
     },
   },

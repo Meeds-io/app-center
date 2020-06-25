@@ -58,6 +58,12 @@ public class ApplicationCenterService implements Startable {
 
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
+  public static final String             ANY_PERMISSION                    = "any";
+
+  public static final String             DEFAULT_USERS_GROUP               = "/platform/users";
+
+  public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
+
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
 
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
@@ -168,7 +174,12 @@ public class ApplicationCenterService implements Startable {
           return;
         }
 
-        Application storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+        Application storedApplication = null;
+        try {
+          storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+        } catch (FileStorageException e) {
+          LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
+        }
         if (storedApplication != null && !applicationPlugin.isOverride()) {
           LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
           return;
@@ -177,7 +188,7 @@ public class ApplicationCenterService implements Startable {
         List<String> permissions = application.getPermissions();
         if (permissions == null || permissions.isEmpty()) {
           // Set default permission if empty
-          application.setPermissions(IdentityConstants.ANY);
+          application.setPermissions(DEFAULT_USERS_PERMISSION);
         }
 
         String imagePath = applicationPlugin.getImagePath();
@@ -216,6 +227,8 @@ public class ApplicationCenterService implements Startable {
           }
         }
       });
+    } catch (FileStorageException e) {
+      LOG.warn("An unknown error occurs while retrieving system applications images", e);
     } finally {
       RequestLifeCycle.end();
     }
@@ -250,8 +263,9 @@ public class ApplicationCenterService implements Startable {
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(this.defaultAdministratorPermission);
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
+
     return appCenterStorage.createApplication(application);
   }
 
@@ -280,11 +294,43 @@ public class ApplicationCenterService implements Startable {
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-    if (!hasPermission(username, storedApplication)) {
+    if (!isAdmin(username)) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
+
+    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
+      application.setPermissions(DEFAULT_USERS_PERMISSION);
+    }
+
     return appCenterStorage.updateApplication(application);
+  }
+
+  private boolean isAdmin(String username) {
+    // Ingeneral case, the user is already loggedin, thus we will get the
+    // Identity from registry without having to compute it again from
+    // OrganisationService, thus the condition (identity == null) will be false
+    // most of the time for better performances
+    Identity identity = identityRegistry.getIdentity(username);
+    if (identity == null) {
+      try {
+        identity = authenticator.createIdentity(username);
+      } catch (Exception e) {
+        LOG.warn("Error getting memberships of user {}", username, e);
+        return false;
+      }
+
+      // Check null again after building identity
+      if (identity == null) {
+        return false;
+      }
+    }
+
+    MembershipEntry membership = null;
+    String[] permissionExpressionParts = DEFAULT_ADMINISTRATORS_PERMISSION.split(":");
+    membership = new MembershipEntry(permissionExpressionParts[1], permissionExpressionParts[0]);
+
+    return identity.isMemberOf(membership);
   }
 
   /**
@@ -296,7 +342,9 @@ public class ApplicationCenterService implements Startable {
    * @throws ApplicationNotFoundException if application wasn't found
    * @throws IllegalAccessException if user is not allowed to delete application
    */
-  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException, IllegalAccessException {
+  public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException,
+                                                                     IllegalAccessException,
+                                                                     FileStorageException {
     if (applicationId == null || applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -313,10 +361,11 @@ public class ApplicationCenterService implements Startable {
           + " is a system application, thus it can't be deleted");
     }
 
-    if (!hasPermission(username, storedApplication.getPermissions())) {
-      throw new IllegalAccessException("User " + username + " doesn't have enough permissions to delete application "
-          + storedApplication.getTitle());
+    if (!isAdmin(username)) {
+      throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
+              + storedApplication.getTitle());
     }
+    
     appCenterStorage.deleteApplication(applicationId);
   }
 
@@ -330,7 +379,8 @@ public class ApplicationCenterService implements Startable {
    *           application
    */
   public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                          IllegalAccessException {
+                                                                          IllegalAccessException,
+                                                                          FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
@@ -447,7 +497,7 @@ public class ApplicationCenterService implements Startable {
    * @param keyword used to search in title and url
    * @return {@link ApplicationList} that contains the list of applications
    */
-  public ApplicationList getApplicationsList(int offset, int limit, String keyword) {
+  public ApplicationList getApplicationsList(int offset, int limit, String keyword) throws FileStorageException {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword);
     if (limit <= 0) {
@@ -474,12 +524,20 @@ public class ApplicationCenterService implements Startable {
    * @return {@link ApplicationList} that contains the {@link List} of authorized
    *         {@link UserApplication}
    */
-  public ApplicationList getAuthorizedApplicationsList(int offset, int limit, String keyword, String username) {
+  public ApplicationList getAuthorizedApplicationsList(int offset,
+                                                       int limit,
+                                                       String keyword,
+                                                       String username) throws FileStorageException {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
     ApplicationList resultApplicationsList = new ApplicationList();
-    List<Application> userApplicationsList = getApplications(offset, limit, keyword, username);
+    List<Application> userApplicationsList = getApplications(offset,
+                                                             limit,
+                                                             keyword,
+                                                             username).stream()
+                                                                      .filter(application -> application.isActive())
+                                                                      .collect(Collectors.toList());
     userApplicationsList = userApplicationsList.stream().map(app -> {
       UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
@@ -525,7 +583,7 @@ public class ApplicationCenterService implements Startable {
    * @param userName
    */
   public void updateFavoriteApplicationOrder(ApplicationOrder applicationOrder,
-                                             String userName) throws ApplicationNotFoundException {
+                                             String userName) throws ApplicationNotFoundException, FileStorageException {
     if (StringUtils.isBlank(userName)) {
       throw new IllegalArgumentException("userName is mandatory");
     }
@@ -687,10 +745,6 @@ public class ApplicationCenterService implements Startable {
       return false;
     }
 
-    if (StringUtils.equals(IdentityConstants.ANY, permissionExpression)) {
-      return true;
-    }
-
     // Ingeneral case, the user is already loggedin, thus we will get the
     // Identity from registry without having to compute it again from
     // OrganisationService, thus the condition (identity == null) will be false
@@ -731,7 +785,7 @@ public class ApplicationCenterService implements Startable {
     return defaultAppImageId;
   }
 
-  private List<Application> getApplications(int offset, int limit, String keyword, String username) {
+  private List<Application> getApplications(int offset, int limit, String keyword, String username) throws FileStorageException {
     if (offset < 0) {
       offset = 0;
     }

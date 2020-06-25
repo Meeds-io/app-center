@@ -100,10 +100,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-list-item-content class="defaultAppImage">
             <span>
               {{ $t("appCenter.adminSetupForm.defaultAppImage") }}
-              <img
-                class="appImage"
-                :src="`data:image/png;base64,${defaultAppImage.fileBody}`"
-              >
+              <img v-if="defaultAppImage.fileBody" class="appImage" :src="`data:image/png;base64,${defaultAppImage.fileBody}`" />
+              <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
             </span>
             <p v-if="defaultAppImage.invalidImage" class="errorInput">
               {{ $t("appCenter.adminSetupForm.imageError") }}
@@ -111,31 +109,39 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-list-item-content>
           <v-spacer></v-spacer>
           <v-list-item-action class="setDefaultAppImage">
-            <label
-              v-if="!defaultAppImageViewMode"
-              for="defaultAppImageFile"
-              class="custom-file-upload"
+            <div v-show="!defaultAppImageViewMode
+              && !defaultAppImage.fileName &&
+              !defaultAppImage.fileBody"
             >
-              <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
-            </label>
-            <input
-              v-if="!defaultAppImageViewMode"
-              id="defaultAppImageFile"
-              ref="defaultAppImageFile"
-              type="file"
-              accept="image/*"
-              @change="handleDefaultAppImageFileUpload()"
-            >
-            <div
-              v-if="!defaultAppImageViewMode &&
-                !defaultAppImage.fileName &&
-                !defaultAppImage.fileName"
-              class="file-listing"
-            >
-              {{ defaultAppImage.fileName }}
-              <span class="remove-file" @click="removeDefaultAppImageFile()">
-                <i class="uiCloseIcon"></i>
+              <label
+                v-if="!defaultAppImageViewMode"
+                for="defaultAppImageFile"
+                class="custom-file-upload"
+              >
+                <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
+              </label>
+              <input
+                v-if="!defaultAppImageViewMode"
+                id="defaultAppImageFile"
+                ref="defaultAppImageFile"
+                type="file"
+                accept="image/*"
+                @change="handleDefaultAppImageFileUpload()"
+              >
+            </div>
+            <div v-show="!defaultAppImageViewMode && defaultAppImage.fileName && defaultAppImage.fileBody">
+              <span>
+                {{ defaultAppImage.fileName }}
               </span>
+              <v-btn
+                class="remove-file"
+                icon
+                @click="removeDefaultAppImageFile"
+              >
+                <v-icon small>
+                  mdi-delete
+                </v-icon>
+              </v-btn>
             </div>
           </v-list-item-action>
           <v-list-item-action class="editDefaultImage">

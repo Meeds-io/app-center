@@ -58,7 +58,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           {{ $t("appCenter.adminSetupForm.permissions") }}
         </th>
         <th class="d-none d-sm-table-cell">
-          {{ $t("appCenter.adminSetupForm.byDefault") }}
+          {{ $t("appCenter.adminSetupForm.isMandatory") }}
         </th>
         <th class="d-none d-sm-table-cell">
           {{ $t("appCenter.adminSetupForm.active") }}
@@ -69,7 +69,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </tr>
       <tr v-for="application in applicationsList" :key="application.id">
         <td>
-          <img :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-if="application.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+          <img v-else src="/app-center/skin/images/defaultApp.png" />
         </td>
         <td>
           <h5>{{ application.title }}</h5>
@@ -91,7 +93,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </td>
         <td class="d-none d-sm-table-cell">
           <input
-            v-model="application.byDefault"
+            v-model="application.mandatory"
             disabled="disabled"
             type="checkbox"
           >
@@ -148,7 +150,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       />
     </div>
     
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
+    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" :app-permissions="appPermissions" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
       <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
       <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
     </exo-app-center-drawer>
@@ -242,7 +244,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         <img
                           width="13"
                           height="13"
-                          src="/app-center/skin/images/Info tooltip.png"
+                          src="/app-center/skin/images/defaultApp.png"
                         >
                         {{ $t("appCenter.adminSetupForm.sizeError") }}
                       </p>
@@ -270,13 +272,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <tr class="application-checkbox">
                     <td>
                       <span>{{
-                        $t("appCenter.adminSetupForm.byDefault")
+                        $t("appCenter.adminSetupForm.isMandatory")
                       }}</span>
                     </td>
                     <td>
                       <input
                         id="byDefault"
-                        v-model="formArray.byDefault"
+                        v-model="formArray.mandatory"
                         :disabled="!formArray.active"
                         type="checkbox"
                       >
@@ -340,8 +342,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       >
         <div class="deleteApplication">
           <h3>
-            {{ $t("appCenter.adminSetupForm.confirmDelete")
-            }}<span>{{ formArray.title }}</span> ?
+            {{ $t("appCenter.adminSetupForm.confirmDelete", {0: formArray.title}) }}
           </h3>
           <div class="form-group application-buttons pt-2">
             <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
@@ -381,6 +382,12 @@ export default {
   },
   data() {
     return {
+      defaultAppImage: {
+        fileBody: '',
+        fileName: '',
+        invalidSize: false,
+        invalidImage: false
+      },
       keyword: '',
       applicationsList: [],
       formArray: {
@@ -390,12 +397,13 @@ export default {
         helpPageURL: '',
         description: '',
         active: true,
-        isMandatory: false,
+        mandatory: false,
+        mobile: true,
         system: false,
         permissions: [],
         imageFileBody: '',
         imageFileName: '',
-        mobile: true,
+        imageFileId: '',
         viewMode: true,
         invalidSize: false,
         invalidImage: false
@@ -409,11 +417,13 @@ export default {
       groups: [],
       openAppDrawer: false,
       addApplication: true,
+      appPermissions: [],
     };
   },
 
   created() {
     this.getApplicationsList();
+    this.getAppGeneralSettings();
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape' && this && this.closeModals) {
         this.closeModals();
@@ -458,70 +468,6 @@ export default {
       this.getApplicationsList();
     },
 
-    submitForm() {
-      const MAX_FILE_SIZE = 100000;
-
-      if (
-        this.formArray.title &&
-        this.formArray.url &&
-        this.validUrl(this.formArray)
-      ) {
-        if (this.$refs.file && this.$refs.file.files.length > 0) {
-          const reader = new FileReader();
-          reader.onload = e => {
-            if (!e.target.result.includes('data:image')) {
-              this.formArray.invalidImage = true;
-              return;
-            }
-            if (this.$refs.file.files[0].size > MAX_FILE_SIZE) {
-              this.formArray.invalidSize = true;
-              return;
-            }
-            this.formArray.imageFileBody = e.target.result;
-            this.addOrEditApplication();
-          };
-          reader.readAsDataURL(this.$refs.file.files[0]);
-        } else {
-          this.addOrEditApplication();
-        }
-      }
-    },
-
-    addOrEditApplication() {
-      return fetch('/portal/rest/app-center/applications', {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: this.formArray.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          id: this.formArray.id,
-          title: this.formArray.title,
-          url: this.formArray.url,
-          description: this.formArray.description,
-          active: this.formArray.active,
-          byDefault: this.formArray.byDefault,
-          permissions: this.formArray.permissions,
-          imageFileBody: this.formArray.imageFileBody,
-          imageFileName: this.formArray.imageFileName,
-          imageFileId: this.formArray.imageFileId,
-        })
-      })
-        .then(() => {
-          this.getApplicationsList();
-          this.resetForm();
-        })
-        .catch(e => {
-          const UNAUTHORIZED_ERROR_CODE = 401;
-          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
-            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
-          } else {
-            this.error = this.$t('appCenter.adminSetupForm.error');
-          }
-        });
-    },
-
     deleteApplication() {
       return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
         method: 'DELETE',
@@ -550,7 +496,7 @@ export default {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
       this.formArray.description = '';
-      this.formArray.isMandatory = false;
+      this.formArray.mandatory = false;
       this.formArray.system = false;
       this.formArray.active = true;
       this.formArray.mobile = true;
@@ -560,35 +506,25 @@ export default {
       this.showAddOrEditApplicationModal = false;
     },
 
-    handleFileUpload() {
-      if (this.$refs.file.files.length > 0) {
-        this.formArray.imageFileName = this.$refs.file.files[0].name;
-        this.formArray.invalidSize = false;
-        this.formArray.invalidImage = false;
-      } else {
-        this.removeFile();
-      }
-    },
-
-    removeFile() {
-      this.formArray.imageFileName = '';
-      this.formArray.imageFileBody = '';
-      this.formArray.invalidSize = false;
-      this.formArray.invalidImage = false;
-    },
-
     showAddApplicationDrawer() {
       this.openAppDrawer = true;
       this.addApplication = true;
       this.formArray.viewMode = true;
-      this.initPermissionsSuggester();
     },
 
     showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
       this.addApplication = false;
       Object.assign(this.formArray, item);
-      this.initPermissionsSuggester();
+      this.appPermissions = [];
+      const allOffset = 2;
+      for (const permission of this.formArray.permissions) {
+        const groupId = permission.startsWith('*:') ? permission.substr(allOffset, permission.length - allOffset) : permission;
+        this.appPermissions.push({
+          id: groupId,
+          name: groupId,
+        });
+      }
     },
 
     toDeleteApplicationModal(item) {
@@ -613,111 +549,29 @@ export default {
     },
     onActiveChange() {
       if (!this.formArray.active) {
-        this.formArray.byDefault = false;
+        this.formArray.mandatory = false;
       }
     },
     closeDrawer() {
       this.resetForm();
       this.openAppDrawer = false;
     },
-    initPermissionsSuggester() {
-      const permissionsSuggester = $('#permissions-suggester');
-      if (permissionsSuggester && permissionsSuggester.length) {
-        const component = this;
-        const suggesterData = {
-          type: 'tag',
-          plugins: ['remove_button', 'restore_on_backspace'],
-          create: false,
-          createOnBlur: false,
-          highlight: false,
-          openOnFocus: false,
-          sourceProviders: ['adminSetup'],
-          valueField: 'text',
-          labelField: 'text',
-          searchField: ['text'],
-          closeAfterSelect: true,
-          dropdownParent: 'body',
-          hideSelected: true,
-          renderMenuItem(item, escape) {
-            return component.renderMenuItem(item, escape);
-          },
-          renderItem(item) {
-            if (item.text === 'any') {
-              return '<div class="item">*</div>';
-            } else {
-              return `<div class="item">${item.text}</div>`;
-            }
-          },
-          onItemAdd(item) {
-            component.addSuggestedItem(item);
-          },
-          onItemRemove(item) {
-            component.removeSuggestedItem(item);
-          },
-          sortField: [{ field: 'order' }, { field: '$score' }],
-          providers: {
-            adminSetup: component.findGroups
+    getAppGeneralSettings() {
+      return fetch('/portal/rest/app-center/settings', {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(resp => {
+          if (resp && resp.ok) {
+            return resp.json();
+          } else {
+            throw new Error('Error getting favorite applications list');
           }
-        };
-        permissionsSuggester.suggester(suggesterData);
-        $('#permissions-suggester')[0].selectize.clear();
-        if (this.formArray.permissions && this.formArray.permissions !== null) {
-          for (const permission of this.formArray.permissions) {
-            permissionsSuggester[0].selectize.addOption({ text: permission });
-            permissionsSuggester[0].selectize.addItem(permission);
-          }
-        }
-      }
-    },
-
-    addSuggestedItem(item) {
-      if (
-        $('#permissions-suggester') &&
-        $('#permissions-suggester').length &&
-        $('#permissions-suggester')[0].selectize
-      ) {
-        const selectize = $('#permissions-suggester')[0].selectize;
-        item = selectize.options[item];
-      }
-      if (
-        !this.formArray.permissions.find(permission => permission === item.text)
-      ) {
-        this.formArray.permissions.push(item.text);
-      }
-    },
-
-    removeSuggestedItem(item) {
-      const permissionsSuggester = $('#permissions-suggester');
-      for (let i = this.formArray.permissions.length - 1; i >= 0; i--) {
-        if (this.formArray.permissions[i] === item) {
-          this.formArray.permissions.splice(i, 1);
-          permissionsSuggester[0].selectize.removeOption(item);
-          permissionsSuggester[0].selectize.removeItem(item);
-        }
-      }
-    },
-    findGroups(query, callback) {
-      if (!query.length) {
-        return callback();
-      }
-      fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' })
-        .then(resp => resp.json())
+        })
         .then(data => {
-          const groups = [];
-          for (const group of data) {
-            groups.push({
-              avatarUrl: null,
-              text: `*:${group.id}`,
-              value: `*:${group.id}`,
-              type: 'group'
-            });
-          }
-          callback(groups);
+          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
     },
-    renderMenuItem(item, escape) {
-      return `<div class="item">${escape(item.value)}</div>`;
-    }
   }
 };
 </script>

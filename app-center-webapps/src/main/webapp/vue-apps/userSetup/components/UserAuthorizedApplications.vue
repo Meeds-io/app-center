@@ -49,7 +49,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-list-item class="applicationHeader">
             <div class="image">
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
-                <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
+                <img v-if="authorizedApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
+                <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
+                <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
               </a>
             </div>
             <v-list-item-content>
@@ -90,9 +92,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-divider></v-divider>
           <v-card-actions class="applicationActions">
             <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-            <div v-exo-tooltip.bottom.body="authorizedApp.byDefault ? $t('appCenter.userSetup.mandatory') : ''">
+            <div v-exo-tooltip.bottom.body="authorizedApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''">
               <v-btn
-                v-if="authorizedApp.byDefault"
+                v-if="authorizedApp.mandatory"
                 icon
                 disabled
                 class="mandatory"
@@ -107,15 +109,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <v-btn
                 v-else
                 icon
-                :disabled="authorizedApp.byDefault || (!authorizedApp.favorite && !canAddFavorite)"
-                :class="authorizedApp.byDefault || authorizedApp.favorite ? 'favorite' : ''"
+                :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
+                :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
                 @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
               >
                 <v-icon
                   small
                   color="red"
                 >
-                  {{ authorizedApp.byDefault || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                  {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
                 </v-icon>
               </v-btn>
             </div>
@@ -148,9 +150,14 @@ export default {
       type: Boolean,
       default: true,
     },
+    defaultAppImage: {
+      type: Object,
+      default: function() { return {}; }
+    },
   },
   data() {
     return {
+      isMobileDevice: false,
       isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
       applicationsListSize: null,
@@ -182,10 +189,26 @@ export default {
     }
   },
   created() {
+    this.isMobileDevice = this.detectMobile();
     this.getMaxFavoriteApps();
     this.getAuthorizedApplicationsList();
   },
   methods: {
+    detectMobile() {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    },
     getAuthorizedApplicationsList(searchMode) {
       this.loadingApplications = true;
       let offset = this.offset;
@@ -206,7 +229,15 @@ export default {
           }
         })
         .then(data => {
-          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(data.applications);
+          const allApplications = [];
+          if (data) {
+            if (this.isMobileDevice) {
+              allApplications.push(...data.applications.filter(app => app.mobile));
+            } else {
+              allApplications.push(...data.applications);
+            }
+          }
+          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
           this.authorizedApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);

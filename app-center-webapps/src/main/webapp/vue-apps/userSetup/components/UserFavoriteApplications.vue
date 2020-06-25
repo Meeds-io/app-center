@@ -31,7 +31,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-list-item>
         <div class="favoriteAppImage">
           <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
-            <img class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+            <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+            <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+            <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
           </a>
         </div>
         <v-list-item-content>
@@ -49,12 +51,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </a>
         </v-list-item-content>
         <v-list-item-action
-          v-exo-tooltip.bottom.body="favoriteApp.byDefault ? $t('appCenter.userSetup.mandatory') : ''"
+          v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''"
           class="favoriteAppRemove"
         >
           <v-btn
-            :disabled="favoriteApp.byDefault"
-            :class="favoriteApp.byDefault ? 'mandatory' : ''"
+            :disabled="favoriteApp.mandatory"
+            :class="favoriteApp.mandatory ? 'mandatory' : ''"
             icon
             @click.stop="deleteFavoriteApplication(favoriteApp.id)"
           >
@@ -83,17 +85,40 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <script>
 export default {
   name: 'UserFavoriteApplications',
+  props: {
+    defaultAppImage: {
+      type: Object,
+      default: function() { return {}; }
+    },
+  },
   data() {
     return {
+      isMobileDevice: false,
       favoriteApplicationsList: [],
       loading: true,
       canAddFavorite: false,
     };
   },
   created() {
+    this.isMobileDevice = this.detectMobile();
     this.getFavoriteApplicationsList();
   },
   methods: {
+    detectMobile() {
+      const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+      ];
+
+      return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+      });
+    },
     getFavoriteApplicationsList() {
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
@@ -108,9 +133,16 @@ export default {
         })
         .then(data => {
           this.canAddFavorite = data.canAddFavorite;
-          const allApplications = data && data.applications || [];
-          const mandatoryApps = allApplications.filter(app => app.byDefault && !app.favorite);
-          const favoriteApps = allApplications.filter(app => app.favorite && !app.byDefault);
+          const allApplications = [];
+          if (data) {
+            if (this.isMobileDevice) {
+              allApplications.push(...data.applications.filter(app => app.mobile));
+            } else {
+              allApplications.push(...data.applications);
+            }
+          }
+          const mandatoryApps = allApplications.filter(app => app.mandatory && !app.favorite);
+          const favoriteApps = allApplications.filter(app => app.favorite && !app.mandatory);
           mandatoryApps.sort((a, b) => {
             if (a.title < b.title) {
               return -1;
@@ -162,7 +194,7 @@ export default {
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
         });
-    }
+    },
   }
 };
 </script>
