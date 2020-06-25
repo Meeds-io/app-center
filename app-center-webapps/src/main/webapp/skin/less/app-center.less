@@ -472,8 +472,70 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   }
   
   .listApplications {
-    .text-md-center {
+    .addApplicationBtn {
+      background-color: @primaryColor!important;
+      color: @baseBackgroundDefault;
+    }
+    .appSearch {
+      .v-input__prepend-inner {
+        margin-top: 6px!important;
+      }
+      .v-text-field {
+        padding-top: 0!important;
+        margin-top: 0!important;
+        color: @primaryColorDefault;
+      }
+      .v-text-field__slot {
+        height: 58px!important;
+        &:focus {
+          outline: none!important;
+        }
+        input {
+          margin-top: 6px;
+        }
+      }
+      .v-input__slot {
+        height: 36px!important;
+      }
+      input:focus {
+        box-shadow: none;
+      }
+      i {
+        font-size: 24px;
+      }
+    }
+    .appUrl {
+      max-width: 250px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;      
+    }
+    .tableAppDescription {
+      max-width: 270px;
       word-break: break-word;
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+    .tableAppPermissions {
+      max-width: 170px;
+      max-height: 60px;
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-box-orient: vertical;
+      
+      .permission {
+        max-width: 140px;
+        word-break: break-word;
+        white-space: nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+    }
+    .text-md-center {
       .actionsBtn {
         color: @primaryColor;
       }
@@ -1251,6 +1313,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             transition: all .3s;
           }
           .appLauncherTitle {
+            max-width: 100px;
+            word-break: break-word;
             display: -webkit-box;
             text-align: center;
             color: @textColorDefault;

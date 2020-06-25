@@ -16,30 +16,32 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="listApplications">
-    <div class="applicationListHeader">
-      <a
-        class="actionIcon addApplicationButton tooltipContent"
-        data-placement="bottom"
-        data-container="body"
-        @click.stop="showAddApplicationDrawer"
-      >
-        <i class="uiIconPlus uiIconLightGray"></i>
-        <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
-        <span class="tooltiptext">{{
-          $t("appCenter.adminSetupForm.addNewApp")
-        }}</span>
-      </a>
-      <input
-        v-model="search"
-        :placeholder="$t('appCenter.adminSetupList.search')"
-        type="text"
-      >
-    </div>
+    <v-row>
+      <v-col cols="3">
+        <v-btn class="addApplicationBtn" depressed @click="showAddApplicationDrawer">
+          <v-icon left>
+            mdi-plus
+          </v-icon>
+          {{ $t("appCenter.adminSetupForm.addNewApp") }}
+        </v-btn>
+      </v-col>
+      <v-spacer></v-spacer>
+      <v-col class="appSearch pb-5" cols="3">
+        <v-text-field
+          v-model="searchText"
+          :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
+          prepend-inner-icon="mdi-filter"
+          hide-details
+        ></v-text-field>
+      </v-col>
+    </v-row>
     <v-divider></v-divider>
     <v-data-table
       :headers="headers"
       :items="applicationsList"
-      :search="search"
+      :footer-props="{
+        itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
+      }"
       disable-sort
     >
       <template slot="item" slot-scope="props">
@@ -52,20 +54,35 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <td class="text-md-center">
             {{ props.item.title }}
           </td>
-          <td class="text-md-center">
+          <td 
+            v-exo-tooltip.bottom.body="props.item.url.length > 39 ? props.item.url : ''"
+            class="text-md-center appUrl"
+          >
             {{ props.item.url }}
           </td>
-          <td class="text-md-center">
-            {{ props.item.description }}
+          <td
+            v-exo-tooltip.bottom.body="props.item.description.length > 79 ? props.item.description : ''"
+            class="text-md-center"
+          >
+            <div class="tableAppDescription">
+              {{ props.item.description }}              
+            </div>
           </td>
           <td class="text-md-center">
-            <h5
-              v-for="permission in props.item.permissions"
-              :key="permission"
+            <div
+              v-exo-tooltip.bottom.body="props.item.permissions.length > 3 ? props.item.permissions : ''" 
+              class="tableAppPermissions"
             >
-              <span v-if="permission==='any'">*</span>
-              <span v-else> {{ permission }}</span>
-            </h5>
+              <div
+                v-for="permission in props.item.permissions"
+                :key="permission"
+                v-exo-tooltip.bottom.body="permission.length > 22 && props.item.permissions.length <= 3 ? permission : ''"
+                class="permission"
+              >
+                <span v-if="permission==='any'">*</span>
+                <span v-else> {{ permission }}</span>
+              </div>
+            </div>
           </td>
           <td class="text-md-center">
             <v-row justify="center">
@@ -79,7 +96,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </td>
           <td class="text-md-center">
             <v-row justify="center">
-              <v-switch v-model="props.item.mobile" @change="updateOption(props.item)"></v-switch>
+              <v-switch 
+                v-model="props.item.mobile"
+                v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.switch.mobile.tooltip')"
+                @change="updateOption(props.item)"
+              ></v-switch>
             </v-row>
           </td>
           <td class="text-md-center">
@@ -164,24 +185,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 export default {
   name: 'AdminSetup',
-  props: {
-    pageSize: {
-      type: Number,
-      default: 10,
-    },
-  },
   data() {
     return {
       headers: [
-        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.permissions')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.mandatory')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.active')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.mobile')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupList.actions')}`, align: 'center', filterable: false },
+        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.permissions')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mandatory')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.active')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mobile')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.actions')}`, align: 'center' },
       ],
       defaultAppImage: {
         fileBody: '',
@@ -189,7 +204,9 @@ export default {
         invalidSize: false,
         invalidImage: false
       },
-      search: '',
+      searchText: '',
+      searchApp: '',
+      searchDelay: 300,
       applicationsList: [],
       formArray: {
         id: 0,
@@ -210,15 +227,23 @@ export default {
         invalidImage: false
       },
       error: '',
-      showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
-      totalApplications: 0,
-      totalPages: 0,
-      groups: [],
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
     };
+  },
+  watch: {
+    searchText() {
+      if (this.searchText && this.searchText.trim().length) {
+        clearTimeout(this.searchApp);
+        this.searchApp = setTimeout(() => {
+          this.getApplicationsList();
+        }, this.searchDelay);
+      } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
+        this.getApplicationsList();
+      }
+    }
   },
 
   created() {
@@ -234,7 +259,8 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${''}`, {
+      const limit = 0;
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -249,8 +275,6 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          this.totalApplications = this.applicationsList.size;
-          this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
           data.applications.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -297,7 +321,6 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
-      this.showAddOrEditApplicationModal = false;
     },
 
     showAddApplicationDrawer() {
