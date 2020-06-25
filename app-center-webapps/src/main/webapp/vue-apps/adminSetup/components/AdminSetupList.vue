@@ -16,30 +16,29 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="listApplications">
-    <div class="applicationListHeader">
-      <a
-        class="actionIcon addApplicationButton tooltipContent"
-        data-placement="bottom"
-        data-container="body"
-        @click.stop="showAddApplicationDrawer"
-      >
-        <i class="uiIconPlus uiIconLightGray"></i>
-        <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
-        <span class="tooltiptext">{{
-          $t("appCenter.adminSetupForm.addNewApp")
-        }}</span>
-      </a>
-      <input
-        v-model="search"
-        :placeholder="$t('appCenter.adminSetupList.search')"
-        type="text"
-      >
-    </div>
+    <v-row>
+      <v-col cols="3">
+        <v-btn class="addApplicationBtn" depressed @click="showAddApplicationDrawer">
+          <v-icon left>
+            mdi-plus
+          </v-icon>
+          {{ $t("appCenter.adminSetupForm.addNewApp") }}
+        </v-btn>
+      </v-col>
+      <v-spacer></v-spacer>
+      <v-col class="appSearch pb-5" cols="3">
+        <v-text-field
+          v-model="searchText"
+          :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
+          prepend-inner-icon="mdi-filter"
+          hide-details
+        ></v-text-field>
+      </v-col>
+    </v-row>
     <v-divider></v-divider>
     <v-data-table
       :headers="headers"
       :items="applicationsList"
-      :search="search"
       disable-sort
     >
       <template slot="item" slot-scope="props">
@@ -189,7 +188,9 @@ export default {
         invalidSize: false,
         invalidImage: false
       },
-      search: '',
+      searchText: '',
+      searchApp: '',
+      searchDelay: 300,
       applicationsList: [],
       formArray: {
         id: 0,
@@ -220,6 +221,18 @@ export default {
       appPermissions: [],
     };
   },
+  watch: {
+    searchText() {
+      if (this.searchText && this.searchText.trim().length) {
+        clearTimeout(this.searchApp);
+        this.searchApp = setTimeout(() => {
+          this.getApplicationsList();
+        }, this.searchDelay);
+      } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
+        this.getApplicationsList();
+      }
+    }
+  },
 
   created() {
     this.getApplicationsList();
@@ -234,7 +247,7 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${''}`, {
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
