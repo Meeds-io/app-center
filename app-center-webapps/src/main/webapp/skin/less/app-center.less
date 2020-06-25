@@ -472,11 +472,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   }
   
   .listApplications {
-    .fade-enter-active, .fade-leave-active {
-      transition: opacity 0.5s ease-out;
+    .text-md-center {
+      word-break: break-word;
     }
-    .fade-enter, .fade-leave-to {
-      opacity: 0;
+    .text-center {
+      span {
+        color: @darkGrey;
+        font-size: 0.9rem;
+      }
+    }
+    img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      overflow: hidden;
     }
   }
 }
