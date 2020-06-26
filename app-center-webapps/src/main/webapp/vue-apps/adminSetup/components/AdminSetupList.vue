@@ -163,12 +163,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 export default {
   name: 'AdminSetup',
-  props: {
-    pageSize: {
-      type: Number,
-      default: 10,
-    },
-  },
   data() {
     return {
       headers: [
@@ -211,11 +205,7 @@ export default {
         invalidImage: false
       },
       error: '',
-      showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
-      totalApplications: 0,
-      totalPages: 0,
-      groups: [],
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
@@ -247,7 +237,8 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.searchText}`, {
+      const limit = 0;
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -262,8 +253,6 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          this.totalApplications = this.applicationsList.size;
-          this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
           data.applications.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -310,7 +299,6 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
-      this.showAddOrEditApplicationModal = false;
     },
 
     showAddApplicationDrawer() {
