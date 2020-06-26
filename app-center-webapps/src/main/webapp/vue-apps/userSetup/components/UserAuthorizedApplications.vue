@@ -184,7 +184,7 @@ export default {
           this.searchAuthorizedApplicationsList();
         }, this.searchDelay);
       } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
-        this.searchAuthorizedApplicationsList();
+        this.getAuthorizedApplicationsList(false, true);
       }
     }
   },
@@ -209,7 +209,12 @@ export default {
         return navigator.userAgent.match(toMatchItem);
       });
     },
-    getAuthorizedApplicationsList(searchMode) {
+    getAuthorizedApplicationsList(searchMode, back) {
+      if (back) {
+        this.authorizedApplicationsList = [];
+        // init offset
+        this.offset = 0;
+      }
       this.loadingApplications = true;
       let offset = this.offset;
       let limit = this.pageSize;
