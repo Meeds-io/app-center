@@ -58,7 +58,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             {{ props.item.url }}
           </td>
           <td
-            v-exo-tooltip.bottom.body="props.item.description.length > 64 ? props.item.description : ''"
+            v-exo-tooltip.bottom.body="props.item.description.length > 79 ? props.item.description : ''"
             class="text-md-center"
           >
             <div class="tableAppDescription">
@@ -66,13 +66,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </td>
           <td class="text-md-center">
-            <h5
-              v-for="permission in props.item.permissions"
-              :key="permission"
+            <div
+              v-exo-tooltip.bottom.body="props.item.permissions.length > 3 ? props.item.permissions : ''" 
+              class="tableAppPermissions"
             >
-              <span v-if="permission==='any'">*</span>
-              <span v-else> {{ permission }}</span>
-            </h5>
+              <div
+                v-for="permission in props.item.permissions"
+                :key="permission"
+                v-exo-tooltip.bottom.body="permission.length > 22 && props.item.permissions.length <= 3 ? permission : ''"
+                class="permission"
+              >
+                <span v-if="permission==='any'">*</span>
+                <span v-else> {{ permission }}</span>
+              </div>
+            </div>
           </td>
           <td class="text-md-center">
             <v-row justify="center">
