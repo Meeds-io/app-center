@@ -187,6 +187,16 @@ export default {
   name: 'AdminSetup',
   data() {
     return {
+      systemAppNames: [
+        'Agenda',
+        'Drives',
+        'Forum',
+        'News',
+        'Notes',
+        'Tasks',
+        'Wallet',
+        'Wiki',
+      ],
       headers: [
         { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
         { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
@@ -275,6 +285,14 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (this.systemAppNames.includes(app.title)) {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
+            } else if (app.title === 'Perk store') {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            }
+          });
           data.applications.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -417,6 +435,9 @@ export default {
           }
         });      
     },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
+    }
   }
 };
 </script>
