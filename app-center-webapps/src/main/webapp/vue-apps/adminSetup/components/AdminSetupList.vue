@@ -39,6 +39,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <v-data-table
       :headers="headers"
       :items="applicationsList"
+      :footer-props="{
+        itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
+      }"
       disable-sort
     >
       <template slot="item" slot-scope="props">
@@ -93,7 +96,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </td>
           <td class="text-md-center">
             <v-row justify="center">
-              <v-switch v-model="props.item.mobile" @change="updateOption(props.item)"></v-switch>
+              <v-switch 
+                v-model="props.item.mobile"
+                v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.switch.mobile.tooltip')"
+                @change="updateOption(props.item)"
+              ></v-switch>
             </v-row>
           </td>
           <td class="text-md-center">
@@ -181,15 +188,15 @@ export default {
   data() {
     return {
       headers: [
-        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.permissions')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.mandatory')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.active')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupForm.mobile')}`, align: 'center', filterable: false },
-        { text: `${this.$t('appCenter.adminSetupList.actions')}`, align: 'center', filterable: false },
+        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.permissions')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mandatory')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.active')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mobile')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.actions')}`, align: 'center' },
       ],
       defaultAppImage: {
         fileBody: '',
