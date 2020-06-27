@@ -357,7 +357,7 @@ export default {
           } else {
             this.error = this.$t('appCenter.adminSetupForm.error');
           }
-        });
+        }).finally(() => this.permissions = []);
     },
     submitForm() {
       if (this.$refs.image && this.$refs.image.files.length > 0) {

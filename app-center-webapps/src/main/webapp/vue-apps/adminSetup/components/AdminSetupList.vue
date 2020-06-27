@@ -299,9 +299,7 @@ export default {
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
 
-          // A trick to force retrieving img URL again to update illustration
-          const REFRESH_TIMEOUT=20;
-          window.setTimeout(() => this.applicationsList = data.applications, REFRESH_TIMEOUT);
+          this.applicationsList = data.applications;
         });
     },
 
