@@ -138,6 +138,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     
     <exo-app-center-drawer
+      :key="applicationDrawerKey"
       :applications-drawer="openAppDrawer"
       :form-array="formArray"
       :app-permissions="appPermissions"
@@ -152,28 +153,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <transition name="fade">
       <exo-app-center-modal
         v-show="showDeleteApplicationModal"
-        :title="$t('appCenter.adminSetupForm.DeleteApp')"
-        @modal-closed="closeDeleteModal()"
+        :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+        @modal-closed="closeDeleteModal"
       >
-        <div class="deleteApplication">
-          <h3>
-            {{ $t("appCenter.adminSetupForm.confirmDelete", {0: formArray.title}) }}
-          </h3>
-          <div class="form-group application-buttons pt-2">
-            <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
-              <i class="uiTrashIcon"></i>
-              {{ $t("appCenter.adminSetupForm.delete") }}
-            </button>
-            <button
-              class="ignore-vuetify-classes btn form-reset"
-              @click.stop="showDeleteApplicationModal = false"
-            >
-              <i class="uiCloseIcon"></i>
-              {{ $t("appCenter.adminSetupForm.cancel") }}
-            </button>
+        <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
+        <div class="uiAction uiActionBorder">
+          <div class="btn" @click="closeDeleteModal">
+            {{ $t("appCenter.adminSetupForm.cancel") }}
           </div>
-          <div v-if="error != ''" class="error">
-            <span>{{ error }}</span>
+          <div id="deleteBtn" class="btn btn-primary" @click="deleteApplication">
+            {{ $t("appCenter.adminSetupForm.modal.delete") }}
           </div>
         </div>
       </exo-app-center-modal>
@@ -187,6 +176,16 @@ export default {
   name: 'AdminSetup',
   data() {
     return {
+      systemAppNames: [
+        'Agenda',
+        'Drives',
+        'Forum',
+        'News',
+        'Notes',
+        'Tasks',
+        'Wallet',
+        'Wiki',
+      ],
       headers: [
         { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
         { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
@@ -231,6 +230,7 @@ export default {
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
+      applicationDrawerKey: 0,
     };
   },
   watch: {
@@ -250,8 +250,8 @@ export default {
     this.getApplicationsList();
     this.getAppGeneralSettings();
     $(document).on('keydown', (event) => {
-      if (event.key === 'Escape' && this && this.closeModals) {
-        this.closeModals();
+      if (event.key === 'Escape' && this && this.closeDeleteModal) {
+        this.closeDeleteModal();
       }
     });
   },
@@ -275,15 +275,21 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (this.systemAppNames.includes(app.title)) {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
+            } else if (app.title === 'Perk store') {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            }
+          });
           data.applications.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
 
-          // A trick to force retrieving img URL again to update illustration
-          const REFRESH_TIMEOUT=20;
-          window.setTimeout(() => this.applicationsList = data.applications, REFRESH_TIMEOUT);
+          this.applicationsList = data.applications;
         });
     },
 
@@ -321,16 +327,19 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      this.forceRerender();
     },
 
     showAddApplicationDrawer() {
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = true;
       this.formArray.viewMode = true;
     },
 
     showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = false;
       Object.assign(this.formArray, item);
       this.appPermissions = [];
@@ -350,24 +359,21 @@ export default {
       this.formArray.title = item.title;
     },
 
-    closeModals() {
-      this.closeDeleteModal();
+    closeDeleteModal() {
+      this.showDeleteApplicationModal = false;
       this.resetForm();
     },
 
-    closeDeleteModal() {
-      this.formArray.id = '';
-      this.formArray.title = '';
-      this.showDeleteApplicationModal = false;
-    },
     validUrl(app) {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     closeDrawer() {
-      this.resetForm();
       this.openAppDrawer = false;
+      this.resetForm();
     },
+
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
         method: 'GET',
@@ -384,6 +390,7 @@ export default {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
     },
+
     updateOption(application) {
       return fetch('/portal/rest/app-center/applications', {
         credentials: 'include',
@@ -416,6 +423,15 @@ export default {
             this.error = this.$t('appCenter.adminSetupForm.error');
           }
         });      
+    },
+
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
+    },
+
+    forceRerender() {
+      this.applicationDrawerKey += 1;
+      $('body').removeClass('hide-scroll');
     },
   }
 };
