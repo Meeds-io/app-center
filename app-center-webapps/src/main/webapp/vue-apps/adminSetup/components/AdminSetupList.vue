@@ -138,6 +138,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     
     <exo-app-center-drawer
+      :key="applicationDrawerKey"
       :applications-drawer="openAppDrawer"
       :form-array="formArray"
       :app-permissions="appPermissions"
@@ -241,6 +242,7 @@ export default {
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
+      applicationDrawerKey: 0,
     };
   },
   watch: {
@@ -299,9 +301,7 @@ export default {
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
 
-          // A trick to force retrieving img URL again to update illustration
-          const REFRESH_TIMEOUT=20;
-          window.setTimeout(() => this.applicationsList = data.applications, REFRESH_TIMEOUT);
+          this.applicationsList = data.applications;
         });
     },
 
@@ -339,6 +339,7 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      this.forceRerender();
     },
 
     showAddApplicationDrawer() {
@@ -383,8 +384,8 @@ export default {
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
     closeDrawer() {
-      this.resetForm();
       this.openAppDrawer = false;
+      this.resetForm();
     },
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
@@ -437,7 +438,10 @@ export default {
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
-    }
+    },
+    forceRerender() {
+      this.applicationDrawerKey += 1;
+    },
   }
 };
 </script>
