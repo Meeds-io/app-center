@@ -16,157 +16,171 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="listApplications">
-    <v-row>
-      <v-col cols="3">
-        <v-btn class="addApplicationBtn" depressed @click="showAddApplicationDrawer">
-          <v-icon left>
-            mdi-plus
-          </v-icon>
-          {{ $t("appCenter.adminSetupForm.addNewApp") }}
-        </v-btn>
-      </v-col>
-      <v-spacer></v-spacer>
-      <v-col class="appSearch pb-5" cols="3">
-        <v-text-field
-          v-model="searchText"
-          :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
-          prepend-inner-icon="mdi-filter"
-          hide-details
-        ></v-text-field>
-      </v-col>
-    </v-row>
-    <v-divider></v-divider>
-    <v-data-table
-      :headers="headers"
-      :items="applicationsList"
-      :footer-props="{
-        itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
-      }"
-      disable-sort
-    >
-      <template slot="item" slot-scope="props">
-        <tr>
-          <td class="text-md-start">
-            <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
-            <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
-            <img v-else src="/app-center/skin/images/defaultApp.png" />
-          </td>
-          <td class="text-md-center">
-            {{ props.item.title }}
-          </td>
-          <td 
-            v-exo-tooltip.bottom.body="props.item.url.length > 39 ? props.item.url : ''"
-            class="text-md-center appUrl"
-          >
-            {{ props.item.url }}
-          </td>
-          <td
-            v-exo-tooltip.bottom.body="props.item.description.length > 79 ? props.item.description : ''"
-            class="text-md-center"
-          >
-            <div class="tableAppDescription">
-              {{ props.item.description }}              
-            </div>
-          </td>
-          <td class="text-md-center">
-            <div
-              v-exo-tooltip.bottom.body="props.item.permissions.length > 3 ? props.item.permissions : ''" 
-              class="tableAppPermissions"
-            >
-              <div
-                v-for="permission in props.item.permissions"
-                :key="permission"
-                v-exo-tooltip.bottom.body="permission.length > 22 && props.item.permissions.length <= 3 ? permission : ''"
-                class="permission"
-              >
-                <span v-if="permission==='any'">*</span>
-                <span v-else> {{ permission }}</span>
-              </div>
-            </div>
-          </td>
-          <td class="text-md-center">
-            <v-row justify="center">
-              <v-switch v-model="props.item.mandatory" @change="updateOption(props.item)"></v-switch>              
-            </v-row>
-          </td>
-          <td class="text-md-center">
-            <v-row justify="center">
-              <v-switch v-model="props.item.active" @change="updateOption(props.item)"></v-switch>
-            </v-row>
-          </td>
-          <td class="text-md-center">
-            <v-row justify="center">
-              <v-switch 
-                v-model="props.item.mobile"
-                v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.switch.mobile.tooltip')"
-                @change="updateOption(props.item)"
-              ></v-switch>
-            </v-row>
-          </td>
-          <td class="text-md-center">
-            <v-row justify="center">
-              <v-btn
-                icon
-                class="actionsBtn"
-                @click="showEditApplicationDrawer(props.item)"
-              >
-                <v-icon
-                  medium
-                >
-                  mdi-pencil
-                </v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                class="actionsBtn"
-                @click="toDeleteApplicationModal(props.item)"
-              >
-                <v-icon
-                  medium
-                >
-                  mdi-delete
-                </v-icon>
-              </v-btn>
-            </v-row>
-          </td>
-        </tr>
-      </template>
-    </v-data-table>
-
-    <div v-if="!applicationsList.length" class="noApp">
-      {{ $t("appCenter.adminSetupForm.noApp") }}
-    </div>
-    
-    <exo-app-center-drawer
-      :key="applicationDrawerKey"
-      :applications-drawer="openAppDrawer"
-      :form-array="formArray"
-      :app-permissions="appPermissions"
-      @initApps="getApplicationsList"
-      @resetForm="closeDrawer"
-      @closeDrawer="closeDrawer"
-    >
-      <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
-      <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
-    </exo-app-center-drawer>
-
-    <transition name="fade">
-      <exo-app-center-modal
-        v-show="showDeleteApplicationModal"
-        :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
-        @modal-closed="closeDeleteModal"
+    <div v-if="loading">
+      <v-skeleton-loader
+        class="mx-auto"
+        type="table-heading,table-tbody"
       >
-        <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
-        <div class="uiAction uiActionBorder">
-          <div class="btn" @click="closeDeleteModal">
-            {{ $t("appCenter.adminSetupForm.cancel") }}
+      </v-skeleton-loader>
+    </div>
+    <div v-else>
+      <v-row>
+        <v-col cols="3">
+          <v-btn class="addApplicationBtn" depressed @click="showAddApplicationDrawer">
+            <v-icon left>
+              mdi-plus
+            </v-icon>
+            {{ $t("appCenter.adminSetupForm.addNewApp") }}
+          </v-btn>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col class="appSearch pb-5" cols="3">
+          <v-text-field
+            v-model="searchText"
+            :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
+            prepend-inner-icon="mdi-filter"
+            hide-details
+          ></v-text-field>
+        </v-col>
+      </v-row>
+      <v-divider></v-divider>
+      <v-data-table
+        :headers="headers"
+        :items="applicationsList"
+        :footer-props="{
+          itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
+        }"
+        disable-sort
+      >
+        <template slot="item" slot-scope="props">
+          <tr>
+            <td class="text-md-start">
+              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
+              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
+              <img v-else src="/app-center/skin/images/defaultApp.png" />
+            </td>
+            <td
+              v-exo-tooltip.bottom.body="props.item.title.length > 22 ? props.item.title : ''"
+              class="text-md-center tableAppTitle"
+            >
+              {{ props.item.title }}
+            </td>
+            <td 
+              v-exo-tooltip.bottom.body="props.item.url.length > 23 ? props.item.url : ''"
+              class="text-md-center appUrl"
+            >
+              {{ props.item.url }}
+            </td>
+            <td
+              v-exo-tooltip.bottom.body="props.item.description.length > 91 ? props.item.description : ''"
+              class="text-md-center"
+            >
+              <div class="tableAppDescription">
+                {{ props.item.description }}              
+              </div>
+            </td>
+            <td class="text-md-center">
+              <div
+                v-exo-tooltip.bottom.body="props.item.permissions.length > 3 ? props.item.permissions : ''" 
+                class="tableAppPermissions"
+              >
+                <div
+                  v-for="permission in props.item.permissions"
+                  :key="permission"
+                  v-exo-tooltip.bottom.body="permission.length > 23 && props.item.permissions.length <= 3 ? permission : ''"
+                  class="permission"
+                >
+                  <span v-if="permission==='any'">*</span>
+                  <span v-else> {{ permission }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch v-model="props.item.mandatory" @change="updateOption(props.item)"></v-switch>              
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch v-model="props.item.active" @change="updateOption(props.item)"></v-switch>
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch 
+                  v-model="props.item.mobile"
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.switch.mobile.tooltip')"
+                  @change="updateOption(props.item)"
+                ></v-switch>
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-btn
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.editApp.tooltip')"
+                  icon
+                  class="actionsBtn"
+                  @click="showEditApplicationDrawer(props.item)"
+                >
+                  <v-icon
+                    medium
+                  >
+                    mdi-pencil
+                  </v-icon>
+                </v-btn>
+                <v-btn
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.deleteApp.tooltip')"
+                  icon
+                  class="actionsBtn"
+                  @click="toDeleteApplicationModal(props.item)"
+                >
+                  <v-icon
+                    medium
+                  >
+                    mdi-delete
+                  </v-icon>
+                </v-btn>
+              </v-row>
+            </td>
+          </tr>
+        </template>
+      </v-data-table>
+  
+      <div v-if="!applicationsList.length" class="noApp">
+        {{ $t("appCenter.adminSetupForm.noApp") }}
+      </div>
+      
+      <exo-app-center-drawer
+        :key="applicationDrawerKey"
+        :applications-drawer="openAppDrawer"
+        :form-array="formArray"
+        :app-permissions="appPermissions"
+        @initApps="getApplicationsList"
+        @resetForm="closeDrawer"
+        @closeDrawer="closeDrawer"
+      >
+        <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
+        <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
+      </exo-app-center-drawer>
+  
+      <transition name="fade">
+        <exo-app-center-modal
+          v-show="showDeleteApplicationModal"
+          :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+          @modal-closed="closeDeleteModal"
+        >
+          <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
+          <div class="uiAction uiActionBorder">
+            <div class="btn" @click="closeDeleteModal">
+              {{ $t("appCenter.adminSetupForm.cancel") }}
+            </div>
+            <div id="deleteBtn" class="btn btn-primary" @click="deleteApplication">
+              {{ $t("appCenter.adminSetupForm.modal.delete") }}
+            </div>
           </div>
-          <div id="deleteBtn" class="btn btn-primary" @click="deleteApplication">
-            {{ $t("appCenter.adminSetupForm.modal.delete") }}
-          </div>
-        </div>
-      </exo-app-center-modal>
-    </transition>
+        </exo-app-center-modal>
+      </transition>
+    </div>
   </div>
 </template>
 
@@ -176,6 +190,7 @@ export default {
   name: 'AdminSetup',
   data() {
     return {
+      loading: true,
       systemAppNames: [
         'Agenda',
         'Drives',
@@ -290,7 +305,7 @@ export default {
           });
 
           this.applicationsList = data.applications;
-        });
+        }).finally(() => this.loading = false);
     },
 
     deleteApplication() {

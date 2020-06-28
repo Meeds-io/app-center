@@ -155,7 +155,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="appDescription"
             name="description"
             rows="20"
-            maxlength="2000"
+            counter="1000"
+            :rules="rules"
             :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
             no-resize
           >
@@ -233,6 +234,7 @@ export default {
     },
   },
   data() {
+    const maxDescriptionSize = 1000;
     const component = this;
     return {
       isAppMandatory: false,
@@ -255,12 +257,14 @@ export default {
         sortField: [{field: 'order'}, {field: '$score'}],
       },
       permissions: [],
+      rules: [v => v.length <= maxDescriptionSize],
     };
   },
   computed: {
     canSaveApplication() {
+      const maxDescriptionSize = 1000;
       return this.formArray.title && this.formArray.title !== '' && !this.formArray.invalidSize && !this.formArray.invalidImage &&
-        this.validUrl(this.formArray) && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
+        this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
   watch: {

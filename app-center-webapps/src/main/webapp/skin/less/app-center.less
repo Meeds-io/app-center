@@ -212,6 +212,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     width: 442px !important;
     height: 200px;
 
+    .v-list-item {
+      padding-right: 4px;
+      .v-list-item__action {
+        margin-top: 2px;
+      }
+    }
     #deleteBtn {
       font-weight: 200!important;
     }
@@ -226,238 +232,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       }
     }
     p {
-      padding: 0 12%;
-    }
-  }
-  .app-center-modal-mask {
-    top: 0;
-    left: 0;
-    z-index: 9999;
-    position: fixed;
-    overflow-y: scroll;
-
-    .app-center-modal-content {
-      width: 420px;
-      left: 35%;
-      top: 0;
-      .popupHeader .popupTitle {
-        color: #848484;
-        cursor: move;
-        display: block;
-        font-size: 14px;
-        font-weight: normal;
-        margin: 0;
-      }
-      .popupContent {
-        .addApplication .form-container.appCenter-form , .editApplication .form-container.appCenter-form {
-          .form-container.appCenter-form {
-            padding-bottom: 0!important;
-          }
-          .applicationTable {
-            textarea {
-              min-height: inherit!important;
-              height: 80px!important;
-              padding: 0 10px!important;
-            }
-            input[type="text"],
-            input[type="url"] {
-              border-bottom: 1px solid #cccccc;
-              border: none;
-              box-shadow: 0 0 5px 0px #e8e8e8;
-              margin-bottom: 15px;
-              height: 35px!important;
-            }
-            .file-listing {
-              display: block;
-              margin: 15px 0 !important;
-              overflow: hidden;
-              position: relative;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              width: 260px;
-            }
-            span.remove-file {
-              background: @baseBackgroundDefault;
-              color: red;
-              position: absolute;
-              right: 0;
-              top: -4px;
-            }
-            td {
-              vertical-align: top;
-            }
-            td .errorInput {
-              color: red;
-              text-align: right;
-              padding-right: 30px;
-              margin-top: -10px;
-              font-size: 11px;
-              font-style: italic;
-            }
-            td .sizeInfo {
-              color: #b3b3b3;
-              font-size: 11px;
-              font-style: italic;
-            }
-            td .sizeInfo.error {
-              color: red;
-            }
-            .requiredInput {
-              color: #333333;
-              padding: 0 10px;
-            }
-            .uploadImage {
-              height: 60px;
-            }
-            .uploadImage .custom-file-upload {
-              background: @primaryColor;
-              border-radius: 5px;
-              border: 1px solid @primaryColor;
-              color: @baseBackgroundDefault;
-              padding: 5px 6px;
-              transition: 0.5s all;
-            }
-            .uploadImage .custom-file-upload:hover {
-              background: @baseBackgroundDefault !important;
-              color: @primaryColor;
-              transition: 0.5s all;
-            }
-            td:nth-child(2) {
-              display: block;
-            }
-            .editImage {
-              width: 40px;
-            }
-            .selectize-control .selectize-input {
-              height: auto;
-              max-height: unset;
-            }
-          }
-          .application-checkbox {
-            height: 40px;
-            label {
-              -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
-              -moz-transition: background 0.3s, text-indent 0.3s;
-              -o-transition: background 0.3s, text-indent 0.3s;
-              -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
-              -webkit-transition: background 0.3s, text-indent 0.3s;
-              background: #e8e8e8;
-              border-radius: 25px;
-              box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4) inset;
-              color: @baseBackgroundDefault;
-              cursor: pointer;
-              font-weight: bold;
-              height: 20px;
-              left: 0px;
-              position: absolute;
-              text-indent: 27px;
-              top: 0px;
-              transition: background 0.3s, text-indent 0.3s;
-              width: 60px;
-              &:after {
-                color: #7b7b7b;
-                content: "No";
-                display: block;
-                font-size: 12px;
-                left: 0px;
-                position: absolute;
-                top: 0px;
-                width: 100%;
-                z-index: 1;
-              }
-              &:before {
-                -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
-                -moz-transition: left 0.3s;
-                -o-transition: left 0.3s;
-                -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
-                -webkit-transition: left 0.3s;
-                background: #7b7b7b;
-                border-radius: 25px;
-                box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
-                content: "";
-                display: block;
-                height: 18px;
-                left: 1px;
-                position: absolute;
-                top: 1px;
-                transition: left 0.3s;
-                width: 18px;
-                z-index: 2;
-              }
-            }
-            input {
-              visibility: hidden;
-              &:checked {
-                background: @primaryColor !important;
-                text-indent: 8px;
-                 + label {
-                  background: @primaryColorLight;
-                  &:after {
-                    color: @baseBackgroundDefault;
-                    content: "Yes";
-                    left: -16px;
-                  }
-                  &:before {
-                    background: #e3d8e6;
-                    left: 41px;
-                  }
-                }
-              }
-            }
-            td:nth-child(2) {
-              position: relative;
-            }
-          }
-        }
-        .application-buttons {
-          text-align: center;
-        }
-      }
-      .requiredField {
-        text-align: right;
-        font-size: 11px;
-        padding-top: 10px;
-        color: red;
-      }
-      .deleteApplication {
-        text-align: center;
-      }
-      .deleteApplication h3 {
-        font-size: 18px;
-      }
-      .deleteApplication h3 span {
-        color: red;
-        font-weight: bold;
-      }
-      .deleteApplication .application-buttons {
-        text-align: center;
-      }
-      .deleteApplication .application-buttons .form-submit {
-        background: #e20000;
-        color: @baseBackgroundDefault;
-        padding: 5px 10px;
-        border: 1px solid #e20000;
-        border-radius: 5px;
-        transition: .5s all;
-      }
-      .deleteApplication .application-buttons .form-submit:hover {
-        background: transparent;
-        color: #e20000;
-        transition: .5s all;
-      }
-      .deleteApplication .application-buttons .form-reset {
-        background: #b9b9b9;
-        color: @baseBackgroundDefault;
-        padding: 5px 10px;
-        border: 1px solid #b9b9b9;
-        border-radius: 5px;
-        transition: .5s all;
-      }
-      .deleteApplication .application-buttons .form-reset:hover {
-        background: transparent;
-        color: #b9b9b9;
-        transition: .5s all;
-      }
+      padding: 0 13%;
+      text-align: center;
     }
   }
 
@@ -530,14 +306,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         font-size: 24px;
       }
     }
-    .appUrl {
-      max-width: 250px;
+    .tableAppTitle, .appUrl {
+      max-width: 160px;
       white-space: nowrap;
       overflow:hidden;
-      text-overflow:ellipsis;      
+      text-overflow:ellipsis;
     }
     .tableAppDescription {
-      max-width: 270px;
+      max-width: 200px;
       word-break: break-word;
       display: -webkit-box;
       overflow: hidden;
@@ -1269,6 +1045,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           .v-icon {
             color: @greyColorLighten1Default;
           }
+        }
+        .error {
+          background-color: @baseBackgroundDefault!important;
+          color: @errorColor!important;
         }
       }
       .mandatoryLabel {
