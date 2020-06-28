@@ -98,7 +98,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   @GET
   @Path(APPLICATIONS_ENDPOINT)
   @Produces(MediaType.APPLICATION_JSON)
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Retrieves all available applications", httpMethod = "GET", response = Response.class, produces = "application/json", notes = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
       @ApiResponse(code = 500, message = "Internal server error") })
@@ -217,7 +217,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   @POST
   @Path(APPLICATIONS_ENDPOINT)
   @Consumes(MediaType.APPLICATION_JSON)
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Creates a new application in application center", httpMethod = "GET", response = Response.class, notes = "empty response")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
       @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
@@ -237,7 +237,7 @@ public class ApplicationCenterREST implements ResourceContainer {
 
   @PUT
   @Path(APPLICATIONS_ENDPOINT)
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Updates an existing application identified by its id or title or url", httpMethod = "GET", response = Response.class, notes = "empty response")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
       @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
@@ -260,7 +260,7 @@ public class ApplicationCenterREST implements ResourceContainer {
 
   @DELETE
   @Path(APPLICATIONS_ENDPOINT + "/{applicationId}")
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Deletes an existing application identified by its id", httpMethod = "GET", response = Response.class, notes = "empty response")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
       @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
@@ -343,7 +343,7 @@ public class ApplicationCenterREST implements ResourceContainer {
 
   @PATCH
   @Path(SETTINGS_ENDPOINT + "/maxFavorites")
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Modifies maximum application count to add as favorites for all users", httpMethod = "GET", response = Response.class, notes = "empty response")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
       @ApiResponse(code = 500, message = "Internal server error") })
@@ -360,7 +360,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   @PATCH
   @Path(SETTINGS_ENDPOINT + "/image")
   @Consumes(MediaType.APPLICATION_JSON)
-  @RolesAllowed("administrators")
+  @RolesAllowed({"administrators","professional"})
   @ApiOperation(value = "Modifies default application image setting", httpMethod = "GET", response = Response.class, notes = "empty response")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.NO_CONTENT, message = "Request fulfilled"),
       @ApiResponse(code = 500, message = "Internal server error") })
