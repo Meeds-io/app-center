@@ -266,7 +266,6 @@ export default {
   watch: {
     applicationsDrawer() {
       if (this.applicationsDrawer) {
-        $('body').addClass('hide-scroll');
         this.$nextTick().then(() => {
           $('#app .v-overlay').click(() => {
             this.permissions = [];

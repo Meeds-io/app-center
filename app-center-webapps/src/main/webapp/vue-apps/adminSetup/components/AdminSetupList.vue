@@ -153,28 +153,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <transition name="fade">
       <exo-app-center-modal
         v-show="showDeleteApplicationModal"
-        :title="$t('appCenter.adminSetupForm.DeleteApp')"
-        @modal-closed="closeDeleteModal()"
+        :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+        @modal-closed="closeDeleteModal"
       >
-        <div class="deleteApplication">
-          <h3>
-            {{ $t("appCenter.adminSetupForm.confirmDelete", {0: formArray.title}) }}
-          </h3>
-          <div class="form-group application-buttons pt-2">
-            <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
-              <i class="uiTrashIcon"></i>
-              {{ $t("appCenter.adminSetupForm.delete") }}
-            </button>
-            <button
-              class="ignore-vuetify-classes btn form-reset"
-              @click.stop="showDeleteApplicationModal = false"
-            >
-              <i class="uiCloseIcon"></i>
-              {{ $t("appCenter.adminSetupForm.cancel") }}
-            </button>
+        <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
+        <div class="uiAction uiActionBorder">
+          <div class="btn btn-primary" @click="deleteApplication">
+            {{ $t("appCenter.adminSetupForm.delete") }}
           </div>
-          <div v-if="error != ''" class="error">
-            <span>{{ error }}</span>
+          <div class="btn" @click="closeDeleteModal">
+            {{ $t("appCenter.adminSetupForm.cancel") }}
           </div>
         </div>
       </exo-app-center-modal>
@@ -262,8 +250,8 @@ export default {
     this.getApplicationsList();
     this.getAppGeneralSettings();
     $(document).on('keydown', (event) => {
-      if (event.key === 'Escape' && this && this.closeModals) {
-        this.closeModals();
+      if (event.key === 'Escape' && this && this.closeDeleteModal) {
+        this.closeDeleteModal();
       }
     });
   },
@@ -344,12 +332,14 @@ export default {
 
     showAddApplicationDrawer() {
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = true;
       this.formArray.viewMode = true;
     },
 
     showEditApplicationDrawer(item) {
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = false;
       Object.assign(this.formArray, item);
       this.appPermissions = [];
@@ -369,24 +359,21 @@ export default {
       this.formArray.title = item.title;
     },
 
-    closeModals() {
-      this.closeDeleteModal();
+    closeDeleteModal() {
+      this.showDeleteApplicationModal = false;
       this.resetForm();
     },
 
-    closeDeleteModal() {
-      this.formArray.id = '';
-      this.formArray.title = '';
-      this.showDeleteApplicationModal = false;
-    },
     validUrl(app) {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     closeDrawer() {
       this.openAppDrawer = false;
       this.resetForm();
     },
+
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
         method: 'GET',
@@ -403,6 +390,7 @@ export default {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
     },
+
     updateOption(application) {
       return fetch('/portal/rest/app-center/applications', {
         credentials: 'include',
@@ -436,11 +424,14 @@ export default {
           }
         });      
     },
+
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
     },
+
     forceRerender() {
       this.applicationDrawerKey += 1;
+      $('body').removeClass('hide-scroll');
     },
   }
 };
