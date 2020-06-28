@@ -294,10 +294,12 @@ export default {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     validHelpPageUrl(app) {
       const url = app && app.helpPageURL;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     handleFileUpload() {
       const MAX_FILE_SIZE = 100000;
       if (this.$refs.image.files.length > 0) {
@@ -311,6 +313,7 @@ export default {
         this.removeFile();
       }
     },
+
     removeFile() {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
@@ -322,6 +325,7 @@ export default {
         document.getElementById('imageFile').value = '';
       }
     },
+
     addOrEditApplication() {
       return fetch('/portal/rest/app-center/applications', {
         credentials: 'include',
@@ -356,8 +360,12 @@ export default {
           } else {
             this.error = this.$t('appCenter.adminSetupForm.error');
           }
-        }).finally(() => this.permissions = []);
+        }).finally(() => {
+          this.permissions = [];
+          this.$emit('closeDrawer');
+        });
     },
+
     submitForm() {
       if (this.$refs.image && this.$refs.image.files.length > 0) {
         this.formArray.imageFileName = this.$refs.image.files[0].name;
@@ -369,18 +377,18 @@ export default {
           }
           this.formArray.imageFileBody = e.target.result;
           this.addOrEditApplication();
-          this.$emit('closeDrawer');
         };
         reader.readAsDataURL(this.$refs.image.files[0]);
       } else {
         this.addOrEditApplication();
-        this.$emit('closeDrawer');
       }
     },
+
     resetForm() {
       this.permissions = [];
       this.$emit('resetForm');
     },
+
     findGroups (query, callback) {
       if (!query.length) {
         return callback();
@@ -400,9 +408,11 @@ export default {
         callback(groups);
       });
     },
+
     getGroups(query) {
       return fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' }).then(resp => resp.json());
     },
+
     renderMenuItem (item, escape) {
       return `
         <div class="item">*:${escape(item.value)}</div>
