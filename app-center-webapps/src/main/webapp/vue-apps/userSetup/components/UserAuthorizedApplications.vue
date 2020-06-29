@@ -168,7 +168,6 @@ export default {
         'Wiki',
       ],
       isMobileDevice: false,
-      isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
       applicationsListSize: null,
       pageSize: 12,
@@ -310,6 +309,7 @@ export default {
     },
     navigateTo(link) {
       window.open(link);
+
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
