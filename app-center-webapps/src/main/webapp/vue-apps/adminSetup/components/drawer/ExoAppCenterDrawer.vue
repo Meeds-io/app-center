@@ -228,6 +228,10 @@ export default {
       type: Array,
       default: () => []
     },
+    appToEditOriginalTitle: {
+      type: Object,
+      default: null
+    },
   },
   data() {
     const maxDescriptionSize = 1000;
@@ -420,7 +424,7 @@ export default {
     },
     
     appTitleExists() {
-      return this.existingAppNames.includes(this.formArray.title);
+      return this.formArray.title !== this.appToEditOriginalTitle && this.existingAppNames.includes(this.formArray.title);
     },
   },
 };
