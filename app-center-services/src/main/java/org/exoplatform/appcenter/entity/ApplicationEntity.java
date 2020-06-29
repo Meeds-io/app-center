@@ -29,8 +29,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @ExoEntity
 @Table(name = "AC_APPLICATION")
 @NamedQueries({
-    @NamedQuery(name = "ApplicationEntity.getAppByTitleOrUrl", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.title = :title OR app.url = :url"),
+    @NamedQuery(name = "ApplicationEntity.getAppByTitle", query = "SELECT app FROM ApplicationEntity app "
+        + "WHERE app.title = :title"),
     @NamedQuery(name = "ApplicationEntity.getApplicationsByKeyword", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.title like :title OR app.description like :description OR app.url like :url"),
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),

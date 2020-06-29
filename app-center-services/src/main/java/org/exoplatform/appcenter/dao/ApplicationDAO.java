@@ -58,17 +58,16 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
     return query.getResultList();
   }
 
-  public ApplicationEntity getApplicationByTitleOrUrl(String title, String url) {
+  public ApplicationEntity getApplicationByTitle(String title) {
     TypedQuery<ApplicationEntity> query = getEntityManager()
-                                                            .createNamedQuery("ApplicationEntity.getAppByTitleOrUrl",
+                                                            .createNamedQuery("ApplicationEntity.getAppByTitle",
                                                                               ApplicationEntity.class)
-                                                            .setParameter("title", title)
-                                                            .setParameter("url", url);
+                                                            .setParameter("title", title);
     List<ApplicationEntity> result = query.getResultList();
     if (result == null || result.isEmpty()) {
       return null;
     } else if (result.size() > 1) {
-      LOG.warn("More than one application was found with URL '{}' or Title '{}'", url, title);
+      LOG.warn("More than one application was found with Title '{}'", title);
       return result.get(0);
     } else {
       return result.get(0);
