@@ -45,9 +45,6 @@ public class ApplicationPlugin extends BaseComponentPlugin {
     if (params.containsKey("override")) {
       this.override = Boolean.parseBoolean(params.getValueParam("override").getValue());
     }
-    if (!params.containsKey("isMobile")) {
-      application.setIsMobile(true);
-    }
   }
 
   public Application getApplication() {
