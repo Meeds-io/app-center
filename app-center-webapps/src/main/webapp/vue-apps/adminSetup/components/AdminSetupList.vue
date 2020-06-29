@@ -156,6 +156,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :form-array="formArray"
         :app-permissions="appPermissions"
         :existing-app-names="existingAppNames"
+        :app-to-edit-original-title="appToEditOriginalTitle"
         @initApps="getApplicationsList"
         @resetForm="closeDrawer"
         @closeDrawer="closeDrawer"
@@ -248,6 +249,7 @@ export default {
       appPermissions: [],
       applicationDrawerKey: 0,
       existingAppNames: [],
+      appToEditOriginalTitle: '',
     };
   },
   watch: {
@@ -344,6 +346,7 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      this.appToEditOriginalTitle = '';
       this.forceRerender();
     },
 
@@ -355,6 +358,7 @@ export default {
     },
 
     showEditApplicationDrawer(item) {
+      this.appToEditOriginalTitle = item.title;
       this.openAppDrawer = true;
       $('body').addClass('hide-scroll');
       this.addApplication = false;
