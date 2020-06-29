@@ -55,8 +55,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <template slot="item" slot-scope="props">
           <tr>
             <td class="text-md-start">
-              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
-              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
+              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
+              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
               <img v-else src="/app-center/skin/images/defaultApp.png" />
             </td>
             <td
