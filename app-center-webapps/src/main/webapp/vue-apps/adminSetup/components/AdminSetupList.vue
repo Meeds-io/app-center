@@ -55,8 +55,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <template slot="item" slot-scope="props">
           <tr>
             <td class="text-md-start">
-              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
-              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
+              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
+              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
               <img v-else src="/app-center/skin/images/defaultApp.png" />
             </td>
             <td
@@ -193,16 +193,6 @@ export default {
   data() {
     return {
       loading: true,
-      systemAppNames: [
-        'Agenda',
-        'Drives',
-        'Forum',
-        'News',
-        'Notes',
-        'Tasks',
-        'Wallet',
-        'Wiki',
-      ],
       headers: [
         { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
         { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
@@ -294,13 +284,14 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          // manage system apps localized names
           data.applications.forEach(app => {
             this.existingAppNames.push(app.title);
-            if (this.systemAppNames.includes(app.title)) {
-              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
-            } else if (app.title === 'Perk store') {
-              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            // manage system apps localized names
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);   
+              }
             }
 
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);

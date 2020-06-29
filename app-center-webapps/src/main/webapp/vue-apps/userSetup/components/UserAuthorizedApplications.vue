@@ -267,10 +267,11 @@ export default {
           const allApplications = [];
           // manage system apps localized names
           data.applications.forEach(app => {
-            if (this.systemAppNames.includes(app.title)) {
-              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
-            } else if (app.title === 'Perk store') {
-              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+              }
             }
           });
           if (data) {
