@@ -155,6 +155,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :applications-drawer="openAppDrawer"
         :form-array="formArray"
         :app-permissions="appPermissions"
+        :existing-app-names="existingAppNames"
+        :app-to-edit-original-title="appToEditOriginalTitle"
         @initApps="getApplicationsList"
         @resetForm="closeDrawer"
         @closeDrawer="closeDrawer"
@@ -246,6 +248,8 @@ export default {
       addApplication: true,
       appPermissions: [],
       applicationDrawerKey: 0,
+      existingAppNames: [],
+      appToEditOriginalTitle: '',
     };
   },
   watch: {
@@ -292,13 +296,13 @@ export default {
           this.applicationsList = [];
           // manage system apps localized names
           data.applications.forEach(app => {
+            this.existingAppNames.push(app.title);
             if (this.systemAppNames.includes(app.title)) {
               data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
             } else if (app.title === 'Perk store') {
               data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
             }
-          });
-          data.applications.forEach(app => {
+
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
@@ -342,6 +346,7 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      this.appToEditOriginalTitle = '';
       this.forceRerender();
     },
 
@@ -353,6 +358,7 @@ export default {
     },
 
     showEditApplicationDrawer(item) {
+      this.appToEditOriginalTitle = item.title;
       this.openAppDrawer = true;
       $('body').addClass('hide-scroll');
       this.addApplication = false;

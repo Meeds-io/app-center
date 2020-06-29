@@ -66,10 +66,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
             required
           />
-          <!--          <span class="requiredInput">*</span>-->
-          <!--          <p v-if="!formArray.system && !formArray.title" class="errorInput">-->
-          <!--            {{ $t("appCenter.adminSetupForm.titleError") }}-->
-          <!--          </p>-->
+          <p v-if="!formArray.system && appTitleExists()" class="error">
+            {{ $t('appCenter.adminSetupForm.existingTitle.error') }}
+          </p>
           <v-label for="url">
             {{ `${$t('appCenter.adminSetupForm.url')}*` }}
           </v-label>
@@ -83,10 +82,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
             required
           />
-          <!--          <span class="requiredInput">*</span>-->
-          <!--          <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">-->
-          <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
-          <!--          </p>-->
           <v-row class="uploadImageContainer">
             <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
@@ -131,10 +126,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     </v-icon>
                   </v-btn>
                 </v-list-item-action>
-              </v-list-item>
-              <p v-if="formArray.invalidImage" class="errorInput">
-                {{ $t("appCenter.adminSetupForm.imageError") }}
-              </p>              
+              </v-list-item>             
             </v-col>
             <v-col class="uploadImageInfo">
               <p
@@ -232,6 +224,14 @@ export default {
       type: Array,
       default: () => []
     },
+    existingAppNames: {
+      type: Array,
+      default: () => []
+    },
+    appToEditOriginalTitle: {
+      type: Object,
+      default: null
+    },
   },
   data() {
     const maxDescriptionSize = 1000;
@@ -263,7 +263,7 @@ export default {
   computed: {
     canSaveApplication() {
       const maxDescriptionSize = 1000;
-      return this.formArray.title && this.formArray.title !== '' && !this.formArray.invalidSize && !this.formArray.invalidImage &&
+      return this.formArray.title && this.formArray.title !== '' && !this.appTitleExists() && !this.formArray.invalidSize && !this.formArray.invalidImage &&
         this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
@@ -421,6 +421,10 @@ export default {
       return `
         <div class="item">*:${escape(item.value)}</div>
       `;
+    },
+    
+    appTitleExists() {
+      return this.formArray.title !== this.appToEditOriginalTitle && this.existingAppNames.includes(this.formArray.title);
     },
   },
 };
