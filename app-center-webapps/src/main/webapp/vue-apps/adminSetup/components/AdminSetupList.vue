@@ -51,17 +51,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}`" />
             <img v-else src="/app-center/skin/images/defaultApp.png" />
           </td>
-          <td class="text-md-center">
+          <td
+            v-exo-tooltip.bottom.body="props.item.title.length > 22 ? props.item.title : ''"
+            class="text-md-center tableAppTitle"
+          >
             {{ props.item.title }}
           </td>
           <td 
-            v-exo-tooltip.bottom.body="props.item.url.length > 39 ? props.item.url : ''"
+            v-exo-tooltip.bottom.body="props.item.url.length > 23 ? props.item.url : ''"
             class="text-md-center appUrl"
           >
             {{ props.item.url }}
           </td>
           <td
-            v-exo-tooltip.bottom.body="props.item.description.length > 79 ? props.item.description : ''"
+            v-exo-tooltip.bottom.body="props.item.description.length > 91 ? props.item.description : ''"
             class="text-md-center"
           >
             <div class="tableAppDescription">
@@ -76,7 +79,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <div
                 v-for="permission in props.item.permissions"
                 :key="permission"
-                v-exo-tooltip.bottom.body="permission.length > 22 && props.item.permissions.length <= 3 ? permission : ''"
+                v-exo-tooltip.bottom.body="permission.length > 23 && props.item.permissions.length <= 3 ? permission : ''"
                 class="permission"
               >
                 <span v-if="permission==='any'">*</span>
