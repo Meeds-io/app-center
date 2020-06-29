@@ -969,7 +969,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
     .applicationForm {
       width: 420px;
-      
+
+      .error {
+        background-color: @baseBackgroundDefault!important;
+        color: @errorColor!important;
+      }
       .required:focus {
         border-color: #e9322d;
       }
@@ -1045,10 +1049,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           .v-icon {
             color: @greyColorLighten1Default;
           }
-        }
-        .error {
-          background-color: @baseBackgroundDefault!important;
-          color: @errorColor!important;
         }
       }
       .mandatoryLabel {
