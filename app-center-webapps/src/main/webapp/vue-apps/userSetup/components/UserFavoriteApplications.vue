@@ -93,6 +93,16 @@ export default {
   },
   data() {
     return {
+      systemAppNames: [
+        'Agenda',
+        'Drives',
+        'Forum',
+        'News',
+        'Notes',
+        'Tasks',
+        'Wallet',
+        'Wiki',
+      ],
       isMobileDevice: false,
       favoriteApplicationsList: [],
       loading: true,
@@ -132,6 +142,14 @@ export default {
           }
         })
         .then(data => {
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (this.systemAppNames.includes(app.title)) {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
+            } else if (app.title === 'Perk store') {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            }
+          });
           this.canAddFavorite = data.canAddFavorite;
           const allApplications = [];
           if (data) {
@@ -194,6 +212,9 @@ export default {
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
         });
+    },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
     },
   }
 };

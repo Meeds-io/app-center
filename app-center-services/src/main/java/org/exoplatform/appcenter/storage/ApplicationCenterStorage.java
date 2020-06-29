@@ -62,14 +62,11 @@ public class ApplicationCenterStorage {
     this.fileService = fileService;
   }
 
-  public Application getApplicationByTitleOrURL(String title, String url) throws FileStorageException {
+  public Application getApplicationByTitle(String title) throws FileStorageException {
     if (StringUtils.isBlank(title)) {
       throw new IllegalArgumentException("title is mandatory");
     }
-    if (StringUtils.isBlank(url)) {
-      throw new IllegalArgumentException("url is mandatory");
-    }
-    ApplicationEntity applicationentity = applicationDAO.getApplicationByTitleOrUrl(title, url);
+    ApplicationEntity applicationentity = applicationDAO.getApplicationByTitle(title);
     return toDTO(applicationentity);
   }
 

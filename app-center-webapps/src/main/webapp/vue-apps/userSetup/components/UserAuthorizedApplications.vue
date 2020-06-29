@@ -157,6 +157,16 @@ export default {
   },
   data() {
     return {
+      systemAppNames: [
+        'Agenda',
+        'Drives',
+        'Forum',
+        'News',
+        'Notes',
+        'Tasks',
+        'Wallet',
+        'Wiki',
+      ],
       isMobileDevice: false,
       isAdmin: eXo.env.portal.isAdmin,
       authorizedApplicationsList: [],
@@ -235,6 +245,14 @@ export default {
         })
         .then(data => {
           const allApplications = [];
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (this.systemAppNames.includes(app.title)) {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${app.title.toLowerCase()}`);
+            } else if (app.title === 'Perk store') {
+              data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t('appCenter.system.application.perkStore');
+            }
+          });
           if (data) {
             if (this.isMobileDevice) {
               allApplications.push(...data.applications.filter(app => app.mobile));
@@ -292,6 +310,9 @@ export default {
     },
     navigateTo(link) {
       window.open(link);
+    },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
     },
   }
 };

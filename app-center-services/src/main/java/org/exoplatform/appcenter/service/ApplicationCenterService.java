@@ -179,7 +179,7 @@ public class ApplicationCenterService implements Startable {
 
         Application storedApplication = null;
         try {
-          storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+          storedApplication = appCenterStorage.getApplicationByTitle(title);
         } catch (FileStorageException e) {
           LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
         }
@@ -256,13 +256,9 @@ public class ApplicationCenterService implements Startable {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
-    Application existingApplication = appCenterStorage.getApplicationByTitleOrURL(application.getTitle(), application.getUrl());
+    Application existingApplication = appCenterStorage.getApplicationByTitle(application.getTitle());
     if (existingApplication != null) {
-      if (StringUtils.equals(existingApplication.getTitle(), application.getTitle())) {
-        throw new ApplicationAlreadyExistsException("An application with same title already exists");
-      } else {
-        throw new ApplicationAlreadyExistsException("An application with same URL already exists");
-      }
+      throw new ApplicationAlreadyExistsException("An application with same title already exists");
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
