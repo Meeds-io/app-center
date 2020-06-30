@@ -66,10 +66,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
             required
           />
-          <!--          <span class="requiredInput">*</span>-->
-          <!--          <p v-if="!formArray.system && !formArray.title" class="errorInput">-->
-          <!--            {{ $t("appCenter.adminSetupForm.titleError") }}-->
-          <!--          </p>-->
+          <p v-if="!formArray.system && appTitleExists()" class="error">
+            {{ $t('appCenter.adminSetupForm.existingTitle.error') }}
+          </p>
           <v-label for="url">
             {{ `${$t('appCenter.adminSetupForm.url')}*` }}
           </v-label>
@@ -83,10 +82,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
             required
           />
-          <!--          <span class="requiredInput">*</span>-->
-          <!--          <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">-->
-          <!--            {{ $t("appCenter.adminSetupForm.urlError") }}-->
-          <!--          </p>-->
           <v-row class="uploadImageContainer">
             <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
@@ -131,10 +126,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     </v-icon>
                   </v-btn>
                 </v-list-item-action>
-              </v-list-item>
-              <p v-if="formArray.invalidImage" class="errorInput">
-                {{ $t("appCenter.adminSetupForm.imageError") }}
-              </p>              
+              </v-list-item>             
             </v-col>
             <v-col class="uploadImageInfo">
               <p
@@ -155,7 +147,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="appDescription"
             name="description"
             rows="20"
-            maxlength="2000"
+            counter="1000"
+            :rules="rules"
             :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
             no-resize
           >
@@ -231,8 +224,17 @@ export default {
       type: Array,
       default: () => []
     },
+    existingAppNames: {
+      type: Array,
+      default: () => []
+    },
+    appToEditOriginalTitle: {
+      type: Object,
+      default: null
+    },
   },
   data() {
+    const maxDescriptionSize = 1000;
     const component = this;
     return {
       isAppMandatory: false,
@@ -255,18 +257,19 @@ export default {
         sortField: [{field: 'order'}, {field: '$score'}],
       },
       permissions: [],
+      rules: [v => v.length <= maxDescriptionSize],
     };
   },
   computed: {
     canSaveApplication() {
-      return this.formArray.title && this.formArray.title !== '' && !this.formArray.invalidSize && !this.formArray.invalidImage &&
-        this.validUrl(this.formArray) && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
+      const maxDescriptionSize = 1000;
+      return this.formArray.title && this.formArray.title !== '' && !this.appTitleExists() && !this.formArray.invalidSize && !this.formArray.invalidImage &&
+        this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
   watch: {
     applicationsDrawer() {
       if (this.applicationsDrawer) {
-        $('body').addClass('hide-scroll');
         this.$nextTick().then(() => {
           $('#app .v-overlay').click(() => {
             this.permissions = [];
@@ -295,10 +298,12 @@ export default {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     validHelpPageUrl(app) {
       const url = app && app.helpPageURL;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
+
     handleFileUpload() {
       const MAX_FILE_SIZE = 100000;
       if (this.$refs.image.files.length > 0) {
@@ -312,6 +317,7 @@ export default {
         this.removeFile();
       }
     },
+
     removeFile() {
       this.formArray.imageFileName = '';
       this.formArray.imageFileBody = '';
@@ -323,6 +329,7 @@ export default {
         document.getElementById('imageFile').value = '';
       }
     },
+
     addOrEditApplication() {
       return fetch('/portal/rest/app-center/applications', {
         credentials: 'include',
@@ -357,8 +364,12 @@ export default {
           } else {
             this.error = this.$t('appCenter.adminSetupForm.error');
           }
+        }).finally(() => {
+          this.permissions = [];
+          this.$emit('closeDrawer');
         });
     },
+
     submitForm() {
       if (this.$refs.image && this.$refs.image.files.length > 0) {
         this.formArray.imageFileName = this.$refs.image.files[0].name;
@@ -370,18 +381,18 @@ export default {
           }
           this.formArray.imageFileBody = e.target.result;
           this.addOrEditApplication();
-          this.$emit('closeDrawer');
         };
         reader.readAsDataURL(this.$refs.image.files[0]);
       } else {
         this.addOrEditApplication();
-        this.$emit('closeDrawer');
       }
     },
+
     resetForm() {
       this.permissions = [];
       this.$emit('resetForm');
     },
+
     findGroups (query, callback) {
       if (!query.length) {
         return callback();
@@ -401,13 +412,19 @@ export default {
         callback(groups);
       });
     },
+
     getGroups(query) {
       return fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' }).then(resp => resp.json());
     },
+
     renderMenuItem (item, escape) {
       return `
         <div class="item">*:${escape(item.value)}</div>
       `;
+    },
+    
+    appTitleExists() {
+      return this.formArray.title !== this.appToEditOriginalTitle && this.existingAppNames.includes(this.formArray.title);
     },
   },
 };

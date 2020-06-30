@@ -16,379 +16,203 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="listApplications">
-    <div class="applicationListHeader">
-      <a
-        class="actionIcon addApplicationButton tooltipContent"
-        data-placement="bottom"
-        data-container="body"
-        @click.stop="showAddApplicationDrawer"
+    <div v-if="loading">
+      <v-skeleton-loader
+        class="mx-auto"
+        type="table-heading,table-tbody"
       >
-        <i class="uiIconPlus uiIconLightGray"></i>
-        <span>{{ $t("appCenter.adminSetupForm.addNewApp") }}</span>
-        <span class="tooltiptext">{{
-          $t("appCenter.adminSetupForm.addNewApp")
-        }}</span>
-      </a>
-      <input
-        v-model="keyword"
-        :placeholder="$t('appCenter.adminSetupList.search')"
-        type="text"
-        @input="
-          currentPage = 1;
-          getApplicationsList();
-        "
-      >
+      </v-skeleton-loader>
     </div>
-
-    <table class="uiGrid table table-hover table-striped">
-      <tr>
-        <th>
-          {{ $t("appCenter.adminSetupList.picto") }}
-        </th>
-        <th>
-          {{ $t("appCenter.adminSetupList.application") }}
-        </th>
-        <th class="d-none d-md-table-cell">
-          {{ $t("appCenter.adminSetupForm.url") }}
-        </th>
-        <th class="d-none d-md-table-cell">
-          {{ $t("appCenter.adminSetupForm.description") }}
-        </th>
-        <th class="d-none d-md-table-cell">
-          {{ $t("appCenter.adminSetupForm.permissions") }}
-        </th>
-        <th class="d-none d-sm-table-cell">
-          {{ $t("appCenter.adminSetupForm.isMandatory") }}
-        </th>
-        <th class="d-none d-sm-table-cell">
-          {{ $t("appCenter.adminSetupForm.active") }}
-        </th>
-        <th class="actions">
-          {{ $t("appCenter.adminSetupList.actions") }}
-        </th>
-      </tr>
-      <tr v-for="application in applicationsList" :key="application.id">
-        <td>
-          <img v-if="application.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-          <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-          <img v-else src="/app-center/skin/images/defaultApp.png" />
-        </td>
-        <td>
-          <h5>{{ application.title }}</h5>
-        </td>
-        <td class="d-none d-md-table-cell">
-          <h5>{{ application.url }}</h5>
-        </td>
-        <td class="d-none d-md-table-cell">
-          <h5>{{ application.description }}</h5>
-        </td>
-        <td class="d-none d-md-table-cell">
-          <h5
-            v-for="permission in application.permissions"
-            :key="permission"
-          >
-            <span v-if="permission==='any'">*</span>
-            <span v-else> {{ permission }}</span>
-          </h5>
-        </td>
-        <td class="d-none d-sm-table-cell">
-          <input
-            v-model="application.mandatory"
-            disabled="disabled"
-            type="checkbox"
-          >
-        </td>
-        <td class="d-none d-sm-table-cell">
-          <input
-            v-model="application.active"
-            disabled="disabled"
-            type="checkbox"
-          >
-        </td>
-        <td>
-          <a
-            class="actionIcon tooltipContent"
-            data-placement="bottom"
-            data-container="body"
-            @click.stop="showEditApplicationDrawer(application)"
-          >
-            <i class="uiIconEdit uiIconLightGray"></i>
-            <span class="tooltiptext tooltiptextIcon">{{
-              $t("appCenter.adminSetupForm.edit")
-            }}</span>
-          </a>
+    <div v-else>
+      <v-row>
+        <v-col cols="3">
+          <v-btn class="addApplicationBtn" depressed @click="showAddApplicationDrawer">
+            <v-icon left>
+              mdi-plus
+            </v-icon>
+            {{ $t("appCenter.adminSetupForm.addNewApp") }}
+          </v-btn>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col class="appSearch pb-5" cols="3">
+          <v-text-field
+            v-model="searchText"
+            :placeholder="`${$t('appCenter.adminSetupList.filter')} ...`"
+            prepend-inner-icon="mdi-filter"
+            hide-details
+          ></v-text-field>
+        </v-col>
+      </v-row>
+      <v-divider></v-divider>
+      <v-data-table
+        :headers="headers"
+        :items="applicationsList"
+        :footer-props="{
+          itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
+        }"
+        disable-sort
+      >
+        <template slot="item" slot-scope="props">
+          <tr>
+            <td class="text-md-start">
+              <img v-if="props.item.imageFileId" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
+              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?${new Date().getTime()}`" />
+              <img v-else src="/app-center/skin/images/defaultApp.png" />
+            </td>
+            <td
+              v-exo-tooltip.bottom.body="props.item.title.length > 22 ? props.item.title : ''"
+              class="text-md-center tableAppTitle"
+            >
+              {{ props.item.title }}
+            </td>
+            <td 
+              v-exo-tooltip.bottom.body="props.item.url.length > 23 ? props.item.url : ''"
+              class="text-md-center appUrl"
+            >
+              {{ props.item.url }}
+            </td>
+            <td
+              v-exo-tooltip.bottom.body="props.item.description.length > 91 ? props.item.description : ''"
+              class="text-md-center"
+            >
+              <div class="tableAppDescription">
+                {{ props.item.description }}              
+              </div>
+            </td>
+            <td class="text-md-center">
+              <div
+                v-exo-tooltip.bottom.body="props.item.permissions.length > 3 ? props.item.permissions : ''" 
+                class="tableAppPermissions"
+              >
+                <div
+                  v-for="permission in props.item.permissions"
+                  :key="permission"
+                  v-exo-tooltip.bottom.body="permission.length > 23 && props.item.permissions.length <= 3 ? permission : ''"
+                  class="permission"
+                >
+                  <span v-if="permission==='any'">*</span>
+                  <span v-else> {{ permission }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch v-model="props.item.mandatory" @change="updateOption(props.item)"></v-switch>              
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch v-model="props.item.active" @change="updateOption(props.item)"></v-switch>
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-switch 
+                  v-model="props.item.mobile"
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.switch.mobile.tooltip')"
+                  @change="updateOption(props.item)"
+                ></v-switch>
+              </v-row>
+            </td>
+            <td class="text-md-center">
+              <v-row justify="center">
+                <v-btn
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.editApp.tooltip')"
+                  icon
+                  class="actionsBtn"
+                  @click="showEditApplicationDrawer(props.item)"
+                >
+                  <v-icon
+                    medium
+                  >
+                    mdi-pencil
+                  </v-icon>
+                </v-btn>
+                <v-btn
+                  v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.table.deleteApp.tooltip')"
+                  icon
+                  class="actionsBtn"
+                  @click="toDeleteApplicationModal(props.item)"
+                >
+                  <v-icon
+                    medium
+                  >
+                    mdi-delete
+                  </v-icon>
+                </v-btn>
+              </v-row>
+            </td>
+          </tr>
+        </template>
+      </v-data-table>
   
-          <a
-            v-if="!application.system"
-            class="actionIcon tooltipContent"
-            data-placement="bottom"
-            data-container="body"
-            @click.stop="toDeleteApplicationModal(application)"
-          >
-            <i class="uiIconRemove uiIconLightGray"></i>
-            <span class="tooltiptext tooltiptextIcon">{{
-              $t("appCenter.adminSetupList.remove")
-            }}</span>
-          </a>
-        </td>
-      </tr>
-    </table>
-
-    <div v-if="!applicationsList.length" class="noApp">
-      {{ $t("appCenter.adminSetupForm.noApp") }}
-    </div>
-    <div
-      v-if="totalPages > 1"
-      class="applicationsPaginator"
-    >
-      <paginator
-        :current-page="currentPage"
-        :per-page="pageSize"
-        :total="totalApplications"
-        :total-pages="totalPages"
-        @pagechanged="onPageChange"
-      />
-    </div>
-    
-    <exo-app-center-drawer :applications-drawer="openAppDrawer" :form-array="formArray" :app-permissions="appPermissions" @initApps="getApplicationsList" @resetForm="closeDrawer" @closeDrawer="closeDrawer">
-      <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
-      <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
-    </exo-app-center-drawer>
-
-    <transition name="fade">
-      <exo-app-center-modal
-        v-show="showAddOrEditApplicationModal"
-        :title="
-          formArray.viewMode
-            ? $t('appCenter.adminSetupForm.createNewApp')
-            : $t('appCenter.adminSetupForm.editApp')
-        "
-        @modal-closed="resetForm()"
+      <div v-if="!applicationsList.length" class="noApp">
+        {{ $t("appCenter.adminSetupForm.noApp") }}
+      </div>
+      
+      <exo-app-center-drawer
+        :key="applicationDrawerKey"
+        :applications-drawer="openAppDrawer"
+        :form-array="formArray"
+        :app-permissions="appPermissions"
+        :existing-app-names="existingAppNames"
+        :app-to-edit-original-title="appToEditOriginalTitle"
+        @initApps="getApplicationsList"
+        @resetForm="closeDrawer"
+        @closeDrawer="closeDrawer"
       >
-        <div class="addApplication">
-          <div class="form-container appCenter-form">
-            <div class="row row-form-items">
-              <form>
-                <table class="applicationTable">
-                  <tr>
-                    <td>
-                      <span>{{ $t("appCenter.adminSetupForm.title") }}</span>
-                    </td>
-                    <td>
-                      <input
-                        v-model="formArray.title"
-                        type="text"
-                        :readonly="formArray.system"
-                        :placeholder="
-                          $t('appCenter.adminSetupForm.titlePlaceholder')
-                        "
-                      >
-                      <span class="requiredInput">*</span>
-                      <p v-if="!formArray.system && !formArray.title" class="errorInput">
-                        {{ $t("appCenter.adminSetupForm.titleError") }}
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <span>{{ $t("appCenter.adminSetupForm.url") }}</span>
-                    </td>
-                    <td>
-                      <input
-                        v-model="formArray.url"
-                        type="url"
-                        :readonly="formArray.system"
-                        :placeholder="
-                          $t('appCenter.adminSetupForm.urlPlaceholder')
-                        "
-                      >
-                      <span class="requiredInput">*</span>
-                      <p v-if="!formArray.system && !validUrl(formArray)" class="errorInput">
-                        {{ $t("appCenter.adminSetupForm.urlError") }}
-                      </p>
-                    </td>
-                  </tr>
-                  <tr class="uploadImage">
-                    <td>
-                      <span>{{ $t("appCenter.adminSetupForm.image") }}</span>
-                    </td>
-                    <td>
-                      <label for="file" class="custom-file-upload">
-                        <i class="uiDownloadIcon download-icon"></i>
-                        {{ $t("appCenter.adminSetupForm.browse") }}
-                      </label>
-                      <input
-                        id="file"
-                        ref="file"
-                        type="file"
-                        accept="image/*"
-                        @change="handleFileUpload()"
-                      >
-                      <div
-                        v-if="
-                          formArray.imageFileName != undefined &&
-                            formArray.imageFileName != ''
-                        "
-                        class="file-listing"
-                      >
-                        {{ formArray.imageFileName }}
-                        <span class="remove-file" @click="removeFile()">
-                          <i class="uiCloseIcon"></i>
-                        </span>
-                      </div>
-                      <p
-                        :class="
-                          'sizeInfo' + (formArray.invalidSize ? ' error' : '')
-                        "
-                      >
-                        <img
-                          width="13"
-                          height="13"
-                          src="/app-center/skin/images/defaultApp.png"
-                        >
-                        {{ $t("appCenter.adminSetupForm.sizeError") }}
-                      </p>
-                      <p v-if="formArray.invalidImage" class="errorInput">
-                        {{ $t("appCenter.adminSetupForm.imageError") }}
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <span>{{
-                        $t("appCenter.adminSetupForm.description")
-                      }}</span>
-                    </td>
-                    <td>
-                      <textarea
-                        v-model="formArray.description"
-                        type="text"
-                        :placeholder="
-                          $t('appCenter.adminSetupForm.description')
-                        "
-                      ></textarea>
-                    </td>
-                  </tr>
-                  <tr class="application-checkbox">
-                    <td>
-                      <span>{{
-                        $t("appCenter.adminSetupForm.isMandatory")
-                      }}</span>
-                    </td>
-                    <td>
-                      <input
-                        id="byDefault"
-                        v-model="formArray.mandatory"
-                        :disabled="!formArray.active"
-                        type="checkbox"
-                      >
-                      <label for="byDefault"></label>
-                    </td>
-                  </tr>
-                  <tr class="application-checkbox">
-                    <td>
-                      <span>{{ $t("appCenter.adminSetupForm.active") }}</span>
-                    </td>
-                    <td>
-                      <input
-                        id="active"
-                        v-model="formArray.active"
-                        type="checkbox"
-                        @change="onActiveChange()"
-                      >
-                      <label for="active"></label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <span>{{
-                        $t("appCenter.adminSetupForm.permissions")
-                      }}</span>
-                    </td>
-                    <td>
-                      <input id="permissions-suggester" type="text">
-                    </td>
-                  </tr>
-                </table>
-
-                <div class="form-group application-buttons pt-2">
-                  <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="submitForm()">
-                    {{ $t("appCenter.adminSetupForm.save") }}
-                  </button>
-                  <button class="ignore-vuetify-classes btn form-reset" @click.stop="resetForm()">
-                    {{ $t("appCenter.adminSetupForm.cancel") }}
-                  </button>
-                </div>
-                <div class="requiredField">
-                  <span>{{
-                    $t("appCenter.adminSetupForm.requiredField")
-                  }}</span>
-                </div>
-                <div v-if="error != ''" class="error">
-                  <span>{{ error }}</span>
-                </div>
-              </form>
+        <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
+        <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
+      </exo-app-center-drawer>
+  
+      <transition name="fade">
+        <exo-app-center-modal
+          v-show="showDeleteApplicationModal"
+          :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+          @modal-closed="closeDeleteModal"
+        >
+          <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
+          <div class="uiAction uiActionBorder">
+            <div class="btn" @click="closeDeleteModal">
+              {{ $t("appCenter.adminSetupForm.cancel") }}
+            </div>
+            <div id="deleteBtn" class="btn btn-primary" @click="deleteApplication">
+              {{ $t("appCenter.adminSetupForm.modal.delete") }}
             </div>
           </div>
-        </div>
-      </exo-app-center-modal>
-    </transition>
-
-    <transition name="fade">
-      <exo-app-center-modal
-        v-show="showDeleteApplicationModal"
-        :title="$t('appCenter.adminSetupForm.DeleteApp')"
-        @modal-closed="closeDeleteModal()"
-      >
-        <div class="deleteApplication">
-          <h3>
-            {{ $t("appCenter.adminSetupForm.confirmDelete", {0: formArray.title}) }}
-          </h3>
-          <div class="form-group application-buttons pt-2">
-            <button class="ignore-vuetify-classes btn btn-primary form-submit" @click.stop="deleteApplication()">
-              <i class="uiTrashIcon"></i>
-              {{ $t("appCenter.adminSetupForm.delete") }}
-            </button>
-            <button
-              class="ignore-vuetify-classes btn form-reset"
-              @click.stop="showDeleteApplicationModal = false"
-            >
-              <i class="uiCloseIcon"></i>
-              {{ $t("appCenter.adminSetupForm.cancel") }}
-            </button>
-          </div>
-          <div v-if="error != ''" class="error">
-            <span>{{ error }}</span>
-          </div>
-        </div>
-      </exo-app-center-modal>
-    </transition>
+        </exo-app-center-modal>
+      </transition>
+    </div>
   </div>
 </template>
 
 <script>
-import Paginator from './Paginator.vue';
 
 export default {
   name: 'AdminSetup',
-  components: {
-    Paginator
-  },
-  props: {
-    pageSize: {
-      type: Number,
-      default: 10,
-    },
-  },
   data() {
     return {
+      loading: true,
+      headers: [
+        { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.application')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.url')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.description')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.permissions')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mandatory')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.active')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupForm.mobile')}`, align: 'center' },
+        { text: `${this.$t('appCenter.adminSetupList.actions')}`, align: 'center' },
+      ],
       defaultAppImage: {
         fileBody: '',
         fileName: '',
         invalidSize: false,
         invalidImage: false
       },
-      keyword: '',
+      searchText: '',
+      searchApp: '',
+      searchDelay: 300,
       applicationsList: [],
       formArray: {
         id: 0,
@@ -409,32 +233,43 @@ export default {
         invalidImage: false
       },
       error: '',
-      showAddOrEditApplicationModal: false,
       showDeleteApplicationModal: false,
-      currentPage: 1,
-      totalApplications: 0,
-      totalPages: 0,
-      groups: [],
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
+      applicationDrawerKey: 0,
+      existingAppNames: [],
+      appToEditOriginalTitle: '',
     };
+  },
+  watch: {
+    searchText() {
+      if (this.searchText && this.searchText.trim().length) {
+        clearTimeout(this.searchApp);
+        this.searchApp = setTimeout(() => {
+          this.getApplicationsList();
+        }, this.searchDelay);
+      } else if (!this.searchText || this.searchText.length !== this.searchText.split(' ').length - 1) {
+        this.getApplicationsList();
+      }
+    }
   },
 
   created() {
     this.getApplicationsList();
     this.getAppGeneralSettings();
     $(document).on('keydown', (event) => {
-      if (event.key === 'Escape' && this && this.closeModals) {
-        this.closeModals();
+      if (event.key === 'Escape' && this && this.closeDeleteModal) {
+        this.closeDeleteModal();
       }
     });
   },
 
   methods: {
     getApplicationsList() {
-      const offset = this.currentPage - 1;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${this.pageSize}&keyword=${this.keyword}`, {
+      const offset = 0;
+      const limit = 0;
+      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -449,23 +284,23 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          this.totalApplications = this.applicationsList.size;
-          this.totalPages = Number.parseInt((this.applicationsList.size + this.pageSize - 1) / this.pageSize);
           data.applications.forEach(app => {
+            this.existingAppNames.push(app.title);
+            // manage system apps localized names
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);   
+              }
+            }
+
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
 
-          // A trick to force retrieving img URL again to update illustration
-          const REFRESH_TIMEOUT=20;
-          window.setTimeout(() => this.applicationsList = data.applications, REFRESH_TIMEOUT);
-        });
-    },
-
-    onPageChange(page) {
-      this.currentPage = page;
-      this.getApplicationsList();
+          this.applicationsList = data.applications;
+        }).finally(() => this.loading = false);
     },
 
     deleteApplication() {
@@ -482,7 +317,6 @@ export default {
         })
         .then(() => {
           this.closeDeleteModal();
-          this.currentPage = 1;
           this.getApplicationsList();
         });
     },
@@ -503,17 +337,21 @@ export default {
       this.formArray.permissions = [];
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
-      this.showAddOrEditApplicationModal = false;
+      this.appToEditOriginalTitle = '';
+      this.forceRerender();
     },
 
     showAddApplicationDrawer() {
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = true;
       this.formArray.viewMode = true;
     },
 
     showEditApplicationDrawer(item) {
+      this.appToEditOriginalTitle = item.title;
       this.openAppDrawer = true;
+      $('body').addClass('hide-scroll');
       this.addApplication = false;
       Object.assign(this.formArray, item);
       this.appPermissions = [];
@@ -533,29 +371,21 @@ export default {
       this.formArray.title = item.title;
     },
 
-    closeModals() {
-      this.closeDeleteModal();
+    closeDeleteModal() {
+      this.showDeleteApplicationModal = false;
       this.resetForm();
     },
 
-    closeDeleteModal() {
-      this.formArray.id = '';
-      this.formArray.title = '';
-      this.showDeleteApplicationModal = false;
-    },
     validUrl(app) {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
-    onActiveChange() {
-      if (!this.formArray.active) {
-        this.formArray.mandatory = false;
-      }
-    },
+
     closeDrawer() {
-      this.resetForm();
       this.openAppDrawer = false;
+      this.resetForm();
     },
+
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
         method: 'GET',
@@ -571,6 +401,49 @@ export default {
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
+    },
+
+    updateOption(application) {
+      return fetch('/portal/rest/app-center/applications', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'PUT',
+        body: JSON.stringify({
+          id: application.id,
+          title: application.title,
+          url: application.url,
+          helpPageURL: application.helpPageURL,
+          description: application.description,
+          active: application.active,
+          mandatory: application.mandatory,
+          isMobile: application.mobile,
+          system: application.system,
+          permissions: application.permissions,
+          imageFileBody: application.imageFileBody,
+          imageFileName: application.imageFileName,
+          imageFileId: application.imageFileId,
+        })
+      })
+        .catch(e => {
+          const UNAUTHORIZED_ERROR_CODE = 401;
+          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
+            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
+          } else {
+            this.error = this.$t('appCenter.adminSetupForm.error');
+          }
+        });      
+    },
+
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
+    },
+
+    forceRerender() {
+      this.applicationDrawerKey += 1;
+      $('body').removeClass('hide-scroll');
     },
   }
 };

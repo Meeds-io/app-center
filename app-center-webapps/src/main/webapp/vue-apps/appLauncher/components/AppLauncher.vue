@@ -132,7 +132,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
             small
+            :href="appCenterLink"
             @click="navigateTo('appCenterUserSetup/')"
+            @click.middle="navigateTo('appCenterUserSetup/')"
+            @click.right="navigateTo('appCenterUserSetup/')"
           >
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
@@ -160,6 +163,7 @@ export default {
       loading: true,
       draggedElementIndex: null,
       alphabeticalOrder: true,
+      appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
   },
   watch: {
@@ -257,6 +261,15 @@ export default {
           }
         })
         .then(data => {
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+              }
+            }
+          });
           const applications = [];
           if (this.isMobileDevice) {
             applications.push(...data.applications.filter(app => app.mobile));
@@ -328,7 +341,6 @@ export default {
           credentials: 'include',
         });
       }
-      location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
     },
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
@@ -345,6 +357,9 @@ export default {
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
+    },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
     },
   }
 };

@@ -45,7 +45,10 @@ import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.security.*;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
 
 /**
  * A Service to access and store applications
@@ -176,7 +179,7 @@ public class ApplicationCenterService implements Startable {
 
         Application storedApplication = null;
         try {
-          storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+          storedApplication = appCenterStorage.getApplicationByTitle(title);
         } catch (FileStorageException e) {
           LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
         }
@@ -253,13 +256,9 @@ public class ApplicationCenterService implements Startable {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
-    Application existingApplication = appCenterStorage.getApplicationByTitleOrURL(application.getTitle(), application.getUrl());
+    Application existingApplication = appCenterStorage.getApplicationByTitle(application.getTitle());
     if (existingApplication != null) {
-      if (StringUtils.equals(existingApplication.getTitle(), application.getTitle())) {
-        throw new ApplicationAlreadyExistsException("An application with same title already exists");
-      } else {
-        throw new ApplicationAlreadyExistsException("An application with same URL already exists");
-      }
+      throw new ApplicationAlreadyExistsException("An application with same title already exists");
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
@@ -363,9 +362,9 @@ public class ApplicationCenterService implements Startable {
 
     if (!isAdmin(username)) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
-              + storedApplication.getTitle());
+          + storedApplication.getTitle());
     }
-    
+
     appCenterStorage.deleteApplication(applicationId);
   }
 
@@ -532,12 +531,8 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalArgumentException("username is mandatory");
     }
     ApplicationList resultApplicationsList = new ApplicationList();
-    List<Application> userApplicationsList = getApplications(offset,
-                                                             limit,
-                                                             keyword,
-                                                             username).stream()
-                                                                      .filter(application -> application.isActive())
-                                                                      .collect(Collectors.toList());
+    List<Application> userApplicationsList = getApplications(offset, limit, keyword, username).stream()
+                                                                                              .collect(Collectors.toList());
     userApplicationsList = userApplicationsList.stream().map(app -> {
       UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
@@ -792,7 +787,10 @@ public class ApplicationCenterService implements Startable {
     List<Application> userApplicationsList = new ArrayList<>();
 
     List<Application> applications = appCenterStorage.getApplications(keyword);
-    applications = applications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
+    applications = applications.stream()
+                               .filter(app -> hasPermission(username, app))
+                               .filter(application -> application.isActive())
+                               .collect(Collectors.toList());
     if (limit <= 0) {
       limit = applications.size();
     }
