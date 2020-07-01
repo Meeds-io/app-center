@@ -52,6 +52,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                                         <string>application</string>
                                     </key>
                                     <value>
+                                        <string>appcenter</string>
+                                    </value>
+                                </entry>
+                                <entry>
+                                    <key>
+                                        <string>operation</string>
+                                    </key>
+                                    <value>
                                         <string>AppLauncherMenu</string>
                                     </value>
                                 </entry>
@@ -59,7 +67,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         </field>
                         <!-- DOM jquery selector, used to search elements -->
                         <field name="domSelector">
-                            <string>#appLauncher .uiApplicationIconButton</string>
+                            <string>#appLauncher #appcenterLauncherButton</string>
                         </field>
                         <!-- DOM jquery event, used to trigger storing new statistic data -->
                         <field name="domEvent">
@@ -113,6 +121,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                                 <entry>
                                     <key>
                                         <string>application</string>
+                                    </key>
+                                    <value>
+                                        <string>appcenter</string>
+                                    </value>
+                                </entry>
+                                <entry>
+                                    <key>
+                                        <string>operation</string>
                                     </key>
                                     <value>
                                         <string>AppLauncherClickViewAll</string>
