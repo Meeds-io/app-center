@@ -1,3 +1,19 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 package org.exoplatform.appcenter.dto;
 
 import java.io.Serializable;
@@ -17,11 +33,15 @@ public class Application implements Serializable {
 
   private String            url;
 
+  private String            helpPageURL;
+
   private String            description;
 
   private boolean           active;
 
-  private boolean           byDefault;
+  private boolean           isMandatory;
+
+  private boolean           isMobile;
 
   private boolean           system;
 
@@ -33,47 +53,57 @@ public class Application implements Serializable {
 
   private Long              imageFileId;
 
+  private Long              order;
+
   public Application() {
   }
 
   public Application(Long id,
                      String title,
                      String url,
+                     String helpPageURL,
                      Long imageFileId,
                      String imageFileBody,
                      String imageFileName,
                      String description,
                      boolean active,
-                     boolean byDefault,
+                     boolean isMandatory,
+                     boolean isMobile,
                      String... permissions) {
     this(id,
          title,
          url,
+         helpPageURL,
          imageFileId,
          imageFileBody,
          imageFileName,
          description,
          active,
-         byDefault,
+         isMandatory,
+         isMobile,
          permissions == null ? null : Arrays.asList(permissions));
   }
 
   public Application(Long id,
                      String title,
                      String url,
+                     String helpPageURL,
                      Long imageFileId,
                      String imageFileBody,
                      String imageFileName,
                      String description,
                      boolean active,
-                     boolean byDefault,
+                     boolean isMandatory,
+                     boolean isMobile,
                      List<String> permissions) {
     this.id = id;
     this.title = title;
     this.url = url;
+    this.helpPageURL = helpPageURL;
     this.description = description;
     this.active = active;
-    this.byDefault = byDefault;
+    this.isMandatory = isMandatory;
+    this.isMobile = isMobile;
     this.permissions = permissions;
     this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
@@ -104,6 +134,14 @@ public class Application implements Serializable {
     this.url = url;
   }
 
+  public String getHelpPageURL() {
+    return helpPageURL;
+  }
+
+  public void setHelpPageURL(String helpPageURL) {
+    this.helpPageURL = helpPageURL;
+  }
+
   public String getDescription() {
     return description;
   }
@@ -120,12 +158,20 @@ public class Application implements Serializable {
     this.active = active;
   }
 
-  public boolean isByDefault() {
-    return byDefault;
+  public boolean isMandatory() {
+    return isMandatory;
   }
 
-  public void setByDefault(boolean byDefault) {
-    this.byDefault = byDefault;
+  public void setMandatory(boolean mandatory) {
+    this.isMandatory = mandatory;
+  }
+
+  public boolean isMobile() {
+    return isMobile;
+  }
+
+  public void setIsMobile(boolean mobile) {
+    isMobile = mobile;
   }
 
   public List<String> getPermissions() {
@@ -170,6 +216,14 @@ public class Application implements Serializable {
 
   public void setSystem(boolean system) {
     this.system = system;
+  }
+
+  public Long getOrder() {
+    return order;
+  }
+
+  public void setOrder(Long order) {
+    this.order = order;
   }
 
   @Override

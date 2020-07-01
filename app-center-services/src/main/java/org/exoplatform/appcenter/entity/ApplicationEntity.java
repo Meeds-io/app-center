@@ -1,3 +1,19 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 package org.exoplatform.appcenter.entity;
 
 import java.util.Collection;
@@ -13,16 +29,14 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @ExoEntity
 @Table(name = "AC_APPLICATION")
 @NamedQueries({
-    @NamedQuery(name = "ApplicationEntity.getAppByTitleOrUrl", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.title = :title OR app.url = :url"),
+    @NamedQuery(name = "ApplicationEntity.getAppByTitle", query = "SELECT app FROM ApplicationEntity app "
+        + "WHERE app.title = :title"),
     @NamedQuery(name = "ApplicationEntity.getApplicationsByKeyword", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.title like :title OR app.url like :url"),
+        + "WHERE app.title like :title OR app.description like :description OR app.url like :url"),
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
     @NamedQuery(name = "ApplicationEntity.getSystemApplications", query = "SELECT app FROM ApplicationEntity app WHERE app.system = TRUE"),
-    @NamedQuery(name = "ApplicationEntity.getFavoriteActiveApps", query = "SELECT distinct(app) FROM ApplicationEntity app "
-        + " LEFT JOIN app.favorites as favoriteApp "
-        + " WHERE app.active = TRUE AND (app.byDefault = TRUE OR favoriteApp.userName = :userName)"),
-})
+    @NamedQuery(name = "ApplicationEntity.getMandatoryActiveApps", query = "SELECT app FROM ApplicationEntity app "
+        + " WHERE app.active = TRUE AND app.isMandatory = TRUE "), })
 public class ApplicationEntity {
 
   @Id
@@ -37,6 +51,9 @@ public class ApplicationEntity {
   @Column(name = "URL")
   private String                                url;
 
+  @Column(name = "HELP_PAGE_URL")
+  private String                                helpPageUrl;
+
   @Column(name = "IMAGE_FILE_ID")
   private Long                                  imageFileId;
 
@@ -47,7 +64,10 @@ public class ApplicationEntity {
   private boolean                               active;
 
   @Column(name = "BY_DEFAULT")
-  private boolean                               byDefault;
+  private boolean                               isMandatory;
+
+  @Column(name = "IS_MOBILE")
+  private boolean                               isMobile;
 
   @Column(name = "IS_SYSTEM")
   private Boolean                               system;
@@ -67,7 +87,7 @@ public class ApplicationEntity {
                            Long imageFileId,
                            String description,
                            boolean active,
-                           boolean byDefault,
+                           boolean isMandatory,
                            String permissions) {
     this.id = id;
     this.title = title;
@@ -75,7 +95,7 @@ public class ApplicationEntity {
     this.imageFileId = imageFileId;
     this.description = description;
     this.active = active;
-    this.byDefault = byDefault;
+    this.isMandatory = isMandatory;
     this.permissions = permissions;
   }
 
@@ -122,6 +142,20 @@ public class ApplicationEntity {
   }
 
   /**
+   * @return the help page url
+   */
+  public String getHelpPageUrl() {
+    return helpPageUrl;
+  }
+
+  /**
+   * @param helpPageUrl the help page url to set
+   */
+  public void setHelpPageUrl(String helpPageUrl) {
+    this.helpPageUrl = helpPageUrl;
+  }
+
+  /**
    * @return the imageFileId
    */
   public Long getImageFileId() {
@@ -164,17 +198,31 @@ public class ApplicationEntity {
   }
 
   /**
-   * @return the byDefault
+   * @return the isMandatory
    */
-  public boolean isByDefault() {
-    return byDefault;
+  public boolean isMandatory() {
+    return isMandatory;
   }
 
   /**
-   * @param byDefault the byDefault to set
+   * @param mandatory the isMandatory to set
    */
-  public void setByDefault(boolean byDefault) {
-    this.byDefault = byDefault;
+  public void setMandatory(boolean mandatory) {
+    this.isMandatory = mandatory;
+  }
+
+  /**
+   * @return the isMobile
+   */
+  public boolean isMobile() {
+    return isMobile;
+  }
+
+  /**
+   * @param isMobile the isMobile to set
+   */
+  public void setIsMobile(boolean isMobile) {
+    this.isMobile = isMobile;
   }
 
   /**

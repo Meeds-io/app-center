@@ -1,18 +1,41 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 package org.exoplatform.appcenter.storage;
 
 import static org.junit.Assert.*;
 
 import java.util.List;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
-import org.exoplatform.appcenter.dto.*;
+import org.exoplatform.appcenter.dto.Application;
+import org.exoplatform.appcenter.dto.ApplicationImage;
+import org.exoplatform.appcenter.dto.UserApplication;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.commons.file.services.impl.NameSpaceServiceImpl;
-import org.exoplatform.container.*;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.RootContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.naming.InitialContextInitializer;
 
@@ -70,11 +93,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -87,7 +112,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -99,11 +124,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "url",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -111,7 +138,7 @@ public class ApplicationCenterStorageTest {
     Application storedApplication = applicationCenterStorage.createApplication(application);
     application.setId(storedApplication.getId());
     application.setActive(!storedApplication.isActive());
-    application.setByDefault(!storedApplication.isByDefault());
+    application.setMandatory(!storedApplication.isMandatory());
     application.setDescription("description2");
     application.setUrl("url2");
     application.setUrl("title2");
@@ -127,7 +154,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -153,11 +180,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -185,11 +214,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -203,7 +234,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -213,43 +244,31 @@ public class ApplicationCenterStorageTest {
     assertNotNull(applicationCenterStorage);
 
     try {
-      applicationCenterStorage.getApplicationByTitleOrURL(null, null);
+      applicationCenterStorage.getApplicationByTitle(null);
       fail("Shouldn't allow to get application by null values");
     } catch (IllegalArgumentException e) {
       // Expected
     }
 
-    try {
-      applicationCenterStorage.getApplicationByTitleOrURL(null, "url");
-      fail("Shouldn't allow to get application by null values");
-    } catch (IllegalArgumentException e) {
-      // Expected
-    }
 
-    try {
-      applicationCenterStorage.getApplicationByTitleOrURL("title", null);
-      fail("Shouldn't allow to get application by null values");
-    } catch (IllegalArgumentException e) {
-      // Expected
-    }
-
-    assertNull(applicationCenterStorage.getApplicationByTitleOrURL("title", "url"));
+    assertNull(applicationCenterStorage.getApplicationByTitle("title"));
 
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
     applicationCenterStorage.createApplication(application);
-    Application storedApplication = applicationCenterStorage.getApplicationByTitleOrURL(application.getTitle(),
-                                                                                        application.getUrl());
+    Application storedApplication = applicationCenterStorage.getApplicationByTitle(application.getTitle());
     assertNotNull(storedApplication);
     assertNotNull(storedApplication.getId());
     assertEquals(application.getTitle(), storedApplication.getTitle());
@@ -257,7 +276,7 @@ public class ApplicationCenterStorageTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
   }
 
@@ -283,17 +302,46 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
 
     Application storedApplication = applicationCenterStorage.createApplication(application);
     applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
+  }
+
+  @Test
+  public void testUpdateApplicationFavoriteOrder() throws Exception {
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    assertNotNull(applicationCenterStorage);
+
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              "",
+                                              0L,
+                                              null,
+                                              null,
+                                              "description",
+                                              true,
+                                              false,
+                                              false,
+                                              "permissions1",
+                                              "permissions2");
+
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+    applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), "testuser");
+    Long appID = applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getId();
+    applicationCenterStorage.updateFavoriteApplicationOrder(appID, "testuser", new Long(1));
+
+    assertEquals(new Long(1), applicationCenterStorage.getFavoriteApplicationsByUser("testuser").get(0).getOrder());
   }
 
   @Test
@@ -313,11 +361,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -346,11 +396,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -361,40 +413,92 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
+  public void testGetMandatoryApplicationsByUser() throws Exception {
+    ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
+    assertNotNull(applicationCenterStorage);
+
+    try {
+      applicationCenterStorage.getFavoriteApplicationsByUser(null);
+      fail("Shouldn't allow to get favorite of null user");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    List<UserApplication> mandatoryApplications = applicationCenterStorage.getMandatoryApplications();
+    assertNotNull(mandatoryApplications);
+    assertEquals(0, mandatoryApplications.size());
+
+    Application application1 = new Application(null,
+                                               "title",
+                                               "url",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description",
+                                               true,
+                                               true,
+                                               true,
+                                               "permissions1",
+                                               "permissions2");
+
+    Application application2 = new Application(null,
+                                               "title",
+                                               "url",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description",
+                                               false,
+                                               true,
+                                               true,
+                                               "permissions1",
+                                               "permissions2");
+
+    applicationCenterStorage.createApplication(application1);
+    applicationCenterStorage.createApplication(application2);
+
+    assertEquals(1, applicationCenterStorage.getMandatoryApplications().size());
+  }
+
+  @Test
   public void testGetApplications() throws Exception {
     ApplicationCenterStorage applicationCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
     assertNotNull(applicationCenterStorage);
 
-    List<Application> applications = applicationCenterStorage.getApplications(null, 0, 0);
+    List<Application> applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(0, applications.size());
 
-    applications = applicationCenterStorage.getApplications("title", 0, 0);
+    applications = applicationCenterStorage.getApplications("title");
     assertNotNull(applications);
     assertEquals(0, applications.size());
 
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
     applicationCenterStorage.createApplication(application);
-    applications = applicationCenterStorage.getApplications(null, 0, 0);
+    applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(1, applications.size());
 
-    applications = applicationCenterStorage.getApplications("title", 0, 0);
+    applications = applicationCenterStorage.getApplications("title");
     assertNotNull(applications);
     assertEquals(1, applications.size());
 
-    applications = applicationCenterStorage.getApplications("url", 0, 0);
+    applications = applicationCenterStorage.getApplications("url");
     assertNotNull(applications);
     assertEquals(1, applications.size());
   }
@@ -409,11 +513,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -460,11 +566,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -492,11 +600,13 @@ public class ApplicationCenterStorageTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");

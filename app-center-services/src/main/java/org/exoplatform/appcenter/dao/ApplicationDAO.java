@@ -1,3 +1,19 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 package org.exoplatform.appcenter.dao;
 
 import java.util.List;
@@ -17,30 +33,21 @@ import org.exoplatform.services.log.Log;
 public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
   private static final Log LOG = ExoLogger.getLogger(ApplicationDAO.class);
 
-  public List<ApplicationEntity> getFavoriteActiveApps(String userName) {
-    return getEntityManager().createNamedQuery("ApplicationEntity.getFavoriteActiveApps", ApplicationEntity.class)
-                             .setParameter("userName", userName)
+  public List<ApplicationEntity> getMandatoryActiveApps() {
+    return getEntityManager().createNamedQuery("ApplicationEntity.getMandatoryActiveApps", ApplicationEntity.class)
                              .getResultList();
   }
 
-  public List<ApplicationEntity> getApplications(String keyword, int offset, int limit) {
+  public List<ApplicationEntity> getApplications(String keyword) {
     TypedQuery<ApplicationEntity> query = null;
     if (StringUtils.isBlank(keyword)) {
-      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications",
-                                                  ApplicationEntity.class);
+      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications", ApplicationEntity.class);
     } else {
-      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword",
-                                                  ApplicationEntity.class);
+      query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword", ApplicationEntity.class);
       keyword = "%" + keyword.replaceAll("%", "").replaceAll("\\*", "%") + "%";
       query.setParameter("title", keyword);
+      query.setParameter("description", keyword);
       query.setParameter("url", keyword);
-    }
-
-    if (offset > 0) {
-      query.setFirstResult(offset);
-    }
-    if (limit > 0) {
-      query.setMaxResults(limit);
     }
     return query.getResultList();
   }
@@ -51,17 +58,16 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
     return query.getResultList();
   }
 
-  public ApplicationEntity getApplicationByTitleOrUrl(String title, String url) {
+  public ApplicationEntity getApplicationByTitle(String title) {
     TypedQuery<ApplicationEntity> query = getEntityManager()
-                                                            .createNamedQuery("ApplicationEntity.getAppByTitleOrUrl",
+                                                            .createNamedQuery("ApplicationEntity.getAppByTitle",
                                                                               ApplicationEntity.class)
-                                                            .setParameter("title", title)
-                                                            .setParameter("url", url);
+                                                            .setParameter("title", title);
     List<ApplicationEntity> result = query.getResultList();
     if (result == null || result.isEmpty()) {
       return null;
     } else if (result.size() > 1) {
-      LOG.warn("More than one application was found with URL '{}' or Title '{}'", url, title);
+      LOG.warn("More than one application was found with Title '{}'", title);
       return result.get(0);
     } else {
       return result.get(0);

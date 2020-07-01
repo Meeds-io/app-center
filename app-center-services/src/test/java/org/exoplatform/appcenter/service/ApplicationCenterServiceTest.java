@@ -1,24 +1,47 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 Meeds Association
+ * contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 package org.exoplatform.appcenter.service;
 
 import static org.junit.Assert.*;
 
 import java.io.InputStream;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
 import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.plugin.ApplicationPlugin;
+import org.exoplatform.commons.file.services.FileStorageException;
 import org.exoplatform.commons.file.services.NameSpaceService;
-import org.exoplatform.container.*;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.RootContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
-import org.exoplatform.container.xml.*;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.ObjectParameter;
+import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.naming.InitialContextInitializer;
 import org.exoplatform.services.organization.*;
 import org.exoplatform.services.organization.idm.MembershipImpl;
-import org.exoplatform.services.security.IdentityConstants;
 
 public class ApplicationCenterServiceTest {
 
@@ -95,11 +118,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               "permissions1",
                                               "permissions2");
@@ -112,7 +137,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -142,11 +167,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
@@ -187,7 +214,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.getImageFileId(), storedApplication.getImageFileId());
     assertEquals(application.getDescription(), storedApplication.getDescription());
     assertEquals(application.isActive(), storedApplication.isActive());
-    assertEquals(application.isByDefault(), storedApplication.isByDefault());
+    assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
     try {
@@ -197,12 +224,13 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
-    application.setPermissions(IdentityConstants.ANY);
+    application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals(ApplicationCenterService.DEFAULT_USERS_PERMISSION, storedApplication.getPermissions().get(0));
 
     application.setUrl("url2");
-    storedApplication = applicationCenterService.updateApplication(application, SIMPLE_USERNAME);
-    assertNotNull("simple user should be able to modify application after an admin changed its permissions", storedApplication);
+    storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
+    assertEquals("url2", storedApplication.getUrl());
   }
 
   @Test
@@ -238,11 +266,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
@@ -251,11 +281,13 @@ public class ApplicationCenterServiceTest {
     application = new Application(null,
                                   "title",
                                   "url",
-                                  5L,
+                                  "",
+                                  0L,
                                   null,
                                   null,
                                   "description",
                                   true,
+                                  false,
                                   false,
                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     storedApplication = applicationCenterService.createApplication(application);
@@ -267,10 +299,10 @@ public class ApplicationCenterServiceTest {
     }
 
     application.setId(storedApplication.getId());
-    application.setPermissions(IdentityConstants.ANY);
+    application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
 
-    applicationCenterService.deleteApplication(storedApplication.getId(), SIMPLE_USERNAME);
+    applicationCenterService.deleteApplication(storedApplication.getId(), ADMIN_USERNAME);
   }
 
   @Test
@@ -355,11 +387,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
@@ -371,7 +405,7 @@ public class ApplicationCenterServiceTest {
     }
 
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
-    storedApplication.setPermissions(IdentityConstants.ANY);
+    storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
   }
@@ -397,11 +431,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
@@ -411,7 +447,7 @@ public class ApplicationCenterServiceTest {
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
 
-    storedApplication.setPermissions(IdentityConstants.ANY);
+    storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
 
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
@@ -431,11 +467,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     applicationCenterService.createApplication(application);
@@ -443,11 +481,13 @@ public class ApplicationCenterServiceTest {
     Application application2 = new Application(null,
                                                "title2",
                                                "url2",
-                                               6L,
+                                               "",
+                                               0L,
                                                null,
                                                null,
                                                "description",
                                                true,
+                                               false,
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     applicationCenterService.createApplication(application2);
@@ -462,25 +502,172 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(2, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getSize());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(3, 0, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(2, applicationsList.getSize());
+    assertEquals(0, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getApplicationsList(0, 10, null);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
     assertEquals(2, applicationsList.getSize());
+  }
+
+  @Test
+  public void testGetMandatoryAndFavoriteApplicationsList() throws Exception {
+    Application application1 = new Application(null,
+                                               "title1",
+                                               "url1",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description1",
+                                               true,
+                                               true,
+                                               true,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application2 = new Application(null,
+                                               "title2",
+                                               "url2",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description",
+                                               false,
+                                               true,
+                                               true,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application3 = new Application(null,
+                                               "title3",
+                                               "url3",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description3",
+                                               true,
+                                               false,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application4 = new Application(null,
+                                               "title4",
+                                               "url4",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description4",
+                                               true,
+                                               false,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application5 = new Application(null,
+                                               "title5",
+                                               "url5",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description5",
+                                               true,
+                                               false,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
+
+    applicationCenterService.createApplication(application1);
+    applicationCenterService.createApplication(application2);
+    Application storedApp3 = applicationCenterService.createApplication(application3);
+    Application storedApp4 = applicationCenterService.createApplication(application4);
+    Application storedApp5 = applicationCenterService.createApplication(application5);
+
+    applicationCenterService.addFavoriteApplication(storedApp3.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp4.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp5.getId(), "simple");
+
+    ApplicationList MandatoryAndFavoriteApplications = applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin");
+    assertEquals(3, MandatoryAndFavoriteApplications.getApplications().size());
+    assertEquals(3, MandatoryAndFavoriteApplications.getSize());
+  }
+
+  @Test
+  public void testUpdateFavoriteApplicationOrder() throws Exception {
+    Application application1 = new Application(null,
+                                               "title3",
+                                               "url3",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description3",
+                                               true,
+                                               false,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    Application application2 = new Application(null,
+                                               "title5",
+                                               "url5",
+                                               "",
+                                               0L,
+                                               null,
+                                               null,
+                                               "description5",
+                                               true,
+                                               false,
+                                               false,
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
+
+    try {
+      applicationCenterService.getMandatoryAndFavoriteApplicationsList("");
+      fail("Shouldn't retrieve applications with null username");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    Application storedApp1 = applicationCenterService.createApplication(application1);
+    Application storedApp2 = applicationCenterService.createApplication(application2);
+
+    applicationCenterService.addFavoriteApplication(storedApp1.getId(), "admin");
+    applicationCenterService.addFavoriteApplication(storedApp2.getId(), "simple");
+
+    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "admin");
+    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp2.getId(), new Long(2)), "simple");
+
+    try {
+      applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(storedApp1.getId(), new Long(1)), "");
+      fail("Shouldn't retrieve applications with null username");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    try {
+      applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(0L, new Long(1)), "");
+      fail("Application id can not be negative or equal to zero.");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    assertEquals(new Long(1),
+                 applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+    assertEquals(new Long(1),
+                 applicationCenterService.getMandatoryAndFavoriteApplicationsList("admin").getApplications().get(0).getOrder());
+
   }
 
   @Test
@@ -501,11 +688,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
-                                              5L,
+                                              "",
+                                              0L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     applicationCenterService.createApplication(application);
@@ -513,32 +702,34 @@ public class ApplicationCenterServiceTest {
     Application application2 = new Application(null,
                                                "title2",
                                                "url2",
-                                               6L,
+                                               "",
+                                               0L,
                                                null,
                                                null,
                                                "description",
                                                true,
                                                false,
-                                               IdentityConstants.ANY);
+                                               false,
+                                               ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     applicationCenterService.createApplication(application2);
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
@@ -574,13 +765,13 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
   }
 
   @Test
@@ -603,11 +794,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     application.setImageFileName("name");
@@ -645,11 +838,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     application.setImageFileName("name");
@@ -663,14 +858,13 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
-    InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(),
-                                                                                      ADMIN_USERNAME);
+    InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(), ADMIN_USERNAME);
     assertNotNull(inputStream);
     assertTrue(inputStream.available() > 0);
   }
 
   @Test
-  public void testAddApplicationPlugin() {
+  public void testAddApplicationPlugin() throws FileStorageException {
     try {
       applicationCenterService.addApplicationPlugin(null);
       fail("Shouldn't be able to add null plugin");
@@ -696,11 +890,13 @@ public class ApplicationCenterServiceTest {
     Application application = new Application(null,
                                               "title",
                                               "url",
+                                              "",
                                               5L,
                                               null,
                                               null,
                                               "description",
                                               true,
+                                              false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
@@ -739,10 +935,12 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
@@ -774,10 +972,12 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
@@ -809,7 +1009,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getUrl(), storedApplication.getUrl());
       assertEquals(application.getDescription(), storedApplication.getDescription());
       assertEquals(application.isActive(), storedApplication.isActive());
-      assertEquals(application.isByDefault(), storedApplication.isByDefault());
+      assertEquals(application.isMandatory(), storedApplication.isMandatory());
       assertTrue(storedApplication.isSystem());
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNotNull(application.getImageFileId());

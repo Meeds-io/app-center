@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+This file is part of the Meeds project (https://meeds.io/).
+Copyright (C) 2020 Meeds Association
+contact@meeds.io
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+-->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
@@ -55,6 +72,7 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
     </modifySql>
   </changeSet>
+  
   <changeSet author="appCenter" id="1.0.0-2" onValidationFail="MARK_RAN">
     <preConditions onFail="MARK_RAN" onError="MARK_RAN">
       <not>
@@ -63,6 +81,7 @@
     </preConditions>
     <addForeignKeyConstraint constraintName="FK_AC_FAVORITE_APPLICATION_AC_APPLICATION" baseTableName="AC_FAVORITE_APPLICATION" baseColumnNames="APPLICATION_ID" referencedTableName="AC_APPLICATION" referencedColumnNames="ID" onDelete="CASCADE" />
   </changeSet>
+  
   <changeSet author="appCenter" id="1.0.0-3">
     <addColumn tableName="AC_APPLICATION">
       <column name="IS_SYSTEM" type="BOOLEAN" defaultValueBoolean="false" />
@@ -72,5 +91,27 @@
   <changeSet author="appCenter" id="1.0.0-4" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_APPLICATION_ID" startValue="1"/>
     <createSequence sequenceName="SEQFAVORITE_APPLICATION_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-5">
+    <addColumn tableName="AC_FAVORITE_APPLICATION">
+      <column name="APPLICATION_ORDER" type="BIGINT">
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-6">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="HELP_PAGE_URL" type="VARCHAR(500)">
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-7">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_MOBILE" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false" />
+      </column>
+    </addColumn>
   </changeSet>
 </databaseChangeLog>
