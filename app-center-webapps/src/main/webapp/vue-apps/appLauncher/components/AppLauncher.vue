@@ -71,6 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
+                  @click="logOpenApplication(application.id)"
                 >
                   <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
@@ -105,6 +106,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
+                  @click="logOpenApplication(application.id)"
                 >
                   <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
@@ -332,6 +334,12 @@ export default {
         credentials: 'include',
         method: 'PUT',
         body: JSON.stringify(applicationsOrder)
+      });
+    },
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
       });
     },
     navigateTo(link) {

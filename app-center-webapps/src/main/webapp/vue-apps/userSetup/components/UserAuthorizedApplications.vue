@@ -67,14 +67,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <div class="authorisedAppContent">
             <v-list-item class="applicationHeader">
               <div class="image">
-                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
+                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">
                   <img v-if="authorizedApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
                   <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
                 </a>
               </div>
               <v-list-item-content>
-                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">
+                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">
                   <h5 class="tooltipContent">
                     <div 
                       v-exo-tooltip.bottom.body="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
@@ -110,7 +110,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-card-text>
             <v-divider></v-divider>
             <v-card-actions class="applicationActions">
-              <a :target="authorizedApp.target" :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+              <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
               <div v-exo-tooltip.bottom.body="authorizedApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''">
                 <v-btn
                   v-if="authorizedApp.mandatory"
@@ -295,19 +295,17 @@ export default {
         });
     },
     addOrDeleteFavoriteApplication(application) {
-      return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
-        credentials: 'include',
-        method: application.favorite ? 'DELETE' : 'POST',
-      })
-        .then(() => {
+      if (!application.favorite) {
+        return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
+          credentials: 'include',
+          method: application.favorite ? 'DELETE' : 'POST',
+        }).then(() => {
+          application.favorite=!application.favorite;
           return this.$parent.$children[1].getFavoriteApplicationsList();
-        })
-        .then(() => {
-          application.favorite = !application.favorite;
-          if (!application.favorite) {
-            this.$parent.$children[1].deleteFavoriteApplication(application.id);
-          }
         });
+      } else {
+        this.$parent.$children[1].deleteFavoriteApplication(application.id);
+      }
     },
     loadNextPage() {
       this.getAuthorizedApplicationsList();
@@ -331,6 +329,12 @@ export default {
     searchAuthorizedApplicationsList() {
       this.authorizedApplicationsList = [];
       this.getAuthorizedApplicationsList(true);
+    },
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
     },
     navigateTo(link) {
       window.open(link);
