@@ -54,11 +54,11 @@ import org.exoplatform.services.security.MembershipEntry;
  * A Service to access and store applications
  */
 public class ApplicationCenterService implements Startable {
-
-  private static final Log               LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
-
+  
+  private static final Log LOG = ExoLogger.getLogger(ApplicationCenterService.class);
+  
   public static final String             DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
-
+  
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
   public static final String             ANY_PERMISSION                    = "any";
@@ -68,45 +68,52 @@ public class ApplicationCenterService implements Startable {
   public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
 
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
-
+  
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
-
+  
   public static final String             DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
-
+  
   public static final String             DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
-
+  
   public static final int                DEFAULT_LIMIT                     = 10;
-
+  
   private static final Context           APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
-
+  
   private static final Scope             APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
-
+  
   private PortalContainer                container;
-
+  
   private ConfigurationManager           configurationManager;
-
+  
   private SettingService                 settingService;
-
+  
   private Authenticator                  authenticator;
-
+  
   private IdentityRegistry               identityRegistry;
-
+  
   private ApplicationCenterStorage       appCenterStorage;
-
+  
   private String                         defaultAdministratorPermission    = null;
-
+  
   private long                           maxFavoriteApps                   = -1;
-
+  
   private long                           defaultMaxFavoriteApps            = 0;
-
+  
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
-
+  
   public static String                   LOG_SERVICE_NAME                  = "application-center";
-
+  
   public static String                   LOG_OPEN_FAVORITE_DRAWER          = "open-favorite-drawer";
-
+  
   public static String                   LOG_CLICK_ALL_APPLICATIONS        = "click-all-applications";
-
+  
+  public static final String LOG_OPEN_APPLICATION = "open-application";
+  
+  public static final String LOG_REORGANIZE_FAVORITES = "reorganize-favorites";
+  
+  public static final String LOG_ADD_FAVORITE = "add-favorite";
+  public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
+  
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
@@ -131,7 +138,7 @@ public class ApplicationCenterService implements Startable {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
     }
   }
-
+  
   /**
    * A method that will be invoked when the server starts (
    * {@link PortalContainer} starts ) to inject default application and to delete
@@ -266,6 +273,22 @@ public class ApplicationCenterService implements Startable {
     }
 
     return appCenterStorage.createApplication(application);
+  }
+  
+  /**
+   * Get an application by id
+   *
+   * @param applicationId application to find
+   * @return stored {@link Application} in datasource
+   * @throws Exception when {@link ApplicationNotFoundException} is thrown or an
+   *           error occurs while saving application
+   */
+  public Application findApplication(long applicationId) throws Exception {
+    Application application = appCenterStorage.getApplicationById(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
+    }
+    return application;
   }
 
   /**
