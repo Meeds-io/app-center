@@ -53,7 +53,10 @@ public class ApplicationCenterREST implements ResourceContainer {
   private static final String      LOG_OPEN_DRAWER_ENDPOINT            = "applications/logOpenDrawer";
 
   private static final String      LOG_CLICK_ALL_APPLICATIONS_ENDPOINT = "applications/logClickAllApplications";
-
+  
+  private static final String      LOG_CLICK_ONE_APPLICATION_ENDPOINT = "applications/logClickApplication";
+  
+  
   private static final String      ADMINISTRATORS_GROUP                = "/platform/administrators";
 
   private static final Log         LOG                                 = ExoLogger.getLogger(ApplicationCenterREST.class);
@@ -166,6 +169,32 @@ public class ApplicationCenterREST implements ResourceContainer {
                ApplicationCenterService.LOG_SERVICE_NAME,
                ApplicationCenterService.LOG_CLICK_ALL_APPLICATIONS,
                getCurrentUserName(),
+               "0");
+      return Response.ok().build();
+    } catch (Exception e) {
+      LOG.error("Unknown error occurred while updating application", e);
+      return Response.serverError().build();
+    }
+  }
+  
+  
+  @GET
+  @Path(LOG_CLICK_ONE_APPLICATION_ENDPOINT+ "/{applicationId}")
+  @RolesAllowed("users")
+  @ApiOperation(value = "Log that the currently authenticated user clicked on one Application", httpMethod = "GET",
+      response = Response.class, notes = "empty response")
+  @ApiResponses(value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
+      @ApiResponse(code = 500, message = "Internal server error") })
+  public Response logClickOneApplications(@ApiParam(value = "Application technical id to log", required = true) @PathParam("applicationId") Long applicationId) {
+    try {
+      Application application = appCenterService.findApplication(applicationId);
+      
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_OPEN_APPLICATION,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
                "0");
       return Response.ok().build();
     } catch (Exception e) {
@@ -289,7 +318,18 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response addFavoriteApplication(@ApiParam(value = "Application technical id to add as favorite", required = true) @PathParam("applicationId") Long applicationId) {
     try {
+      long startTime = System.currentTimeMillis();
+      Application application = appCenterService.findApplication(applicationId);
       appCenterService.addFavoriteApplication(applicationId, getCurrentUserName());
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_ADD_FAVORITE,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
+               totalTime);
       return Response.noContent().build();
     } catch (IllegalAccessException e) {
       LOG.warn(e);
@@ -312,9 +352,17 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response updateApplicationsOrder(@ApiParam(value = "Application to update", required = true) List<ApplicationOrder> applicationOrders) {
     try {
+      long startTime = System.currentTimeMillis();
       for (ApplicationOrder applicationOrder : applicationOrders) {
         appCenterService.updateFavoriteApplicationOrder(applicationOrder, getCurrentUserName());
       }
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_REORGANIZE_FAVORITES,
+               getCurrentUserName(),
+               totalTime);
     } catch (ApplicationNotFoundException e) {
       LOG.warn(e);
       return Response.serverError().build();
@@ -333,7 +381,18 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response deleteFavoriteApplication(@ApiParam(value = "Application technical id to delete from favorite", required = true) @PathParam("applicationId") Long applicationId) {
     try {
+      long startTime = System.currentTimeMillis();
+      Application application = appCenterService.findApplication(applicationId);
       appCenterService.deleteFavoriteApplication(applicationId, getCurrentUserName());
+      long endTime = System.currentTimeMillis();
+      long totalTime = endTime - startTime;
+      LOG.info("service={} operation={} parameters=\"user:{},applicationId={},applicationName={}\" status=ok " + "duration_ms={}",
+               ApplicationCenterService.LOG_SERVICE_NAME,
+               ApplicationCenterService.LOG_REMOVE_FAVORITE,
+               getCurrentUserName(),
+               applicationId,
+               application.getTitle(),
+               totalTime);
       return Response.noContent().build();
     } catch (Exception e) {
       LOG.error("Unknown error occurred while deleting application from favorites", e);

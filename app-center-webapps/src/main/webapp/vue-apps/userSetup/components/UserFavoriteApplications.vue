@@ -49,7 +49,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       >
         <v-list-item>
           <div class="favoriteAppImage">
-            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
+            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl" @click="logOpenApplication(favoriteApp.id)">
               <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
               <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
               <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
@@ -60,6 +60,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               class="favoriteAppUrl"
               :target="favoriteApp.target"
               :href="favoriteApp.computedUrl"
+              @click="logOpenApplication(favoriteApp.id)"
             >
               <div
                 v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
@@ -208,6 +209,12 @@ export default {
           this.$emit('canAddFavorite', this.canAddFavorite);
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
+    },
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
     },
     deleteFavoriteApplication(appId) {
       return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
