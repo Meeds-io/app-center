@@ -7,7 +7,7 @@
 		<node>
 			<uri>appCenterAdminSetup</uri>
 			<name>appCenterAdminSetup</name>
-			<label>App center admin setup</label>
+			<label>#{portal.intranet.appCenterAdminSetup}</label>
 			<page-reference>group::/platform/administrators::appCenterAdminSetup</page-reference>
 		</node>
 	</page-nodes>
