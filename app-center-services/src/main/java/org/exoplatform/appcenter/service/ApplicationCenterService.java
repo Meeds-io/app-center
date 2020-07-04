@@ -45,17 +45,20 @@ import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.security.*;
+import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityRegistry;
+import org.exoplatform.services.security.MembershipEntry;
 
 /**
  * A Service to access and store applications
  */
 public class ApplicationCenterService implements Startable {
-
-  private static final Log               LOG                               = ExoLogger.getLogger(ApplicationCenterService.class);
-
+  
+  private static final Log LOG = ExoLogger.getLogger(ApplicationCenterService.class);
+  
   public static final String             DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
-
+  
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
   public static final String             ANY_PERMISSION                    = "any";
@@ -65,45 +68,52 @@ public class ApplicationCenterService implements Startable {
   public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
 
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
-
+  
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
-
+  
   public static final String             DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
-
+  
   public static final String             DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
-
+  
   public static final int                DEFAULT_LIMIT                     = 10;
-
+  
   private static final Context           APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
-
+  
   private static final Scope             APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
-
+  
   private PortalContainer                container;
-
+  
   private ConfigurationManager           configurationManager;
-
+  
   private SettingService                 settingService;
-
+  
   private Authenticator                  authenticator;
-
+  
   private IdentityRegistry               identityRegistry;
-
+  
   private ApplicationCenterStorage       appCenterStorage;
-
+  
   private String                         defaultAdministratorPermission    = null;
-
+  
   private long                           maxFavoriteApps                   = -1;
-
+  
   private long                           defaultMaxFavoriteApps            = 0;
-
+  
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
-
+  
   public static String                   LOG_SERVICE_NAME                  = "application-center";
-
+  
   public static String                   LOG_OPEN_FAVORITE_DRAWER          = "open-favorite-drawer";
-
+  
   public static String                   LOG_CLICK_ALL_APPLICATIONS        = "click-all-applications";
-
+  
+  public static final String LOG_OPEN_APPLICATION = "open-application";
+  
+  public static final String LOG_REORGANIZE_FAVORITES = "reorganize-favorites";
+  
+  public static final String LOG_ADD_FAVORITE = "add-favorite";
+  public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
+  
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
@@ -128,7 +138,7 @@ public class ApplicationCenterService implements Startable {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
     }
   }
-
+  
   /**
    * A method that will be invoked when the server starts (
    * {@link PortalContainer} starts ) to inject default application and to delete
@@ -176,7 +186,7 @@ public class ApplicationCenterService implements Startable {
 
         Application storedApplication = null;
         try {
-          storedApplication = appCenterStorage.getApplicationByTitleOrURL(title, url);
+          storedApplication = appCenterStorage.getApplicationByTitle(title);
         } catch (FileStorageException e) {
           LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
         }
@@ -253,13 +263,9 @@ public class ApplicationCenterService implements Startable {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
-    Application existingApplication = appCenterStorage.getApplicationByTitleOrURL(application.getTitle(), application.getUrl());
+    Application existingApplication = appCenterStorage.getApplicationByTitle(application.getTitle());
     if (existingApplication != null) {
-      if (StringUtils.equals(existingApplication.getTitle(), application.getTitle())) {
-        throw new ApplicationAlreadyExistsException("An application with same title already exists");
-      } else {
-        throw new ApplicationAlreadyExistsException("An application with same URL already exists");
-      }
+      throw new ApplicationAlreadyExistsException("An application with same title already exists");
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
@@ -267,6 +273,22 @@ public class ApplicationCenterService implements Startable {
     }
 
     return appCenterStorage.createApplication(application);
+  }
+  
+  /**
+   * Get an application by id
+   *
+   * @param applicationId application to find
+   * @return stored {@link Application} in datasource
+   * @throws Exception when {@link ApplicationNotFoundException} is thrown or an
+   *           error occurs while saving application
+   */
+  public Application findApplication(long applicationId) throws Exception {
+    Application application = appCenterStorage.getApplicationById(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
+    }
+    return application;
   }
 
   /**
@@ -363,9 +385,9 @@ public class ApplicationCenterService implements Startable {
 
     if (!isAdmin(username)) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
-              + storedApplication.getTitle());
+          + storedApplication.getTitle());
     }
-    
+
     appCenterStorage.deleteApplication(applicationId);
   }
 
@@ -532,12 +554,8 @@ public class ApplicationCenterService implements Startable {
       throw new IllegalArgumentException("username is mandatory");
     }
     ApplicationList resultApplicationsList = new ApplicationList();
-    List<Application> userApplicationsList = getApplications(offset,
-                                                             limit,
-                                                             keyword,
-                                                             username).stream()
-                                                                      .filter(application -> application.isActive())
-                                                                      .collect(Collectors.toList());
+    List<Application> userApplicationsList = getApplications(offset, limit, keyword, username).stream()
+                                                                                              .collect(Collectors.toList());
     userApplicationsList = userApplicationsList.stream().map(app -> {
       UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
@@ -792,7 +810,10 @@ public class ApplicationCenterService implements Startable {
     List<Application> userApplicationsList = new ArrayList<>();
 
     List<Application> applications = appCenterStorage.getApplications(keyword);
-    applications = applications.stream().filter(app -> hasPermission(username, app)).collect(Collectors.toList());
+    applications = applications.stream()
+                               .filter(app -> hasPermission(username, app))
+                               .filter(application -> application.isActive())
+                               .collect(Collectors.toList());
     if (limit <= 0) {
       limit = applications.size();
     }

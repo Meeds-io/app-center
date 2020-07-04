@@ -157,7 +157,7 @@ public class ApplicationDAOTest {
   }
 
   @Test
-  public void testGetApplicationByTitleOrUrl() {
+  public void testGetApplicationByTitle() {
     ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
     assertNotNull(applicationDAO);
     FavoriteApplicationDAO favoriteApplicationDAO = ExoContainerContext.getService(FavoriteApplicationDAO.class);
@@ -182,23 +182,15 @@ public class ApplicationDAOTest {
                                                                  "permissions");
     applicationDAO.create(applicationEntity2);
 
-    ApplicationEntity foundEntity = applicationDAO.getApplicationByTitleOrUrl("title", "url");
+    ApplicationEntity foundEntity = applicationDAO.getApplicationByTitle("title");
     assertNotNull(foundEntity);
     assertEquals(applicationEntity.getId(), foundEntity.getId());
 
-    foundEntity = applicationDAO.getApplicationByTitleOrUrl("title2", "url");
-    assertNotNull(foundEntity);
-    assertEquals(applicationEntity.getId(), foundEntity.getId());
-
-    foundEntity = applicationDAO.getApplicationByTitleOrUrl("title", "url2");
-    assertNotNull(foundEntity);
-    assertEquals(applicationEntity.getId(), foundEntity.getId());
-
-    foundEntity = applicationDAO.getApplicationByTitleOrUrl("title2", "url2");
+    foundEntity = applicationDAO.getApplicationByTitle("title2");
     assertNotNull(foundEntity);
     assertEquals(applicationEntity2.getId(), foundEntity.getId());
-
-    foundEntity = applicationDAO.getApplicationByTitleOrUrl("title3", "url3");
+    
+    foundEntity = applicationDAO.getApplicationByTitle("title3");
     assertNull(foundEntity);
   }
 

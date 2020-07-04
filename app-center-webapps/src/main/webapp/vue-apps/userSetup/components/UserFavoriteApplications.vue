@@ -16,55 +16,76 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="userFavoriteApplications">
-    <div class="favoriteAppsTitle">
-      {{ $t("appCenter.userSetup.favorite") }}
+    <div v-if="loading" class="favoriteAppsTitle">
+      <v-skeleton-loader
+        class="mx-auto"
+        type="card-heading"
+      >
+      </v-skeleton-loader>
+    </div>
+    <div v-else>
+      <div class="favoriteAppsTitle">
+        {{ $t("appCenter.userSetup.favorite") }}
+      </div>
     </div>
 
-    <v-card
-      v-for="(favoriteApp, index) in favoriteApplicationsList"
-      :key="index"
-      class="favoriteApplication"
-      height="65"
-      max-width="auto"
-      outlined
-    >
-      <v-list-item>
-        <div class="favoriteAppImage">
-          <a :target="favoriteApp.target" :href="favoriteApp.computedUrl">
-            <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
-            <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
-            <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
-          </a>
-        </div>
-        <v-list-item-content>
-          <a
-            class="favoriteAppUrl"
-            :target="favoriteApp.target"
-            :href="favoriteApp.computedUrl"
-          >
-            <div
-              v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
-              class="favAppTitle"
-            >
-              {{ favoriteApp.title }}
-            </div>
-          </a>
-        </v-list-item-content>
-        <v-list-item-action
-          v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''"
-          class="favoriteAppRemove"
+    <div v-if="loading">
+      <div v-for="n in 8" :key="n">
+        <v-skeleton-loader
+          class="mx-auto"
+          type="table-heading"
         >
-          <v-btn
-            :disabled="favoriteApp.mandatory"
-            :class="favoriteApp.mandatory ? 'mandatory' : ''"
-            icon
-            @click.stop="deleteFavoriteApplication(favoriteApp.id)"
+        </v-skeleton-loader>
+      </div>      
+    </div>
+    <div v-else>
+      <v-card
+        v-for="(favoriteApp, index) in favoriteApplicationsList"
+        :key="index"
+        class="favoriteApplication"
+        height="65"
+        max-width="auto"
+        outlined
+      >
+        <v-list-item>
+          <div class="favoriteAppImage">
+            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl" @click="logOpenApplication(favoriteApp.id)">
+              <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+              <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+              <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
+            </a>
+          </div>
+          <v-list-item-content>
+            <a
+              class="favoriteAppUrl"
+              :target="favoriteApp.target"
+              :href="favoriteApp.computedUrl"
+              @click="logOpenApplication(favoriteApp.id)"
+            >
+              <div
+                v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
+                class="favAppTitle"
+              >
+                {{ favoriteApp.title }}
+              </div>
+            </a>
+          </v-list-item-content>
+          <v-list-item-action
+            v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''"
+            class="favoriteAppRemove"
           >
-            <v-icon>mdi-star</v-icon>
-          </v-btn>
-        </v-list-item-action>
-      </v-list-item>
-    </v-card>
+            <v-btn
+              :disabled="favoriteApp.mandatory"
+              :class="favoriteApp.mandatory ? 'mandatory' : ''"
+              icon
+              @click.stop="deleteFavoriteApplication(favoriteApp.id)"
+            >
+              <v-icon>mdi-star</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+      </v-card>
+    </div>
     <div v-show="!loading">
       <div v-if="canAddFavorite" class="maxFavorite">
         <v-icon class="notReached">
@@ -132,6 +153,15 @@ export default {
           }
         })
         .then(data => {
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+              }
+            }
+          });
           this.canAddFavorite = data.canAddFavorite;
           const allApplications = [];
           if (data) {
@@ -180,6 +210,12 @@ export default {
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
     },
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+    },
     deleteFavoriteApplication(appId) {
       return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
         method: 'DELETE',
@@ -194,6 +230,9 @@ export default {
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
         });
+    },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
     },
   }
 };

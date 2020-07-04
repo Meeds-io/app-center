@@ -30,7 +30,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-tab>
 
           <v-tab-item class="px-4 py-2">
-            <adminSetup-list :page-size="pageSize" />
+            <adminSetup-list />
           </v-tab-item>
           <v-tab-item class="px-4 py-2">
             <adminSetup-generalParams />
@@ -40,16 +40,3 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </v-row>
   </v-app>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      pageSize: 10,
-    };
-  },
-  created() {
-    this.pageSize = this.$parent.$data.preferences.pageSize && Number(this.$parent.$data.preferences.pageSize) || this.pageSize;
-  },
-};
-</script>

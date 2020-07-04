@@ -24,7 +24,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     <ul class="myToolsList">
       <li v-for="favoriteApp in favoriteApplicationsList" :key="favoriteApp.id">
-        <a :href="favoriteApp.computedUrl" :target="favoriteApp.target">
+        <a :href="favoriteApp.computedUrl" :target="favoriteApp.target"
+                  @click="logOpenApplication(favoriteApp.id)">
           <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
           <span class="myToolTitle tooltipContent">
             <div>{{ favoriteApp.title }}</div>
@@ -88,7 +89,12 @@ export default {
           return this.favoriteApplicationsList;
         });
     },
-
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+    },
     getMaxFavoriteApps() {
       return fetch('/portal/rest/app-center/settings', {
         method: 'GET',

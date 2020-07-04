@@ -244,27 +244,14 @@ public class ApplicationCenterStorageTest {
     assertNotNull(applicationCenterStorage);
 
     try {
-      applicationCenterStorage.getApplicationByTitleOrURL(null, null);
+      applicationCenterStorage.getApplicationByTitle(null);
       fail("Shouldn't allow to get application by null values");
     } catch (IllegalArgumentException e) {
       // Expected
     }
 
-    try {
-      applicationCenterStorage.getApplicationByTitleOrURL(null, "url");
-      fail("Shouldn't allow to get application by null values");
-    } catch (IllegalArgumentException e) {
-      // Expected
-    }
 
-    try {
-      applicationCenterStorage.getApplicationByTitleOrURL("title", null);
-      fail("Shouldn't allow to get application by null values");
-    } catch (IllegalArgumentException e) {
-      // Expected
-    }
-
-    assertNull(applicationCenterStorage.getApplicationByTitleOrURL("title", "url"));
+    assertNull(applicationCenterStorage.getApplicationByTitle("title"));
 
     Application application = new Application(null,
                                               "title",
@@ -281,8 +268,7 @@ public class ApplicationCenterStorageTest {
                                               "permissions2");
 
     applicationCenterStorage.createApplication(application);
-    Application storedApplication = applicationCenterStorage.getApplicationByTitleOrURL(application.getTitle(),
-                                                                                        application.getUrl());
+    Application storedApplication = applicationCenterStorage.getApplicationByTitle(application.getTitle());
     assertNotNull(storedApplication);
     assertNotNull(storedApplication.getId());
     assertEquals(application.getTitle(), storedApplication.getTitle());

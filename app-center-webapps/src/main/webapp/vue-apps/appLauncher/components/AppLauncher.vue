@@ -18,7 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <v-app id="appLauncher" flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn icon class="text-xs-center" @click="toggleDrawer()">
+        <v-btn icon class="text-xs-center" id="appcenterLauncherButton" @click="toggleDrawer()">
           <v-icon class="grey-color">
             mdi-apps
           </v-icon>
@@ -71,6 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
+                  @click="logOpenApplication(application.id)"
                 >
                   <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
@@ -105,6 +106,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
+                  @click="logOpenApplication(application.id)"
                 >
                   <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
@@ -132,7 +134,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
             small
+            :href="appCenterLink"
             @click="navigateTo('appCenterUserSetup/')"
+            @click.middle="navigateTo('appCenterUserSetup/')"
+            @click.right="navigateTo('appCenterUserSetup/')"
           >
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
@@ -160,6 +165,7 @@ export default {
       loading: true,
       draggedElementIndex: null,
       alphabeticalOrder: true,
+      appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
   },
   watch: {
@@ -257,6 +263,15 @@ export default {
           }
         })
         .then(data => {
+          // manage system apps localized names
+          data.applications.forEach(app => {
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+              }
+            }
+          });
           const applications = [];
           if (this.isMobileDevice) {
             applications.push(...data.applications.filter(app => app.mobile));
@@ -321,6 +336,12 @@ export default {
         body: JSON.stringify(applicationsOrder)
       });
     },
+    logOpenApplication(id) {
+      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+    },
     navigateTo(link) {
       if (link==='appCenterUserSetup/') {
         fetch('/portal/rest/app-center/applications/logClickAllApplications', {
@@ -328,7 +349,6 @@ export default {
           credentials: 'include',
         });
       }
-      location.href = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/${link}`;
     },
     getAppGeneralSettings() {
       return fetch('/portal/rest/app-center/settings', {
@@ -345,6 +365,9 @@ export default {
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
         });
+    },
+    getAppIndex(appList, appId) {
+      return appList.findIndex(app => app.id === appId);
     },
   }
 };
