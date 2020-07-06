@@ -400,14 +400,12 @@ export default {
       this.getGroups(query).then(data => {
         const groups = [];
         for(const group of data.entities) {
-          if (!group.id.startsWith('/spaces')) {
-            groups.push({
-              avatarUrl: null,
-              text: `*:${group.id}`,
-              value: group.id,
-              type: 'group'
-            });
-          }
+          groups.push({
+            avatarUrl: null,
+            text: `*:${group.id}`,
+            value: group.id,
+            type: 'group'
+          });
         }
         callback(groups);
       });
