@@ -50,6 +50,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :footer-props="{
           itemsPerPageText: `${$t('appCenter.adminSetupForm.table.footer.text')}:`,        
         }"
+        :no-data-text="$t('appCenter.adminSetupForm.noApp')"
         disable-sort
       >
         <template slot="item" slot-scope="props">
@@ -145,10 +146,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </tr>
         </template>
       </v-data-table>
-  
-      <div v-if="!applicationsList.length" class="noApp">
-        {{ $t("appCenter.adminSetupForm.noApp") }}
-      </div>
       
       <exo-app-center-drawer
         :key="applicationDrawerKey"

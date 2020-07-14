@@ -17,8 +17,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <v-card class="searchApplicationCard d-flex flex-column" outlined>
     <div class="image mx-auto">
-      <a :target="targetUrl" :href="applicationUrl"
-        @click="logOpenApplication(id)">
+      <a 
+        :target="targetUrl"
+        :href="applicationUrl"
+        @click="logOpenApplication(id)"
+      >
         <v-img
           class="appImage"
           :src="imageUrl"
@@ -29,11 +32,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     <div class="mx-auto">
       <a
+        class="headline"
         :title="result.title"
         :target="targetUrl"
         :href="applicationUrl"
         @click="logOpenApplication(id)"
-        class="headline"
       >
         {{ result.title }}
       </a>
@@ -74,7 +77,6 @@ export default {
   },
   methods: {
     logOpenApplication() {
-      console.log(this);
       fetch(`/portal/rest/app-center/applications/logClickApplication/${this.result.id}`, {
         method: 'GET',
         credentials: 'include',
