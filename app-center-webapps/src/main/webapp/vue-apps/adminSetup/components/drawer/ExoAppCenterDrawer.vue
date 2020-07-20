@@ -260,7 +260,6 @@ export default {
       rules: [v => v.length <= maxDescriptionSize],
     };
   },
-
   computed: {
     canSaveApplication() {
       const maxDescriptionSize = 1000;
