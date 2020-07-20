@@ -260,6 +260,7 @@ export default {
       rules: [v => v.length <= maxDescriptionSize],
     };
   },
+
   computed: {
     canSaveApplication() {
       const maxDescriptionSize = 1000;
@@ -285,6 +286,12 @@ export default {
       const groups = this.appPermissions.map(permission => permission.id);
       this.permissions.push(...groups);
     },
+  },
+  mounted () {
+    $('.formContent').on( 'scroll', function(){
+      $('.selectize-dropdown').css('display', 'none');
+      $('.selectize-input').find('input').blur();
+    });
   },
   created() {
     $(document).on('keydown', (event) => {
