@@ -129,7 +129,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 @change="handleDefaultAppImageFileUpload()"
               >
             </div>
-            <div v-show="!defaultAppImageViewMode && defaultAppImage.fileName && defaultAppImage.fileBody">
+            <div v-show="!defaultAppImageViewMode && defaultAppImage.fileName">
               <span>
                 {{ defaultAppImage.fileName }}
               </span>
