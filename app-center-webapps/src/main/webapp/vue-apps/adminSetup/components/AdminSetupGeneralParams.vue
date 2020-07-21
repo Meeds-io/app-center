@@ -264,12 +264,15 @@ export default {
       this.defaultAppImage.fileBody = '';
       this.defaultAppImage.invalidSize = false;
       this.defaultAppImage.invalidImage = false;
+      if (this.$refs.defaultAppImageFile.files.length > 0) {
+        // remove file from the input
+        document.getElementById('defaultAppImageFile').value = '';
+      }
     },
 
     resetDefaultAppImage() {
-      this.defaultAppImage.isView = true;
-      this.defaultAppImage.invalidSize = false;
-      this.defaultAppImage.invalidImage = false;
+      this.defaultAppImageViewMode = true;
+      this.removeDefaultAppImageFile();
       this.getAppGeneralSettings();
     }
   }
