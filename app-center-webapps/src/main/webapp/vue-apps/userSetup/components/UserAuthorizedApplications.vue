@@ -111,7 +111,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-divider></v-divider>
             <v-card-actions class="applicationActions">
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-              <div v-exo-tooltip.bottom.body="authorizedApp.mandatory ? $t('appCenter.userSetup.mandatory') : ''">
+              <div 
+                v-exo-tooltip.bottom.body="getTooltip(authorizedApp)"
+              >
                 <v-btn
                   v-if="authorizedApp.mandatory"
                   icon
@@ -338,10 +340,16 @@ export default {
     },
     navigateTo(link) {
       window.open(link);
-
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
+    },
+    getTooltip(app) {
+      if (app.mandatory) {
+        return this.$t('appCenter.userSetup.mandatory');
+      } else {
+        return app.favorite ? this.$t('appCenter.userSetup.remove.favorite'): this.$t('appCenter.userSetup.add.favorite');
+      }
     },
   }
 };
