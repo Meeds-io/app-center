@@ -286,6 +286,12 @@ export default {
       this.permissions.push(...groups);
     },
   },
+  mounted () {
+    $('.formContent').on( 'scroll', function(){
+      $('.selectize-dropdown').css('display', 'none');
+      $('.selectize-input').find('input').blur();
+    });
+  },
   created() {
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape') {
