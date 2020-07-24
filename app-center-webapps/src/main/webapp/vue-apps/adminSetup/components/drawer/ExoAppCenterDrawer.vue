@@ -128,7 +128,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 </v-list-item-action>
               </v-list-item>             
             </v-col>
-            <v-col class="uploadImageInfo">
+            <v-col v-if="!formArray.invalidImageFormat" class="uploadImageInfo">
               <p
                 :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')"
               >
@@ -136,6 +136,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   mdi-information
                 </v-icon>
                 {{ $t("appCenter.adminSetupForm.sizeError") }}
+              </p>
+            </v-col>
+            <v-col v-else class="uploadImageInfo">
+              <p
+                :class="'imageFormat error'"
+              >
+                <v-icon small>
+                  mdi-information
+                </v-icon>
+                {{ $t("appCenter.adminSetupForm.imageFormatError") }}
               </p>
             </v-col>
           </v-row>
@@ -264,7 +274,7 @@ export default {
     canSaveApplication() {
       const maxDescriptionSize = 1000;
       return this.formArray.title && this.formArray.title !== '' && !this.appTitleExists() && !this.formArray.invalidSize && !this.formArray.invalidImage &&
-        this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
+          !this.formArray.invalidImageFormat && this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
     }
   },
   watch: {
@@ -312,7 +322,12 @@ export default {
 
     handleFileUpload() {
       const MAX_FILE_SIZE = 100000;
+      const imageTypeIndex = 6;
       if (this.$refs.image.files.length > 0) {
+        const imageFormatType = this.$refs.image.files[0].type.substring(imageTypeIndex);
+        if (imageFormatType.includes('svg')) {
+          this.formArray.invalidImageFormat = true;
+        }
         this.formArray.imageFileName = this.$refs.image.files[0].name;
         if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
           this.formArray.invalidSize = true;
@@ -330,6 +345,7 @@ export default {
       this.formArray.imageFileId = '';
       this.formArray.invalidSize = false;
       this.formArray.invalidImage = false;
+      this.formArray.invalidImageFormat = false;
       if (this.$refs.image.files.length > 0) {
         // remove file from the input
         document.getElementById('imageFile').value = '';
