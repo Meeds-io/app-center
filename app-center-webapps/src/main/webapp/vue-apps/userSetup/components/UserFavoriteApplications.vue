@@ -71,7 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </a>
           </v-list-item-content>
           <v-list-item-action
-            v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : $t('appCenter.userSetup.remove.favorite')"
+            v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : $t('appCenter.userSetup.remove.from.favorite')"
             class="favoriteAppRemove"
           >
             <v-btn

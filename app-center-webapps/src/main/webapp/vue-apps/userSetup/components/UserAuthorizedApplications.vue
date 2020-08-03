@@ -348,7 +348,7 @@ export default {
       if (app.mandatory) {
         return this.$t('appCenter.userSetup.mandatory');
       } else {
-        return app.favorite ? this.$t('appCenter.userSetup.remove.favorite'): this.$t('appCenter.userSetup.add.favorite');
+        return app.favorite ? this.$t('appCenter.userSetup.remove.from.favorite'): this.$t('appCenter.userSetup.add.to.favorite');
       }
     },
   }
