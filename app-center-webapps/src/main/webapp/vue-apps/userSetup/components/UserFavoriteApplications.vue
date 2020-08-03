@@ -229,6 +229,12 @@ export default {
             app => app.id === appId
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
+        }).finally(() => {
+          // make sure to hide tooltips.
+          const tooltips = document.getElementsByClassName('tooltip fade bottom');
+          Array.prototype.forEach.call(tooltips, tooltip => {
+            tooltip.style.display= 'none';
+          });
         });
     },
     getAppIndex(appList, appId) {
