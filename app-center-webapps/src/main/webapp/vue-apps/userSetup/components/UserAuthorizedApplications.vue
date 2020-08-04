@@ -77,7 +77,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">
                   <h5 class="tooltipContent">
                     <div 
-                      v-exo-tooltip.bottom.body="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
+                      :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
                       class="appTitle"
                     >
                       {{ authorizedApp.title }}
@@ -102,7 +102,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-list-item>
             <v-card-text class="userAppDescription">
               <div 
-                v-exo-tooltip.bottom.body="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
+                :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
                 class="description"
               >
                 {{ authorizedApp.description }}
@@ -112,7 +112,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-card-actions class="applicationActions">
               <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
               <div 
-                v-exo-tooltip.bottom.body="getTooltip(authorizedApp)"
+                :title="getTooltip(authorizedApp)"
               >
                 <v-btn
                   v-if="authorizedApp.mandatory"
@@ -348,7 +348,7 @@ export default {
       if (app.mandatory) {
         return this.$t('appCenter.userSetup.mandatory');
       } else {
-        return app.favorite ? this.$t('appCenter.userSetup.remove.favorite'): this.$t('appCenter.userSetup.add.favorite');
+        return app.favorite ? this.$t('appCenter.userSetup.remove.from.favorite'): this.$t('appCenter.userSetup.add.to.favorite');
       }
     },
   }
