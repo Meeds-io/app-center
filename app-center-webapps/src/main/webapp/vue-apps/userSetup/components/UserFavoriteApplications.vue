@@ -63,7 +63,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               @click="logOpenApplication(favoriteApp.id)"
             >
               <div
-                v-exo-tooltip.bottom.body="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
+                :title="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
                 class="favAppTitle"
               >
                 {{ favoriteApp.title }}
@@ -71,7 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </a>
           </v-list-item-content>
           <v-list-item-action
-            v-exo-tooltip.bottom.body="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : $t('appCenter.userSetup.remove.from.favorite')"
+            :title="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : $t('appCenter.userSetup.remove.from.favorite')"
             class="favoriteAppRemove"
           >
             <v-btn
@@ -229,12 +229,6 @@ export default {
             app => app.id === appId
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
-        }).finally(() => {
-          // make sure to hide tooltips.
-          const tooltips = document.getElementsByClassName('tooltip fade bottom');
-          Array.prototype.forEach.call(tooltips, tooltip => {
-            tooltip.style.display= 'none';
-          });
         });
     },
     getAppIndex(appList, appId) {
