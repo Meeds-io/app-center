@@ -64,7 +64,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               v-exo-tooltip.bottom.body="props.item.title.length > 22 ? props.item.title : ''"
               class="text-md-center tableAppTitle"
             >
-              {{ props.item.title }}
+              {{ props.item.displayName }}
             </td>
             <td 
               v-exo-tooltip.bottom.body="props.item.url.length > 23 ? props.item.url : ''"
@@ -289,7 +289,7 @@ export default {
             if (app.system) {
               const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
               if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
-                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);   
+                data.applications[this.getAppIndex(data.applications, app.id)].displayName = this.$t(`appCenter.system.application.${appTitle}`);
               }
             }
 
