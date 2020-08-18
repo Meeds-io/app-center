@@ -66,6 +66,7 @@ public class Application implements Serializable {
                      String imageFileBody,
                      String imageFileName,
                      String description,
+                     boolean isSystem,
                      boolean active,
                      boolean isMandatory,
                      boolean isMobile,
@@ -78,6 +79,7 @@ public class Application implements Serializable {
          imageFileBody,
          imageFileName,
          description,
+         isSystem,
          active,
          isMandatory,
          isMobile,
@@ -92,6 +94,7 @@ public class Application implements Serializable {
                      String imageFileBody,
                      String imageFileName,
                      String description,
+                     boolean isSystem,
                      boolean active,
                      boolean isMandatory,
                      boolean isMobile,
@@ -104,6 +107,7 @@ public class Application implements Serializable {
     this.active = active;
     this.isMandatory = isMandatory;
     this.isMobile = isMobile;
+    this.system = isSystem;
     this.permissions = permissions;
     this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
