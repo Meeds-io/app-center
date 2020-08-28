@@ -681,8 +681,11 @@ public class ApplicationCenterService implements Startable {
     if (application == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-    if (!hasPermission(username, application)) {
-      throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
+    // if user is admin then no need to check for permissions
+    if (!isAdmin(username)) {
+      if (!hasPermission(username, application)) {
+        throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
+      }
     }
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
       return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
