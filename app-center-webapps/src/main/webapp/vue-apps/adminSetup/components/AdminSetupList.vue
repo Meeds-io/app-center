@@ -283,7 +283,6 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          console.log('Data: ', data);
           data.applications.forEach(app => {
             this.existingAppNames.push(app.title);
             // manage system apps localized names
