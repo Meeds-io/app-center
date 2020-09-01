@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.impl.util.Base64;
+import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.portal.config.UserACL;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
@@ -329,7 +331,11 @@ public class ApplicationCenterService implements Startable {
   }
 
   private boolean isAdmin(String username) {
-    // Ingeneral case, the user is already loggedin, thus we will get the
+    UserACL userACL = CommonsUtils.getService(UserACL.class);
+    if (userACL != null) {
+      return userACL.isSuperUser() || userACL.isUserInGroup(userACL.getAdminGroups());
+    }
+    // In general case, the user is already loggedin, thus we will get the
     // Identity from registry without having to compute it again from
     // OrganisationService, thus the condition (identity == null) will be false
     // most of the time for better performances
