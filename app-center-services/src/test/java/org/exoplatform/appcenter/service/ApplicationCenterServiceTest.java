@@ -123,6 +123,8 @@ public class ApplicationCenterServiceTest {
     ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
     applicationDAO.deleteAll();
 
+    ConversationState.setCurrent(null);
+
     RequestLifeCycle.end();
     ExoContainerContext.setCurrentContainer(null);
   }
