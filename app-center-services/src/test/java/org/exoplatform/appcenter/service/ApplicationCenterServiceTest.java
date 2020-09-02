@@ -19,7 +19,11 @@ package org.exoplatform.appcenter.service;
 import static org.junit.Assert.*;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 
+import org.exoplatform.services.organization.*;
+import org.exoplatform.services.organization.idm.MembershipImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,14 +44,19 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ObjectParameter;
 import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.naming.InitialContextInitializer;
-import org.exoplatform.services.organization.*;
-import org.exoplatform.services.organization.idm.MembershipImpl;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.MembershipEntry;
 
 public class ApplicationCenterServiceTest {
 
   private static final String      ADMIN_USERNAME  = "admin";
 
   private static final String      SIMPLE_USERNAME = "simple";
+
+  private ConversationState        adminState;
+
+  private ConversationState        simpleState;
 
   private ApplicationCenterService applicationCenterService;
 
@@ -92,6 +101,18 @@ public class ApplicationCenterServiceTest {
     Startable fileNameSpaceService = (Startable) ExoContainerContext.getService(NameSpaceService.class);
     assertNotNull(fileNameSpaceService);
     fileNameSpaceService.start();
+
+    Collection<MembershipEntry> adminMemberships = new ArrayList<MembershipEntry>();
+    adminMemberships.add(new MembershipEntry(ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP, "*"));
+    adminMemberships.add(new MembershipEntry(ApplicationCenterService.DEFAULT_USERS_GROUP, "*"));
+    Collection<MembershipEntry> simpleMemberships = new ArrayList<MembershipEntry>();
+    simpleMemberships.add(new MembershipEntry(ApplicationCenterService.DEFAULT_USERS_GROUP, "*"));
+
+    Identity adminIdentity = new Identity(ADMIN_USERNAME, adminMemberships);
+    Identity simpleIdentity = new Identity(SIMPLE_USERNAME, simpleMemberships);
+
+    adminState = new ConversationState(adminIdentity);
+    simpleState = new ConversationState(simpleIdentity);
   }
 
   @After
@@ -101,6 +122,8 @@ public class ApplicationCenterServiceTest {
 
     ApplicationDAO applicationDAO = ExoContainerContext.getService(ApplicationDAO.class);
     applicationDAO.deleteAll();
+
+    ConversationState.setCurrent(null);
 
     RequestLifeCycle.end();
     ExoContainerContext.setCurrentContainer(null);
@@ -186,6 +209,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     try {
       applicationCenterService.updateApplication(application, ADMIN_USERNAME);
       fail("Shouldn't allow to update non existing application");
@@ -219,6 +243,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(application.isMandatory(), storedApplication.isMandatory());
     assertEquals(application.getPermissions(), storedApplication.getPermissions());
 
+    ConversationState.setCurrent(simpleState);
     try {
       storedApplication = applicationCenterService.updateApplication(application, SIMPLE_USERNAME);
       fail("Simple user shouldn't be able to update non authorized application");
@@ -226,6 +251,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
     assertEquals(ApplicationCenterService.DEFAULT_USERS_PERMISSION, storedApplication.getPermissions().get(0));
@@ -258,6 +284,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     try {
       applicationCenterService.deleteApplication(50000L, ADMIN_USERNAME);
       fail("Shouldn't allow to update non existing application");
@@ -295,6 +322,7 @@ public class ApplicationCenterServiceTest {
                                   false,
                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     storedApplication = applicationCenterService.createApplication(application);
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.deleteApplication(storedApplication.getId(), SIMPLE_USERNAME);
       fail("Simple user shouldn't be able to delete non authorized application");
@@ -302,6 +330,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     application.setId(storedApplication.getId());
     application.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
@@ -367,6 +396,7 @@ public class ApplicationCenterServiceTest {
 
   @Test
   public void testAddFavoriteApplication() throws Exception {
+    ConversationState.setCurrent(adminState);
     try {
       applicationCenterService.addFavoriteApplication(0, null);
       fail("Shouldn't allow to add null arguments");
@@ -374,6 +404,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.addFavoriteApplication(0, SIMPLE_USERNAME);
       fail("Shouldn't allow to add zero as applicationId");
@@ -402,6 +433,7 @@ public class ApplicationCenterServiceTest {
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
       fail("Shouldn't allow to add an application as favorite while user doesn't have access to it");
@@ -409,9 +441,11 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
     storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
+    ConversationState.setCurrent(simpleState);
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
   }
 
@@ -424,6 +458,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.deleteFavoriteApplication(0L, SIMPLE_USERNAME);
       fail("Shouldn't allow to add zero as applicationId");
@@ -448,6 +483,7 @@ public class ApplicationCenterServiceTest {
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
+    ConversationState.setCurrent(adminState);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
 
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), ADMIN_USERNAME);
@@ -456,6 +492,7 @@ public class ApplicationCenterServiceTest {
     storedApplication.setPermissions(ApplicationCenterService.DEFAULT_USERS_PERMISSION);
     storedApplication = applicationCenterService.updateApplication(storedApplication, ADMIN_USERNAME);
 
+    ConversationState.setCurrent(simpleState);
     applicationCenterService.addFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
   }
@@ -694,6 +731,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(simpleState);
     ApplicationList applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
@@ -713,6 +751,7 @@ public class ApplicationCenterServiceTest {
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+    ConversationState.setCurrent(adminState);
     applicationCenterService.createApplication(application);
 
     Application application2 = new Application(null,
@@ -736,54 +775,63 @@ public class ApplicationCenterServiceTest {
     assertEquals(2, applicationsList.getApplications().size());
     assertEquals(2, applicationsList.getSize());
 
+    ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
     assertEquals(1, applicationsList.getSize());
 
+    ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
     assertEquals(1, applicationsList.getSize());
 
+    ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
     assertEquals(0, applicationsList.getSize());
 
+    ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
     assertEquals(0, applicationsList.getSize());
 
+    ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
     assertEquals(0, applicationsList.getSize());
 
+    ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
     assertEquals(0, applicationsList.getSize());
 
+    ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
     assertEquals(0, applicationsList.getSize());
 
+    ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(2, applicationsList.getApplications().size());
     assertEquals(2, applicationsList.getSize());
 
+    ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
@@ -801,6 +849,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.getApplicationImageLastUpdated(50000L, SIMPLE_USERNAME);
       fail("Shouldn't allow to get not found application");
@@ -825,6 +874,7 @@ public class ApplicationCenterServiceTest {
     application.setImageFileBody("content");
     Application storedApplication = applicationCenterService.createApplication(application);
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.getApplicationImageLastUpdated(storedApplication.getId(), SIMPLE_USERNAME);
       fail("Shouldn't allow to get illustration of non authorized application");
@@ -832,6 +882,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(storedApplication.getId(), ADMIN_USERNAME);
     assertNotNull(lastUpdated);
     assertTrue(lastUpdated >= currentTimeMillis);
@@ -846,6 +897,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.getApplicationImageInputStream(50000L, SIMPLE_USERNAME);
       fail("Shouldn't allow to get not found application");
@@ -870,6 +922,7 @@ public class ApplicationCenterServiceTest {
     application.setImageFileBody("content");
     Application storedApplication = applicationCenterService.createApplication(application);
 
+    ConversationState.setCurrent(simpleState);
     try {
       applicationCenterService.getApplicationImageInputStream(storedApplication.getId(), SIMPLE_USERNAME);
       fail("Shouldn't allow to get illustration of non authorized application");
@@ -877,6 +930,7 @@ public class ApplicationCenterServiceTest {
       // Expected
     }
 
+    ConversationState.setCurrent(adminState);
     InputStream inputStream = applicationCenterService.getApplicationImageInputStream(storedApplication.getId(), ADMIN_USERNAME);
     assertNotNull(inputStream);
     assertTrue(inputStream.available() > 0);

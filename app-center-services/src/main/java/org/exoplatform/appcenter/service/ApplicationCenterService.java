@@ -37,12 +37,14 @@ import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.file.services.FileStorageException;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Authenticator;
@@ -316,7 +318,7 @@ public class ApplicationCenterService implements Startable {
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
-    if (!isAdmin(username)) {
+    if (!isAdmin()) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
@@ -328,31 +330,9 @@ public class ApplicationCenterService implements Startable {
     return appCenterStorage.updateApplication(application);
   }
 
-  private boolean isAdmin(String username) {
-    // Ingeneral case, the user is already loggedin, thus we will get the
-    // Identity from registry without having to compute it again from
-    // OrganisationService, thus the condition (identity == null) will be false
-    // most of the time for better performances
-    Identity identity = identityRegistry.getIdentity(username);
-    if (identity == null) {
-      try {
-        identity = authenticator.createIdentity(username);
-      } catch (Exception e) {
-        LOG.warn("Error getting memberships of user {}", username, e);
-        return false;
-      }
-
-      // Check null again after building identity
-      if (identity == null) {
-        return false;
-      }
-    }
-
-    MembershipEntry membership = null;
-    String[] permissionExpressionParts = DEFAULT_ADMINISTRATORS_PERMISSION.split(":");
-    membership = new MembershipEntry(permissionExpressionParts[1], permissionExpressionParts[0]);
-
-    return identity.isMemberOf(membership);
+  private boolean isAdmin() {
+    UserACL userACL = CommonsUtils.getService(UserACL.class);
+    return userACL.isSuperUser() || userACL.isUserInGroup(userACL.getAdminGroups());
   }
 
   /**
@@ -383,7 +363,7 @@ public class ApplicationCenterService implements Startable {
           + " is a system application, thus it can't be deleted");
     }
 
-    if (!isAdmin(username)) {
+    if (!isAdmin()) {
       throw new IllegalAccessException("User " + username + " is not allowed to modify application : "
           + storedApplication.getTitle());
     }
@@ -640,7 +620,7 @@ public class ApplicationCenterService implements Startable {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
     // if user is admin then no need to check for permissions
-    if (!isAdmin(username)) {
+    if (!isAdmin()) {
       if (!hasPermission(username, application)) {
         throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
       }
@@ -682,7 +662,7 @@ public class ApplicationCenterService implements Startable {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
     }
     // if user is admin then no need to check for permissions
-    if (!isAdmin(username)) {
+    if (!isAdmin()) {
       if (!hasPermission(username, application)) {
         throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
       }
