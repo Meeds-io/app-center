@@ -667,15 +667,19 @@ public class ApplicationCenterService implements Startable {
         throw new IllegalAccessException("User " + username + " isn't allowed to access application with id " + applicationId);
       }
     }
+    InputStream applicationImageInputStream=null;
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
-      return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
-    } else {
+      applicationImageInputStream = appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+    }
+    if (applicationImageInputStream==null) {
+      //result is null if there is no image associated to the application
+      //or if the image is not readable (data corruption, or quarantined by an antivirus)
       Long defaultImageId = getDefaultImageId();
       if (defaultImageId != null && defaultImageId > 0) {
-        return appCenterStorage.getApplicationImageInputStream(defaultImageId);
+        applicationImageInputStream=appCenterStorage.getApplicationImageInputStream(defaultImageId);
       }
     }
-    return null;
+    return applicationImageInputStream;
   }
 
   /**
