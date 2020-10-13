@@ -32,7 +32,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "ApplicationEntity.getAppByTitle", query = "SELECT app FROM ApplicationEntity app "
         + "WHERE app.title = :title"),
     @NamedQuery(name = "ApplicationEntity.getApplicationsByKeyword", query = "SELECT app FROM ApplicationEntity app "
-        + "WHERE app.title like :title OR app.description like :description OR LOWER(app.url) like LOWER(:url) "),
+        + "WHERE LOWER(app.title) like :title OR LOWER(app.description) like :description OR LOWER(app.url) like :url"),
     @NamedQuery(name = "ApplicationEntity.getApplications", query = "SELECT app FROM ApplicationEntity app"),
     @NamedQuery(name = "ApplicationEntity.getSystemApplications", query = "SELECT app FROM ApplicationEntity app WHERE app.system = TRUE"),
     @NamedQuery(name = "ApplicationEntity.getMandatoryActiveApps", query = "SELECT app FROM ApplicationEntity app "
