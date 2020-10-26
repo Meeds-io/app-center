@@ -33,7 +33,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       temporary
       width="420"
       max-width="100vw"
-      max-height="100vh"
+      max-height="100%"
       class="appCenterDrawer"
     >
       <v-row class="mx-0 title">
