@@ -76,6 +76,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/myApplications.html</value>
     </init-param>
+    <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -98,6 +99,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/appLauncher.html</value>
     </init-param>
+    <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>

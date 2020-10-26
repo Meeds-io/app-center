@@ -15,18 +15,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
  
-import ExoAppCenterModal from './modal/ExoAppCenterModal.vue';
-import AdminSetupGeneralParams from './AdminSetupGeneralParams.vue';
-import AdminSetupList from './AdminSetupList.vue';
-import ExoAppCenterDrawer from './drawer/ExoAppCenterDrawer.vue';
-import ExoSuggester from './suggester/ExoSuggester.vue';
+import ExoAppCenterModal from './components/modal/ExoAppCenterModal.vue';
+import AdminSetupGeneralParams from './components/AdminSetupGeneralParams.vue';
+import AdminSetupList from './components/AdminSetupList.vue';
+import ExoAppCenterDrawer from './components/drawer/ExoAppCenterDrawer.vue';
+import ExoSuggester from './components/suggester/ExoSuggester.vue';
+import AdminSetupApp from './components/AdminSetup.vue';
 
 const components = {
   'adminSetup-generalParams': AdminSetupGeneralParams,
   'adminSetup-list': AdminSetupList,
-  'exo-app-center-modal': ExoAppCenterModal,
-  'exo-app-center-drawer': ExoAppCenterDrawer,
-  'exo-suggester': ExoSuggester,
+  'app-center-modal': ExoAppCenterModal,
+  'app-center-drawer': ExoAppCenterDrawer,
+  'app-center-suggester': ExoSuggester,
+  'app-center-admin-setup': AdminSetupApp,
 };
 
 for (const key in components) {

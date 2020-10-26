@@ -25,7 +25,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     }
 %>
 <div class="VuetifyApp">
-  <div id="userSetup">
+  <div id="userSetup" class="userApplications">
+    <v-cacheable-dom-app cache-id="userSetup"></v-cacheable-dom-app>
   	<script>
   		require(['SHARED/userSetupPortletBundle'], function(userSetupPortletApp) {
   			var preferences = {

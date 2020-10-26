@@ -14,12 +14,35 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import ApplicationSearchCard from './ApplicationSearchCard.vue';
+import './initComponents.js';
 
-const components = {
-  'application-search-card': ApplicationSearchCard,
-};
+//should expose the locale ressources as REST API
+const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
+const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
 
-for (const key in components) {
-  Vue.component(key, components[key]);
+
+Vue.use(Vuetify);
+const vuetify = new Vuetify({
+  dark: true,
+  iconfont: ''
+});
+
+const appId = 'adminSetup';
+
+export function init(preferences) {
+  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
+    const appElement = document.createElement('div');
+    appElement.id = appId;
+
+    new Vue({
+      data: {
+        preferences: preferences,
+      },
+      template: `<app-center-admin-setup
+                  id="${appId}"
+                  v-cacheable />`,
+      vuetify,
+      i18n,
+    }).$mount(appElement);
+  });
 }

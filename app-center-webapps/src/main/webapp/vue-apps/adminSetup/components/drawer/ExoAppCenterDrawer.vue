@@ -177,7 +177,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-label for="permissions">
             {{ $t('appCenter.adminSetupForm.permissions') }}
           </v-label>
-          <exo-suggester
+          <app-center-suggester
             v-model="permissions"
             class="input-block-level ignore-vuetify-classes my-3"
             name="permissions"

@@ -26,14 +26,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
 %>
 <div class="VuetifyApp">
-  <div id="adminSetup">
-  	<script>
+  <div data-app="true"
+    class="v-application applicationsAdmin v-application--is-ltr theme--light"
+    id="adminSetup">
+    <v-cacheable-dom-app cache-id="adminSetup"></v-cacheable-dom-app>
+    <script>
   		require(['SHARED/adminSetupPortletBundle'], function(adminSetupPortletApp) {
   			var preferences = {
   				pageSize: "<%=pageSize%>"
   			};
   			adminSetupPortletApp.init(preferences);
-  	    });
+	    });
   	</script>
   </div>
 </div>

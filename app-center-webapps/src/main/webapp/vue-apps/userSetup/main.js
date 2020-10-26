@@ -14,14 +14,28 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import UserAuthorizedApplications from './UserAuthorizedApplications.vue';
-import UserFavoriteApplications from './UserFavoriteApplications.vue';
+import './initComponents.js';
 
-const components = {
-  'user-authorizedApplications': UserAuthorizedApplications,
-  'user-favoriteApplications': UserFavoriteApplications
-};
+//should expose the locale ressources as REST API
+const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
+const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
 
-for (const key in components) {
-  Vue.component(key, components[key]);
+const appId = 'userSetup';
+
+export function init(preferences) {
+  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
+    const appElement = document.createElement('div');
+    appElement.id = appId;
+
+    new Vue({
+      data: {
+        preferences: preferences
+      },
+      template: `<app-center-user-setup
+                   id="${appId}"
+                   :preferences="preferences"
+                   v-cacheable />`,
+      i18n,
+    }).$mount(appElement);
+  });
 }

@@ -147,7 +147,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </template>
       </v-data-table>
       
-      <exo-app-center-drawer
+      <app-center-drawer
         :key="applicationDrawerKey"
         :applications-drawer="openAppDrawer"
         :form-array="formArray"
@@ -160,10 +160,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       >
         <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
         <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
-      </exo-app-center-drawer>
+      </app-center-drawer>
   
       <transition name="fade">
-        <exo-app-center-modal
+        <app-center-modal
           v-show="showDeleteApplicationModal"
           :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
           @modal-closed="closeDeleteModal"
@@ -177,7 +177,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               {{ $t("appCenter.adminSetupForm.modal.delete") }}
             </div>
           </div>
-        </exo-app-center-modal>
+        </app-center-modal>
       </transition>
     </div>
   </div>
@@ -189,6 +189,7 @@ export default {
   name: 'AdminSetup',
   data() {
     return {
+      initialized: false,
       loading: true,
       headers: [
         { text: `${this.$t('appCenter.adminSetupList.avatar')}`, align: 'center' },
@@ -299,7 +300,14 @@ export default {
           });
 
           this.applicationsList = data.applications;
-        }).finally(() => this.loading = false);
+          return this.$nextTick();
+        }).finally(() => {
+          this.loading = false;
+          if (!this.initialized) {
+            this.initialized = true;
+            this.$root.$emit('application-loaded');
+          }
+        });
     },
 
     deleteApplication() {
