@@ -29,6 +29,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 <script>
 export default {
+  props: {
+    preferences: {
+      type: Object,
+      default: null,
+    },
+  },
   data() {
     return {
       defaultAppImage: {
@@ -42,7 +48,7 @@ export default {
   },
   created() {
     this.getAppGeneralSettings();
-    this.pageSize = this.$parent.$data.preferences.pageSize;
+    this.pageSize = this.preferences.pageSize;
   },
   methods: {
     setCanAddFavorite(canAddFavorite) {
@@ -62,7 +68,9 @@ export default {
         })
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
-        });
+          return this.$nextTick();
+        })
+        .finally(() => this.$root.$emit('application-loaded'));
     },
   },
 };

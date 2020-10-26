@@ -14,22 +14,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import './components/initComponents.js';
-import UserSetupApp from './components/UserSetup.vue';
+import ApplicationSearchCard from './components/ApplicationSearchCard.vue';
 
+const components = {
+  'application-search-card': ApplicationSearchCard,
+};
 
-//should expose the locale ressources as REST API
-const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
-
-export function init(preferences) {
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    new Vue({
-      data: {
-        preferences: preferences
-      },
-      render: h => h(UserSetupApp),
-      i18n
-    }).$mount('#userSetup');
-  });
+for (const key in components) {
+  Vue.component(key, components[key]);
 }

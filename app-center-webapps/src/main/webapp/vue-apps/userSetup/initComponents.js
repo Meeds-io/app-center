@@ -14,29 +14,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import './components/initComponents.js';
-import AdminSetupApp from './components/AdminSetup.vue';
+import UserAuthorizedApplications from './components/UserAuthorizedApplications.vue';
+import UserFavoriteApplications from './components/UserFavoriteApplications.vue';
+import AppCenterUserSetup from './components/UserSetup.vue';
 
-//should expose the locale ressources as REST API
-const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
+const components = {
+  'user-authorizedApplications': UserAuthorizedApplications,
+  'user-favoriteApplications': UserFavoriteApplications,
+  'app-center-user-setup': AppCenterUserSetup,
+};
 
-
-Vue.use(Vuetify);
-const vuetify = new Vuetify({
-  dark: true,
-  iconfont: ''
-});
-
-export function init(preferences) {
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    new Vue({
-      data: {
-        preferences: preferences,
-      },
-      render: h => h(AdminSetupApp),
-      vuetify,
-      i18n,
-    }).$mount('#adminSetup');
-  });
+for (const key in components) {
+  Vue.component(key, components[key]);
 }
