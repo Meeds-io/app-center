@@ -23,11 +23,11 @@ module.exports = {
     // can use multiple entry
 
     entry: {
-        adminSetup: "./src/main/webapp/vue-apps/adminSetup/adminSetup.js",
-        userSetup: "./src/main/webapp/vue-apps/userSetup/userSetup.js",
-        myApplications: "./src/main/webapp/vue-apps/myApplications/myApplications.js",
-        appLauncher: "./src/main/webapp/vue-apps/appLauncher/appLauncher.js",
-        applicationSearch: "./src/main/webapp/vue-apps/application-search/applicationSearch.js"
+        adminSetup: "./src/main/webapp/vue-apps/adminSetup/main.js",
+        userSetup: "./src/main/webapp/vue-apps/userSetup/main.js",
+        myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
+        appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
+        applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js"
     },
     output: {
         filename: 'javascript/vue/[name].bundle.js',

@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-app id="appLauncher" flat>
+  <v-app flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
         <v-btn id="appcenterLauncherButton" icon class="text-xs-center" @click="toggleDrawer()">
@@ -33,10 +33,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       temporary
       width="420"
       max-width="100vw"
-      max-height="100vh"
+      max-height="100%"
       class="appCenterDrawer"
     >
-      <v-row class="mx-0 title">
+      <v-row v-if="appLauncherDrawer" class="mx-0 title">
         <v-list-item class="appLauncherDrawerHeader">
           <v-list-item-content>
             <span class="appLauncherDrawerTitle">{{
@@ -157,6 +157,7 @@ export default {
         invalidImage: false
       },
       isMobileDevice: false,
+      applicationsLoaded: false,
       appLauncherDrawer: null,
       mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
@@ -203,7 +204,7 @@ export default {
             this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
           }
         });
-        if (applicationsToUpdateOrder && applicationsToUpdateOrder.length > 0) {
+        if (applicationsToUpdateOrder.length) {
           const applicationsOrder = applicationsToUpdateOrder.map(app => {
             return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
           });
@@ -221,6 +222,7 @@ export default {
         this.appLauncherDrawer = false;
       }
     });
+    this.$nextTick().then(() => this.$root.$emit('application-loaded'));
   },
   methods: {
     detectMobile() {
@@ -239,13 +241,14 @@ export default {
       });
     },
     toggleDrawer() {
-      if (!this.appLauncherDrawer) {
+      if (!this.applicationsLoaded) {
         this.getMandatoryAndFavoriteApplications();
         //only when opening the appLauncherDrawer
         fetch('/portal/rest/app-center/applications/logOpenDrawer', {
           method: 'GET',
           credentials: 'include',
         });
+        this.applicationsLoaded = true;
       }
 
       this.appLauncherDrawer = !this.appLauncherDrawer;

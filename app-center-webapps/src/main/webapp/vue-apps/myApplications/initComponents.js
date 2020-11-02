@@ -1,4 +1,3 @@
-
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  * Copyright (C) 2020 Meeds Association
@@ -15,27 +14,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import AppLauncherApp from './components/AppLauncher.vue';
+import UserAuthorizedApplications from './UserAuthorizedApplications.vue';
+import UserFavoriteApplications from './UserFavoriteApplications.vue';
+import AppCenterUserSetup from './UserSetup.vue';
 
-Vue.use(Vuetify);
-const vuetify = new Vuetify({
-  dark: true,
-  iconfont: ''
-});
+const components = {
+  'user-authorizedApplications': UserAuthorizedApplications,
+  'user-favoriteApplications': UserFavoriteApplications,
+  'app-center-user-setup': AppCenterUserSetup,
+};
 
-
-//should expose the locale ressources as REST API
-const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
-
-export function init() {
-  //getting locale ressources
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    // init Vue app when locale ressources are ready
-    new Vue({
-      render: h => h(AppLauncherApp),
-      i18n,
-      vuetify
-    }).$mount('#appLauncher');
-  });
+for (const key in components) {
+  Vue.component(key, components[key]);
 }
