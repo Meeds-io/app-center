@@ -22,18 +22,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <page>
     <name>appCenterUserSetup</name>
     <title>App Center User Setup</title>
-    <access-permissions>*:/platform/users</access-permissions>
+    <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
     <edit-permission>manager:/platform/administrators</edit-permission>
     <container id="AppCenterUserSetup"
       template="system:/groovy/portal/webui/container/UIContainer.gtmpl">
-      <access-permissions>*:/platform/users</access-permissions>
+      <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
       <portlet-application>
         <portlet>
           <application-ref>app-center</application-ref>
           <portlet-ref>AppCenterUserSetupPortlet</portlet-ref>
         </portlet>
         <title>App Center User Setup</title>
-        <access-permissions>*:/platform/users</access-permissions>
+        <access-permissions>*:/platform/users;*:/platform/externals</access-permissions>
         <show-info-bar>false</show-info-bar>
         <show-application-state>true</show-application-state>
       </portlet-application>
