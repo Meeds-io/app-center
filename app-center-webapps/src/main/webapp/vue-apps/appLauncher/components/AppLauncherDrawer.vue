@@ -19,7 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <v-container px-0 py-0>
       <v-layout class="transparent">
         <v-btn id="appcenterLauncherButton" icon class="text-xs-center" @click="toggleDrawer()">
-          <v-icon class="grey-color">
+          <v-icon class="appCenterLauncherButtonIcon">
             mdi-apps
           </v-icon>
         </v-btn>
