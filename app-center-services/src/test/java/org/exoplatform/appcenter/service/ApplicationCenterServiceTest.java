@@ -150,6 +150,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -198,6 +199,7 @@ public class ApplicationCenterServiceTest {
                                               "description",
                                               false,
                                               true,
+                                              false,
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -304,6 +306,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     applicationCenterService.deleteApplication(storedApplication.getId(), ADMIN_USERNAME);
@@ -318,6 +321,7 @@ public class ApplicationCenterServiceTest {
                                   "description",
                                   false,
                                   true,
+                                  false,
                                   false,
                                   false,
                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -431,6 +435,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     ConversationState.setCurrent(simpleState);
@@ -480,6 +485,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
@@ -519,6 +525,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     applicationCenterService.createApplication(application);
 
@@ -532,6 +539,7 @@ public class ApplicationCenterServiceTest {
                                                "description",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -582,6 +590,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                true,
                                                true,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application2 = new Application(null,
@@ -596,6 +605,7 @@ public class ApplicationCenterServiceTest {
                                                false,
                                                true,
                                                true,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application3 = new Application(null,
@@ -608,6 +618,7 @@ public class ApplicationCenterServiceTest {
                                                "description3",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -624,6 +635,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application5 = new Application(null,
@@ -636,6 +648,7 @@ public class ApplicationCenterServiceTest {
                                                "description5",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -669,6 +682,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application2 = new Application(null,
@@ -681,6 +695,7 @@ public class ApplicationCenterServiceTest {
                                                "description5",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -750,6 +765,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     ConversationState.setCurrent(adminState);
     applicationCenterService.createApplication(application);
@@ -764,6 +780,7 @@ public class ApplicationCenterServiceTest {
                                                "description",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -869,6 +886,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     application.setImageFileName("name");
     application.setImageFileBody("content");
@@ -915,6 +933,7 @@ public class ApplicationCenterServiceTest {
                                               "description",
                                               false,
                                               true,
+                                              false,
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -970,6 +989,7 @@ public class ApplicationCenterServiceTest {
                                               "description",
                                               false,
                                               true,
+                                              false,
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);

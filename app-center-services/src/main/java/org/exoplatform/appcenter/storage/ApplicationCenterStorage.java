@@ -318,6 +318,7 @@ public class ApplicationCenterStorage {
                                               applicationEntity.isActive(),
                                               applicationEntity.isMandatory(),
                                               applicationEntity.isMobile(),
+                                              applicationEntity.isChangedManually(),
                                               permissions);
     application.setSystem(applicationEntity.isSystem());
     application.setHelpPageURL(applicationEntity.getHelpPageUrl());
@@ -345,6 +346,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.isMandatory(),
                                                           applicationEntity.isMobile(),
                                                           false,
+                                                          applicationEntity.isChangedManually(),
                                                           permissions);
     userApplication.setSystem(applicationEntity.isSystem());
     userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
@@ -371,6 +373,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.isMandatory(),
                                                           applicationEntity.isMobile(),
                                                           true,
+                                                          applicationEntity.isChangedManually(),
                                                           permissions);
     // set UserApplication's order
     userApplication.setOrder(favoriteApplicationEntity.getOrder());
@@ -391,7 +394,8 @@ public class ApplicationCenterStorage {
                                                                 application.getDescription(),
                                                                 application.isActive(),
                                                                 application.isMandatory(),
-                                                                StringUtils.join(application.getPermissions(), ","));
+                                                                StringUtils.join(application.getPermissions(), ","),
+                                                                application.isChangedManually());
     applicationEntity.setSystem(application.isSystem());
     applicationEntity.setHelpPageUrl(application.getHelpPageURL());
     applicationEntity.setIsMobile(application.isMobile());

@@ -114,4 +114,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </column>
     </addColumn>
   </changeSet>
+  <changeSet author="appCenter" id="1.0.0-8">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_CHANGED_MANUALLY" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

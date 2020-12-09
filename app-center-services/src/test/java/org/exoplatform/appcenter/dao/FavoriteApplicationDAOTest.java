@@ -74,7 +74,7 @@ public class FavoriteApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationEntity = applicationDAO.create(applicationEntity);
     FavoriteApplicationEntity favoriteApp = new FavoriteApplicationEntity();
     favoriteApp.setId(null);
@@ -102,7 +102,7 @@ public class FavoriteApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationEntity = applicationDAO.create(applicationEntity);
 
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
@@ -112,7 +112,7 @@ public class FavoriteApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  false,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationEntity2 = applicationDAO.create(applicationEntity2);
 
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser"));
@@ -156,7 +156,7 @@ public class FavoriteApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationEntity = applicationDAO.create(applicationEntity);
 
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
@@ -166,7 +166,7 @@ public class FavoriteApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  false,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationEntity2 = applicationDAO.create(applicationEntity2);
 
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser"));

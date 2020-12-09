@@ -56,11 +56,11 @@ import org.exoplatform.services.security.MembershipEntry;
  * A Service to access and store applications
  */
 public class ApplicationCenterService implements Startable {
-  
+
   private static final Log LOG = ExoLogger.getLogger(ApplicationCenterService.class);
-  
+
   public static final String             DEFAULT_ADMINISTRATORS_GROUP      = "/platform/administrators";
-  
+
   public static final String             DEFAULT_ADMINISTRATORS_PERMISSION = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
   public static final String             ANY_PERMISSION                    = "any";
@@ -70,52 +70,53 @@ public class ApplicationCenterService implements Startable {
   public static final String             DEFAULT_USERS_PERMISSION          = "*:" + DEFAULT_USERS_GROUP;
 
   public static final String             MAX_FAVORITE_APPS                 = "maxFavoriteApps";
-  
+
   public static final String             DEFAULT_APP_IMAGE_ID              = "defaultAppImageId";
-  
+
   public static final String             DEFAULT_APP_IMAGE_NAME            = "defaultAppImageName";
-  
+
   public static final String             DEFAULT_APP_IMAGE_BODY            = "defaultAppImageBody";
-  
+
   public static final int                DEFAULT_LIMIT                     = 10;
-  
+
   private static final Context           APP_CENTER_CONTEXT                = Context.GLOBAL.id("APP_CENTER");
-  
+
   private static final Scope             APP_CENTER_SCOPE                  = Scope.APPLICATION.id("APP_CENTER");
-  
+
   private PortalContainer                container;
-  
+
   private ConfigurationManager           configurationManager;
-  
+
   private SettingService                 settingService;
-  
+
   private Authenticator                  authenticator;
-  
+
   private IdentityRegistry               identityRegistry;
-  
+
   private ApplicationCenterStorage       appCenterStorage;
-  
+
   private String                         defaultAdministratorPermission    = null;
-  
+
   private long                           maxFavoriteApps                   = -1;
-  
+
   private long                           defaultMaxFavoriteApps            = 0;
-  
+
   private Map<String, ApplicationPlugin> defaultApplications               = new LinkedHashMap<>();
-  
+
   public static String                   LOG_SERVICE_NAME                  = "application-center";
-  
+
   public static String                   LOG_OPEN_FAVORITE_DRAWER          = "open-favorite-drawer";
-  
+
   public static String                   LOG_CLICK_ALL_APPLICATIONS        = "click-all-applications";
-  
+
   public static final String LOG_OPEN_APPLICATION = "open-application";
-  
+
   public static final String LOG_REORGANIZE_FAVORITES = "reorganize-favorites";
-  
+
   public static final String LOG_ADD_FAVORITE = "add-favorite";
   public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
-  
+  public static final String MERGE_MODE = "merge";
+
   public ApplicationCenterService(ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
@@ -140,7 +141,7 @@ public class ApplicationCenterService implements Startable {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
     }
   }
-  
+
   /**
    * A method that will be invoked when the server starts (
    * {@link PortalContainer} starts ) to inject default application and to delete
@@ -192,7 +193,7 @@ public class ApplicationCenterService implements Startable {
         } catch (FileStorageException e) {
           LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
         }
-        if (storedApplication != null && !applicationPlugin.isOverride()) {
+        if (storedApplication != null && !applicationPlugin.isOverride() && storedApplication.isChangedManually() && ( MERGE_MODE.equals(applicationPlugin.getOverrideMode()) || applicationPlugin.getOverrideMode() == null) ) {
           LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
           return;
         }
@@ -222,6 +223,7 @@ public class ApplicationCenterService implements Startable {
           try {
             LOG.info("Create system application '{}'", application.getTitle());
             application.setSystem(true);
+            application.setChangedManually(false);
             application.setImageFileId(null);
             this.createApplication(application);
           } catch (Exception e) {
@@ -231,6 +233,7 @@ public class ApplicationCenterService implements Startable {
           try {
             LOG.info("Update system application '{}'", application.getTitle());
             application.setSystem(true);
+            application.setChangedManually(false);
             application.setId(storedApplication.getId());
             application.setImageFileId(storedApplication.getImageFileId());
             appCenterStorage.updateApplication(application);
@@ -255,7 +258,7 @@ public class ApplicationCenterService implements Startable {
    * Create new Application that will be available for all users. If the
    * application already exits an {@link ApplicationAlreadyExistsException} will
    * be thrown.
-   * 
+   *
    * @param application application to create
    * @return stored {@link Application} in datasource
    * @throws Exception when application already exists or an error occurs while
@@ -276,7 +279,7 @@ public class ApplicationCenterService implements Startable {
 
     return appCenterStorage.createApplication(application);
   }
-  
+
   /**
    * Get an application by id
    *
@@ -296,7 +299,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Update an existing application on datasource. If the application doesn't exit
    * an {@link ApplicationNotFoundException} will be thrown.
-   * 
+   *
    * @param application dto to update on store
    * @param username username storing application
    * @return stored {@link Application} in datasource
@@ -338,7 +341,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Delete application identified by its id and check if username has permission
    * to delete it.
-   * 
+   *
    * @param applicationId technical identifier of application
    * @param username user currently deleting application
    * @throws ApplicationNotFoundException if application wasn't found
@@ -373,7 +376,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Add an application, identified by its technical id, as favorite of a user
-   * 
+   *
    * @param applicationId technical application id
    * @param username user login
    * @throws ApplicationNotFoundException when application is not found
@@ -403,7 +406,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Deletes an application identified by its id from favorite applications of
    * user
-   * 
+   *
    * @param applicationId application technical identifier
    * @param username login of user currently deleting application
    */
@@ -419,7 +422,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Change general setting for maximum allowed favorites that a user can have
-   * 
+   *
    * @param maxFavoriteApplications max favorite applications count
    */
   public void setMaxFavoriteApps(long maxFavoriteApplications) {
@@ -449,7 +452,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Stores default image for applications not having an attached illustration
-   * 
+   *
    * @param defaultAppImage image content and name
    * @return stored image
    * @throws Exception if an exception occurs while storing image into database
@@ -492,7 +495,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Retrieves the list of applications with offset, limit and a keyword that can
    * be empty
-   * 
+   *
    * @param offset offset of the query
    * @param limit limit of the query that can be less or equal to 0, which mean,
    *          getting all available applications
@@ -517,7 +520,7 @@ public class ApplicationCenterService implements Startable {
    * Retrieves the list of applications switch offset and limit of the query, a
    * keyword to filter on title and url of {@link Application} and the username to
    * filter on authorized applications
-   * 
+   *
    * @param offset offset of the query
    * @param limit limit of the query that can be less or equal to 0, which mean,
    *          getting all available applications
@@ -552,7 +555,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Retrieves all the list of applications for a user
-   * 
+   *
    * @param username login of user
    * @return {@link ApplicationList} that contains {@link List} of
    *         {@link UserApplication}
@@ -576,7 +579,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Update favorite applications order for a user
-   * 
+   *
    * @param applicationOrder
    * @param userName
    */
@@ -599,7 +602,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Return the {@link Application} illustration last modifed timestamp (in ms),
    * if not found, the default image last modifed timestamp will be retrieved
-   * 
+   *
    * @param applicationId technical id of application
    * @param username login of user accessing application
    * @return timestamp in milliseconds of last modified date of illustration
@@ -639,7 +642,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Return the {@link Application} illustration {@link InputStream}, if not
    * found, the default image {@link InputStream} will be retrieved
-   * 
+   *
    * @param applicationId technical id of application
    * @param username login of user accessing application
    * @return {@link InputStream} of application illustration
@@ -685,7 +688,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Inject a default application using IOC {@link ComponentPlugin} using
    * configuration
-   * 
+   *
    * @param applicationPlugin plugin containing application to inject
    */
   public void addApplicationPlugin(ApplicationPlugin applicationPlugin) {
@@ -700,7 +703,7 @@ public class ApplicationCenterService implements Startable {
 
   /**
    * Delete an injected plugin identified by its name
-   * 
+   *
    * @param pluginName plugin name to delete
    */
   public void removeApplicationPlugin(String pluginName) {
@@ -713,7 +716,7 @@ public class ApplicationCenterService implements Startable {
   /**
    * Checks whether the application is a system application injected by
    * configuration or not
-   * 
+   *
    * @param application application to check its state
    * @return true if the configuration of the application exists with same title
    *         and URL, else false.
