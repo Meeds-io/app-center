@@ -75,6 +75,9 @@ public class ApplicationEntity {
   @Column(name = "PERMISSIONS")
   private String                                permissions;
 
+  @Column(name = "IS_CHANGED_MANUALLY")
+  private Boolean                               isChangedManually;
+
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)
   private Collection<FavoriteApplicationEntity> favorites;
 
@@ -88,7 +91,8 @@ public class ApplicationEntity {
                            String description,
                            boolean active,
                            boolean isMandatory,
-                           String permissions) {
+                           String permissions,
+                           boolean isChangedManually) {
     this.id = id;
     this.title = title;
     this.url = url;
@@ -97,6 +101,7 @@ public class ApplicationEntity {
     this.active = active;
     this.isMandatory = isMandatory;
     this.permissions = permissions;
+    this.isChangedManually = isChangedManually;
   }
 
   /**
@@ -247,4 +252,17 @@ public class ApplicationEntity {
     this.system = system;
   }
 
+  /**
+   * @return the isChangedManually
+   */
+  public boolean isChangedManually() {
+    return isChangedManually;
+  }
+
+  /**
+   * @param isChangedManually the isChangedManually to set
+   */
+  public void setChangedManually(boolean isChangedManually) {
+    isChangedManually = isChangedManually;
+  }
 }

@@ -35,6 +35,7 @@ public class UserApplication extends Application {
           app.isActive(),
           app.isMandatory(),
           app.isMobile(),
+          app.isChangedManually(),
           app.getPermissions());
   }
 
@@ -51,6 +52,7 @@ public class UserApplication extends Application {
                          boolean isMandatory,
                          boolean isMobile,
                          boolean favorite,
+                         boolean isChangedManually,
                          String... permissions) {
     super(id,
           title,
@@ -64,6 +66,7 @@ public class UserApplication extends Application {
           active,
           isMandatory,
           isMobile,
+          isChangedManually,
           permissions);
     this.favorite = favorite;
   }

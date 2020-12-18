@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.exoplatform.appcenter.storage.ApplicationCenterStorage;
 import org.exoplatform.services.organization.*;
 import org.exoplatform.services.organization.idm.MembershipImpl;
 import org.junit.After;
@@ -60,6 +61,8 @@ public class ApplicationCenterServiceTest {
 
   private ApplicationCenterService applicationCenterService;
 
+  private ApplicationCenterStorage appCenterStorage;
+
   @BeforeClass
   @SuppressWarnings("deprecation")
   public static void startDB() {
@@ -77,6 +80,7 @@ public class ApplicationCenterServiceTest {
     ExoContainerContext.setCurrentContainer(container);
     RequestLifeCycle.begin(container);
     applicationCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+    appCenterStorage = ExoContainerContext.getService(ApplicationCenterStorage.class);
 
     OrganizationService organizationService = ExoContainerContext.getService(OrganizationService.class);
     UserHandler userHandler = organizationService.getUserHandler();
@@ -150,6 +154,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               "permissions1",
                                               "permissions2");
 
@@ -198,6 +203,7 @@ public class ApplicationCenterServiceTest {
                                               "description",
                                               false,
                                               true,
+                                              false,
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -304,6 +310,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     applicationCenterService.deleteApplication(storedApplication.getId(), ADMIN_USERNAME);
@@ -318,6 +325,7 @@ public class ApplicationCenterServiceTest {
                                   "description",
                                   false,
                                   true,
+                                  false,
                                   false,
                                   false,
                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -431,6 +439,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     ConversationState.setCurrent(simpleState);
@@ -480,6 +489,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     Application storedApplication = applicationCenterService.createApplication(application);
     applicationCenterService.deleteFavoriteApplication(storedApplication.getId(), SIMPLE_USERNAME);
@@ -519,6 +529,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     applicationCenterService.createApplication(application);
 
@@ -532,6 +543,7 @@ public class ApplicationCenterServiceTest {
                                                "description",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -582,6 +594,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                true,
                                                true,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application2 = new Application(null,
@@ -596,6 +609,7 @@ public class ApplicationCenterServiceTest {
                                                false,
                                                true,
                                                true,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application3 = new Application(null,
@@ -608,6 +622,7 @@ public class ApplicationCenterServiceTest {
                                                "description3",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -624,6 +639,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application5 = new Application(null,
@@ -636,6 +652,7 @@ public class ApplicationCenterServiceTest {
                                                "description5",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -669,6 +686,7 @@ public class ApplicationCenterServiceTest {
                                                true,
                                                false,
                                                false,
+                                               false,
                                                ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     Application application2 = new Application(null,
@@ -681,6 +699,7 @@ public class ApplicationCenterServiceTest {
                                                "description5",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -750,6 +769,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     ConversationState.setCurrent(adminState);
     applicationCenterService.createApplication(application);
@@ -764,6 +784,7 @@ public class ApplicationCenterServiceTest {
                                                "description",
                                                false,
                                                true,
+                                               false,
                                                false,
                                                false,
                                                ApplicationCenterService.DEFAULT_USERS_PERMISSION);
@@ -869,6 +890,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
     application.setImageFileName("name");
     application.setImageFileBody("content");
@@ -915,6 +937,7 @@ public class ApplicationCenterServiceTest {
                                               "description",
                                               false,
                                               true,
+                                              false,
                                               false,
                                               false,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
@@ -972,6 +995,7 @@ public class ApplicationCenterServiceTest {
                                               true,
                                               false,
                                               false,
+                                              true,
                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
 
     ObjectParameter applicationParam = new ObjectParameter();
@@ -1031,6 +1055,13 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationPlugin.getImagePath());
     try {
       applicationCenterService.addApplicationPlugin(applicationPlugin);
+      try {
+        Application newApplication =appCenterStorage.getApplicationByTitle("title");
+        newApplication.setChangedManually(true);
+        appCenterStorage.updateApplication(newApplication);
+      } catch (Exception e){
+        // Expected
+      }
       applicationCenterService.start();
 
       ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
@@ -1098,5 +1129,145 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
+  }
+
+  @Test
+  public void testUpdateApplicationBySystem() {
+    try {
+      applicationCenterService.addApplicationPlugin(null);
+      fail("Shouldn't be able to add null plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    try {
+      new ApplicationPlugin(null);
+      fail("Shouldn't be able to add null params in plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+
+    InitParams params = new InitParams();
+    try {
+      new ApplicationPlugin(params);
+      fail("Shouldn't be able to add null application in parameter of plugin");
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+    Application application = new Application(null,
+                                              "title",
+                                              "url",
+                                              "",
+                                              5L,
+                                              null,
+                                              null,
+                                              "description",
+                                              false,
+                                              true,
+                                              false,
+                                              false,
+                                              true,
+                                              ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
+    ObjectParameter applicationParam = new ObjectParameter();
+    applicationParam.setName("application");
+    applicationParam.setObject(application);
+    params.addParameter(applicationParam);
+
+    ApplicationPlugin applicationPlugin = new ApplicationPlugin(params);
+
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      fail("Shouldn't be able to add plugin with null name");
+    } catch (IllegalStateException e) {
+      // Expected
+    }
+
+    String pluginName = "testapp";
+    applicationPlugin.setName(pluginName);
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      assertNotNull(applicationsList);
+      assertNotNull(applicationsList.getApplications());
+      assertEquals(1, applicationsList.getApplications().size());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
+    // Second start with file attached and override-mode is write
+    ValueParam imagePathValueParam = new ValueParam();
+    imagePathValueParam.setName("imagePath");
+    imagePathValueParam.setValue("jar:/test.png");
+    params.addParameter(imagePathValueParam);
+    ValueParam overrideValueParam = new ValueParam();
+    overrideValueParam.setName("override");
+    overrideValueParam.setValue("false");
+    params.addParameter(overrideValueParam);
+    ValueParam overrideModeValueParam = new ValueParam();
+    overrideModeValueParam.setName("override-mode");
+    overrideModeValueParam.setValue("write");
+    params.addParameter(overrideModeValueParam);
+
+    applicationPlugin = new ApplicationPlugin(params);
+    applicationPlugin.setName(pluginName);
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      try {
+        Application newApplication =appCenterStorage.getApplicationByTitle("title");
+        newApplication.setChangedManually(true);
+        appCenterStorage.updateApplication(newApplication);
+      } catch (Exception e){
+        // Expected
+      }
+
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      //this updated done  by system because override-mode is write and isChangedManually true
+      assertEquals(false,applicationsList.getApplications().get(0).isChangedManually());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
+    // Third start with file attached and override-mode is merge
+    ValueParam imagePathValueParam1 = new ValueParam();
+    imagePathValueParam1.setName("imagePath");
+    imagePathValueParam1.setValue("jar:/test.png");
+    params.addParameter(imagePathValueParam1);
+    ValueParam overrideValueParam1 = new ValueParam();
+    overrideValueParam1.setName("override");
+    overrideValueParam1.setValue("false");
+    params.addParameter(overrideValueParam1);
+    ValueParam overrideModeValueParam1 = new ValueParam();
+    overrideModeValueParam1.setName("override-mode");
+    overrideModeValueParam1.setValue("merge");
+    params.addParameter(overrideModeValueParam1);
+
+    applicationPlugin = new ApplicationPlugin(params);
+    applicationPlugin.setName(pluginName);
+    try {
+      applicationCenterService.addApplicationPlugin(applicationPlugin);
+      try {
+        Application newApplication =appCenterStorage.getApplicationByTitle("title");
+        newApplication.setChangedManually(true);
+        appCenterStorage.updateApplication(newApplication);
+      } catch (Exception e){
+        // Expected
+      }
+      applicationCenterService.start();
+
+      ApplicationList applicationsList = applicationCenterService.getApplicationsList(0, 0, null);
+      //Ignore updating application, override mode is merge and isChangedManually is true
+      assertEquals(true,applicationsList.getApplications().get(0).isChangedManually());
+    } catch (FileStorageException e) {
+      e.printStackTrace();
+    } finally {
+      applicationCenterService.removeApplicationPlugin(pluginName);
+    }
   }
 }
