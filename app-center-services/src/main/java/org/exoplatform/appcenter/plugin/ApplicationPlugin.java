@@ -28,6 +28,8 @@ public class ApplicationPlugin extends BaseComponentPlugin {
 
   private boolean     override;
 
+  private String      overrideMode;
+
   public ApplicationPlugin(InitParams params) {
     if (params == null || !params.containsKey("application")) {
       throw new IllegalArgumentException("params containing 'application' parameter of plugin is mandatory");
@@ -45,6 +47,9 @@ public class ApplicationPlugin extends BaseComponentPlugin {
     if (params.containsKey("override")) {
       this.override = Boolean.parseBoolean(params.getValueParam("override").getValue());
     }
+    if (params.containsKey("override-mode")) {
+      this.overrideMode = params.getValueParam("override-mode").getValue();
+    }
   }
 
   public Application getApplication() {
@@ -57,5 +62,8 @@ public class ApplicationPlugin extends BaseComponentPlugin {
 
   public boolean isOverride() {
     return override;
+  }
+  public String getOverrideMode(){
+    return overrideMode;
   }
 }
