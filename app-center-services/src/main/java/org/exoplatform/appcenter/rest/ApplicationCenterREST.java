@@ -273,6 +273,7 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error") })
   public Response updateApplication(@ApiParam(value = "Application to update", required = true) Application application) {
     try {
+      application.setChangedManually(true);
       appCenterService.updateApplication(application, getCurrentUserName());
     } catch (IllegalAccessException e) {
       LOG.warn(e);

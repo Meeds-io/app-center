@@ -55,6 +55,8 @@ public class Application implements Serializable {
 
   private Long              order;
 
+  private boolean           isChangedManually;
+
   public Application() {
   }
 
@@ -70,6 +72,7 @@ public class Application implements Serializable {
                      boolean active,
                      boolean isMandatory,
                      boolean isMobile,
+                     boolean isChangedManually,
                      String... permissions) {
     this(id,
          title,
@@ -83,6 +86,7 @@ public class Application implements Serializable {
          active,
          isMandatory,
          isMobile,
+         isChangedManually,
          permissions == null ? null : Arrays.asList(permissions));
   }
 
@@ -98,6 +102,7 @@ public class Application implements Serializable {
                      boolean active,
                      boolean isMandatory,
                      boolean isMobile,
+                     boolean isChangedManually,
                      List<String> permissions) {
     this.id = id;
     this.title = title;
@@ -112,6 +117,7 @@ public class Application implements Serializable {
     this.imageFileId = imageFileId;
     this.imageFileBody = imageFileBody;
     this.imageFileName = imageFileName;
+    this.isChangedManually = isChangedManually;
   }
 
   public Long getId() {
@@ -228,6 +234,14 @@ public class Application implements Serializable {
 
   public void setOrder(Long order) {
     this.order = order;
+  }
+
+  public boolean isChangedManually() {
+    return isChangedManually;
+  }
+
+  public void setChangedManually(boolean changedManually) {
+    this.isChangedManually = changedManually;
   }
 
   @Override
