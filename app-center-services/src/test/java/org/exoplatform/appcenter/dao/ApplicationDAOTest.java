@@ -76,7 +76,8 @@ public class ApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",
+                                                                false);
     ApplicationEntity storedEntity = service.create(applicationEntity);
     assertNotNull(storedEntity);
     assertNotNull(storedEntity.getId());
@@ -123,7 +124,7 @@ public class ApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationEntity = service.create(applicationEntity);
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
                                                                  "title2",
@@ -132,7 +133,7 @@ public class ApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  false,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationEntity2 = service.create(applicationEntity2);
 
     List<ApplicationEntity> applications = service.getApplications("title");
@@ -170,7 +171,7 @@ public class ApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationDAO.create(applicationEntity);
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
                                                                  "title2",
@@ -179,7 +180,7 @@ public class ApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  false,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationDAO.create(applicationEntity2);
 
     ApplicationEntity foundEntity = applicationDAO.getApplicationByTitle("title");
@@ -208,7 +209,7 @@ public class ApplicationDAOTest {
                                                                 "description",
                                                                 true,
                                                                 false,
-                                                                "permissions");
+                                                                "permissions",false);
     applicationEntity = applicationDAO.create(applicationEntity);
 
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
@@ -218,7 +219,7 @@ public class ApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  false,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationEntity2 = applicationDAO.create(applicationEntity2);
 
     ApplicationEntity applicationEntity3 = new ApplicationEntity(null,
@@ -228,7 +229,7 @@ public class ApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  true,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationEntity3 = applicationDAO.create(applicationEntity3);
 
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(applicationEntity, "testuser"));
@@ -264,7 +265,7 @@ public class ApplicationDAOTest {
                                                                  "description1",
                                                                  true,
                                                                  true,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationDAO.create(applicationEntity1);
 
     ApplicationEntity applicationEntity2 = new ApplicationEntity(null,
@@ -274,7 +275,7 @@ public class ApplicationDAOTest {
                                                                  "description2",
                                                                  true,
                                                                  true,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationDAO.create(applicationEntity2);
 
     ApplicationEntity applicationEntity3 = new ApplicationEntity(null,
@@ -284,7 +285,7 @@ public class ApplicationDAOTest {
                                                                  "description3",
                                                                  false,
                                                                  true,
-                                                                 "permissions");
+                                                                 "permissions",false);
     applicationDAO.create(applicationEntity3);
 
     List<ApplicationEntity> mandatoryApps = applicationDAO.getMandatoryActiveApps();
