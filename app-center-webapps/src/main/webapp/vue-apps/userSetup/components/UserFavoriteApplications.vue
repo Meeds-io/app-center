@@ -50,7 +50,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-list-item>
           <div class="favoriteAppImage">
             <a :target="favoriteApp.target" :href="favoriteApp.computedUrl" @click="logOpenApplication(favoriteApp.id)">
-              <img v-if="favoriteApp.imageFileId" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
+              <img v-if="favoriteApp.imageFileId && authorizedApp.imageFileName" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
               <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
               <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
             </a>
