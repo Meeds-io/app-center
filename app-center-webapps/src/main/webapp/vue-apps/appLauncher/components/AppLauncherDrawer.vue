@@ -73,7 +73,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :href="application.computedUrl"
                   @click="logOpenApplication(application.id)"
                 >
-                  <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
                   <span
@@ -108,7 +108,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :href="application.computedUrl"
                   @click="logOpenApplication(application.id)"
                 >
-                  <img v-if="application.imageFileId" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
+                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
                   <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
                   <span 
