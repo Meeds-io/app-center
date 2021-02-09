@@ -44,8 +44,8 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
       query = getEntityManager().createNamedQuery("ApplicationEntity.getApplications", ApplicationEntity.class);
     } else {
       query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword", ApplicationEntity.class);
-      keyword = StringUtils.stripAccents(keyword.toLowerCase());
-      keyword = "%" + keyword.replaceAll("%", "").replaceAll("\\*", "%") + "%";
+      keyword = keyword.toLowerCase();
+      keyword = new StringBuilder().append("%").append(keyword.replaceAll("%", "").replaceAll("\\*", "%").replaceAll("[^\\p{ASCII}]", "_")).append("%").toString();
       query.setParameter("title", keyword);
       query.setParameter("description", keyword);
       query.setParameter("url", keyword);
