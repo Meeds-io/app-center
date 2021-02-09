@@ -36,6 +36,7 @@ import org.exoplatform.appcenter.dto.UserApplication;
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.appcenter.entity.FavoriteApplicationEntity;
 import org.exoplatform.appcenter.service.ApplicationNotFoundException;
+import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.file.services.FileStorageException;
@@ -303,8 +304,13 @@ public class ApplicationCenterStorage {
     if (applicationEntity == null) {
       return null;
     }
-    String imageFileName = applicationEntity.getImageFileId() != null
-        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
+    String imageFileName = null;
+    if(applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId()>0){
+      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
+      if(fileInfo != null){
+        imageFileName = fileInfo.getName();
+      }
+    }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     Application application = new Application(applicationEntity.getId(),
                                               applicationEntity.getTitle(),
@@ -330,8 +336,13 @@ public class ApplicationCenterStorage {
     if (applicationEntity == null) {
       return null;
     }
-    String imageFileName = applicationEntity.getImageFileId() != null
-        && applicationEntity.getImageFileId() > 0 ? fileService.getFile(applicationEntity.getImageFileId()).getFileInfo().getName() : null;
+    String imageFileName = null;
+    if(applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId()>0){
+      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
+      if(fileInfo != null){
+        imageFileName = fileInfo.getName();
+      }
+    }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
