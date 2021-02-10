@@ -135,6 +135,16 @@ public class ApplicationDAOTest {
                                                                  false,
                                                                  "permissions",false);
     applicationEntity2 = service.create(applicationEntity2);
+    
+    ApplicationEntity applicationEntity3 = new ApplicationEntity(null,
+                                                                 "tést âpp",
+                                                                 "url3",
+                                                                 5L,
+                                                                 "description3",
+                                                                 true,
+                                                                 false,
+                                                                 "permissions",false);
+    applicationEntity3 = service.create(applicationEntity3);
 
     List<ApplicationEntity> applications = service.getApplications("title");
     assertNotNull(applications);
@@ -155,6 +165,16 @@ public class ApplicationDAOTest {
     assertNotNull(applications);
     assertEquals(1, applications.size());
     assertEquals(applicationEntity2.getId(), applications.get(0).getId());
+
+    applications = service.getApplications("tés");
+    assertNotNull(applications);
+    assertEquals(1, applications.size());
+    assertEquals(applicationEntity3.getId(), applications.get(0).getId());
+
+    applications = service.getApplications("âpp");
+    assertNotNull(applications);
+    assertEquals(1, applications.size());
+    assertEquals(applicationEntity3.getId(), applications.get(0).getId());
   }
 
   @Test

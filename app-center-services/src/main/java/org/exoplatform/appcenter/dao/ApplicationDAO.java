@@ -20,7 +20,7 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
@@ -45,7 +45,7 @@ public class ApplicationDAO extends GenericDAOJPAImpl<ApplicationEntity, Long> {
     } else {
       query = getEntityManager().createNamedQuery("ApplicationEntity.getApplicationsByKeyword", ApplicationEntity.class);
       keyword = keyword.toLowerCase();
-      keyword = "%" + keyword.replaceAll("%", "").replaceAll("\\*", "%") + "%";
+      keyword = new StringBuilder().append("%").append(keyword.replaceAll("%", "").replaceAll("\\*", "%").replaceAll("[^\\p{ASCII}]", "_")).append("%").toString();
       query.setParameter("title", keyword);
       query.setParameter("description", keyword);
       query.setParameter("url", keyword);
