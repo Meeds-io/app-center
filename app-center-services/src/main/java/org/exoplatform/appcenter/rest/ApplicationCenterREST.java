@@ -72,6 +72,7 @@ public class ApplicationCenterREST implements ResourceContainer {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
   @ApiOperation(value = "Retrieves all available subresources of current endpoint", httpMethod = "GET", response = Response.class, produces = "application/json")
   @ApiResponses(value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
       @ApiResponse(code = 500, message = "Internal server error") })
