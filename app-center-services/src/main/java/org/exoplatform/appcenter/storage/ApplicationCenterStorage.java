@@ -370,6 +370,13 @@ public class ApplicationCenterStorage {
       return null;
     }
     ApplicationEntity applicationEntity = favoriteApplicationEntity.getApplication();
+    String imageFileName = null;
+    if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
+      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
+      if (fileInfo != null) {
+        imageFileName = fileInfo.getName();
+      }
+    }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
     UserApplication userApplication = new UserApplication(applicationEntity.getId(),
                                                           applicationEntity.getTitle(),
@@ -377,7 +384,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
                                                           null,
-                                                          null,
+                                                          imageFileName,
                                                           applicationEntity.getDescription(),
                                                           applicationEntity.isSystem(),
                                                           applicationEntity.isActive(),
