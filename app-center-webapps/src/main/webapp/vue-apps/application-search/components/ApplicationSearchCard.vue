@@ -20,14 +20,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <a 
         :target="targetUrl"
         :href="applicationUrl"
-        @click="logOpenApplication(id)"
-      >
+        @click="logOpenApplication(id)">
         <v-img
           class="appImage"
           :src="imageUrl"
           width="148"
-          height="148"
-        />
+          height="148" />
       </a>
     </div>
     <div class="mx-auto">
@@ -36,15 +34,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :title="result.title"
         :target="targetUrl"
         :href="applicationUrl"
-        @click="logOpenApplication(id)"
-      >
+        @click="logOpenApplication(id)">
         {{ result.title }}
       </a>
     </div>
     <div
       :title="result.description"
-      class="mx-auto text-sub-title pt-2 pb-4"
-    >
+      class="mx-auto text-sub-title pt-2 pb-4">
       {{ result.description }}
     </div>
   </v-card>

@@ -24,7 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               {{ `${$t("appCenter.adminSetupForm.maxFavoriteApps")} : ${maxFavoriteApps}` }}
             </span>
           </v-list-item-content>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-list-item-action class="setMaxFavorite">
             <v-slider
               v-if="!isMaxFavoriteAppsView"
@@ -33,21 +33,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               track-color="grey"
               always-dirty
               min="0"
-              max="50"
-            >
+              max="50">
               <template v-slot:prepend>
                 <v-icon
                   color="blue"
-                  @click="decrement"
-                >
+                  @click="decrement">
                   mdi-minus
                 </v-icon>
               </template>
               <template v-slot:append>
                 <v-icon
                   color="blue"
-                  @click="increment"
-                >
+                  @click="increment">
                   mdi-plus
                 </v-icon>
               </template>
@@ -56,27 +53,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-list-item-action class="editMaxFavorite">
             <div
               v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
-              class="saveChanges"
-            >
+              class="saveChanges">
               <a
                 v-if="!isMaxFavoriteAppsView"
                 data-placement="bottom"
                 data-container="body"
-                @click.stop="setMaxFavoriteApps()"
-              >
+                @click.stop="setMaxFavoriteApps()">
                 <i class="uiIconSave uiIconLightGray"></i>
               </a>
             </div>
             <div
               v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
-              class="cancelEdit"
-            >
+              class="cancelEdit">
               <a
                 v-if="!isMaxFavoriteAppsView"
                 data-placement="bottom"
                 data-container="body"
-                @click.stop="isMaxFavoriteAppsView = true"
-              >
+                @click.stop="isMaxFavoriteAppsView = true">
                 <v-icon class="iconClose">
                   close
                 </v-icon>
@@ -85,39 +78,43 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-btn
               v-if="isMaxFavoriteAppsView"
               icon
-              @click.stop="isMaxFavoriteAppsView = false"
-            >
+              @click.stop="isMaxFavoriteAppsView = false">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-list-item-action>
         </v-list-item>        
       </v-row>
       <v-row class="px-6 my-2">
-        <v-divider></v-divider>
+        <v-divider />
       </v-row>
       <v-row class="px-12 py-0">
         <v-list-item dense>
           <v-list-item-content class="defaultAppImage">
             <span>
               {{ $t("appCenter.adminSetupForm.defaultAppImage") }}
-              <img v-if="defaultAppImage.fileBody" class="appImage" :src="`data:image/png;base64,${defaultAppImage.fileBody}`" />
-              <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
+              <img
+                v-if="defaultAppImage.fileBody"
+                class="appImage"
+                :src="`data:image/png;base64,${defaultAppImage.fileBody}`">
+              <img
+                v-else
+                class="appImage"
+                src="/app-center/skin/images/defaultApp.png">
             </span>
             <p v-if="defaultAppImage.invalidImage" class="errorInput">
               {{ $t("appCenter.adminSetupForm.imageError") }}
             </p>
           </v-list-item-content>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-list-item-action class="setDefaultAppImage">
-            <div v-show="!defaultAppImageViewMode
-              && !defaultAppImage.fileName &&
-              !defaultAppImage.fileBody"
-            >
+            <div
+              v-show="!defaultAppImageViewMode
+                && !defaultAppImage.fileName &&
+                !defaultAppImage.fileBody">
               <label
                 v-if="!defaultAppImageViewMode"
                 for="defaultAppImageFile"
-                class="custom-file-upload"
-              >
+                class="custom-file-upload">
                 <i class="uiDownloadIcon download-icon"></i>{{ $t("appCenter.adminSetupForm.browse") }}
               </label>
               <input
@@ -126,8 +123,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 ref="defaultAppImageFile"
                 type="file"
                 accept="image/*"
-                @change="handleDefaultAppImageFileUpload()"
-              >
+                @change="handleDefaultAppImageFileUpload()">
             </div>
             <div v-show="!defaultAppImageViewMode && defaultAppImage.fileName">
               <span>
@@ -136,8 +132,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <v-btn
                 class="remove-file"
                 icon
-                @click="removeDefaultAppImageFile"
-              >
+                @click="removeDefaultAppImageFile">
                 <v-icon small>
                   mdi-delete
                 </v-icon>
@@ -147,27 +142,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-list-item-action class="editDefaultImage">
             <div
               v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
-              class="saveChanges"
-            >
+              class="saveChanges">
               <a
                 v-if="!defaultAppImageViewMode"
                 data-placement="bottom"
                 data-container="body"
-                @click.stop="submitDefaultAppImage()"
-              >
+                @click.stop="submitDefaultAppImage()">
                 <i class="uiIconSave uiIconLightGray"></i>
               </a>
             </div>
             <div
               v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
-              class="cancelEdit"
-            >
+              class="cancelEdit">
               <a
                 v-if="!defaultAppImageViewMode"
                 data-placement="bottom"
                 data-container="body"
-                @click.stop="resetDefaultAppImage()"
-              >
+                @click.stop="resetDefaultAppImage()">
                 <v-icon class="iconClose">
                   close
                 </v-icon>
@@ -176,8 +167,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-btn
               v-if="defaultAppImageViewMode"
               icon
-              @click.stop="defaultAppImageViewMode = false"
-            >
+              @click.stop="defaultAppImageViewMode = false">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-list-item-action>

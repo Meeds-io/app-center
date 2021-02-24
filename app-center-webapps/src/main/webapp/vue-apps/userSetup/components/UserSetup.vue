@@ -18,10 +18,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <div class="userApplications">
     <v-row dense>
       <v-col class="authorizedApplicationsContainer">
-        <user-authorizedApplications :can-add-favorite="canAddFavorite" :default-app-image="defaultAppImage"></user-authorizedApplications>
+        <user-authorizedApplications :can-add-favorite="canAddFavorite" :default-app-image="defaultAppImage" />
       </v-col>
       <v-col class="userFavoriteApplicationsContainer" sm="3">
-        <user-favoriteApplications :default-app-image="defaultAppImage" @canAddFavorite="setCanAddFavorite"></user-favoriteApplications>
+        <user-favoriteApplications :default-app-image="defaultAppImage" @canAddFavorite="setCanAddFavorite" />
       </v-col>      
     </v-row>
   </div>

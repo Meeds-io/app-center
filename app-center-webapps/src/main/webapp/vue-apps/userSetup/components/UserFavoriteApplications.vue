@@ -19,9 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <div v-if="loading" class="favoriteAppsTitle">
       <v-skeleton-loader
         class="mx-auto"
-        type="card-heading"
-      >
-      </v-skeleton-loader>
+        type="card-heading" />
     </div>
     <div v-else>
       <div class="favoriteAppsTitle">
@@ -33,9 +31,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <div v-for="n in 8" :key="n">
         <v-skeleton-loader
           class="mx-auto"
-          type="table-heading"
-        >
-        </v-skeleton-loader>
+          type="table-heading" />
       </div>      
     </div>
     <div v-else>
@@ -45,14 +41,25 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         class="favoriteApplication"
         height="65"
         max-width="auto"
-        outlined
-      >
+        outlined>
         <v-list-item>
           <div class="favoriteAppImage">
-            <a :target="favoriteApp.target" :href="favoriteApp.computedUrl" @click="logOpenApplication(favoriteApp.id)">
-              <img v-if="favoriteApp.imageFileId && favoriteApp.imageFileName" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
-              <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`" />
-              <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
+            <a
+              :target="favoriteApp.target"
+              :href="favoriteApp.computedUrl"
+              @click="logOpenApplication(favoriteApp.id)">
+              <img
+                v-if="favoriteApp.imageFileId && favoriteApp.imageFileName"
+                class="appImage"
+                :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+              <img
+                v-else-if="defaultAppImage.fileBody"
+                class="appImage"
+                :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+              <img
+                v-else
+                class="appImage"
+                src="/app-center/skin/images/defaultApp.png">
             </a>
           </div>
           <v-list-item-content>
@@ -60,26 +67,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               class="favoriteAppUrl"
               :target="favoriteApp.target"
               :href="favoriteApp.computedUrl"
-              @click="logOpenApplication(favoriteApp.id)"
-            >
+              @click="logOpenApplication(favoriteApp.id)">
               <div
                 :title="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
-                class="favAppTitle"
-              >
+                class="favAppTitle">
                 {{ favoriteApp.title }}
               </div>
             </a>
           </v-list-item-content>
           <v-list-item-action
             :title="favoriteApp.mandatory ? $t('appCenter.userSetup.mandatory') : $t('appCenter.userSetup.remove.from.favorite')"
-            class="favoriteAppRemove"
-          >
+            class="favoriteAppRemove">
             <v-btn
               :disabled="favoriteApp.mandatory"
               :class="favoriteApp.mandatory ? 'mandatory' : ''"
               icon
-              @click.stop="deleteFavoriteApplication(favoriteApp.id)"
-            >
+              @click.stop="deleteFavoriteApplication(favoriteApp.id)">
               <v-icon>mdi-star</v-icon>
             </v-btn>
           </v-list-item-action>
