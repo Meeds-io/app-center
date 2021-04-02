@@ -63,6 +63,8 @@ public class ApplicationCenterServiceTest {
 
   private ApplicationCenterStorage appCenterStorage;
 
+  protected PortalContainer container;
+
   @BeforeClass
   @SuppressWarnings("deprecation")
   public static void startDB() {
@@ -73,8 +75,8 @@ public class ApplicationCenterServiceTest {
 
   @Before
   @SuppressWarnings("deprecation")
-  public void setup() throws Exception {
-    PortalContainer container = PortalContainer.getInstance();
+  public void setUp() throws Exception {
+    container = PortalContainer.getInstance();
     assertNotNull(container);
 
     ExoContainerContext.setCurrentContainer(container);

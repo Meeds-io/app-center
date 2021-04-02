@@ -31,6 +31,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   </component>
 
   <component>
+    <type>org.exoplatform.appcenter.search.ApplicationESListener</type>
+  </component>
+
+  <component>
     <type>org.exoplatform.appcenter.service.ApplicationCenterService</type>
     <init-params>
       <value-param>
@@ -64,6 +68,38 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </properties-param>
       </init-params>
     </component-plugin>
+  </external-component-plugins>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.search.index.IndexingOperationProcessor</target-component>
+    <component-plugin>
+      <name>ApplicationIndexingServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.appcenter.search.ApplicationIndexingServiceConnector</type>
+      <description>Application ElasticSearch Indexing Connector</description>
+      <init-params>
+        <value-param>
+          <name>mapping.file.path</name>
+          <value>${exo.appcenter.es.mapping.path:jar:/application-es-mapping.json}</value>
+        </value-param>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index_alias" value="application_alias" />
+          <property name="index_previous" value="" />
+          <property name="index_current" value="application_v1" />
+          <property name="type" value="application" />
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+
+  <external-component-plugins>
+  <target-component>org.exoplatform.services.listener.ListenerService</target-component>
+  <component-plugin>
+    <name>exo.application.created</name>
+    <set-method>addListener</set-method>
+    <type>org.exoplatform.appcenter.search.ApplicationESListener</type>
+  </component-plugin>
   </external-component-plugins>
 
 </configuration>

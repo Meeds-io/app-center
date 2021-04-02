@@ -20,6 +20,21 @@
    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
+  <component>
+    <type>org.exoplatform.appcenter.search.ApplicationSearchConnector</type>
+    <init-params>
+      <value-param>
+        <name>query.file.path</name>
+        <value>${exo.appcenter.es.query.path:jar:/application-search-query.json}</value>
+      </value-param>
+      <properties-param>
+        <name>constructor.params</name>
+        <property name="searchType" value="application"/>
+        <property name="index" value="application_alias"/>
+      </properties-param>
+    </init-params>
+  </component>
+
   <external-component-plugins>
     <target-component>org.exoplatform.social.core.search.SearchService</target-component>
     <component-plugin>
@@ -36,7 +51,7 @@
               <string>application</string>
             </field>
             <field name="uri">
-              <string><![CDATA[/portal/rest/app-center/applications/authorized?offset=0&limit={limit}&keyword={keyword}]]></string>
+              <string><![CDATA[/portal/rest/app-center/applications/search?limit={limit}&query={keyword}]]></string>
             </field>
             <field name="enabled">
               <boolean>${exo.search.application.enabled:true}</boolean>
