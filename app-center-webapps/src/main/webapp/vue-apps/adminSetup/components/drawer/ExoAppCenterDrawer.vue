@@ -15,15 +15,8 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-navigation-drawer
+  <exo-drawer
     v-model="applicationsDrawer"
-    absolute
-    right
-    stateless
-    temporary
-    width="420"
-    max-width="100vw"
-    max-height="100vh"
     class="appCenterDrawer"
   >
     <v-row class="mx-0 title">
@@ -216,7 +209,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </button>
       </v-card>
     </v-row>
-  </v-navigation-drawer>
+  </exo-drawer>
 </template>
 
 <script>
