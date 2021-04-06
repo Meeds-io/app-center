@@ -31,8 +31,6 @@ import org.exoplatform.appcenter.search.ApplicationSearchConnector;
 import org.exoplatform.appcenter.util.RestEntityBuilder;
 import org.exoplatform.appcenter.util.Utils;
 import org.exoplatform.services.listener.ListenerService;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
@@ -103,8 +101,6 @@ public class ApplicationCenterService implements Startable {
 
   private ApplicationCenterStorage       appCenterStorage;
 
-  private IdentityManager                identityManager;
-
   private ListenerService                listenerService;
 
   private String                         defaultAdministratorPermission    = null;
@@ -129,8 +125,7 @@ public class ApplicationCenterService implements Startable {
   public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
   public static final String MERGE_MODE = "merge";
 
-  public ApplicationCenterService(IdentityManager identityManager,
-                                  ApplicationSearchConnector applicationSearchConnector,
+  public ApplicationCenterService(ApplicationSearchConnector applicationSearchConnector,
                                   ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
@@ -139,7 +134,6 @@ public class ApplicationCenterService implements Startable {
                                   PortalContainer container,
                                   InitParams params,
                                   ListenerService listenerService) {
-    this.identityManager = identityManager;
     this.applicationSearchConnector = applicationSearchConnector;
     this.container = container;
     this.configurationManager = configurationManager;
@@ -751,8 +745,7 @@ public class ApplicationCenterService implements Startable {
   }
 
   public List<ApplicationSearchResultEntity> search(String currentUser, String query, int offset, int limit) {
-    long userIdentityId = getCurrentUserIdentityId(identityManager, currentUser);
-    List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(userIdentityId, query, offset, limit);
+    List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(currentUser, query, offset, limit);
     return searchResults.stream()
             .map(searchResult -> RestEntityBuilder.fromSearchApplication(searchResult))
             .collect(Collectors.toList());
@@ -841,11 +834,5 @@ public class ApplicationCenterService implements Startable {
 
     return userApplicationsList;
   }
-
-  public static final long getCurrentUserIdentityId(IdentityManager identityManager, String currentUser) {
-    org.exoplatform.social.core.identity.model.Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, currentUser);
-    return identity == null ? 0 : Long.parseLong(identity.getId());
-  }
-
 
 }

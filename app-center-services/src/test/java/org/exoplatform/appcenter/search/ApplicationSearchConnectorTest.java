@@ -117,7 +117,7 @@ public class ApplicationSearchConnectorTest {
                                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
         try { 
             Application storedApplication = applicationCenterService.createApplication(application);
-            List<ApplicationSearchResult> result = applicationSearchConnector.search(Long.parseLong(identity.getId()), term, 0, 10);
+            List<ApplicationSearchResult> result = applicationSearchConnector.search(identity.getRemoteId(), term, 0, 10);
         } catch (Exception e) {
             //
         }

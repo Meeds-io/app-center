@@ -1,6 +1,7 @@
 package org.exoplatform.appcenter.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -16,7 +17,6 @@ import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 
 
@@ -32,11 +32,11 @@ public class ApplicationSearchConnector {
 
     private static final String          SEARCH_QUERY_FILE_PATH_PARAM = "query.file.path";
 
-    private final ConfigurationManager   configurationManager;
+    private ConfigurationManager   configurationManager;
 
-    private final IdentityManager        identityManager;
+    private IdentityManager        identityManager;
 
-    private final ElasticSearchingClient client;
+    private ElasticSearchingClient client;
 
     private String                       index;
 
@@ -45,6 +45,9 @@ public class ApplicationSearchConnector {
     private String                       searchQueryFilePath;
 
     private String                       searchQuery;
+
+    public ApplicationSearchConnector() {
+    }
 
     public ApplicationSearchConnector(ConfigurationManager configurationManager,
                                       IdentityManager identityManager,
@@ -66,7 +69,7 @@ public class ApplicationSearchConnector {
         }
     }
 
-    public List<ApplicationSearchResult> search(long userIdentityId, String term, long offset, long limit) {
+    public List<ApplicationSearchResult> search(String currentUser, String term, long offset, long limit) {
         if (offset < 0) {
             throw new IllegalArgumentException("Offset must be positive");
         }
@@ -74,6 +77,7 @@ public class ApplicationSearchConnector {
             throw new IllegalArgumentException("Limit must be positive");
         }
 
+        long userIdentityId = getCurrentUserIdentityId(identityManager, currentUser);
         if (userIdentityId < 0) {
             throw new IllegalArgumentException("User identity id must be positive");
         }
@@ -164,12 +168,13 @@ public class ApplicationSearchConnector {
         return this.searchQuery;
     }
 
-    private Identity getIdentityById(IdentityManager identityManager, long identityId){
-        return identityManager.getIdentity(String.valueOf(identityId));
-    }
-
     private Long parseLong(JSONObject hitSource, String key) {
         String value = (String) hitSource.get(key);
         return StringUtils.isBlank(value) ? null : Long.parseLong(value);
+    }
+
+    public static final long getCurrentUserIdentityId(IdentityManager identityManager, String currentUser) {
+        org.exoplatform.social.core.identity.model.Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, currentUser);
+        return identity == null ? 0 : Long.parseLong(identity.getId());
     }
 }
