@@ -27,8 +27,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </v-container>
     <v-navigation-drawer
       v-model="appLauncherDrawer"
+      :right="rightDrawer"
       absolute
-      right
       stateless
       temporary
       width="420"
@@ -156,6 +156,7 @@ export default {
         invalidSize: false,
         invalidImage: false
       },
+      rightDrawer: eXo.env.portal.orientation === 'ltr',
       isMobileDevice: false,
       applicationsLoaded: false,
       appLauncherDrawer: null,

@@ -234,6 +234,7 @@ export default {
       },
       error: '',
       showDeleteApplicationModal: false,
+      displayAppDelay: 200,
       openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
@@ -305,7 +306,12 @@ export default {
           this.loading = false;
           if (!this.initialized) {
             this.initialized = true;
-            this.$root.$emit('application-loaded');
+            /* Differ replacing cached content
+             To let Vuetify the time to process
+             chevron icons position switch RTL or LTR */
+            window.setTimeout(() => {
+              this.$root.$emit('application-loaded');
+            }, this.displayAppDelay);
           }
         });
     },
