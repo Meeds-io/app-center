@@ -24,8 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     width="420"
     max-width="100vw"
     max-height="100vh"
-    class="appCenterDrawer"
-  >
+    class="appCenterDrawer">
     <v-row class="mx-0 title">
       <v-list-item class="applicationsDrawerHeader">
         <v-list-item-content>
@@ -35,12 +34,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-btn
             icon
             class="rightIcon"
-            @click="$emit('closeDrawer')"
-          >
+            @click="$emit('closeDrawer')">
             <v-icon
               large
-              class="closeIcon"
-            >
+              class="closeIcon">
               close
             </v-icon>
           </v-btn>
@@ -64,8 +61,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
-            required
-          />
+            required>
           <p v-if="!formArray.system && appTitleExists()" class="error">
             {{ $t('appCenter.adminSetupForm.existingTitle.error') }}
           </p>
@@ -80,15 +76,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             maxlength="200"
             :readonly="formArray.system"
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-            required
-          />
+            required>
           <v-row class="uploadImageContainer">
             <v-col class="uploadImageTitle" cols="1">
               <v-label for="image">
                 {{ $t('appCenter.adminSetupForm.image') }}
               </v-label>
             </v-col>
-            <v-col v-show="!formArray.imageFileName" class="uploadImage" cols="3">
+            <v-col
+              v-show="!formArray.imageFileName"
+              class="uploadImage"
+              cols="3">
               <label for="imageFile" class="custom-file-upload">
                 <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
                 <span>
@@ -100,15 +98,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 ref="image"
                 type="file"
                 accept="image/*"
-                @change="handleFileUpload"
-              >
+                @change="handleFileUpload">
             </v-col>
-            <v-col v-show="formArray.imageFileName" class="imageSet" cols="4">
+            <v-col
+              v-show="formArray.imageFileName"
+              class="imageSet"
+              cols="4">
               <v-list-item
                 v-if="formArray.imageFileName != undefined &&
                   formArray.imageFileName != ''"
-                class="file-listing"
-              >
+                class="file-listing">
                 <v-list-item-content>
                   <div class="imageTitle">
                     {{ formArray.imageFileName }}
@@ -119,8 +118,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     class="remove-file"
                     icon
                     :disabled="formArray.system"
-                    @click="removeFile"
-                  >
+                    @click="removeFile">
                     <v-icon small>
                       mdi-delete
                     </v-icon>
@@ -130,8 +128,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-col>
             <v-col v-if="!formArray.invalidImageFormat" class="uploadImageInfo">
               <p
-                :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')"
-              >
+                :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')">
                 <v-icon small>
                   mdi-information
                 </v-icon>
@@ -140,8 +137,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-col>
             <v-col v-else class="uploadImageInfo">
               <p
-                :class="'imageFormat error'"
-              >
+                :class="'imageFormat error'">
                 <v-icon small>
                   mdi-information
                 </v-icon>
@@ -160,18 +156,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             counter="1000"
             :rules="rules"
             :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
-            no-resize
-          >
-          </v-textarea>
+            no-resize />
           <v-row class="applicationProperties">
             <v-col>
-              <v-switch v-model="formArray.mandatory" class="mandatoryLabel" :label="$t('appCenter.adminSetupForm.mandatory')"></v-switch>
+              <v-switch
+                v-model="formArray.mandatory"
+                class="mandatoryLabel"
+                :label="$t('appCenter.adminSetupForm.mandatory')" />
             </v-col>
             <v-col>
-              <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')"></v-switch>
+              <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')" />
             </v-col>
             <v-col>
-              <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')"></v-switch>
+              <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')" />
             </v-col>
           </v-row>
           <v-label for="permissions">
@@ -185,8 +182,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :options="suggesterOptions"
             :source-providers="[findGroups]"
             :application-permissions="appPermissions"
-            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')"
-          />
+            :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')" />
           <v-label for="helpPage">
             {{ $t('appCenter.adminSetupForm.helpPage') }}
           </v-label>
@@ -196,8 +192,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             type="url"
             name="name"
             maxlength="200"
-            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
-          />
+            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')">
         </v-col>
       </v-row>
     </v-col>
@@ -206,12 +201,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-card
         flat
         tile
-        class="d-flex flex justify-end mx-2 px-1"
-      >
-        <button type="button" class="btn ml-2 applicationsActionBtn" @click="resetForm">
+        class="d-flex flex justify-end mx-2 px-1">
+        <button
+          type="button"
+          class="btn ml-2 applicationsActionBtn"
+          @click="resetForm">
           {{ $t('appCenter.adminSetupForm.cancel') }}
         </button>
-        <button type="button" class="btn btn-primary ml-6 applicationsActionBtn" :disabled="!canSaveApplication" @click="submitForm">
+        <button
+          type="button"
+          class="btn btn-primary ml-6 applicationsActionBtn"
+          :disabled="!canSaveApplication"
+          @click="submitForm">
           {{ $t('appCenter.adminSetupForm.save') }}
         </button>
       </v-card>
@@ -421,7 +422,7 @@ export default {
       }
       this.getGroups(query).then(data => {
         const groups = [];
-        for(const group of data.entities) {
+        for (const group of data.entities) {
           groups.push({
             avatarUrl: null,
             text: `*:${group.id}`,

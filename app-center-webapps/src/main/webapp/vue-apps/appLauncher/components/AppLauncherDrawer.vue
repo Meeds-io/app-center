@@ -18,7 +18,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <v-app flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn id="appcenterLauncherButton" icon class="text-xs-center" @click="toggleDrawer()">
+        <v-btn
+          id="appcenterLauncherButton"
+          icon
+          class="text-xs-center"
+          @click="toggleDrawer()">
           <v-icon class="appCenterLauncherButtonIcon">
             mdi-apps
           </v-icon>
@@ -34,8 +38,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       width="420"
       max-width="100vw"
       max-height="100%"
-      class="appCenterDrawer"
-    >
+      class="appCenterDrawer">
       <v-row v-if="appLauncherDrawer" class="mx-0 title">
         <v-list-item class="appLauncherDrawerHeader">
           <v-list-item-content>
@@ -46,8 +49,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-list-item-action class="appLauncherDrawerIcons">
             <i
               class="uiCloseIcon appLauncherDrawerClose"
-              @click="toggleDrawer()"
-            ></i>
+              @click="toggleDrawer()"></i>
           </v-list-item-action>
         </v-list-item>
       </v-row>
@@ -61,25 +63,30 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               v-for="(application, index) in mandatoryApplicationsList"
               :id="'Pos-' + index"
               :key="index"
-              class="appLauncherItemContainer"
-            >
+              class="appLauncherItemContainer">
               <div
                 :id="'App-' + index"
-                class="appLauncherItem"
-              >
+                class="appLauncherItem">
                 <a
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)"
-                >
-                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
+                  @click="logOpenApplication(application.id)">
+                  <img
+                    v-if="application.imageFileId && application.imageFileName"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else-if="defaultAppImage.fileBody"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else
+                    class="appLauncherImage"
+                    src="/app-center/skin/images/defaultApp.png">
                   <span
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle"
-                  >
+                    class="appLauncherTitle">
                     {{ application.title }}
                   </span>
                 </a>
@@ -88,33 +95,42 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-col>
         </v-row>
         <v-row v-if="favoriteApplicationsList.length > 0 && mandatoryApplicationsList.length > 0" class="appsContainer">
-          <v-divider></v-divider>
+          <v-divider />
         </v-row>
         <v-layout class="favorite appsContainer">
-          <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
+          <draggable
+            v-model="favoriteApplicationsList"
+            class="appLauncherList"
+            @start="drag=true"
+            @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
               :id="'Pos-' + index"
               :key="index"
-              class="appLauncherItemContainer"
-            >
+              class="appLauncherItemContainer">
               <div
                 :id="'App-' + index"
-                class="appLauncherItem"
-              >
+                class="appLauncherItem">
                 <a
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)"
-                >
-                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
+                  @click="logOpenApplication(application.id)">
+                  <img
+                    v-if="application.imageFileId && application.imageFileName"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else-if="defaultAppImage.fileBody"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else
+                    class="appLauncherImage"
+                    src="/app-center/skin/images/defaultApp.png">
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle"
-                  >
+                    class="appLauncherTitle">
                     {{ application.title }}
                   </span>
                 </a>
@@ -128,8 +144,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-card
           flat
           tile
-          class="d-flex flex justify-end mx-2 px-1"
-        >
+          class="d-flex flex justify-end mx-2 px-1">
           <v-btn
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
@@ -137,8 +152,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :href="appCenterLink"
             @click="navigateTo('appCenterUserSetup/')"
             @click.middle="navigateTo('appCenterUserSetup/')"
-            @click.right="navigateTo('appCenterUserSetup/')"
-          >
+            @click.right="navigateTo('appCenterUserSetup/')">
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
         </v-card>

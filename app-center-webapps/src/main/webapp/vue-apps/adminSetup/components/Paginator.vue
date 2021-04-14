@@ -20,8 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <button
         :disabled="isInFirstPage"
         type="button"
-        @click="onClickPreviousPage"
-      >
+        @click="onClickPreviousPage">
         <img src="/app-center/skin/images/paginator/previous-page.svg">
       </button>
     </li>
@@ -29,14 +28,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <li
       v-for="page in pages"
       :key="page.name"
-      class="paginator-item"
-    >
+      class="paginator-item">
       <button
         :class="{ isActive: isPageActive(page.name) }"
         :disabled="page.isDisabled"
         type="button"
-        @click="onClickPage(page.name)"
-      >
+        @click="onClickPage(page.name)">
         {{ page.name }}
       </button>
     </li>
@@ -45,8 +42,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <button
         :disabled="isInLastPage"
         type="button"
-        @click="onClickNextPage"
-      >
+        @click="onClickNextPage">
         <img src="/app-center/skin/images/paginator/next-page.svg">
       </button>
     </li>

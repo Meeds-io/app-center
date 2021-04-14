@@ -24,7 +24,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     <ul class="myToolsList">
       <li v-for="favoriteApp in favoriteApplicationsList" :key="favoriteApp.id">
-        <a :href="favoriteApp.computedUrl" :target="favoriteApp.target" @click="logOpenApplication(favoriteApp.id)">
+        <a
+          :href="favoriteApp.computedUrl"
+          :target="favoriteApp.target"
+          @click="logOpenApplication(favoriteApp.id)">
           <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
           <span class="myToolTitle tooltipContent">
             <div>{{ favoriteApp.title }}</div>
@@ -37,8 +40,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       v-if="
         !maxFavoriteApps || favoriteApplicationsList.length < maxFavoriteApps
       "
-      class="addTool"
-    >
+      class="addTool">
       <a :href="appCenterUserSetupLink">
         <i class="uiIconPlus uiIconLightGray"></i>
       </a>
