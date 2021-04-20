@@ -29,34 +29,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </v-btn>
       </v-layout>
     </v-container>
-    <v-navigation-drawer
-      v-model="appLauncherDrawer"
-      :right="rightDrawer"
-      absolute
-      stateless
-      temporary
-      width="420"
-      max-width="100vw"
-      max-height="100%"
+    <exo-drawer
+      ref="appLauncherDrawer"
+      :right="!$vuetify.rtl"
+      body-classes="hide-scroll"
       class="appCenterDrawer">
-      <v-row v-if="appLauncherDrawer" class="mx-0 title">
-        <v-list-item class="appLauncherDrawerHeader">
-          <v-list-item-content>
-            <span class="appLauncherDrawerTitle">{{
-              $t("appCenter.appLauncher.drawer.title")
-            }}</span>
-          </v-list-item-content>
-          <v-list-item-action class="appLauncherDrawerIcons">
-            <i
-              class="uiCloseIcon appLauncherDrawerClose"
-              @click="toggleDrawer()"></i>
-          </v-list-item-action>
-        </v-list-item>
-      </v-row>
-      
-      <v-divider class="my-0 appHeaderBorder" />
-
-      <div class="content">
+      <template slot="title">
+        {{ $t("appCenter.appLauncher.drawer.title") }}
+      </template>
+      <div slot="content" class="content">
         <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
           <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
             <div
@@ -139,8 +120,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </draggable>
         </v-layout>
       </div>
-      
-      <v-row class="drawerActions mx-0">
+      <div slot="footer">
         <v-card
           flat
           tile
@@ -156,8 +136,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
         </v-card>
-      </v-row>
-    </v-navigation-drawer>
+      </div>
+    </exo-drawer>
   </v-app>
 </template>
 <script>
@@ -170,10 +150,8 @@ export default {
         invalidSize: false,
         invalidImage: false
       },
-      rightDrawer: eXo.env.portal.orientation === 'ltr',
       isMobileDevice: false,
       applicationsLoaded: false,
-      appLauncherDrawer: null,
       mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
       applicationsOrder: null,
@@ -185,19 +163,6 @@ export default {
     };
   },
   watch: {
-    appLauncherDrawer() {
-      if (this.appLauncherDrawer) {
-        $('body').addClass('hide-scroll');
-
-        this.$nextTick().then(() => {
-          $('#appLauncher .v-overlay').click(() => {
-            this.appLauncherDrawer = false;
-          });
-        });
-      } else {
-        $('body').removeClass('hide-scroll');
-      }
-    },
     favoriteApplicationsList() {
       // check if still alphabetically ordered
       if (this.alphabeticalOrder) {
@@ -232,11 +197,6 @@ export default {
     this.isMobileDevice = this.detectMobile();
     this.getAppGeneralSettings();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
-    $(document).on('keydown', (event) => {
-      if (event.key === 'Escape') {
-        this.appLauncherDrawer = false;
-      }
-    });
     this.$nextTick().then(() => this.$root.$emit('application-loaded'));
   },
   methods: {
@@ -265,10 +225,10 @@ export default {
         });
         this.applicationsLoaded = true;
       }
-
-      this.appLauncherDrawer = !this.appLauncherDrawer;
+      this.$refs.appLauncherDrawer.open();
     },
     getMandatoryAndFavoriteApplications() {
+      this.$refs.appLauncherDrawer.startLoading();
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',
@@ -342,7 +302,10 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-        }).finally(() => this.loading = false);
+        }).finally(() => {
+          this.loading = false;
+          this.$refs.appLauncherDrawer.endLoading();
+        });
     },
     updateApplicationsOrder(applicationsOrder) {
       return fetch('/portal/rest/app-center/applications/favorites', {

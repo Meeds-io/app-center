@@ -136,9 +136,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </template>
       </v-data-table>
       
-      <app-center-drawer
-        :key="applicationDrawerKey"
-        :applications-drawer="openAppDrawer"
+      <app-center-form-drawer
+        ref="appFormDrawer"
         :form-array="formArray"
         :app-permissions="appPermissions"
         :existing-app-names="existingAppNames"
@@ -148,7 +147,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         @closeDrawer="closeDrawer">
         <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
         <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
-      </app-center-drawer>
+      </app-center-form-drawer>
   
       <transition name="fade">
         <app-center-modal
@@ -225,10 +224,8 @@ export default {
       error: '',
       showDeleteApplicationModal: false,
       displayAppDelay: 200,
-      openAppDrawer: false,
       addApplication: true,
       appPermissions: [],
-      applicationDrawerKey: 0,
       existingAppNames: [],
       appToEditOriginalTitle: '',
     };
@@ -342,19 +339,20 @@ export default {
       this.formArray.invalidImage = false;
       this.formArray.invalidImageFormat = false;
       this.appToEditOriginalTitle = '';
-      this.forceRerender();
     },
 
     showAddApplicationDrawer() {
-      this.openAppDrawer = true;
+      this.resetForm();
+      this.$refs.appFormDrawer.open();
       $('body').addClass('hide-scroll');
       this.addApplication = true;
       this.formArray.viewMode = true;
     },
 
     showEditApplicationDrawer(item) {
+      this.resetForm();
       this.appToEditOriginalTitle = item.title;
-      this.openAppDrawer = true;
+      this.$refs.appFormDrawer.open();
       $('body').addClass('hide-scroll');
       this.addApplication = false;
       Object.assign(this.formArray, item);
@@ -386,8 +384,7 @@ export default {
     },
 
     closeDrawer() {
-      this.openAppDrawer = false;
-      this.resetForm();
+      this.$refs.appFormDrawer.close();
     },
 
     getAppGeneralSettings() {
@@ -445,10 +442,6 @@ export default {
       return appList.findIndex(app => app.id === appId);
     },
 
-    forceRerender() {
-      this.applicationDrawerKey += 1;
-      $('body').removeClass('hide-scroll');
-    },
   }
 };
 </script>
