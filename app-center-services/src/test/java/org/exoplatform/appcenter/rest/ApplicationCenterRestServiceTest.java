@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationCenterRestServiceTest {
@@ -33,6 +34,7 @@ public class ApplicationCenterRestServiceTest {
   public void setup() throws Exception {
     Mockito.when(portalContainer.getName()).thenReturn("portal");
     Mockito.when(portalContainer.getRestContextName()).thenReturn("rest");
+
   }
   
   @Test
@@ -59,7 +61,32 @@ public class ApplicationCenterRestServiceTest {
     assertEquals(resultList.size(),((ApplicationList)response.getEntity()).getApplications().size());
   
   }
-  
+  @Test
+  public void testCreateApplication() throws Exception {
+    // ApplicationList result = new ApplicationList();
+    Application application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    Response response = applicationCenterREST.createApplication(application);
+    assertEquals(204,response.getStatus());
+
+  }
+
+  @Test
+  public void testSearchApplication() throws Exception {
+    // ApplicationList result = new ApplicationList();
+    Application Application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    applicationCenterREST.createApplication(Application);
+    Response response = applicationCenterREST.search("titre1",0,20);
+    assertEquals(200,response.getStatus());
+    response = applicationCenterREST.search("titre1",-1,20);
+    assertEquals(400,response.getStatus());
+    response = applicationCenterREST.search("titre1",0,-1);
+    assertEquals(400,response.getStatus());
+
+  }
   @Test
   public void testGetAuthorizedApplicationsList() throws Exception {
     

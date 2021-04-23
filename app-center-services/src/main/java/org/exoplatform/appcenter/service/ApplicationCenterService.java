@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.impl.util.Base64;
+import org.exoplatform.appcenter.search.ApplicationSearchConnector;
+import org.exoplatform.appcenter.util.RestEntityBuilder;
+import org.exoplatform.appcenter.util.Utils;
+import org.exoplatform.services.listener.ListenerService;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
@@ -89,11 +93,15 @@ public class ApplicationCenterService implements Startable {
 
   private SettingService                 settingService;
 
+  private ApplicationSearchConnector     applicationSearchConnector;
+
   private Authenticator                  authenticator;
 
   private IdentityRegistry               identityRegistry;
 
   private ApplicationCenterStorage       appCenterStorage;
+
+  private ListenerService                listenerService;
 
   private String                         defaultAdministratorPermission    = null;
 
@@ -117,19 +125,23 @@ public class ApplicationCenterService implements Startable {
   public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
   public static final String MERGE_MODE = "merge";
 
-  public ApplicationCenterService(ConfigurationManager configurationManager,
+  public ApplicationCenterService(ApplicationSearchConnector applicationSearchConnector,
+                                  ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
                                   IdentityRegistry identityRegistry,
                                   Authenticator authenticator,
                                   PortalContainer container,
-                                  InitParams params) {
+                                  InitParams params,
+                                  ListenerService listenerService) {
+    this.applicationSearchConnector = applicationSearchConnector;
     this.container = container;
     this.configurationManager = configurationManager;
     this.settingService = settingService;
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
     this.appCenterStorage = appCenterStorage;
+    this.listenerService = listenerService;
 
     if (params != null && params.containsKey("default.administrators.expression")) {
       this.defaultAdministratorPermission = params.getValueParam("default.administrators.expression").getValue();
@@ -276,8 +288,9 @@ public class ApplicationCenterService implements Startable {
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
-
-    return appCenterStorage.createApplication(application);
+    Application createdApplication = appCenterStorage.createApplication(application);
+    Utils.broadcastEvent(listenerService, Utils.POST_CREATE_APPLICATION_EVENT, createdApplication, null);
+    return createdApplication;
   }
 
   /**
@@ -729,6 +742,13 @@ public class ApplicationCenterService implements Startable {
                                    .stream()
                                    .anyMatch(app -> StringUtils.equals(app.getApplication().getTitle(), application.getTitle())
                                        && StringUtils.equals(app.getApplication().getUrl(), application.getUrl()));
+  }
+
+  public List<ApplicationSearchResultEntity> search(String currentUser, String query, int offset, int limit) {
+    List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(currentUser, query, offset, limit);
+    return searchResults.stream()
+            .map(searchResult -> RestEntityBuilder.fromSearchApplication(searchResult))
+            .collect(Collectors.toList());
   }
 
   private boolean hasPermission(String username, Application application) {
