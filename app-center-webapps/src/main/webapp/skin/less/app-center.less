@@ -934,10 +934,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 }
 
 .appCenterDrawer {
-  min-height: 100vh;
-  max-height: 100vh;
-  position: fixed;
-  
   .applicationsDrawerIcons .closeIcon {
     color: @borderColor!important;
   }
@@ -955,186 +951,179 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   }
 
   .content {
-    max-height: 84vh;
-    overflow-y: auto;
-
-    .applicationForm {
-      width: 420px;
-
-      .error {
-        background-color: @baseBackgroundDefault!important;
-        color: @errorColor!important;
+    .error {
+      background-color: @baseBackgroundDefault!important;
+      color: @errorColor!important;
+    }
+    .required:focus {
+      border-color: #e9322d;
+    }
+    ::placeholder {
+      color: @greyColorLighten1!important;
+    }
+    input, .selectize-input {
+      border: Solid 2px @greyColorLighten1;
+    }
+    textarea {
+      border-color: @greyColorLighten1!important;
+    }
+    .uploadImageContainer {
+      margin-bottom: 15px;
+    }
+    .appDescription {
+      padding-top: 12px;
+      .v-input__slot::before {
+        display: none;
       }
-      .required:focus {
-        border-color: #e9322d;
+      .v-counter {
+        align-self: flex-end;
       }
-      ::placeholder {
-        color: @greyColorLighten1!important;
+    }
+    textarea {
+      resize: none;
+    }
+    .uploadImageTitle {
+      align-self: center;
+    }
+    .uploadImage {
+      span {
+        vertical-align: text-bottom;
       }
-      input, .selectize-input {
-        border: Solid 2px @greyColorLighten1;
+      input[type="file"] {
+        display: none;
       }
-      textarea {
-        border-color: @greyColorLighten1!important;
-      }
-      .uploadImageContainer {
-        margin-bottom: 15px;
-      }
-      .appDescription {
-        padding-top: 12px;
-        .v-input__slot::before {
-          display: none;
-        }
-        .v-counter {
-          align-self: flex-end;
-        }
-      }
-      textarea {
-        resize: none;
-      }
-      .uploadImageTitle {
-        align-self: center;
-      }
-      .uploadImage {
-        span {
-          vertical-align: text-bottom;
-        }
-        input[type="file"] {
-          display: none;
-        }
-        .custom-file-upload {
-          padding: 6px;
-          border-radius: 5px;
-          border: 1px solid @primaryColor;
-          color: @primaryColor;
-          
-          i {
-            margin-right: 6px ~'; /** orientation=lt */ ';
-            margin-left: 6px ~'; /** orientation=rt */ ';
-          }
-        }
-      }
-      .imageSet {
-        padding: 12px 8px;
-        .file-listing {
-          padding: 0;
-          .v-list-item__action {
-            margin-left: 0 ~'; /** orientation=lt */ ';
-            margin-right: 0 ~'; /** orientation=rt */ ';
-            .remove-file {
-              .v-icon {
-               color: @primaryColor;
-              }
-            }
-          }
-          .v-list-item__content {
-            .imageTitle {
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
-        }
-      }
-      .uploadImageInfo {
-        align-self: center;
+      .custom-file-upload {
+        padding: 6px;
+        border-radius: 5px;
+        border: 1px solid @primaryColor;
+        color: @primaryColor;
         
-        p {
-          margin: 0;
-          color: @greyColorLighten1Default;
-          .v-icon {
-            color: @greyColorLighten1Default;
-          }
-        }
-      }
-      .mandatoryLabel {
-        label {
-          margin-right: 6px;
-        }
-      }
-      .v-label {
-        font-weight: bold;
-        color: @darkGrey;
-        cursor: default;
-      }
-      .applicationProperties {
-        .v-input {
-          margin: 0;
-        }
-        .v-input__slot {
-          flex-direction: row-reverse;
-          
-          .v-input--selection-controls__input {
-            margin-right: 0 ~'; /** orientation=lt */ ';
-            margin-left: 8px ~'; /** orientation=lt */ ';
-            margin-left: 0 ~'; /** orientation=rt */ ';
-            margin-right: 8px ~'; /** orientation=rt */ ';
-          }
+        i {
+          margin-right: 6px ~'; /** orientation=lt */ ';
+          margin-left: 6px ~'; /** orientation=rt */ ';
         }
       }
     }
-    .v-skeleton-loader {
-      display: inline-flex;
-      margin: 15px 0;
-
-      .v-skeleton-loader__bone {
-        margin: 0 15px;
-      }
-    }
-    .appsContainer {
-      margin: 0;
-      padding: 0 12px;
-      
-      .appLauncherList {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-        padding: 20px 0;
-        overflow-y: auto;
-      }      
-    }
-
-    .appLauncherItemContainer {
-      max-height: 137px;
-      min-height: 80px;
-      flex: 0 1 33%;
-      .appLauncherItem {
-        transition: all .3s;
-        padding: 15px;
-        a {
-          display: block;
-
-          .appLauncherImage {
-            width: 65px;
-            height: 65px;
-            display: block;
-            margin: 8px auto;
-            border: 1px solid #f0f4fe;
-            border-radius: 5px;
+    .imageSet {
+      padding: 12px 8px;
+      .file-listing {
+        padding: 0;
+        .v-list-item__action {
+          margin-left: 0 ~'; /** orientation=lt */ ';
+          margin-right: 0 ~'; /** orientation=rt */ ';
+          .remove-file {
+            .v-icon {
+             color: @primaryColor;
+            }
           }
-          &:hover .appLauncherImage {
-            box-shadow: -3px 3px 6px 0px #ececec;
-            transition: all .3s;
-          }
-          .appLauncherTitle {
-            max-width: 100px;
-            word-break: break-word;
-            display: -webkit-box;
-            text-align: center;
-            color: @textColorDefault;
-            height: 42px;
+        }
+        .v-list-item__content {
+          .imageTitle {
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            -webkit-line-clamp: 2; /* number of lines to show */
-            -webkit-box-orient: vertical;
           }
         }
       }
-      .dragged {
-        background-color: @greyColorLighten1Default;
-        border-radius: 8px;
-        opacity: 0.5;
+    }
+    .uploadImageInfo {
+      align-self: center;
+      
+      p {
+        margin: 0;
+        color: @greyColorLighten1Default;
+        .v-icon {
+          color: @greyColorLighten1Default;
+        }
       }
+    }
+    .mandatoryLabel {
+      label {
+        margin-right: 6px;
+      }
+    }
+    .v-label {
+      font-weight: bold;
+      color: @darkGrey;
+      cursor: default;
+    }
+    .applicationProperties {
+      .v-input {
+        margin: 0;
+      }
+      .v-input__slot {
+        flex-direction: row-reverse;
+        
+        .v-input--selection-controls__input {
+          margin-right: 0 ~'; /** orientation=lt */ ';
+          margin-left: 8px ~'; /** orientation=lt */ ';
+          margin-left: 0 ~'; /** orientation=rt */ ';
+          margin-right: 8px ~'; /** orientation=rt */ ';
+        }
+      }
+    }
+  }
+  .v-skeleton-loader {
+    display: inline-flex;
+    margin: 15px 0;
+
+    .v-skeleton-loader__bone {
+      margin: 0 15px;
+    }
+  }
+  .appsContainer {
+    margin: 0;
+    padding: 0 12px;
+    
+    .appLauncherList {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      padding: 20px 0;
+      overflow-y: auto;
+    }      
+  }
+
+  .appLauncherItemContainer {
+    max-height: 137px;
+    min-height: 80px;
+    flex: 0 1 33%;
+    .appLauncherItem {
+      transition: all .3s;
+      padding: 15px;
+      a {
+        display: block;
+
+        .appLauncherImage {
+          width: 65px;
+          height: 65px;
+          display: block;
+          margin: 8px auto;
+          border: 1px solid #f0f4fe;
+          border-radius: 5px;
+        }
+        &:hover .appLauncherImage {
+          box-shadow: -3px 3px 6px 0px #ececec;
+          transition: all .3s;
+        }
+        .appLauncherTitle {
+          max-width: 100px;
+          word-break: break-word;
+          display: -webkit-box;
+          text-align: center;
+          color: @textColorDefault;
+          height: 42px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          -webkit-line-clamp: 2; /* number of lines to show */
+          -webkit-box-orient: vertical;
+        }
+      }
+    }
+    .dragged {
+      background-color: @greyColorLighten1Default;
+      border-radius: 8px;
+      opacity: 0.5;
     }
   }
 
@@ -1155,47 +1144,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     }
   }
   
-}
-
-@media screen and (max-height: 748px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 83vh;
-    }
-    .formContent {
-      max-height: 78vh;
-    }
-  }
-}
-@media screen and (max-height: 708px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 82vh;
-    }
-    .formContent {
-      max-height: 77vh;
-    }
-  }
-}
-@media screen and (max-height: 668px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 81vh;
-    }
-    .formContent {
-      max-height: 76vh;      
-    }
-  }
-}
-@media screen and (max-height: 628px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 80vh;
-    }
-    .formContent {
-      max-height: 75vh;
-    }
-  }
 }
 
 /*---------------------tooltip----------------*/
