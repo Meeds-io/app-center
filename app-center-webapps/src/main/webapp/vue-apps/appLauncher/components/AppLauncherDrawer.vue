@@ -18,68 +18,56 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <v-app flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn id="appcenterLauncherButton" icon class="text-xs-center" @click="toggleDrawer()">
+        <v-btn
+          id="appcenterLauncherButton"
+          icon
+          class="text-xs-center"
+          @click="toggleDrawer()">
           <v-icon class="appCenterLauncherButtonIcon">
             mdi-apps
           </v-icon>
         </v-btn>
       </v-layout>
     </v-container>
-    <v-navigation-drawer
-      v-model="appLauncherDrawer"
-      absolute
-      right
-      stateless
-      temporary
-      width="420"
-      max-width="100vw"
-      max-height="100%"
-      class="appCenterDrawer"
-    >
-      <v-row v-if="appLauncherDrawer" class="mx-0 title">
-        <v-list-item class="appLauncherDrawerHeader">
-          <v-list-item-content>
-            <span class="appLauncherDrawerTitle">{{
-              $t("appCenter.appLauncher.drawer.title")
-            }}</span>
-          </v-list-item-content>
-          <v-list-item-action class="appLauncherDrawerIcons">
-            <i
-              class="uiCloseIcon appLauncherDrawerClose"
-              @click="toggleDrawer()"
-            ></i>
-          </v-list-item-action>
-        </v-list-item>
-      </v-row>
-      
-      <v-divider class="my-0 appHeaderBorder" />
-
-      <div class="content">
+    <exo-drawer
+      ref="appLauncherDrawer"
+      :right="!$vuetify.rtl"
+      body-classes="hide-scroll"
+      class="appCenterDrawer">
+      <template slot="title">
+        {{ $t("appCenter.appLauncher.drawer.title") }}
+      </template>
+      <div slot="content" class="content">
         <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
           <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
             <div
               v-for="(application, index) in mandatoryApplicationsList"
               :id="'Pos-' + index"
               :key="index"
-              class="appLauncherItemContainer"
-            >
+              class="appLauncherItemContainer">
               <div
                 :id="'App-' + index"
-                class="appLauncherItem"
-              >
+                class="appLauncherItem">
                 <a
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)"
-                >
-                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
+                  @click="logOpenApplication(application.id)">
+                  <img
+                    v-if="application.imageFileId && application.imageFileName"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else-if="defaultAppImage.fileBody"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else
+                    class="appLauncherImage"
+                    src="/app-center/skin/images/defaultApp.png">
                   <span
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle"
-                  >
+                    class="appLauncherTitle">
                     {{ application.title }}
                   </span>
                 </a>
@@ -88,33 +76,42 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-col>
         </v-row>
         <v-row v-if="favoriteApplicationsList.length > 0 && mandatoryApplicationsList.length > 0" class="appsContainer">
-          <v-divider></v-divider>
+          <v-divider />
         </v-row>
         <v-layout class="favorite appsContainer">
-          <draggable v-model="favoriteApplicationsList" class="appLauncherList" @start="drag=true" @end="drag=false">
+          <draggable
+            v-model="favoriteApplicationsList"
+            class="appLauncherList"
+            @start="drag=true"
+            @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
               :id="'Pos-' + index"
               :key="index"
-              class="appLauncherItemContainer"
-            >
+              class="appLauncherItemContainer">
               <div
                 :id="'App-' + index"
-                class="appLauncherItem"
-              >
+                class="appLauncherItem">
                 <a
                   :id="application.id"
                   :target="application.target"
                   :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)"
-                >
-                  <img v-if="application.imageFileId && application.imageFileName" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else-if="defaultAppImage.fileBody" class="appLauncherImage" :src="`/portal/rest/app-center/applications/illustration/${application.id}`" />
-                  <img v-else class="appLauncherImage" src="/app-center/skin/images/defaultApp.png" />
+                  @click="logOpenApplication(application.id)">
+                  <img
+                    v-if="application.imageFileId && application.imageFileName"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else-if="defaultAppImage.fileBody"
+                    class="appLauncherImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                  <img
+                    v-else
+                    class="appLauncherImage"
+                    src="/app-center/skin/images/defaultApp.png">
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle"
-                  >
+                    class="appLauncherTitle">
                     {{ application.title }}
                   </span>
                 </a>
@@ -123,13 +120,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </draggable>
         </v-layout>
       </div>
-      
-      <v-row class="drawerActions mx-0">
+      <div slot="footer">
         <v-card
           flat
           tile
-          class="d-flex flex justify-end mx-2 px-1"
-        >
+          class="d-flex flex justify-end mx-2 px-1">
           <v-btn
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
@@ -137,13 +132,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :href="appCenterLink"
             @click="navigateTo('appCenterUserSetup/')"
             @click.middle="navigateTo('appCenterUserSetup/')"
-            @click.right="navigateTo('appCenterUserSetup/')"
-          >
+            @click.right="navigateTo('appCenterUserSetup/')">
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
         </v-card>
-      </v-row>
-    </v-navigation-drawer>
+      </div>
+    </exo-drawer>
   </v-app>
 </template>
 <script>
@@ -158,7 +152,6 @@ export default {
       },
       isMobileDevice: false,
       applicationsLoaded: false,
-      appLauncherDrawer: null,
       mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
       applicationsOrder: null,
@@ -170,19 +163,6 @@ export default {
     };
   },
   watch: {
-    appLauncherDrawer() {
-      if (this.appLauncherDrawer) {
-        $('body').addClass('hide-scroll');
-
-        this.$nextTick().then(() => {
-          $('#appLauncher .v-overlay').click(() => {
-            this.appLauncherDrawer = false;
-          });
-        });
-      } else {
-        $('body').removeClass('hide-scroll');
-      }
-    },
     favoriteApplicationsList() {
       // check if still alphabetically ordered
       if (this.alphabeticalOrder) {
@@ -217,11 +197,6 @@ export default {
     this.isMobileDevice = this.detectMobile();
     this.getAppGeneralSettings();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
-    $(document).on('keydown', (event) => {
-      if (event.key === 'Escape') {
-        this.appLauncherDrawer = false;
-      }
-    });
     this.$nextTick().then(() => this.$root.$emit('application-loaded'));
   },
   methods: {
@@ -250,10 +225,10 @@ export default {
         });
         this.applicationsLoaded = true;
       }
-
-      this.appLauncherDrawer = !this.appLauncherDrawer;
+      this.$refs.appLauncherDrawer.open();
     },
     getMandatoryAndFavoriteApplications() {
+      this.$refs.appLauncherDrawer.startLoading();
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',
@@ -327,7 +302,10 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-        }).finally(() => this.loading = false);
+        }).finally(() => {
+          this.loading = false;
+          this.$refs.appLauncherDrawer.endLoading();
+        });
     },
     updateApplicationsOrder(applicationsOrder) {
       return fetch('/portal/rest/app-center/applications/favorites', {

@@ -19,9 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <div v-if="loading">
       <v-skeleton-loader
         class="mx-auto"
-        type="table-heading"
-      >
-      </v-skeleton-loader>
+        type="table-heading" />
     </div>
     <div v-else>    
       <v-row class="authorizedApplicationsHeader">
@@ -39,8 +37,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 prepend-inner-icon="mdi-filter"
                 append-outer-icon="mdi-close"
                 hide-details
-                @click:append-outer="closeSearch"
-              ></v-text-field>
+                @click:append-outer="closeSearch" />
             </v-col>
           </v-row>
         </v-col>
@@ -51,8 +48,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-skeleton-loader
           :key="n"
           class="authorizedApplication"
-          type="card"
-        ></v-skeleton-loader>
+          type="card" />
       </div>
     </div>
     <div v-else>    
@@ -64,25 +60,38 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           v-for="(authorizedApp) in authorizedApplicationsList"
           :key="authorizedApp.id"
           class="authorizedApplication"
-          outlined
-        >
+          outlined>
           <div class="authorisedAppContent">
             <v-list-item class="applicationHeader">
               <div class="image">
-                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">
-                  <img v-if="authorizedApp.imageFileId && authorizedApp.imageFileName" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
-                  <img v-else-if="defaultAppImage.fileBody" class="appImage" :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`" />
-                  <img v-else class="appImage" src="/app-center/skin/images/defaultApp.png" />
+                <a
+                  :target="authorizedApp.target"
+                  :href="authorizedApp.computedUrl"
+                  @click="logOpenApplication(authorizedApp.id)">
+                  <img
+                    v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
+                    class="appImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
+                  <img
+                    v-else-if="defaultAppImage.fileBody"
+                    class="appImage"
+                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
+                  <img
+                    v-else
+                    class="appImage"
+                    src="/app-center/skin/images/defaultApp.png">
                 </a>
               </div>
               <v-list-item-content>
-                <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">
+                <a
+                  :target="authorizedApp.target"
+                  :href="authorizedApp.computedUrl"
+                  @click="logOpenApplication(authorizedApp.id)">
                   <h5 class="tooltipContent">
                     <div 
                       :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
                       class="appTitle"
-                      :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''"
-                    >
+                      :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
                       {{ authorizedApp.title }}
                     </div>
                   </h5>
@@ -93,11 +102,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <v-btn
                     small
                     icon
-                    @click="navigateTo(authorizedApp.helpPageURL)"
-                  >
+                    @click="navigateTo(authorizedApp.helpPageURL)">
                     <v-icon
-                      x-small
-                    >
+                      x-small>
                       mdi-help
                     </v-icon>
                   </v-btn>
@@ -107,27 +114,26 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-card-text class="userAppDescription">
               <div 
                 :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
-                class="description"
-              >
+                class="description">
                 {{ authorizedApp.description }}
               </div>
             </v-card-text>
-            <v-divider></v-divider>
+            <v-divider />
             <v-card-actions class="applicationActions">
-              <a :target="authorizedApp.target" :href="authorizedApp.computedUrl" @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+              <a
+                :target="authorizedApp.target"
+                :href="authorizedApp.computedUrl"
+                @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
               <div 
-                :title="getTooltip(authorizedApp)"
-              >
+                :title="getTooltip(authorizedApp)">
                 <v-btn
                   v-if="authorizedApp.mandatory"
                   icon
                   disabled
-                  class="mandatory"
-                >
+                  class="mandatory">
                   <v-icon
                     small
-                    color="red"
-                  >
+                    color="red">
                     mdi-star
                   </v-icon>
                 </v-btn>
@@ -136,12 +142,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   icon
                   :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
                   :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
-                  @click.stop="addOrDeleteFavoriteApplication(authorizedApp)"
-                >
+                  @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
                   <v-icon
                     small
-                    color="red"
-                  >
+                    color="red">
                     {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
                   </v-icon>
                 </v-btn>
@@ -159,8 +163,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           :loading="loadingApplications"
           :disabled="loadingApplications"
           block
-          @click="loadNextPage"
-        >
+          @click="loadNextPage">
           {{ $t('appCenter.userSetup.authorized.showMore') }}
         </v-btn>
       </v-col>

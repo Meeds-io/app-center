@@ -90,7 +90,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       color: @greyColorLighten1Default!important;
     }
     .saveChanges {
-      margin-right: 15px;
+      margin-right: 15px ~'; /** orientation=lt */ ';
+      margin-left: 15px ~'; /** orientation=rt */ ';
     }
   }
   .appCenter-form input[type="file"] {
@@ -106,10 +107,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       content: " ";
     }
   .appCenter-form .row.row-form-items {
-  	margin-left: 0;
+  	margin-left: 0 ~'; /** orientation=lt */ ';
+  	margin-right: 0 ~'; /** orientation=rt */ ';
   }
   .appCenter-form .download-icon {
-      margin-right: 10px;
+      margin-right: 10px ~'; /** orientation=lt */ ';
+      margin-left: 10px ~'; /** orientation=rt */ ';
   }
   .appCenter-form div.file-listing {
       border: 1px dashed #e7e9ea;
@@ -157,7 +160,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       }
     }
     .setDefaultAppImage {
-      margin-right: 56px;
+      margin-right: 56px ~'; /** orientation=lt */ ';
+      margin-right: 56px ~'; /** orientation=rt */ ';
     }
     .setMaxFavorite {
       width: 400px;
@@ -183,7 +187,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .appImage {
       width: 50px;
       height: 50px;
-      margin-left: 10px;
+      margin-left: 10px ~'; /** orientation=lt */ ';
+      margin-right: 10px ~'; /** orientation=rt */ ';
       object-fit: cover;
       overflow: hidden;
     }
@@ -213,7 +218,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     height: 200px;
 
     .v-list-item {
-      padding-right: 4px;
+      padding-right: 4px ~'; /** orientation=lt */ ';
+      padding-left: 4px ~'; /** orientation=rt */ ';
       .v-list-item__action {
         margin-top: 2px;
       }
@@ -265,11 +271,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     }
     
     .next-page button {
-      padding-left: 20px;
+      padding-left: 20px ~'; /** orientation=lt */ ';
+      padding-right: 20px ~'; /** orientation=rt */ ';
     }
     
     .prev-page button {
-      padding-right: 20px;
+      padding-right: 20px ~'; /** orientation=lt */ ';
+      padding-left: 20px ~'; /** orientation=rt */ ';
     }
   }
   
@@ -281,7 +289,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .appSearch {
       .v-input__icon--append-outer{
         display: none;
-        margin-left: -23px!important;
+        margin-left: ~'-23px!important; /** orientation=lt */ ';
+        margin-right: ~'-23px!important; /** orientation=rt */ ';
       }
       .v-input__prepend-inner {
         margin-top: 6px!important;
@@ -406,7 +415,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     font-size: 20px;
     font-weight: 500;
     letter-spacing: 1px;
-    padding-left: 15px;
+    padding-left: 15px ~'; /** orientation=lt */ ';
+    padding-right: 15px ~'; /** orientation=rt */ ';
 
     .uiIconPLF24x24Setup {
       font-size: 20px;
@@ -422,8 +432,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   .authorizedApplicationsContainer {
     border-radius: 4px;
     background: @baseBackgroundDefault;
-    margin-right: 14px;
-    
+    margin-right: 14px ~'; /** orientation=lt */ ';
+    margin-left: 14px ~'; /** orientation=rt */ ';
+
     .authorizedApplications {
       padding: 14px;
       
@@ -463,7 +474,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               border-radius: unset;
               box-shadow: none;
               margin-top: -52px;
-              margin-left: 16px;
+              margin-left: 16px ~'; /** orientation=lt */ ';
+              margin-right: 16px ~'; /** orientation=rt */ ';
             }
             .userAppDescription {
               width: initial;
@@ -496,7 +508,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               }
               h5 {
                 font-size: 15px;
-                padding-left: 10px;
+                padding-left: 10px ~'; /** orientation=lt */ ';
+                padding-right: 10px ~'; /** orientation=rt */ ';
               }
               .appTitle {
                 white-space: nowrap;
@@ -519,7 +532,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           .applicationActions {
             height: 22px;
             justify-content: space-between;
-            padding: 0 0 0 8px;
+            padding: 0 0 0 8px ~'; /** orientation=lt */ ';
+            padding: 0 8px 0 0 ~'; /** orientation=rt */ ';
             a {
               font-weight: 600;
               text-transform: uppercase;
@@ -543,7 +557,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       .appSearch {
         .v-input__icon--append-outer{
           display: none;
-          margin-left: -23px!important;
+          margin-left: ~'-23px!important; /** orientation=lt */ ';
+          margin-right: ~'-23px!important; /** orientation=rt */ ';
         }
         .v-input__prepend-inner {
           margin-top: 6px!important;
@@ -618,7 +633,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           border-radius: unset;
           box-shadow: none;
           margin-top: -53px;
-          margin-left: 20px;
+          margin-left: 20px ~'; /** orientation=lt */ ';
+          margin-right: 20px ~'; /** orientation=rt */ ';
         }
       }
       .favoriteAppUrl {
@@ -628,7 +644,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           text-overflow: ellipsis;
           color: @textColorDefault;
           font-size: 15px;
-          padding-left: 10px;
+          padding-left: 10px ~'; /** orientation=lt */ ';
+          padding-right: 10px ~'; /** orientation=rt */ ';
         }
       }
       .favoriteAppRemove .v-icon {
@@ -741,8 +758,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   .userApplications {
     .authorizedApplications {
       flex: 1 1 100%;
-      margin-right: 0;
-      border-right: none;
+      margin-right: 0 ~'; /** orientation=lt */ ';
+      border-right: none ~'; /** orientation=lt */ ';
+      margin-left: 0 ~'; /** orientation=rt */ ';
+      border-left: none ~'; /** orientation=rt */ ';
 
       .authorizedApplication {
         flex: 0 1 41%!important;
@@ -760,7 +779,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 }
 @media screen and (max-width: 481px) {
   .authorizedApplicationsContainer {
-    margin-right: 0!important;
+    margin-right:  ~'0!important; /** orientation=lt */ ';
+    margin-left:  ~'0!important; /** orientation=rt */ ';
     margin-bottom: 14px;
   }
   .userFavoriteApplicationsContainer {
@@ -851,7 +871,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       height: 22px;
       object-fit: cover;
       overflow: hidden;
-      padding-right: 5px;
+      padding-right: 5px ~'; /** orientation=lt */ ';
+      padding-left: 5px ~'; /** orientation=rt */ ';
     }
   }
   .addTool {
@@ -913,10 +934,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 }
 
 .appCenterDrawer {
-  min-height: 100vh;
-  max-height: 100vh;
-  position: fixed;
-  
   .applicationsDrawerIcons .closeIcon {
     color: @borderColor!important;
   }
@@ -934,182 +951,179 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   }
 
   .content {
-    max-height: 84vh;
-    overflow-y: auto;
-
-    .applicationForm {
-      width: 420px;
-
-      .error {
-        background-color: @baseBackgroundDefault!important;
-        color: @errorColor!important;
+    .error {
+      background-color: @baseBackgroundDefault!important;
+      color: @errorColor!important;
+    }
+    .required:focus {
+      border-color: #e9322d;
+    }
+    ::placeholder {
+      color: @greyColorLighten1!important;
+    }
+    input, .selectize-input {
+      border: Solid 2px @greyColorLighten1;
+    }
+    textarea {
+      border-color: @greyColorLighten1!important;
+    }
+    .uploadImageContainer {
+      margin-bottom: 15px;
+    }
+    .appDescription {
+      padding-top: 12px;
+      .v-input__slot::before {
+        display: none;
       }
-      .required:focus {
-        border-color: #e9322d;
+      .v-counter {
+        align-self: flex-end;
       }
-      ::placeholder {
-        color: @greyColorLighten1!important;
+    }
+    textarea {
+      resize: none;
+    }
+    .uploadImageTitle {
+      align-self: center;
+    }
+    .uploadImage {
+      span {
+        vertical-align: text-bottom;
       }
-      input, .selectize-input {
-        border: Solid 2px @greyColorLighten1;
+      input[type="file"] {
+        display: none;
       }
-      textarea {
-        border-color: @greyColorLighten1!important;
-      }
-      .uploadImageContainer {
-        margin-bottom: 15px;
-      }
-      .appDescription {
-        padding-top: 12px;
-        .v-input__slot::before {
-          display: none;
-        }
-        .v-counter {
-          align-self: flex-end;
-        }
-      }
-      textarea {
-        resize: none;
-      }
-      .uploadImageTitle {
-        align-self: center;
-      }
-      .uploadImage {
-        span {
-          vertical-align: text-bottom;
-        }
-        input[type="file"] {
-          display: none;
-        }
-        .custom-file-upload {
-          padding: 6px;
-          border-radius: 5px;
-          border: 1px solid @primaryColor;
-          color: @primaryColor;
-          
-          i {
-            margin-right: 6px;
-          }
-        }
-      }
-      .imageSet {
-        padding: 12px 8px;
-        .file-listing {
-          padding: 0;
-          .v-list-item__action {
-            margin-left: 0;
-            .remove-file {
-              .v-icon {
-               color: @primaryColor;
-              }
-            }
-          }
-          .v-list-item__content {
-            .imageTitle {
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
-        }
-      }
-      .uploadImageInfo {
-        align-self: center;
+      .custom-file-upload {
+        padding: 6px;
+        border-radius: 5px;
+        border: 1px solid @primaryColor;
+        color: @primaryColor;
         
-        p {
-          margin: 0;
-          color: @greyColorLighten1Default;
-          .v-icon {
-            color: @greyColorLighten1Default;
-          }
-        }
-      }
-      .mandatoryLabel {
-        label {
-          margin-right: 6px;
-        }
-      }
-      .v-label {
-        font-weight: bold;
-        color: @darkGrey;
-        cursor: default;
-      }
-      .applicationProperties {
-        .v-input {
-          margin: 0;
-        }
-        .v-input__slot {
-          flex-direction: row-reverse;
-          
-          .v-input--selection-controls__input {
-            margin-right: 0;
-            margin-left: 8px;
-          }
+        i {
+          margin-right: 6px ~'; /** orientation=lt */ ';
+          margin-left: 6px ~'; /** orientation=rt */ ';
         }
       }
     }
-    .v-skeleton-loader {
-      display: inline-flex;
-      margin: 15px 0;
-
-      .v-skeleton-loader__bone {
-        margin: 0 15px;
-      }
-    }
-    .appsContainer {
-      margin: 0;
-      padding: 0 12px;
-      
-      .appLauncherList {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-        padding: 20px 0;
-        overflow-y: auto;
-      }      
-    }
-
-    .appLauncherItemContainer {
-      max-height: 137px;
-      min-height: 80px;
-      flex: 0 1 33%;
-      .appLauncherItem {
-        transition: all .3s;
-        padding: 15px;
-        a {
-          display: block;
-
-          .appLauncherImage {
-            width: 65px;
-            height: 65px;
-            display: block;
-            margin: 8px auto;
-            border: 1px solid #f0f4fe;
-            border-radius: 5px;
+    .imageSet {
+      padding: 12px 8px;
+      .file-listing {
+        padding: 0;
+        .v-list-item__action {
+          margin-left: 0 ~'; /** orientation=lt */ ';
+          margin-right: 0 ~'; /** orientation=rt */ ';
+          .remove-file {
+            .v-icon {
+             color: @primaryColor;
+            }
           }
-          &:hover .appLauncherImage {
-            box-shadow: -3px 3px 6px 0px #ececec;
-            transition: all .3s;
-          }
-          .appLauncherTitle {
-            max-width: 100px;
-            word-break: break-word;
-            display: -webkit-box;
-            text-align: center;
-            color: @textColorDefault;
-            height: 42px;
+        }
+        .v-list-item__content {
+          .imageTitle {
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            -webkit-line-clamp: 2; /* number of lines to show */
-            -webkit-box-orient: vertical;
           }
         }
       }
-      .dragged {
-        background-color: @greyColorLighten1Default;
-        border-radius: 8px;
-        opacity: 0.5;
+    }
+    .uploadImageInfo {
+      align-self: center;
+      
+      p {
+        margin: 0;
+        color: @greyColorLighten1Default;
+        .v-icon {
+          color: @greyColorLighten1Default;
+        }
       }
+    }
+    .mandatoryLabel {
+      label {
+        margin-right: 6px;
+      }
+    }
+    .v-label {
+      font-weight: bold;
+      color: @darkGrey;
+      cursor: default;
+    }
+    .applicationProperties {
+      .v-input {
+        margin: 0;
+      }
+      .v-input__slot {
+        flex-direction: row-reverse;
+        
+        .v-input--selection-controls__input {
+          margin-right: 0 ~'; /** orientation=lt */ ';
+          margin-left: 8px ~'; /** orientation=lt */ ';
+          margin-left: 0 ~'; /** orientation=rt */ ';
+          margin-right: 8px ~'; /** orientation=rt */ ';
+        }
+      }
+    }
+  }
+  .v-skeleton-loader {
+    display: inline-flex;
+    margin: 15px 0;
+
+    .v-skeleton-loader__bone {
+      margin: 0 15px;
+    }
+  }
+  .appsContainer {
+    margin: 0;
+    padding: 0 12px;
+    
+    .appLauncherList {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      padding: 20px 0;
+      overflow-y: auto;
+    }      
+  }
+
+  .appLauncherItemContainer {
+    max-height: 137px;
+    min-height: 80px;
+    flex: 0 1 33%;
+    .appLauncherItem {
+      transition: all .3s;
+      padding: 15px;
+      a {
+        display: block;
+
+        .appLauncherImage {
+          width: 65px;
+          height: 65px;
+          display: block;
+          margin: 8px auto;
+          border: 1px solid #f0f4fe;
+          border-radius: 5px;
+        }
+        &:hover .appLauncherImage {
+          box-shadow: -3px 3px 6px 0px #ececec;
+          transition: all .3s;
+        }
+        .appLauncherTitle {
+          max-width: 100px;
+          word-break: break-word;
+          display: -webkit-box;
+          text-align: center;
+          color: @textColorDefault;
+          height: 42px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          -webkit-line-clamp: 2; /* number of lines to show */
+          -webkit-box-orient: vertical;
+        }
+      }
+    }
+    .dragged {
+      background-color: @greyColorLighten1Default;
+      border-radius: 8px;
+      opacity: 0.5;
     }
   }
 
@@ -1132,47 +1146,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   
 }
 
-@media screen and (max-height: 748px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 83vh;
-    }
-    .formContent {
-      max-height: 78vh;
-    }
-  }
-}
-@media screen and (max-height: 708px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 82vh;
-    }
-    .formContent {
-      max-height: 77vh;
-    }
-  }
-}
-@media screen and (max-height: 668px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 81vh;
-    }
-    .formContent {
-      max-height: 76vh;      
-    }
-  }
-}
-@media screen and (max-height: 628px) {
-  .appCenterDrawer {
-    .content {
-      max-height: 80vh;
-    }
-    .formContent {
-      max-height: 75vh;
-    }
-  }
-}
-
 /*---------------------tooltip----------------*/
 
 .tooltipContent {
@@ -1191,7 +1164,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   z-index: 1;
   bottom: -125%;
   left: 50%;
-  margin-left: -60px;
+  margin-left: -60px ~'; /** orientation=lt */ ';
+  margin-right: -60px ~'; /** orientation=rt */ ';
   opacity: 0;
   transition: opacity 0.3s;
   font-size: 13px!important;
@@ -1200,7 +1174,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 .tooltiptextIcon {
   width: auto!important;
   padding: 5px!important;
-  margin-left: -35px!important;
+  margin-left:  ~'-35px!important; /** orientation=lt */ ';
+  margin-right:  ~'-35px!important; /** orientation=rt */ ';
   bottom: -130%!important;
 }
 
@@ -1209,7 +1184,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   position: absolute;
   bottom: 100%;
   left: 50%;
-  margin-left: -5px;
+  margin-left: -5px ~'; /** orientation=lt */ ';
+  margin-right: -5px ~'; /** orientation=rt */ ';
   border-width: 5px;
   border-style: solid;
   border-color: transparent transparent #555 transparent;

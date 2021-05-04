@@ -20,8 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-col>
         <v-tabs
           class="appAdminTabs"
-          background-color="transparent"
-        >
+          background-color="transparent">
           <v-tab @click="loadApplicationsList">
             {{ $t('appCenter.adminSetupForm.applications') }}
           </v-tab>
