@@ -15,49 +15,44 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const path = require('path');
-const { VueLoaderPlugin } = require('vue-loader')
 
 module.exports = {
-    context: path.resolve(__dirname, '.'),
-    // set the entry point of the application
-    // can use multiple entry
+  context: path.resolve(__dirname, '.'),
+  // set the entry point of the application
+  // can use multiple entry
 
-    entry: {
-        adminSetup: "./src/main/webapp/vue-apps/adminSetup/main.js",
-        userSetup: "./src/main/webapp/vue-apps/userSetup/main.js",
-        myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
-        appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
-        applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js"
-    },
-    output: {
-        filename: 'javascript/vue/[name].bundle.js',
-        libraryTarget: 'amd'
-    },
-    module: {
-        rules: [
-            {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                use: [
-                    'babel-loader',
-          	    'eslint-loader',
-                ]
-            },
-            {
-                test: /\.vue$/,
-                use: [
-                    'vue-loader',
-                    'eslint-loader',
-                ]
-            }
+  entry: {
+    adminSetup: "./src/main/webapp/vue-apps/adminSetup/main.js",
+    userSetup: "./src/main/webapp/vue-apps/userSetup/main.js",
+    myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
+    appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
+    applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js"
+  },
+  output: {
+    filename: 'javascript/vue/[name].bundle.js',
+    libraryTarget: 'amd'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: [
+          'babel-loader',
+          'eslint-loader',
         ]
-    },
-    externals: {
-        vue: 'Vue',
-        vuetify: 'Vuetify',
-    },
-    plugins: [
-        // make sure to include the plugin for the magic
-        new VueLoaderPlugin()
-    ],
+      },
+      {
+        test: /\.vue$/,
+        use: [
+          'vue-loader',
+          'eslint-loader',
+        ]
+      }
+    ]
+  },
+  externals: {
+    vue: 'Vue',
+    vuetify: 'Vuetify',
+  }
 };
