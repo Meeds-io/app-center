@@ -495,7 +495,7 @@ public class ApplicationCenterREST implements ResourceContainer {
   @ApiResponses(
           value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
               @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
-              @ApiResponse(code = HTTPStatus.INTERNAL_ERROR, message = "Internal server error"), }
+              @ApiResponse(code = HTTPStatus.BAD_REQUEST, message = "The offset or the limit is not positive"), }
   )
   public Response search(
                         @ApiParam(value = "Term to search", required = true)

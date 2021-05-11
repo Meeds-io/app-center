@@ -1,5 +1,6 @@
 package org.exoplatform.appcenter.search;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +61,7 @@ public class ApplicationSearchConnectorTest {
     private PortalContainer container;
 
     String                      searchResult    = null;
+
 
     boolean                     developingValue = false;
 
@@ -115,14 +118,38 @@ public class ApplicationSearchConnectorTest {
                                                   false,
                                                   false,
                                                   ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP);
+
         try { 
             Application storedApplication = applicationCenterService.createApplication(application);
             List<ApplicationSearchResult> result = applicationSearchConnector.search(identity.getRemoteId(), term, 0, 10);
+            assertNotNull(result);
+            assertEquals(1, result.size());
         } catch (Exception e) {
-            //
+            e.printStackTrace();
         }
-    }
 
+    }
+     @Test
+     public void testBuildResult() {
+     List<ApplicationSearchResult> results = applicationSearchConnector.buildResult(searchResult);
+     assertNotNull(results);
+     }
+
+     @Test
+     public void testRetrieveSearchQuery() {
+        String searchQuery = applicationSearchConnector.retrieveSearchQuery();
+        assertNotNull(searchQuery);
+     }
+
+     @Test
+     public void testBuildQueryStatement() {
+        String searchTerm  = "searchTerm";
+        Identity identity = mock(Identity.class);
+        when(identity.getId()).thenReturn("1");
+        long userId = Long.parseLong(identity.getId());
+        String searchQuery = applicationSearchConnector.buildQueryStatement(userId,searchTerm,0,10);
+        assertNotNull(searchQuery);
+     }
     private InitParams getParams() {
         InitParams params = new InitParams();
         PropertiesParam propertiesParam = new PropertiesParam();

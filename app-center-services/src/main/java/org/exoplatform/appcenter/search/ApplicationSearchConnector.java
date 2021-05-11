@@ -88,7 +88,7 @@ public class ApplicationSearchConnector {
 
 
     @SuppressWarnings("rawtypes")
-    private List<ApplicationSearchResult> buildResult(String jsonResponse) {
+    public List<ApplicationSearchResult> buildResult(String jsonResponse) {
         LOG.debug("Search Query response from ES : {} ", jsonResponse);
         List<ApplicationSearchResult> results = new ArrayList<>();
         JSONParser parser = new JSONParser();
@@ -139,7 +139,7 @@ public class ApplicationSearchConnector {
         return results;
     }
 
-    private String buildQueryStatement(long userIdentityId, String term, long offset, long limit) {
+    public String buildQueryStatement(long userIdentityId, String term, long offset, long limit) {
         List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
             word = word.trim();
             if (word.length() > 5) {
@@ -156,7 +156,7 @@ public class ApplicationSearchConnector {
     }
 
 
-    private String retrieveSearchQuery() {
+    public String retrieveSearchQuery() {
         if (StringUtils.isBlank(this.searchQuery) || PropertyManager.isDevelopping()) {
             try {
                 InputStream queryFileIS = this.configurationManager.getInputStream(searchQueryFilePath);

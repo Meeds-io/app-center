@@ -256,8 +256,13 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      const limit = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
+      let limit = 0;
+      let url = `/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`;
+      if (this.searchText) {
+        limit = 20;
+        url = `/portal/rest/app-center/applications/search?offset=${offset}&limit=${limit}&query=${this.searchText}`;
+      }
+      return fetch(url, {
         method: 'GET',
         credentials: 'include',
       })

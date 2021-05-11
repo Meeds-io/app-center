@@ -3,8 +3,6 @@ package org.exoplatform.appcenter.util;
 import org.exoplatform.appcenter.dto.Application;
 import org.exoplatform.appcenter.dto.ApplicationSearchResult;
 import org.exoplatform.appcenter.dto.ApplicationSearchResultEntity;
-import org.exoplatform.appcenter.service.ApplicationCenterService;
-import org.exoplatform.social.core.manager.IdentityManager;
 
 public class RestEntityBuilder {
     private RestEntityBuilder() {

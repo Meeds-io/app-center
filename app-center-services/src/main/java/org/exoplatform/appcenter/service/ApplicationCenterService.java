@@ -124,6 +124,10 @@ public class ApplicationCenterService implements Startable {
   public static final String LOG_ADD_FAVORITE = "add-favorite";
   public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
   public static final String MERGE_MODE = "merge";
+  public static final String POST_CREATE_APPLICATION = "exo.application.created";
+  public static final String POST_UPDATE_APPLICATION = "exo.application.updated";
+  public static final String POST_DELETE_APPLICATION = "exo.application.deleted";
+
 
   public ApplicationCenterService(ApplicationSearchConnector applicationSearchConnector,
                                   ConfigurationManager configurationManager,
@@ -289,7 +293,8 @@ public class ApplicationCenterService implements Startable {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
     Application createdApplication = appCenterStorage.createApplication(application);
-    Utils.broadcastEvent(listenerService, Utils.POST_CREATE_APPLICATION_EVENT, createdApplication, null);
+    long appId  =createdApplication.getId();
+    this.broadcastEvent(listenerService, this.POST_CREATE_APPLICATION, appId, null);
     return createdApplication;
   }
 
@@ -342,8 +347,10 @@ public class ApplicationCenterService implements Startable {
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
+    Application updatedApplication = appCenterStorage.updateApplication(application);
+    this.broadcastEvent(listenerService, this.POST_UPDATE_APPLICATION, applicationId, null);
 
-    return appCenterStorage.updateApplication(application);
+    return updatedApplication;
   }
 
   private boolean isAdmin() {
@@ -385,6 +392,8 @@ public class ApplicationCenterService implements Startable {
     }
 
     appCenterStorage.deleteApplication(applicationId);
+    this.broadcastEvent(listenerService, this.POST_DELETE_APPLICATION, applicationId, null);
+
   }
 
   /**
@@ -833,6 +842,13 @@ public class ApplicationCenterService implements Startable {
     userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
 
     return userApplicationsList;
+  }
+  public static void broadcastEvent(ListenerService listenerService, String eventName, Object source, Object data) {
+    try {
+      listenerService.broadcast(eventName, source, data);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event '" + eventName + "' using source '" + source + "' and data " + data, e);
+    }
   }
 
 }
