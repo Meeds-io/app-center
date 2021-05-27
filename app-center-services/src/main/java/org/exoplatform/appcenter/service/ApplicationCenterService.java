@@ -28,8 +28,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.impl.util.Base64;
 import org.exoplatform.appcenter.search.ApplicationSearchConnector;
-import org.exoplatform.appcenter.util.RestEntityBuilder;
-import org.exoplatform.appcenter.util.Utils;
 import org.exoplatform.services.listener.ListenerService;
 import org.picocontainer.Startable;
 
@@ -294,7 +292,11 @@ public class ApplicationCenterService implements Startable {
     }
     Application createdApplication = appCenterStorage.createApplication(application);
     long appId  =createdApplication.getId();
-    this.broadcastEvent(listenerService, this.POST_CREATE_APPLICATION, appId, null);
+    try {
+      listenerService.broadcast(this.POST_CREATE_APPLICATION, appId, null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event '" + this.POST_CREATE_APPLICATION + "' using source '" + appId + "' and data " + null, e);
+    }
     return createdApplication;
   }
 
@@ -348,7 +350,11 @@ public class ApplicationCenterService implements Startable {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
     Application updatedApplication = appCenterStorage.updateApplication(application);
-    this.broadcastEvent(listenerService, this.POST_UPDATE_APPLICATION, applicationId, null);
+    try {
+      listenerService.broadcast(this.POST_UPDATE_APPLICATION, updatedApplication.getId(), null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event '" + this.POST_UPDATE_APPLICATION + "' using source '" + updatedApplication.getId() + "' and data " + null, e);
+    }
 
     return updatedApplication;
   }
@@ -392,8 +398,11 @@ public class ApplicationCenterService implements Startable {
     }
 
     appCenterStorage.deleteApplication(applicationId);
-    this.broadcastEvent(listenerService, this.POST_DELETE_APPLICATION, applicationId, null);
-
+    try {
+      listenerService.broadcast(this.POST_DELETE_APPLICATION, applicationId, null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event '" + this.POST_DELETE_APPLICATION + "' using source '" + applicationId + "' and data " + null, e);
+    }
   }
 
   /**
@@ -753,10 +762,17 @@ public class ApplicationCenterService implements Startable {
                                        && StringUtils.equals(app.getApplication().getUrl(), application.getUrl()));
   }
 
-  public List<ApplicationSearchResultEntity> search(String currentUser, String query, int offset, int limit) {
+  public List<Application> search(String currentUser, String query, int offset, int limit) {
     List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(currentUser, query, offset, limit);
     return searchResults.stream()
-            .map(searchResult -> RestEntityBuilder.fromSearchApplication(searchResult))
+            .map(searchResult -> {
+              try {
+                return fromApplication(searchResult);
+              } catch (FileStorageException e) {
+                e.printStackTrace();
+              }
+              return null;
+            })
             .collect(Collectors.toList());
   }
 
@@ -842,6 +858,17 @@ public class ApplicationCenterService implements Startable {
     userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
 
     return userApplicationsList;
+  }
+
+  private  Application fromApplication(Application application) throws FileStorageException {
+    Application storedApplication = appCenterStorage.getApplicationById(application.getId());
+            application.setUrl(storedApplication.getUrl());
+            application.setHelpPageURL(storedApplication.getHelpPageURL());
+            application.setImageFileId(storedApplication.getImageFileId());
+            application.setImageFileBody(storedApplication.getImageFileBody());
+            application.setImageFileName(storedApplication.getImageFileName());
+            application.setPermissions(storedApplication.getPermissions());
+            return application;
   }
   public static void broadcastEvent(ListenerService listenerService, String eventName, Object source, Object data) {
     try {

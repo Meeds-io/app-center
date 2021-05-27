@@ -27,6 +27,10 @@
         <name>query.file.path</name>
         <value>${exo.appcenter.es.query.path:jar:/application-search-query.json}</value>
       </value-param>
+      <value-param>
+        <name>query.all.file.path</name>
+        <value>${exo.appcenter.es.query.path:jar:/application-search-all-query.json}</value>
+      </value-param>
       <properties-param>
         <name>constructor.params</name>
         <property name="searchType" value="application"/>
@@ -51,7 +55,7 @@
               <string>application</string>
             </field>
             <field name="uri">
-              <string><![CDATA[/portal/rest/app-center/applications/search?limit={limit}&query={keyword}]]></string>
+              <string><![CDATA[/portal/rest/app-center/applications/search?limit={limit}&offset={offset}&query={keyword}]]></string>
             </field>
             <field name="enabled">
               <boolean>${exo.search.application.enabled:true}</boolean>

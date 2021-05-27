@@ -32,6 +32,9 @@ public class ApplicationSearchConnector {
 
     private static final String          SEARCH_QUERY_FILE_PATH_PARAM = "query.file.path";
 
+    private static final String          SEARCH_ALL_QUERY_FILE_PATH_PARAM = "query.all.file.path";
+
+
     private ConfigurationManager   configurationManager;
 
     private IdentityManager        identityManager;
@@ -43,6 +46,8 @@ public class ApplicationSearchConnector {
     private String                       searchType;
 
     private String                       searchQueryFilePath;
+
+    private String                       searchAllQueryFilePath;
 
     private String                       searchQuery;
 
@@ -61,8 +66,10 @@ public class ApplicationSearchConnector {
         this.searchType = param.getProperty("searchType");
         if (initParams.containsKey(SEARCH_QUERY_FILE_PATH_PARAM)) {
             searchQueryFilePath = initParams.getValueParam(SEARCH_QUERY_FILE_PATH_PARAM).getValue();
+            searchAllQueryFilePath = initParams.getValueParam(SEARCH_ALL_QUERY_FILE_PATH_PARAM).getValue();
             try {
-                retrieveSearchQuery();
+                retrieveSearchQuery(searchQueryFilePath);
+                retrieveSearchQuery(searchAllQueryFilePath);
             } catch (Exception e) {
                 LOG.error("Can't read elasticsearch search query from path {}", searchQueryFilePath, e);
             }
@@ -81,7 +88,14 @@ public class ApplicationSearchConnector {
         if (userIdentityId < 0) {
             throw new IllegalArgumentException("User identity id must be positive");
         }
-        String esQuery = buildQueryStatement(userIdentityId, term, offset, limit);
+        String esQuery = "";
+        if (StringUtils.isBlank(term)) {
+            esQuery = buildQueryStatement(userIdentityId, term, offset, limit,searchAllQueryFilePath );
+        }
+        else {
+            esQuery = buildQueryStatement(userIdentityId, term, offset, limit,searchQueryFilePath );
+
+        }
         String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
         return buildResult(jsonResponse);
     }
@@ -132,6 +146,7 @@ public class ApplicationSearchConnector {
                 applicationSearchResult.setId(id);
                 applicationSearchResult.setDescription(description);
                 applicationSearchResult.setTitle(title);
+                results.add(applicationSearchResult);
             } catch (Exception e) {
                 LOG.warn("Error processing event search result item, ignore it from results", e);
             }
@@ -139,7 +154,7 @@ public class ApplicationSearchConnector {
         return results;
     }
 
-    public String buildQueryStatement(long userIdentityId, String term, long offset, long limit) {
+    public String buildQueryStatement(long userIdentityId, String term, long offset, long limit,String File) {
         List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
             word = word.trim();
             if (word.length() > 5) {
@@ -148,7 +163,7 @@ public class ApplicationSearchConnector {
             return word;
         }).collect(Collectors.toList());
         String termQuery = StringUtils.join(termsQuery, " AND ");
-        return retrieveSearchQuery().replaceAll("@term@", term)
+        return retrieveSearchQuery(File).replaceAll("@term@", term)
                                     .replaceAll("@term_query@", termQuery)
                                     .replaceAll("@permissions@", String.valueOf(userIdentityId))
                                     .replaceAll("@offset@", String.valueOf(offset))
@@ -156,13 +171,13 @@ public class ApplicationSearchConnector {
     }
 
 
-    public String retrieveSearchQuery() {
+    public String retrieveSearchQuery(String File) {
         if (StringUtils.isBlank(this.searchQuery) || PropertyManager.isDevelopping()) {
             try {
-                InputStream queryFileIS = this.configurationManager.getInputStream(searchQueryFilePath);
+                InputStream queryFileIS = this.configurationManager.getInputStream(File);
                 this.searchQuery = IOUtil.getStreamContentAsString(queryFileIS);
             } catch (Exception e) {
-                throw new IllegalStateException("Error retrieving search query from file: " + searchQueryFilePath, e);
+                throw new IllegalStateException("Error retrieving search query from file: " + File, e);
             }
         }
         return this.searchQuery;

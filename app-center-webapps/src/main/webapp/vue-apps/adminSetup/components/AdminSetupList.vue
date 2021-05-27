@@ -256,12 +256,9 @@ export default {
   methods: {
     getApplicationsList() {
       const offset = 0;
-      let limit = 0;
-      let url = `/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`;
-      if (this.searchText) {
-        limit = 20;
-        url = `/portal/rest/app-center/applications/search?offset=${offset}&limit=${limit}&query=${this.searchText}`;
-      }
+      const limit = 10;
+      const url = `/portal/rest/app-center/applications/search?offset=${offset}&limit=${limit}&query=${this.searchText}`;
+
       return fetch(url, {
         method: 'GET',
         credentials: 'include',
@@ -277,7 +274,9 @@ export default {
         })
         .then(data => {
           this.applicationsList = [];
-          data.applications.forEach(app => {
+          const stringified = JSON.stringify(data);
+          data = JSON.parse(stringified);
+          data.forEach(app => {
             this.existingAppNames.push(app.title);
             // manage system apps localized names
             if (app.system) {
@@ -292,7 +291,7 @@ export default {
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
 
-          this.applicationsList = data.applications;
+          this.applicationsList = data;
           return this.$nextTick();
         }).finally(() => {
           this.loading = false;

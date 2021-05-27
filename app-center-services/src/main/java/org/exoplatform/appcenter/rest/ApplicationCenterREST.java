@@ -495,7 +495,10 @@ public class ApplicationCenterREST implements ResourceContainer {
   @ApiResponses(
           value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
               @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
-              @ApiResponse(code = HTTPStatus.BAD_REQUEST, message = "The offset or the limit is not positive"), }
+              @ApiResponse(code = HTTPStatus.BAD_REQUEST, message = "The offset or the limit is not positive"),
+              @ApiResponse(code = HTTPStatus.INTERNAL_ERROR, message = "internal server error"),
+
+          }
   )
   public Response search(
                         @ApiParam(value = "Term to search", required = true)
@@ -512,15 +515,17 @@ public class ApplicationCenterREST implements ResourceContainer {
                         @QueryParam(
                           "limit"
                         )
-                        int limit) throws Exception {
+                        int limit) {
     if (offset < 0) {
       return Response.status(Response.Status.BAD_REQUEST).entity("Offset must be 0 or positive").build();
     }
     if (limit < 0) {
       return Response.status(Response.Status.BAD_REQUEST).entity("Limit must be positive").build();
     }
+
+    ConversationState state = ConversationState.getCurrent();
     String currentUser = getCurrentUserName();
-    List<ApplicationSearchResultEntity> searchResults = appCenterService.search(currentUser, query, offset, limit);
+    List<Application> searchResults = appCenterService.search(currentUser, query, offset, limit);
     return  Response.ok(searchResults).build();
   }
 

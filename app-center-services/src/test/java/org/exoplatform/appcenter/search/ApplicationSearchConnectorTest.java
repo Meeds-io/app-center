@@ -60,6 +60,14 @@ public class ApplicationSearchConnectorTest {
 
     private PortalContainer container;
 
+    private String                       searchQueryFilePath;
+
+    private String                       searchAllQueryFilePath;
+
+    private static final String          SEARCH_QUERY_FILE_PATH_PARAM = "query.file.path";
+
+    private static final String          SEARCH_ALL_QUERY_FILE_PATH_PARAM = "query.all.file.path";
+
     String                      searchResult    = null;
 
 
@@ -75,6 +83,7 @@ public class ApplicationSearchConnectorTest {
         try {
             Mockito.reset(configurationManager);
             when(configurationManager.getInputStream("FILE_PATH")).thenReturn(new ByteArrayInputStream(FAKE_ES_QUERY.getBytes()));
+            when(configurationManager.getInputStream(searchQueryFilePath)).thenReturn(new ByteArrayInputStream(FAKE_ES_QUERY.getBytes()));
         } catch (Exception e) {
             throw new IllegalArgumentException("Error retrieving ES Query content", e);
         }
@@ -137,7 +146,7 @@ public class ApplicationSearchConnectorTest {
 
      @Test
      public void testRetrieveSearchQuery() {
-        String searchQuery = applicationSearchConnector.retrieveSearchQuery();
+        String searchQuery = applicationSearchConnector.retrieveSearchQuery(searchQueryFilePath);
         assertNotNull(searchQuery);
      }
 
@@ -147,7 +156,7 @@ public class ApplicationSearchConnectorTest {
         Identity identity = mock(Identity.class);
         when(identity.getId()).thenReturn("1");
         long userId = Long.parseLong(identity.getId());
-        String searchQuery = applicationSearchConnector.buildQueryStatement(userId,searchTerm,0,10);
+        String searchQuery = applicationSearchConnector.buildQueryStatement(userId,searchTerm,0,10,searchQueryFilePath);
         assertNotNull(searchQuery);
      }
     private InitParams getParams() {
@@ -161,8 +170,13 @@ public class ApplicationSearchConnectorTest {
         valueParam.setName("query.file.path");
         valueParam.setValue("FILE_PATH");
 
+        ValueParam allValueParam = new ValueParam();
+        valueParam.setName("query.all.file.path");
+        valueParam.setValue("ALL_FILE_PATH");
+
         params.addParameter(propertiesParam);
         params.addParameter(valueParam);
+        params.addParameter(allValueParam);
         return params;
     }
 
