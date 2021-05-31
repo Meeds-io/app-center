@@ -5,9 +5,6 @@ import org.exoplatform.appcenter.dto.ApplicationList;
 import org.exoplatform.appcenter.dto.GeneralSettings;
 import org.exoplatform.appcenter.service.ApplicationCenterService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.MembershipEntry;
-import org.exoplatform.social.core.space.spi.SpaceService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +28,6 @@ public class ApplicationCenterRestServiceTest {
   @Mock
   private ApplicationCenterService applicationCenterService;
 
-  private static final String      ADMINISTRATORS_GROUP                = "/platform/administrators";
 
   @Mock
   private PortalContainer portalContainer;
