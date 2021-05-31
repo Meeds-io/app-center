@@ -1,7 +1,6 @@
 package org.exoplatform.appcenter.search;
 
 import org.exoplatform.appcenter.service.ApplicationCenterService;
-import org.exoplatform.appcenter.util.Utils;
 import org.exoplatform.commons.search.index.IndexingService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.listener.Event;

@@ -82,7 +82,6 @@ public class ApplicationSearchConnectorTest {
 
         try {
             Mockito.reset(configurationManager);
-            when(configurationManager.getInputStream("FILE_PATH")).thenReturn(new ByteArrayInputStream(FAKE_ES_QUERY.getBytes()));
             when(configurationManager.getInputStream(searchQueryFilePath)).thenReturn(new ByteArrayInputStream(FAKE_ES_QUERY.getBytes()));
         } catch (Exception e) {
             throw new IllegalArgumentException("Error retrieving ES Query content", e);

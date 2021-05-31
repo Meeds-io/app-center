@@ -870,12 +870,5 @@ public class ApplicationCenterService implements Startable {
             application.setPermissions(storedApplication.getPermissions());
             return application;
   }
-  public static void broadcastEvent(ListenerService listenerService, String eventName, Object source, Object data) {
-    try {
-      listenerService.broadcast(eventName, source, data);
-    } catch (Exception e) {
-      LOG.warn("Error broadcasting event '" + eventName + "' using source '" + source + "' and data " + data, e);
-    }
-  }
 
 }
