@@ -2,8 +2,7 @@ package org.exoplatform.appcenter.search;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.appcenter.dto.Application;
@@ -18,6 +17,8 @@ import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.container.xml.ValueParam;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.hibernate.ObjectNotFoundException;
@@ -27,15 +28,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.ByteArrayInputStream;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ConversationState.class,PortalContainer.class})
+@PowerMockIgnore("javax.management.*")
 public class ApplicationSearchConnectorTest {
 
     private static final String ES_TYPE         = "application";
@@ -53,11 +59,13 @@ public class ApplicationSearchConnectorTest {
 
     @Mock
     ElasticSearchingClient client;
-
+    @Mock
+    ConversationState state;
+    @Mock
     ApplicationCenterService applicationCenterService;
 
     ApplicationSearchConnector applicationSearchConnector;
-
+    @Mock
     private PortalContainer container;
 
     private String                       searchQueryFilePath;
@@ -75,14 +83,17 @@ public class ApplicationSearchConnectorTest {
 
     @Before
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         container = PortalContainer.getInstance();
-        this.applicationCenterService = container.getComponentInstanceOfType(ApplicationCenterService.class);
+        this.applicationCenterService = new ApplicationCenterService();
         searchResult = IOUtil.getStreamContentAsString(getClass().getClassLoader()
                                                                  .getResourceAsStream("application-search-result.json"));
 
         try {
             Mockito.reset(configurationManager);
             when(configurationManager.getInputStream(searchQueryFilePath)).thenReturn(new ByteArrayInputStream(FAKE_ES_QUERY.getBytes()));
+
+
         } catch (Exception e) {
             throw new IllegalArgumentException("Error retrieving ES Query content", e);
         }
@@ -143,21 +154,28 @@ public class ApplicationSearchConnectorTest {
      assertNotNull(results);
      }
 
+    @Test
+    public void testBuildQueryStatement() {
+        String searchTerm  = "searchTerm";
+        org.exoplatform.services.security.Identity identity = mock(org.exoplatform.services.security.Identity.class);
+        PowerMockito.mockStatic(ConversationState.class);
+        when(ConversationState.getCurrent()).thenReturn(state);
+        when(state.getIdentity()).thenReturn(identity);
+        MembershipEntry membershipEntry = new MembershipEntry("*:/platform/users");
+        Collection<MembershipEntry> membershipEntries = new ArrayList<>();
+        membershipEntries.add(membershipEntry);
+        when(identity.getMemberships()).thenReturn(membershipEntries);
+        String searchQuery = applicationSearchConnector.buildQueryStatement(searchTerm,0,10,searchQueryFilePath);
+        assertNotNull(searchQuery);
+    }
+
      @Test
      public void testRetrieveSearchQuery() {
         String searchQuery = applicationSearchConnector.retrieveSearchQuery(searchQueryFilePath);
         assertNotNull(searchQuery);
      }
 
-     @Test
-     public void testBuildQueryStatement() {
-        String searchTerm  = "searchTerm";
-        Identity identity = mock(Identity.class);
-        when(identity.getId()).thenReturn("1");
-        long userId = Long.parseLong(identity.getId());
-        String searchQuery = applicationSearchConnector.buildQueryStatement(userId,searchTerm,0,10,searchQueryFilePath);
-        assertNotNull(searchQuery);
-     }
+
     private InitParams getParams() {
         InitParams params = new InitParams();
         PropertiesParam propertiesParam = new PropertiesParam();

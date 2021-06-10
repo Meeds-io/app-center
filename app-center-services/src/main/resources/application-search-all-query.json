@@ -5,8 +5,28 @@
     "bool": {
       "must": [
         {
-          "match_all": {}
+          "match": {
+            "permissions": {
+              "query": "@permissions@" ,
+              "operator" : "OR"
+            }
+          }
+        },
+        {
+          "wildcard": {
+            "title": {
+              "value": "*"
+            }
+          }
+        },
+        {
+          "wildcard": {
+            "description": {
+              "value": "*"
+            }
+          }
         }
+
       ],
       "must_not": [],
       "should": []

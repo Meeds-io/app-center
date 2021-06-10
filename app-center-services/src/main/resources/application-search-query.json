@@ -5,11 +5,20 @@
     "bool": {
       "must": [
         {
+          "match": {
+            "permissions": {
+              "query": "@permissions@" ,
+              "operator" : "OR"
+            }
+          }
+        },
+        {
           "multi_match": {
-            "query":"@term_query@"
+            "query" : "@term_query@"
           , "fields": ["title","description"]
           }
         }
+
       ],
       "must_not": [],
       "should": []

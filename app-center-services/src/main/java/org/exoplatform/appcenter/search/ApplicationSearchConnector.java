@@ -1,6 +1,7 @@
 package org.exoplatform.appcenter.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -84,16 +85,13 @@ public class ApplicationSearchConnector {
             throw new IllegalArgumentException("Limit must be positive");
         }
 
-        long userIdentityId = getCurrentUserIdentityId(identityManager, currentUser);
-        if (userIdentityId < 0) {
-            throw new IllegalArgumentException("User identity id must be positive");
-        }
+
         String esQuery = "";
         if (StringUtils.isBlank(term)) {
-            esQuery = buildQueryStatement(userIdentityId, term, offset, limit,searchAllQueryFilePath );
+            esQuery = buildQueryStatement( term, offset, limit,searchAllQueryFilePath );
         }
         else {
-            esQuery = buildQueryStatement(userIdentityId, term, offset, limit,searchQueryFilePath );
+            esQuery = buildQueryStatement( term, offset, limit,searchQueryFilePath );
 
         }
         String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
@@ -128,6 +126,10 @@ public class ApplicationSearchConnector {
                 long id = parseLong(hitSource, "id");
                 String title = (String) hitSource.get("title");
                 String description = (String) hitSource.get("description");
+                String url = (String) hitSource.get("url");
+                String helpPageURL = (String) hitSource.get("helpPageURL");
+                String imageFileBody = (String) hitSource.get("imageFileBody");
+                String imageFileName = (String) hitSource.get("imageFileName");
                 JSONObject highlightSource = (JSONObject) jsonHitObject.get("highlight");
                 List<String> excerpts = new ArrayList<>();
                 if (highlightSource != null) {
@@ -144,8 +146,12 @@ public class ApplicationSearchConnector {
                 }
                 // Application
                 applicationSearchResult.setId(id);
+                applicationSearchResult.setUrl(url);
                 applicationSearchResult.setDescription(description);
                 applicationSearchResult.setTitle(title);
+                applicationSearchResult.setHelpPageURL(helpPageURL);
+                applicationSearchResult.setImageFileBody(imageFileBody);
+                applicationSearchResult.setImageFileName(imageFileName);
                 results.add(applicationSearchResult);
             } catch (Exception e) {
                 LOG.warn("Error processing event search result item, ignore it from results", e);
@@ -154,7 +160,7 @@ public class ApplicationSearchConnector {
         return results;
     }
 
-    public String buildQueryStatement(long userIdentityId, String term, long offset, long limit,String File) {
+    public String buildQueryStatement( String term, long offset, long limit,String File) {
         List<String> termsQuery = Arrays.stream(term.split(" ")).filter(StringUtils::isNotBlank).map(word -> {
             word = word.trim();
             if (word.length() > 5) {
@@ -163,9 +169,10 @@ public class ApplicationSearchConnector {
             return word;
         }).collect(Collectors.toList());
         String termQuery = StringUtils.join(termsQuery, " AND ");
+        String permissions = getCurrentUserPermissions();
         return retrieveSearchQuery(File).replaceAll("@term@", term)
                                     .replaceAll("@term_query@", termQuery)
-                                    .replaceAll("@permissions@", String.valueOf(userIdentityId))
+                                    .replaceAll("@permissions@", permissions)
                                     .replaceAll("@offset@", String.valueOf(offset))
                                     .replaceAll("@limit@", String.valueOf(limit));
     }
@@ -188,8 +195,9 @@ public class ApplicationSearchConnector {
         return StringUtils.isBlank(value) ? null : Long.parseLong(value);
     }
 
-    public static final long getCurrentUserIdentityId(IdentityManager identityManager, String currentUser) {
-        org.exoplatform.social.core.identity.model.Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, currentUser);
-        return identity == null ? 0 : Long.parseLong(identity.getId());
+    public static final String getCurrentUserPermissions() {
+        ConversationState current = ConversationState.getCurrent();
+        String permissions = current.getIdentity().getMemberships().toString();
+        return permissions;
     }
 }

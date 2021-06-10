@@ -156,6 +156,10 @@ public class ApplicationCenterService implements Startable {
     }
   }
 
+  public ApplicationCenterService() {
+
+  }
+
   /**
    * A method that will be invoked when the server starts (
    * {@link PortalContainer} starts ) to inject default application and to delete
@@ -766,12 +770,7 @@ public class ApplicationCenterService implements Startable {
     List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(currentUser, query, offset, limit);
     return searchResults.stream()
             .map(searchResult -> {
-              try {
                 return fromApplication(searchResult);
-              } catch (FileStorageException e) {
-                e.printStackTrace();
-              }
-              return null;
             })
             .collect(Collectors.toList());
   }
@@ -860,15 +859,22 @@ public class ApplicationCenterService implements Startable {
     return userApplicationsList;
   }
 
-  private  Application fromApplication(Application application) throws FileStorageException {
-    Application storedApplication = appCenterStorage.getApplicationById(application.getId());
-            application.setUrl(storedApplication.getUrl());
-            application.setHelpPageURL(storedApplication.getHelpPageURL());
-            application.setImageFileId(storedApplication.getImageFileId());
-            application.setImageFileBody(storedApplication.getImageFileBody());
-            application.setImageFileName(storedApplication.getImageFileName());
-            application.setPermissions(storedApplication.getPermissions());
-            return application;
+  private static final Application fromApplication(Application application) {
+    return new ApplicationSearchResultEntity(application.getId(),
+            application.getTitle(),
+            application.getUrl(),
+            application.getHelpPageURL(),
+            application.getImageFileId(),
+            application.getImageFileBody(),
+            application.getImageFileName(),
+            application.getDescription(),
+            false,
+            false,
+            false,
+            false,
+            false,
+            null,
+            null);
   }
 
 }
