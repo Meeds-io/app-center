@@ -873,7 +873,7 @@ public class ApplicationCenterService implements Startable {
             false,
             false,
             false,
-            null,
+            application.getPermissions(),
             null);
   }
 

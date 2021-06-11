@@ -121,6 +121,7 @@ public class ApplicationSearchConnector {
         for (Object jsonHit : jsonHits) {
             try {
                 ApplicationSearchResult applicationSearchResult = new ApplicationSearchResult();
+                List<String> applicationPermissions = new ArrayList<>();
                 JSONObject jsonHitObject = (JSONObject) jsonHit;
                 JSONObject hitSource = (JSONObject) jsonHitObject.get("_source");
                 long id = parseLong(hitSource, "id");
@@ -130,6 +131,7 @@ public class ApplicationSearchConnector {
                 String helpPageURL = (String) hitSource.get("helpPageURL");
                 String imageFileBody = (String) hitSource.get("imageFileBody");
                 String imageFileName = (String) hitSource.get("imageFileName");
+                JSONArray permissions = (JSONArray) hitSource.get("permissions");
                 JSONObject highlightSource = (JSONObject) jsonHitObject.get("highlight");
                 List<String> excerpts = new ArrayList<>();
                 if (highlightSource != null) {
@@ -152,6 +154,10 @@ public class ApplicationSearchConnector {
                 applicationSearchResult.setHelpPageURL(helpPageURL);
                 applicationSearchResult.setImageFileBody(imageFileBody);
                 applicationSearchResult.setImageFileName(imageFileName);
+                for(Object jsonObject :permissions) {
+                    applicationPermissions.add((String) jsonObject);
+                }
+                applicationSearchResult.setPermissions(applicationPermissions);
                 results.add(applicationSearchResult);
             } catch (Exception e) {
                 LOG.warn("Error processing event search result item, ignore it from results", e);
