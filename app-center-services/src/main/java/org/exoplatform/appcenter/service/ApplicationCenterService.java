@@ -299,8 +299,7 @@ public class ApplicationCenterService implements Startable {
     try {
       listenerService.broadcast(this.POST_CREATE_APPLICATION, appId, null);
     } catch (Exception e) {
-      LOG.warn("Error broadcasting event '" + this.POST_CREATE_APPLICATION + "' using source '" + appId + "' and data " + null, e);
-    }
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_CREATE_APPLICATION, appId,  e);    }
     return createdApplication;
   }
 
@@ -357,9 +356,8 @@ public class ApplicationCenterService implements Startable {
     try {
       listenerService.broadcast(this.POST_UPDATE_APPLICATION, updatedApplication.getId(), null);
     } catch (Exception e) {
-      LOG.warn("Error broadcasting event '" + this.POST_UPDATE_APPLICATION + "' using source '" + updatedApplication.getId() + "' and data " + null, e);
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_UPDATE_APPLICATION, updatedApplication.getId(),  e);
     }
-
     return updatedApplication;
   }
 
@@ -405,8 +403,9 @@ public class ApplicationCenterService implements Startable {
     try {
       listenerService.broadcast(this.POST_DELETE_APPLICATION, applicationId, null);
     } catch (Exception e) {
-      LOG.warn("Error broadcasting event '" + this.POST_DELETE_APPLICATION + "' using source '" + applicationId + "' and data " + null, e);
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_DELETE_APPLICATION, applicationId,  e);
     }
+
   }
 
   /**
