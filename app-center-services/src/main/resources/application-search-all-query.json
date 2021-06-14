@@ -18,18 +18,11 @@
               "value": "*"
             }
           }
-        },
-        {
-          "wildcard": {
-            "description": {
-              "value": "*"
-            }
-          }
         }
-
       ],
       "must_not": [],
-      "should": []
+      "should": [
+      ]
     }
   },
   "highlight" : {
@@ -38,10 +31,7 @@
     "no_match_size" : 0,
     "order": "score",
     "fields" : {
-      "description" : {
-        "pre_tags" : ["<span class='searchMatchExcerpt'>"],
-        "post_tags" : ["</span>"]
-      },
+
       "title" : {
         "pre_tags" : ["<span class='searchMatchExcerpt'>"],
         "post_tags" : ["</span>"]

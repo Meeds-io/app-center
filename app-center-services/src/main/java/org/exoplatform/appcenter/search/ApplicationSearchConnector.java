@@ -131,6 +131,7 @@ public class ApplicationSearchConnector {
                 String helpPageURL = (String) hitSource.get("helpPageURL");
                 String imageFileBody = (String) hitSource.get("imageFileBody");
                 String imageFileName = (String) hitSource.get("imageFileName");
+                String imageFileId = (String) hitSource.get("imageFileId");
                 JSONArray permissions = (JSONArray) hitSource.get("permissions");
                 JSONObject highlightSource = (JSONObject) jsonHitObject.get("highlight");
                 List<String> excerpts = new ArrayList<>();
@@ -154,6 +155,7 @@ public class ApplicationSearchConnector {
                 applicationSearchResult.setHelpPageURL(helpPageURL);
                 applicationSearchResult.setImageFileBody(imageFileBody);
                 applicationSearchResult.setImageFileName(imageFileName);
+                applicationSearchResult.setImageFileId(Long.valueOf(imageFileId));
                 for(Object jsonObject :permissions) {
                     applicationPermissions.add((String) jsonObject);
                 }

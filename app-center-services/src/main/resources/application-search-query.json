@@ -13,15 +13,23 @@
           }
         },
         {
-          "multi_match": {
-            "query" : "@term_query@"
-          , "fields": ["title","description"]
+          "match_phrase_prefix": {
+            "title" : {
+              "query": "@term_query@"
+            }
           }
         }
-
       ],
       "must_not": [],
-      "should": []
+      "should": [
+        {
+          "match_phrase_prefix": {
+            "description" : {
+              "query": "@term_query@"
+            }
+          }
+        }
+      ]
     }
   },
   "highlight" : {
@@ -30,10 +38,6 @@
     "no_match_size" : 0,
     "order": "score",
     "fields" : {
-      "description" : {
-        "pre_tags" : ["<span class='searchMatchExcerpt'>"],
-        "post_tags" : ["</span>"]
-      },
       "title" : {
         "pre_tags" : ["<span class='searchMatchExcerpt'>"],
         "post_tags" : ["</span>"]

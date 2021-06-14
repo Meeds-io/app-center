@@ -84,7 +84,9 @@ public class ApplicationIndexingServiceConnector extends ElasticIndexingServiceC
             if (StringUtils.isNotBlank(application.getDescription())) {
                 fields.put("description", application.getDescription());
             }
-
+            if ((application.getImageFileId() != null )) {
+                fields.put("imageFileId", Long.toString(application.getImageFileId()));
+            }
             Set<String> applicationPermissionIds = application.getPermissions().stream().map(String::valueOf).collect(Collectors.toSet());
             document = new Document(TYPE, id, application.getUrl(), null, applicationPermissionIds, fields);
         } catch (Exception e) {
