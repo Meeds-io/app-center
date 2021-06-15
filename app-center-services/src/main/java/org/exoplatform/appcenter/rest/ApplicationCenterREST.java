@@ -481,6 +481,54 @@ public class ApplicationCenterREST implements ResourceContainer {
     }
   }
 
+  @Path(APPLICATIONS_ENDPOINT + "/search")
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @RolesAllowed("users")
+  @ApiOperation(
+          value = "Search the list of applications available with query, identified by its identity technical identifier."
+              + " If no designated owner, all events available for authenticated user will be retrieved.",
+          httpMethod = "GET",
+          response = Response.class,
+          produces = "application/json"
+  )
+  @ApiResponses(
+          value = { @ApiResponse(code = HTTPStatus.OK, message = "Request fulfilled"),
+              @ApiResponse(code = HTTPStatus.UNAUTHORIZED, message = "Unauthorized operation"),
+              @ApiResponse(code = HTTPStatus.BAD_REQUEST, message = "The offset or the limit is not positive"),
+              @ApiResponse(code = HTTPStatus.INTERNAL_ERROR, message = "internal server error"),
+
+          }
+  )
+  public Response search(
+                        @ApiParam(value = "Term to search", required = true)
+                        @QueryParam(
+                          "query"
+                        )
+                        String query,
+                        @ApiParam(value = "Offset", required = false, defaultValue = "0")
+                        @QueryParam(
+                          "offset"
+                        )
+                        int offset,
+                        @ApiParam(value = "Limit", required = false, defaultValue = "20")
+                        @QueryParam(
+                          "limit"
+                        )
+                        int limit) {
+    if (offset < 0) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("Offset must be 0 or positive").build();
+    }
+    if (limit < 0) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("Limit must be positive").build();
+    }
+
+    ConversationState state = ConversationState.getCurrent();
+    String currentUser = getCurrentUserName();
+    List<Application> searchResults = appCenterService.search(currentUser, query, offset, limit);
+    return  Response.ok(searchResults).build();
+  }
+
   private String getCurrentUserName() {
     ConversationState state = ConversationState.getCurrent();
     return state == null || state.getIdentity() == null ? null : state.getIdentity().getUserId();

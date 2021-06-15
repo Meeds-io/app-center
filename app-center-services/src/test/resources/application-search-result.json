@@ -1,0 +1,31 @@
+{
+  "hits": {
+    "total": 2,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "application_v1",
+        "_type": "application",
+        "_id": "1",
+        "_score": 1,
+        "_source": {
+          "title": "application",
+          "description": "applicationDescription",
+          "id": "1",
+          "url": "",
+          "helpPageURL":"helpPageURL",
+          "imageFileBody": "imageFileBody",
+          "imageFileName": "imageFileName"
+        },
+        "highlight" : {
+          "title": [
+            "title containing <span class='searchMatchExcerpt'>searchTerm</span>"
+          ],
+          "description": [
+            "description containing <span class='searchMatchExcerpt'>searchTerm</span>"
+          ]
+        }
+      }
+    ]
+  }
+}

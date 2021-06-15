@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.impl.util.Base64;
+import org.exoplatform.appcenter.search.ApplicationSearchConnector;
+import org.exoplatform.services.listener.ListenerService;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
@@ -89,11 +91,15 @@ public class ApplicationCenterService implements Startable {
 
   private SettingService                 settingService;
 
+  private ApplicationSearchConnector     applicationSearchConnector;
+
   private Authenticator                  authenticator;
 
   private IdentityRegistry               identityRegistry;
 
   private ApplicationCenterStorage       appCenterStorage;
+
+  private ListenerService                listenerService;
 
   private String                         defaultAdministratorPermission    = null;
 
@@ -116,20 +122,28 @@ public class ApplicationCenterService implements Startable {
   public static final String LOG_ADD_FAVORITE = "add-favorite";
   public static final String LOG_REMOVE_FAVORITE = "remove-favorite";
   public static final String MERGE_MODE = "merge";
+  public static final String POST_CREATE_APPLICATION = "exo.application.created";
+  public static final String POST_UPDATE_APPLICATION = "exo.application.updated";
+  public static final String POST_DELETE_APPLICATION = "exo.application.deleted";
 
-  public ApplicationCenterService(ConfigurationManager configurationManager,
+
+  public ApplicationCenterService(ApplicationSearchConnector applicationSearchConnector,
+                                  ConfigurationManager configurationManager,
                                   ApplicationCenterStorage appCenterStorage,
                                   SettingService settingService,
                                   IdentityRegistry identityRegistry,
                                   Authenticator authenticator,
                                   PortalContainer container,
-                                  InitParams params) {
+                                  InitParams params,
+                                  ListenerService listenerService) {
+    this.applicationSearchConnector = applicationSearchConnector;
     this.container = container;
     this.configurationManager = configurationManager;
     this.settingService = settingService;
     this.authenticator = authenticator;
     this.identityRegistry = identityRegistry;
     this.appCenterStorage = appCenterStorage;
+    this.listenerService = listenerService;
 
     if (params != null && params.containsKey("default.administrators.expression")) {
       this.defaultAdministratorPermission = params.getValueParam("default.administrators.expression").getValue();
@@ -140,6 +154,10 @@ public class ApplicationCenterService implements Startable {
     if (StringUtils.isBlank(this.defaultAdministratorPermission)) {
       this.defaultAdministratorPermission = DEFAULT_ADMINISTRATORS_PERMISSION;
     }
+  }
+
+  public ApplicationCenterService() {
+
   }
 
   /**
@@ -276,8 +294,13 @@ public class ApplicationCenterService implements Startable {
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
-
-    return appCenterStorage.createApplication(application);
+    Application createdApplication = appCenterStorage.createApplication(application);
+    long appId  =createdApplication.getId();
+    try {
+      listenerService.broadcast(this.POST_CREATE_APPLICATION, appId, null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_CREATE_APPLICATION, appId,  e);    }
+    return createdApplication;
   }
 
   /**
@@ -329,8 +352,13 @@ public class ApplicationCenterService implements Startable {
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(DEFAULT_USERS_PERMISSION);
     }
-
-    return appCenterStorage.updateApplication(application);
+    Application updatedApplication = appCenterStorage.updateApplication(application);
+    try {
+      listenerService.broadcast(this.POST_UPDATE_APPLICATION, updatedApplication.getId(), null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_UPDATE_APPLICATION, updatedApplication.getId(),  e);
+    }
+    return updatedApplication;
   }
 
   private boolean isAdmin() {
@@ -372,6 +400,12 @@ public class ApplicationCenterService implements Startable {
     }
 
     appCenterStorage.deleteApplication(applicationId);
+    try {
+      listenerService.broadcast(this.POST_DELETE_APPLICATION, applicationId, null);
+    } catch (Exception e) {
+      LOG.warn("Error broadcasting event {} using source {}", this.POST_DELETE_APPLICATION, applicationId,  e);
+    }
+
   }
 
   /**
@@ -731,6 +765,15 @@ public class ApplicationCenterService implements Startable {
                                        && StringUtils.equals(app.getApplication().getUrl(), application.getUrl()));
   }
 
+  public List<Application> search(String currentUser, String query, int offset, int limit) {
+    List<ApplicationSearchResult> searchResults = applicationSearchConnector.search(currentUser, query, offset, limit);
+    return searchResults.stream()
+            .map(searchResult -> {
+                return fromApplication(searchResult);
+            })
+            .collect(Collectors.toList());
+  }
+
   private boolean hasPermission(String username, Application application) {
     return hasPermission(username, application.getPermissions());
   }
@@ -813,6 +856,24 @@ public class ApplicationCenterService implements Startable {
     userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
 
     return userApplicationsList;
+  }
+
+  private static final Application fromApplication(Application application) {
+    return new ApplicationSearchResultEntity(application.getId(),
+            application.getTitle(),
+            application.getUrl(),
+            application.getHelpPageURL(),
+            application.getImageFileId(),
+            application.getImageFileBody(),
+            application.getImageFileName(),
+            application.getDescription(),
+            false,
+            false,
+            false,
+            false,
+            false,
+            application.getPermissions(),
+            null);
   }
 
 }

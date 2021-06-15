@@ -265,9 +265,10 @@ export default {
       let limit = this.pageSize;
       if (searchMode) {
         offset = 0;
-        limit = 0;
+        limit = 10;
       }
-      return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
+
+      return fetch(`/portal/rest/app-center/applications/search?offset=${offset}&limit=${limit}&query=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -281,19 +282,19 @@ export default {
         .then(data => {
           const allApplications = [];
           // manage system apps localized names
-          data.applications.forEach(app => {
+          data.forEach(app => {
             if (app.system) {
               const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
               if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
-                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+                data[this.getAppIndex(data, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
               }
             }
           });
           if (data) {
             if (this.isMobileDevice) {
-              allApplications.push(...data.applications.filter(app => app.mobile));
+              allApplications.push(...data.filter(app => app.mobile));
             } else {
-              allApplications.push(...data.applications);
+              allApplications.push(...data);
             }
           }
           this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);

@@ -5,7 +5,6 @@ import org.exoplatform.appcenter.dto.ApplicationList;
 import org.exoplatform.appcenter.dto.GeneralSettings;
 import org.exoplatform.appcenter.service.ApplicationCenterService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.social.core.space.spi.SpaceService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,17 +14,21 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.ws.rs.core.Response;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationCenterRestServiceTest {
   
   @Mock
   private ApplicationCenterService applicationCenterService;
-  
+
+
   @Mock
   private PortalContainer portalContainer;
   
@@ -33,6 +36,7 @@ public class ApplicationCenterRestServiceTest {
   public void setup() throws Exception {
     Mockito.when(portalContainer.getName()).thenReturn("portal");
     Mockito.when(portalContainer.getRestContextName()).thenReturn("rest");
+
   }
   
   @Test
@@ -59,7 +63,77 @@ public class ApplicationCenterRestServiceTest {
     assertEquals(resultList.size(),((ApplicationList)response.getEntity()).getApplications().size());
   
   }
-  
+  @Test
+  public void testCreateApplication() throws Exception {
+    Application application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false, "");
+    ApplicationCenterREST applicationCenterREST = new ApplicationCenterREST(applicationCenterService, portalContainer);
+    Response response = applicationCenterREST.createApplication(application);
+    assertEquals(204, response.getStatus());
+   }
+     @Test
+     public void testUpdateApplication() throws Exception {
+    Application application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    Response response = applicationCenterREST.createApplication(application);
+    assertEquals(204, response.getStatus());
+    application.setTitle("titre2");
+    application.setUrl("url2");
+    application.setDescription("description2");
+
+    Response updateResponse = applicationCenterREST.updateApplication(application);
+    assertEquals(204, updateResponse.getStatus());
+     }
+  @Test
+  public void testDeleteApplication() throws Exception {
+    // ApplicationList result = new ApplicationList();
+    Application application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    Response response = applicationCenterREST.createApplication(application);
+    assertEquals(204, response.getStatus());
+    Response deleteResponse = applicationCenterREST.deleteApplication(application.getId());
+    assertEquals(204, deleteResponse.getStatus());
+
+  }
+  @Test
+  public void testAddFavouriteApplication() throws Exception {
+    Application application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    when(applicationCenterService.findApplication(application.getId())).thenReturn(application);
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    Response response = applicationCenterREST.createApplication(application);
+    assertEquals(204, response.getStatus());
+    Response addFavouriteResponse = applicationCenterREST.addFavoriteApplication(application.getId());
+    assertEquals(204, addFavouriteResponse.getStatus());
+
+  }
+  @Test
+  public void testNotAddFavouriteApplication() throws Exception {
+
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+
+    Response addFavouriteResponse = applicationCenterREST.addFavoriteApplication(2L);
+    assertEquals(500, addFavouriteResponse.getStatus());
+
+  }
+
+  @Test
+  public void testSearchApplication() throws Exception {
+    // ApplicationList result = new ApplicationList();
+    Application Application = new Application(1L, "titre1", "url1", "", 0L, "", "",
+            "description1", false, true, false, true, false,"");
+    ApplicationCenterREST applicationCenterREST= new ApplicationCenterREST(applicationCenterService,portalContainer);
+    applicationCenterREST.createApplication(Application);
+    Response response = applicationCenterREST.search("titre1",0,20);
+    assertEquals(200,response.getStatus());
+    response = applicationCenterREST.search("titre1",-1,20);
+    assertEquals(400,response.getStatus());
+    response = applicationCenterREST.search("titre1",0,-1);
+    assertEquals(400,response.getStatus());
+
+  }
   @Test
   public void testGetAuthorizedApplicationsList() throws Exception {
     
