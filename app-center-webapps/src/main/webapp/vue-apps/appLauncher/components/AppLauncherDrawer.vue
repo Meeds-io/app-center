@@ -56,14 +56,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <img
                     v-if="application.imageFileId && application.imageFileName"
                     class="appLauncherImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else-if="defaultAppImage.fileBody"
                     class="appLauncherImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else
                     class="appLauncherImage"
+                    referrerpolicy="no-referrer"
                     src="/app-center/skin/images/defaultApp.png">
                   <span
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
@@ -100,14 +103,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <img
                     v-if="application.imageFileId && application.imageFileName"
                     class="appLauncherImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else-if="defaultAppImage.fileBody"
                     class="appLauncherImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else
                     class="appLauncherImage"
+                    referrerpolicy="no-referrer"
                     src="/app-center/skin/images/defaultApp.png">
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"

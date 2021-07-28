@@ -28,7 +28,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           :href="favoriteApp.computedUrl"
           :target="favoriteApp.target"
           @click="logOpenApplication(favoriteApp.id)">
-          <img class="myToolImage" :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}`">
+          <img
+            class="myToolImage"
+            referrerpolicy="no-referrer"
+            :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
           <span class="myToolTitle tooltipContent">
             <div>{{ favoriteApp.title }}</div>
             <span class="tooltiptext">{{ favoriteApp.description }}</span>

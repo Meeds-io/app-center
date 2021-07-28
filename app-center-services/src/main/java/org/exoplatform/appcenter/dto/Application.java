@@ -53,6 +53,8 @@ public class Application implements Serializable {
 
   private Long              imageFileId;
 
+  private Long              imageLastModified;
+
   private Long              order;
 
   private boolean           isChangedManually;
@@ -65,6 +67,7 @@ public class Application implements Serializable {
                      String url,
                      String helpPageURL,
                      Long imageFileId,
+                     Long imageLastModified,
                      String imageFileBody,
                      String imageFileName,
                      String description,
@@ -79,6 +82,7 @@ public class Application implements Serializable {
          url,
          helpPageURL,
          imageFileId,
+         imageLastModified,
          imageFileBody,
          imageFileName,
          description,
@@ -95,6 +99,7 @@ public class Application implements Serializable {
                      String url,
                      String helpPageURL,
                      Long imageFileId,
+                     Long imageLastModified,
                      String imageFileBody,
                      String imageFileName,
                      String description,
@@ -115,6 +120,7 @@ public class Application implements Serializable {
     this.system = isSystem;
     this.permissions = permissions;
     this.imageFileId = imageFileId;
+    this.imageLastModified = imageLastModified;
     this.imageFileBody = imageFileBody;
     this.imageFileName = imageFileName;
     this.isChangedManually = isChangedManually;
@@ -218,6 +224,14 @@ public class Application implements Serializable {
 
   public void setImageFileId(Long imageFileId) {
     this.imageFileId = imageFileId;
+  }
+
+  public Long getImageLastModified() {
+    return imageLastModified;
+  }
+
+  public void setImageLastModified(Long imageLastModified) {
+    this.imageLastModified = imageLastModified;
   }
 
   public boolean isSystem() {

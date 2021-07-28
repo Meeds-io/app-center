@@ -61,7 +61,7 @@ export default {
   },
   computed: {
     imageUrl() {
-      return `${eXo.env.portal.context}/${eXo.env.portal.rest}/app-center/applications/illustration/${this.result.id}`;
+      return `${eXo.env.portal.context}/${eXo.env.portal.rest}/app-center/applications/illustration/${this.result.id}?v=${this.result.imageLastModified}`;
     },
     applicationUrl() {
       const computedUrl = this.result.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
