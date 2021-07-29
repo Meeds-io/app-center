@@ -47,7 +47,9 @@ import org.exoplatform.commons.file.services.FileStorageException;
  */
 public class ApplicationCenterStorage {
 
-  public static final String     NAME_SPACE = "appCenter";
+  public static final String     NAME_SPACE            = "appCenter";
+
+  public static final Long       DEFAULT_LAST_MODIFIED = System.currentTimeMillis();
 
   private FileService            fileService;
 
@@ -63,7 +65,7 @@ public class ApplicationCenterStorage {
     this.fileService = fileService;
   }
 
-  public Application getApplicationByTitle(String title) throws FileStorageException {
+  public Application getApplicationByTitle(String title) {
     if (StringUtils.isBlank(title)) {
       throw new IllegalArgumentException("title is mandatory");
     }
@@ -149,7 +151,7 @@ public class ApplicationCenterStorage {
     applicationDAO.delete(applicationEntity);
   }
 
-  public Application getApplicationById(long applicationId) throws FileStorageException {
+  public Application getApplicationById(long applicationId) {
     if (applicationId <= 0) {
       throw new IllegalArgumentException("applicationId must be a positive integer");
     }
@@ -170,12 +172,10 @@ public class ApplicationCenterStorage {
 
   public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
-    if (entity != null) {
-      // check if it is a favorite application and not a system application
-      if (!entity.getApplication().isMandatory()) {
-        entity.setOrder(order.longValue());
-        favoriteApplicationDAO.update(entity);
-      }
+    // check if it is a favorite application and not a system application
+    if (entity != null && !entity.getApplication().isMandatory()) {
+      entity.setOrder(order);
+      favoriteApplicationDAO.update(entity);
     }
   }
 
@@ -192,17 +192,9 @@ public class ApplicationCenterStorage {
 
   public List<UserApplication> getMandatoryApplications() {
     List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
-    List<UserApplication> list = new ArrayList<>();
-    for (ApplicationEntity application : applications) {
-      UserApplication userApplication = null;
-      try {
-        userApplication = toUserApplicationDTO(application);
-      } catch (FileStorageException e) {
-        e.printStackTrace();
-      }
-      list.add(userApplication);
-    }
-    return list;
+    return applications.stream()
+                       .map(this::toUserApplicationDTO)
+                       .collect(Collectors.toList());
   }
 
   public List<UserApplication> getFavoriteApplicationsByUser(String username) {
@@ -216,7 +208,7 @@ public class ApplicationCenterStorage {
                        .collect(Collectors.toList());
   }
 
-  public List<Application> getSystemApplications() throws FileStorageException {
+  public List<Application> getSystemApplications() {
     List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
     List<Application> list = new ArrayList<>();
     Application application = null;
@@ -286,7 +278,7 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  public List<Application> getApplications(String keyword) throws FileStorageException {
+  public List<Application> getApplications(String keyword) {
     List<ApplicationEntity> applications = applicationDAO.getApplications(keyword);
     List<Application> list = new ArrayList<>();
     for (ApplicationEntity entity : applications) {
@@ -300,15 +292,19 @@ public class ApplicationCenterStorage {
     return applicationDAO.count();
   }
 
-  private Application toDTO(ApplicationEntity applicationEntity) throws FileStorageException {
+  private Application toDTO(ApplicationEntity applicationEntity) {
     if (applicationEntity == null) {
       return null;
     }
     String imageFileName = null;
+    long imageLastModified = DEFAULT_LAST_MODIFIED;
     if(applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId()>0){
       FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
       if(fileInfo != null){
         imageFileName = fileInfo.getName();
+        if (fileInfo.getUpdatedDate() != null) {
+          imageLastModified = fileInfo.getUpdatedDate().getTime();
+        }
       }
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
@@ -317,6 +313,7 @@ public class ApplicationCenterStorage {
                                               applicationEntity.getUrl(),
                                               applicationEntity.getHelpPageUrl(),
                                               applicationEntity.getImageFileId(),
+                                              imageLastModified,
                                               null,
                                               imageFileName,
                                               applicationEntity.getDescription(),
@@ -332,15 +329,19 @@ public class ApplicationCenterStorage {
     return application;
   }
 
-  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) throws FileStorageException {
+  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
     if (applicationEntity == null) {
       return null;
     }
     String imageFileName = null;
+    long imageLastModified = DEFAULT_LAST_MODIFIED;
     if(applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId()>0){
       FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
       if(fileInfo != null){
         imageFileName = fileInfo.getName();
+        if (fileInfo.getUpdatedDate() != null) {
+          imageLastModified = fileInfo.getUpdatedDate().getTime();
+        }
       }
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
@@ -349,6 +350,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getUrl(),
                                                           applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
+                                                          imageLastModified,
                                                           null,
                                                           imageFileName,
                                                           applicationEntity.getDescription(),
@@ -371,10 +373,14 @@ public class ApplicationCenterStorage {
     }
     ApplicationEntity applicationEntity = favoriteApplicationEntity.getApplication();
     String imageFileName = null;
+    long imageLastModified = DEFAULT_LAST_MODIFIED;
     if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
       FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
       if (fileInfo != null) {
         imageFileName = fileInfo.getName();
+        if (fileInfo.getUpdatedDate() != null) {
+          imageLastModified = fileInfo.getUpdatedDate().getTime();
+        }
       }
     }
     String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
@@ -383,6 +389,7 @@ public class ApplicationCenterStorage {
                                                           applicationEntity.getUrl(),
                                                           applicationEntity.getHelpPageUrl(),
                                                           applicationEntity.getImageFileId(),
+                                                          imageLastModified,
                                                           null,
                                                           imageFileName,
                                                           applicationEntity.getDescription(),

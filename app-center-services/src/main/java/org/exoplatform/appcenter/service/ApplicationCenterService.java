@@ -187,12 +187,7 @@ public class ApplicationCenterService implements Startable {
           return;
         }
 
-        Application storedApplication = null;
-        try {
-          storedApplication = appCenterStorage.getApplicationByTitle(title);
-        } catch (FileStorageException e) {
-          LOG.warn("An unknown error occurs while retrieving not found application '{}' in store", application.getTitle(), e);
-        }
+        Application storedApplication = appCenterStorage.getApplicationByTitle(title);
         if (storedApplication != null && !applicationPlugin.isOverride() && storedApplication.isChangedManually() && ( MERGE_MODE.equals(applicationPlugin.getOverrideMode()) || applicationPlugin.getOverrideMode() == null) ) {
           LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
           return;
@@ -242,7 +237,7 @@ public class ApplicationCenterService implements Startable {
           }
         }
       });
-    } catch (FileStorageException e) {
+    } catch (Exception e) {
       LOG.warn("An unknown error occurs while retrieving system applications images", e);
     } finally {
       RequestLifeCycle.end();
