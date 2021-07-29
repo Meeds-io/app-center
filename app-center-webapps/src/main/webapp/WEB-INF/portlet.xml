@@ -26,6 +26,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <portlet-name>AppCenterAdminSetupPortlet</portlet-name>
     <display-name xml:lang="EN">App center admin setup portlet</display-name>
     <portlet-class>org.exoplatform.portlets.appCenter.AdminSetupPortlet</portlet-class>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.addon.appcenter</value>
+    </init-param>
+    <init-param>
+      <name>preload.resource.rest</name>
+      <value>/portal/rest/app-center/settings</value>
+    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
@@ -49,6 +57,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <portlet-name>AppCenterUserSetupPortlet</portlet-name>
     <display-name xml:lang="EN">App center user setup portlet</display-name>
     <portlet-class>org.exoplatform.portlets.appCenter.UserSetupPortlet</portlet-class>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.addon.appcenter</value>
+    </init-param>
+    <init-param>
+      <name>preload.resource.rest</name>
+      <value><![CDATA[/portal/rest/app-center/settings,/portal/rest/app-center/applications/authorized?offset=0&limit=12&keyword=,/portal/rest/app-center/applications/favorites]]></value>
+    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
@@ -76,11 +92,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/myApplications.html</value>
     </init-param>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.addon.appcenter</value>
+    </init-param>
+    <init-param>
+      <name>preload.resource.rest</name>
+      <value>/portal/rest/app-center/settings,/portal/rest/app-center/applications/favorites</value>
+    </init-param>
     <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
-    <supported-locale>fr</supported-locale>
+    <supported-locale>en</supported-locale>
     <portlet-info>
       <title>App center my applications portlet</title>
       <keywords>App center portlets</keywords>
@@ -99,11 +124,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/appLauncher.html</value>
     </init-param>
+    <init-param>
+      <name>preload.resource.bundles</name>
+      <value>locale.addon.appcenter</value>
+    </init-param>
+    <init-param>
+      <name>preload.resource.rest</name>
+      <value>/portal/rest/app-center/settings</value>
+    </init-param>
     <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
-    <supported-locale>fr</supported-locale>
+    <supported-locale>en</supported-locale>
     <portlet-info>
       <title>App center app launcher portlet</title>
       <keywords>App center portlets</keywords>
