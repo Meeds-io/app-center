@@ -71,14 +71,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   <img
                     v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
                     class="appImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
                   <img
                     v-else-if="defaultAppImage.fileBody"
                     class="appImage"
-                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}`">
+                    referrerpolicy="no-referrer"
+                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
                   <img
                     v-else
                     class="appImage"
+                    referrerpolicy="no-referrer"
                     src="/app-center/skin/images/defaultApp.png">
                 </a>
               </div>

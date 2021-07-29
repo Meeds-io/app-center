@@ -22,6 +22,7 @@ import java.util.*;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response.Status;
 
 import org.exoplatform.appcenter.dto.*;
 import org.exoplatform.appcenter.dto.Application;
@@ -42,24 +43,33 @@ import io.swagger.jaxrs.PATCH;
 @Api(value = "/app-center", description = "Manage and access application center applications") // NOSONAR
 public class ApplicationCenterREST implements ResourceContainer {
 
-  private static final String      APPLICATIONS_ENDPOINT               = "applications";
+  private static final String       APPLICATIONS_ENDPOINT               = "applications";
 
-  private static final String      SETTINGS_ENDPOINT                   = "settings";
+  private static final String       SETTINGS_ENDPOINT                   = "settings";
 
-  private static final String      FAVORITES_APPLICATIONS_ENDPOINT     = "applications/favorites";
+  private static final String       FAVORITES_APPLICATIONS_ENDPOINT     = "applications/favorites";
 
-  private static final String      AUTHORIZED_APPLICATIONS_ENDPOINT    = "applications/authorized";
+  private static final String       AUTHORIZED_APPLICATIONS_ENDPOINT    = "applications/authorized";
 
-  private static final String      LOG_OPEN_DRAWER_ENDPOINT            = "applications/logOpenDrawer";
+  private static final String       LOG_OPEN_DRAWER_ENDPOINT            = "applications/logOpenDrawer";
 
-  private static final String      LOG_CLICK_ALL_APPLICATIONS_ENDPOINT = "applications/logClickAllApplications";
-  
-  private static final String      LOG_CLICK_ONE_APPLICATION_ENDPOINT = "applications/logClickApplication";
-  
-  
-  private static final String      ADMINISTRATORS_GROUP                = "/platform/administrators";
+  private static final String       LOG_CLICK_ALL_APPLICATIONS_ENDPOINT = "applications/logClickAllApplications";
 
-  private static final Log         LOG                                 = ExoLogger.getLogger(ApplicationCenterREST.class);
+  private static final String       LOG_CLICK_ONE_APPLICATION_ENDPOINT  = "applications/logClickApplication";
+
+  private static final String       ADMINISTRATORS_GROUP                = "/platform/administrators";
+
+  private static final int          CACHE_DURATION_SECONDS              = 31536000;
+
+  private static final long         CACHE_DURATION_MILLISECONDS         = CACHE_DURATION_SECONDS * 1000l;
+
+  private static final CacheControl ILLUSTRATION_CACHE_CONTROL          = new CacheControl();
+
+  static {
+    ILLUSTRATION_CACHE_CONTROL.setMaxAge(CACHE_DURATION_SECONDS);
+  }
+
+  private static final Log          LOG                                 = ExoLogger.getLogger(ApplicationCenterREST.class);
 
   private ApplicationCenterService appCenterService;
 
@@ -443,13 +453,14 @@ public class ApplicationCenterREST implements ResourceContainer {
       @ApiResponse(code = 500, message = "Internal server error"), @ApiResponse(code = 400, message = "Invalid query input"),
       @ApiResponse(code = 404, message = "Resource not found") })
   public Response getApplicationIllustration(@Context Request request,
-                                             @ApiParam(value = "Application id", required = true) @PathParam("applicationId") long applicationId) {
+                                             @ApiParam(value = "Application id", required = true) @PathParam("applicationId") long applicationId,
+                                             @ApiParam(value = "Optional last modified parameter", required = false) @QueryParam("v") long lastModified) {
     try {
       Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId, getCurrentUserName());
       if (lastUpdated == null) {
         return Response.status(404).build();
       }
-      EntityTag eTag = new EntityTag(Integer.toString(lastUpdated.hashCode()));
+      EntityTag eTag = new EntityTag(String.valueOf(lastUpdated), true);
       Response.ResponseBuilder builder = request.evaluatePreconditions(eTag);
       if (builder == null) {
         InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, getCurrentUserName());
@@ -464,19 +475,20 @@ public class ApplicationCenterREST implements ResourceContainer {
          */
         builder = Response.ok(stream, "image/png");
         builder.tag(eTag);
+        if (lastModified > 0) {
+          builder.lastModified(new Date(lastUpdated));
+          builder.expires(new Date(System.currentTimeMillis() + CACHE_DURATION_MILLISECONDS));
+          builder.cacheControl(ILLUSTRATION_CACHE_CONTROL);
+        }
       }
-      CacheControl cc = new CacheControl();
-      cc.setMaxAge(86400);
-      builder.cacheControl(cc);
-      return builder.cacheControl(cc).build();
+      return builder.build();
     } catch (IllegalAccessException e) {
-      LOG.warn(e);
-      return Response.status(HTTPStatus.UNAUTHORIZED).build();
+      LOG.warn("Unauthorised access to application {} illustration", applicationId, e);
+      return Response.status(Status.NOT_FOUND).build();
     } catch (ApplicationNotFoundException e) {
-      LOG.warn(e);
-      return Response.serverError().build();
+      return Response.status(Status.NOT_FOUND).build();
     } catch (Exception e) {
-      LOG.error("Unknown error occurred while getting application illustration", e);
+      LOG.error("An error occurred while getting application illustration", e);
       return Response.serverError().build();
     }
   }
