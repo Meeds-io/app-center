@@ -58,11 +58,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <display-name xml:lang="EN">App center user setup portlet</display-name>
     <portlet-class>org.exoplatform.portlets.appCenter.UserSetupPortlet</portlet-class>
     <init-param>
-      <name>preload.resource.bundles</name>
+      <name>prefetch.resources</name>
+      <value>true</value>
+    </init-param>
+    <init-param>
+      <name>prefetch.resource.bundles</name>
       <value>locale.addon.appcenter</value>
     </init-param>
     <init-param>
-      <name>preload.resource.rest</name>
+      <name>prefetch.resource.rest</name>
       <value><![CDATA[/portal/rest/app-center/settings,/portal/rest/app-center/applications/authorized?offset=0&limit=12&keyword=,/portal/rest/app-center/applications/favorites]]></value>
     </init-param>
     <supports>
