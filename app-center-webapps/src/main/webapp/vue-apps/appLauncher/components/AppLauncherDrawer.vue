@@ -201,9 +201,8 @@ export default {
   },
   created() {
     this.isMobileDevice = this.detectMobile();
-    this.getAppGeneralSettings();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
-    this.$nextTick().then(() => this.$root.$emit('application-loaded'));
+    this.getAppGeneralSettings().finally(() => this.$root.$applicationLoaded());
   },
   methods: {
     detectMobile() {

@@ -63,8 +63,10 @@ export default {
   },
 
   created() {
-    this.getFavoriteApplicationsList();
-    this.getMaxFavoriteApps();
+    Promise.all([
+      this.getFavoriteApplicationsList(),
+      this.getMaxFavoriteApps()
+    ]).finally(() => this.$root.$applicationLoaded());
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
   },
 

@@ -27,18 +27,14 @@ const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale
 const appId = 'appLauncher';
 
 export function init() {
-  const appElement = document.createElement('div');
-  appElement.id = appId;
-
   //getting locale ressources
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     // init Vue app when locale ressources are ready
-    new Vue({
+    Vue.createApp({
       template: `<app-center-launcher-drawer
-                  id="${appId}"
-                  v-cacheable />`,
+                  id="${appId}" />`,
       i18n,
       vuetify,
-    }).$mount(appElement);
+    }, `#${appId}`, 'Application Center Drawer');
   });
 }
