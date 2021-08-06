@@ -247,8 +247,10 @@ export default {
   },
 
   created() {
-    this.getApplicationsList();
-    this.getAppGeneralSettings();
+    Promise.all([
+      this.getApplicationsList(),
+      this.getAppGeneralSettings()
+    ]).finally(() => this.$root.$applicationLoaded());
     $(document).on('keydown', (event) => {
       if (event.key === 'Escape' && this && this.closeDeleteModal) {
         this.closeDeleteModal();

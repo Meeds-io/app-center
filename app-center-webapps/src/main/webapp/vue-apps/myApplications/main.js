@@ -26,10 +26,10 @@ const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
 
 export function init() {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    new Vue({
+    Vue.createApp({
       render: h => h(MyApplicationsApp),
       i18n,
       vuetify,
-    }).$mount('#myApplications');
+    }, '#myApplications', 'My Application Center');
   });
 }

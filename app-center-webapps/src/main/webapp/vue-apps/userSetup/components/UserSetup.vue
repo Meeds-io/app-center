@@ -69,8 +69,7 @@ export default {
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
           return this.$nextTick();
-        })
-        .finally(() => this.$root.$emit('application-loaded'));
+        });
     },
   },
 };
