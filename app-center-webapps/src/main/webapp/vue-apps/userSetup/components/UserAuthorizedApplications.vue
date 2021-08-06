@@ -234,8 +234,10 @@ export default {
   },
   created() {
     this.isMobileDevice = this.detectMobile();
-    this.getMaxFavoriteApps();
-    this.getAuthorizedApplicationsList();
+    Promise.all([
+      this.getMaxFavoriteApps(),
+      this.getAuthorizedApplicationsList()
+    ]).finally(() => this.$root.$applicationLoaded());
   },
   methods: {
     closeSearch(){

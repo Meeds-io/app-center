@@ -19,11 +19,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="appLauncher">
-    <v-cacheable-dom-app cache-id="appLauncher"></v-cacheable-dom-app>
-    <script type="text/javascript" defer="defer">
-      require(['SHARED/appLauncherBundle'], function(appLauncherApp) {
-          appLauncherApp.init();
-      });
+    <div class="v-application--wrap">
+      <div class="container px-0 py-0">
+        <div class="layout transparent">
+          <button
+            type="button"
+            disabled="disabled"
+            class="text-xs-center v-btn v-btn--flat v-btn--disabled v-btn--icon v-btn--round theme--light v-size--default"
+            id="appcenterLauncherButton">
+            <span class="v-btn__content"><i aria-hidden="true"
+              class="v-icon notranslate appCenterLauncherButtonIcon mdi mdi-apps theme--light"></i></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript">
+      require(['SHARED/appLauncherBundle'], app =>  app.init());
     </script>
   </div>
 </div>
