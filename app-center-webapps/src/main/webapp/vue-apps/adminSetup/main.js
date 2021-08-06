@@ -34,7 +34,7 @@ export function init(preferences) {
     const appElement = document.createElement('div');
     appElement.id = appId;
 
-    new Vue({
+    Vue.createApp({
       data: {
         preferences: preferences,
       },
@@ -43,6 +43,6 @@ export function init(preferences) {
                   v-cacheable />`,
       vuetify,
       i18n,
-    }).$mount(appElement);
+    }, appElement, 'Application Center Administration');
   });
 }
