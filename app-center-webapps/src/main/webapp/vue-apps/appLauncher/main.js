@@ -17,24 +17,20 @@
  */
 import './initComponents.js';
 
-Vue.use(Vuetify);
-const vuetify = new Vuetify(eXo.env.portal.vuetifyPreset);
-
 //should expose the locale ressources as REST API
-const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
-
 const appId = 'appLauncher';
 
 export function init() {
+  const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
+  const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
   //getting locale ressources
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    // init Vue app when locale ressources are ready
-    Vue.createApp({
-      template: `<app-center-launcher-drawer
-                  id="${appId}" />`,
-      i18n,
-      vuetify,
-    }, `#${appId}`, 'Application Center Drawer');
-  });
+  const i18nPromise = exoi18n.loadLanguageAsync(lang, url);
+  Vue.createApp({
+    data: {
+      i18nPromise: i18nPromise,
+    },
+    template: `<app-center-launcher-drawer id="${appId}" :i18n-promise="i18nPromise" />`,
+    vuetify: Vue.prototype.vuetifyOptions,
+    i18n: exoi18n.i18n,
+  }, `#${appId}`, 'Application Center Drawer');
 }
