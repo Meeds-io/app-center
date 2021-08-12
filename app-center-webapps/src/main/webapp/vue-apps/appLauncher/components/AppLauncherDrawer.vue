@@ -35,7 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       body-classes="hide-scroll"
       class="appCenterDrawer">
       <template slot="title">
-        {{ $t("appCenter.appLauncher.drawer.title") }}
+        {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
       <div slot="content" class="content">
         <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
@@ -126,7 +126,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </draggable>
         </v-layout>
       </div>
-      <div slot="footer">
+      <div v-if="applicationsLoaded" slot="footer">
         <v-card
           flat
           tile
@@ -148,6 +148,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 </template>
 <script>
 export default {
+  props: {
+    i18nPromise: {
+      type: Object,
+      default: null,
+    }
+  },
   data() {
     return {
       defaultAppImage: {
@@ -202,7 +208,24 @@ export default {
   created() {
     this.isMobileDevice = this.detectMobile();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
-    this.getAppGeneralSettings().finally(() => this.$root.$applicationLoaded());
+
+    this.applicationsLoaded = false;
+    this.getAppGeneralSettings()
+      .then(() => this.getMandatoryAndFavoriteApplications())
+      .then(() => this.i18nPromise)
+      .finally(() => {
+        this.applicationsLoaded = true;
+        this.$root.$applicationLoaded();
+        if (this.$refs.appLauncherDrawer) {
+          this.$refs.appLauncherDrawer.endLoading();
+        }
+      });
+  },
+  mounted() {
+    if (!this.applicationsLoaded) {
+      this.$refs.appLauncherDrawer.startLoading();
+    }
+    this.toggleDrawer();
   },
   methods: {
     detectMobile() {
@@ -221,19 +244,9 @@ export default {
       });
     },
     toggleDrawer() {
-      if (!this.applicationsLoaded) {
-        this.getMandatoryAndFavoriteApplications();
-        //only when opening the appLauncherDrawer
-        fetch('/portal/rest/app-center/applications/logOpenDrawer', {
-          method: 'GET',
-          credentials: 'include',
-        });
-        this.applicationsLoaded = true;
-      }
       this.$refs.appLauncherDrawer.open();
     },
     getMandatoryAndFavoriteApplications() {
-      this.$refs.appLauncherDrawer.startLoading();
       return fetch('/portal/rest/app-center/applications/favorites', {
         method: 'GET',
         credentials: 'include',
@@ -307,10 +320,7 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-        }).finally(() => {
-          this.loading = false;
-          this.$refs.appLauncherDrawer.endLoading();
-        });
+        }).finally(() => this.loading = false);
     },
     updateApplicationsOrder(applicationsOrder) {
       return fetch('/portal/rest/app-center/applications/favorites', {

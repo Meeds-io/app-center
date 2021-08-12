@@ -128,14 +128,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>portlet-view-dispatched-file-path</name>
       <value>/html/appLauncher.html</value>
     </init-param>
-    <init-param>
-      <name>preload.resource.bundles</name>
-      <value>locale.addon.appcenter</value>
-    </init-param>
-    <init-param>
-      <name>preload.resource.rest</name>
-      <value>/portal/rest/app-center/settings</value>
-    </init-param>
     <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
