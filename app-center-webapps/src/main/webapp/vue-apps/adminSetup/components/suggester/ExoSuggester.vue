@@ -1,5 +1,7 @@
 <template>
-  <input type="text">
+  <input
+    :value="selectedItems"
+    type="text">
 </template>
 
 <script>
