@@ -24,6 +24,8 @@ public class ApplicationPlugin extends BaseComponentPlugin {
 
   private Application application;
 
+  private boolean     enabled;
+
   private String      imagePath;
 
   private boolean     override;
@@ -38,6 +40,12 @@ public class ApplicationPlugin extends BaseComponentPlugin {
     application = (Application) params.getObjectParam("application").getObject();
     if (application == null) {
       throw new IllegalStateException("'application' init parameter is null");
+    }
+
+    if(params.containsKey("enabled")) {
+      this.enabled = Boolean.parseBoolean(params.getValueParam("enabled").getValue());
+    } else {
+      this.enabled = true;
     }
 
     if (params.containsKey("imagePath")) {
@@ -58,6 +66,10 @@ public class ApplicationPlugin extends BaseComponentPlugin {
 
   public String getImagePath() {
     return imagePath;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 
   public boolean isOverride() {
