@@ -18,6 +18,7 @@ package org.exoplatform.appcenter.service;
 
 import static org.junit.Assert.*;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1058,7 +1059,7 @@ public class ApplicationCenterServiceTest {
       assertEquals(application.getPermissions(), storedApplication.getPermissions());
       assertNull(application.getImageFileId());
     } catch (FileStorageException e) {
-      e.printStackTrace();
+      fail("Should not throw exception for a missing file");
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
@@ -1149,6 +1150,70 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
+  }
+
+  @Test
+  public void testEnableDisableApplication() {
+    InitParams applicationConf = new InitParams();
+    ObjectParameter applicationParam = new ObjectParameter();
+    applicationParam.setName("application");
+    applicationParam.setObject(new Application(null,
+                                               "title",
+                                               "url",
+                                               "",
+                                               5L,
+                                               0L,
+                                               null,
+                                               null,
+                                               "description",
+                                               false,
+                                               true,
+                                               false,
+                                               false,
+                                               true,
+                                               ApplicationCenterService.DEFAULT_ADMINISTRATORS_GROUP));
+    applicationConf.addParameter(applicationParam);
+    ValueParam valueParam = new ValueParam();
+    valueParam.setName("override");
+    valueParam.setValue("false");
+    applicationConf.addParameter(valueParam);
+    valueParam.setName("enabled");
+    valueParam.setValue("false");
+    applicationConf.addParameter(valueParam);
+    valueParam.setName("imagePath");
+    valueParam.setValue("/path/to/image.png");
+    applicationConf.addParameter(valueParam);
+    valueParam.setName("override-mode");
+    valueParam.setValue("merge");
+    applicationConf.addParameter(valueParam);
+    ApplicationPlugin applicationPlugin = new ApplicationPlugin(applicationConf);
+    applicationPlugin.setName("disabledApplication");
+    applicationCenterService.addApplicationPlugin(applicationPlugin);
+    applicationCenterService.start();
+    ApplicationList applicationList = new ApplicationList();
+    try {
+      applicationList = applicationCenterService.getApplicationsList(0, 10, null);
+    } catch (FileStorageException fileNotFoundException) {
+      // Do nothing
+    }
+    assertEquals(0, applicationList.getSize());
+    applicationCenterService.stop();
+
+    // Enable the application
+    valueParam = applicationConf.getValueParam("enabled");
+    valueParam.setValue("true");
+    applicationConf.addParameter(valueParam);
+    applicationPlugin = new ApplicationPlugin(applicationConf);
+    applicationPlugin.setName("enabledApplication");
+    applicationCenterService.addApplicationPlugin(applicationPlugin);
+    applicationCenterService.start();
+    try {
+      applicationList = applicationCenterService.getApplicationsList(0, 10, null);
+    } catch (FileStorageException fileNotFoundException) {
+      // Do nothing
+    }
+    assertEquals(1, applicationList.getSize());
+    applicationCenterService.stop();
   }
 
   @Test
@@ -1286,7 +1351,7 @@ public class ApplicationCenterServiceTest {
       //Ignore updating application, override mode is merge and isChangedManually is true
       assertEquals(true,applicationsList.getApplications().get(0).isChangedManually());
     } catch (FileStorageException e) {
-      e.printStackTrace();
+      fail("Avatar file not found for the application");
     } finally {
       applicationCenterService.removeApplicationPlugin(pluginName);
     }
