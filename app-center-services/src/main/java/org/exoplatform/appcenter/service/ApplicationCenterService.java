@@ -693,7 +693,9 @@ public class ApplicationCenterService implements Startable {
     if (StringUtils.isBlank(applicationPlugin.getName())) {
       throw new IllegalStateException("'applicationPlugin' name is mandatory");
     }
-    this.defaultApplications.put(applicationPlugin.getName(), applicationPlugin);
+    if(applicationPlugin.isEnabled()) {
+      this.defaultApplications.put(applicationPlugin.getName(), applicationPlugin);
+    }
   }
 
   /**
@@ -800,7 +802,7 @@ public class ApplicationCenterService implements Startable {
     List<Application> applications = appCenterStorage.getApplications(keyword);
     applications = applications.stream()
                                .filter(app -> hasPermission(username, app))
-                               .filter(application -> application.isActive())
+                               .filter(Application::isActive)
                                .collect(Collectors.toList());
     if (limit <= 0) {
       limit = applications.size();
