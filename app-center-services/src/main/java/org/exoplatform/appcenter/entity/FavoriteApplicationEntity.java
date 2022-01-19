@@ -40,7 +40,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 public class FavoriteApplicationEntity {
 
   @Id
-  @SequenceGenerator(name = "SEQ_FAVORITE_APPLICATION_ID", sequenceName = "SEQFAVORITE_APPLICATION_ID")
+  @SequenceGenerator(name = "SEQ_FAVORITE_APPLICATION_ID", sequenceName = "SEQFAVORITE_APPLICATION_ID", allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_FAVORITE_APPLICATION_ID")
   @Column(name = "ID")
   private Long              id;

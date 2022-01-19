@@ -25,8 +25,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 /**
  * @author Ayoub Zayati
  */
-@Entity(name = "ApplicationEntity")
 @ExoEntity
+@Entity(name = "ApplicationEntity")
 @Table(name = "AC_APPLICATION")
 @NamedQueries({
     @NamedQuery(name = "ApplicationEntity.getAppByTitle", query = "SELECT app FROM ApplicationEntity app "
@@ -40,7 +40,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 public class ApplicationEntity {
 
   @Id
-  @SequenceGenerator(name = "SEQ_APPLICATION_ID", sequenceName = "SEQ_APPLICATION_ID")
+  @SequenceGenerator(name = "SEQ_APPLICATION_ID", sequenceName = "SEQ_APPLICATION_ID", allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_APPLICATION_ID")
   @Column(name = "ID")
   private Long                                  id;
