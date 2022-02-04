@@ -33,7 +33,7 @@
           <description>Search connector for applications</description>
           <object type="org.exoplatform.social.core.search.SearchConnector">
             <field name="name">
-              <string>application</string>
+              <string>applications</string>
             </field>
             <field name="uri">
               <string><![CDATA[/portal/rest/app-center/applications/authorized?offset=0&limit={limit}&keyword={keyword}]]></string>
