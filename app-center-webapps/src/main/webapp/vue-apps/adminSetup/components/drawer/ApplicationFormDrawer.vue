@@ -166,7 +166,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         class="input-block-level ignore-vuetify-classes my-3"
         type="url"
         name="name"
-        maxlength="200"
+        maxlength="500"
         :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')">
     </div>
     <div slot="footer" class="d-flex">
