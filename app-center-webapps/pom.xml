@@ -26,7 +26,7 @@
   <parent>
     <groupId>io.meeds.app-center</groupId>
     <artifactId>app-center</artifactId>
-	  <version>7.0.x-meed-SNAPSHOT</version>
+	  <version>7.0.x-meedsv2-SNAPSHOT</version>
   </parent>
   <artifactId>app-center-webapps</artifactId>
   <packaging>war</packaging>
