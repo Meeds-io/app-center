@@ -30,11 +30,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <init-params>
         <value-param>
           <name>priority</name>
-          <value>5</value>
+          <value>20</value>
         </value-param>
         <value-param>
           <name>containerName</name>
-          <value>AppCenterAppLauncherPortlet</value>
+          <value>middle-topNavigation-container</value>
         </value-param>
         <object-param>
           <name>AppCenterAppLauncherApplication</name>

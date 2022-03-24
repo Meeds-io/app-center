@@ -126,13 +126,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
     <init-param>
       <name>portlet-view-dispatched-file-path</name>
-      <value>/html/appLauncher.html</value>
+      <value>/jsp/appCenter/appLauncher.jsp</value>
     </init-param>
     <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
     <supported-locale>en</supported-locale>
+    <resource-bundle>locale.addon.status</resource-bundle>
     <portlet-info>
       <title>App center app launcher portlet</title>
       <keywords>App center portlets</keywords>
