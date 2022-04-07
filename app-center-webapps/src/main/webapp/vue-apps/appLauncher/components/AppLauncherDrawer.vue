@@ -20,11 +20,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <v-layout class="transparent">
         <v-btn
           id="appcenterLauncherButton"
+          :title="$t('appCenter.appLauncher.topbarIcon.tooltip')"
           icon
           class="text-xs-center"
           @click="toggleDrawer()">
-          <v-icon class="appCenterLauncherButtonIcon">
-            mdi-apps
+          <v-icon class="appCenterLauncherButtonIcon icon-large-size icon-default-color">
+            mdi-dots-grid
           </v-icon>
         </v-btn>
       </v-layout>
