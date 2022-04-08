@@ -34,14 +34,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               always-dirty
               min="0"
               max="50">
-              <template v-slot:prepend>
+              <template #prepend>
                 <v-icon
                   color="blue"
                   @click="decrement">
                   mdi-minus
                 </v-icon>
               </template>
-              <template v-slot:append>
+              <template #append>
                 <v-icon
                   color="blue"
                   @click="increment">
