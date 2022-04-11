@@ -15,7 +15,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const path = require('path');
-const merge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const common = require('./webpack.common.js');
 
 // the display name of the war
@@ -25,6 +25,7 @@ const app = 'app-center';
 const exoServerPath = "/exo-server";
 
 module.exports = merge(common, {
+  mode: 'development',
   output: {
     path: path.resolve(`${exoServerPath}/webapps/${app}/`)
   },

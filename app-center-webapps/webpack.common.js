@@ -15,6 +15,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const path = require('path');
+const ESLintPlugin = require('eslint-webpack-plugin');
+const { VueLoaderPlugin } = require('vue-loader')
 
 module.exports = {
   context: path.resolve(__dirname, '.'),
@@ -39,18 +41,27 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           'babel-loader',
-          'eslint-loader',
         ]
       },
       {
         test: /\.vue$/,
         use: [
           'vue-loader',
-          'eslint-loader',
         ]
       }
     ]
   },
+  plugins: [
+    new ESLintPlugin({
+      files: [
+        './src/main/webapp/vue-apps/*.js',
+        './src/main/webapp/vue-apps/*.vue',
+        './src/main/webapp/vue-apps/**/*.js',
+        './src/main/webapp/vue-apps/**/*.vue',
+      ],
+    }),
+    new VueLoaderPlugin()
+  ],
   externals: {
     vue: 'Vue',
     vuetify: 'Vuetify',
