@@ -198,10 +198,6 @@ public class Application implements Serializable {
     this.permissions = Arrays.asList(permissions);
   }
 
-  public void setPermissions(List<String> permissions) {
-    this.permissions = permissions;
-  }
-
   public String getImageFileBody() {
     return imageFileBody;
   }
