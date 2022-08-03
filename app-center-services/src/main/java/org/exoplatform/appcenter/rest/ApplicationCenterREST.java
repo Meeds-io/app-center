@@ -36,7 +36,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 
 import io.swagger.annotations.*;
-import io.swagger.jaxrs.PATCH;
+import org.exoplatform.services.rest.http.PATCH;
 
 @Path("app-center")
 @RolesAllowed("users")
