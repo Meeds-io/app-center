@@ -39,15 +39,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
       <div slot="content" class="content">
-        <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
-          <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
+        <v-row v-if="favoriteApplicationsList.length > 0 || mandatoryApplicationsList.length > 0" class=" appsContainer">
+          <draggable
+            class="appLauncherList"
+            @start="drag=true"
+            @end="drag=false">
             <div
               v-for="(application, index) in mandatoryApplicationsList"
-              :id="'Pos-' + index"
+              :id="'Pos-man-' + index"
               :key="index"
-              class="appLauncherItemContainer">
+              class="appLauncherItemContainer mandatory">
               <div
-                :id="'App-' + index"
+                :id="'App-man-' + index"
                 class="appLauncherItem">
                 <a
                   :id="application.id"
@@ -77,24 +80,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 </a>
               </div>
             </div>
-          </v-col>
-        </v-row>
-        <v-row v-if="favoriteApplicationsList.length > 0 && mandatoryApplicationsList.length > 0" class="appsContainer">
-          <v-divider />
-        </v-row>
-        <v-layout class="favorite appsContainer">
-          <draggable
-            v-model="favoriteApplicationsList"
-            class="appLauncherList"
-            @start="drag=true"
-            @end="drag=false">
             <div
               v-for="(application, index) in favoriteApplicationsList"
-              :id="'Pos-' + index"
+              :id="'Pos-fav-' + index"
               :key="index"
-              class="appLauncherItemContainer">
+              class="appLauncherItemContainer favorite">
               <div
-                :id="'App-' + index"
+                :id="'App-fav-' + index"
                 class="appLauncherItem">
                 <a
                   :id="application.id"
@@ -116,16 +108,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
                     src="/app-center/skin/images/defaultApp.png">
-                  <span 
-                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle">
-                    {{ application.title }}
+                <span
+                  v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
+                  class="appLauncherTitle">
+                  {{ application.title }}
                   </span>
                 </a>
               </div>
             </div>
           </draggable>
-        </v-layout>
+        </v-row>
       </div>
       <div v-if="applicationsLoaded" slot="footer">
         <v-card
