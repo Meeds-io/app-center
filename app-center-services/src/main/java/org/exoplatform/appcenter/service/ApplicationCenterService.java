@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.xmlbeans.impl.util.Base64;
+import java.util.Base64;
 import org.picocontainer.Startable;
 
 import org.exoplatform.appcenter.dto.*;
@@ -203,7 +203,7 @@ public class ApplicationCenterService implements Startable {
         if (StringUtils.isNotBlank(imagePath)) {
           try {
             InputStream inputStream = configurationManager.getInputStream(imagePath);
-            String fileBody = new String(Base64.encode(IOUtils.toByteArray(inputStream)));
+            String fileBody = new String(Base64.getEncoder().encode(IOUtils.toByteArray(inputStream)));
             application.setImageFileBody(fileBody);
           } catch (Exception e) {
             LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
