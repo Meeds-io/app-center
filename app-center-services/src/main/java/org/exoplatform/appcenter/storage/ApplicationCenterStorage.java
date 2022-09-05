@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.xmlbeans.impl.util.Base64;
+import java.util.Base64;
 
 import org.exoplatform.appcenter.dao.ApplicationDAO;
 import org.exoplatform.appcenter.dao.FavoriteApplicationDAO;
@@ -271,7 +271,7 @@ public class ApplicationCenterStorage {
     FileItem fileItem = fileService.getFile(fileId);
     if (fileItem != null) {
       byte[] bytes = fileItem.getAsByte();
-      String fileBody = new String(Base64.encode(bytes), Charset.defaultCharset());
+      String fileBody = new String(Base64.getEncoder().encode(bytes), Charset.defaultCharset());
       String fileName = fileItem.getFileInfo().getName();
       return new ApplicationImage(fileId, fileName, fileBody);
     }
@@ -439,7 +439,7 @@ public class ApplicationCenterStorage {
     }
 
     byte[] bytesContent = fileContent.getBytes(Charset.defaultCharset().name());
-    byte[] decodedBytes = Base64.decode(bytesContent);
+    byte[] decodedBytes = Base64.getDecoder().decode(bytesContent);
     if (decodedBytes != null) {
       bytesContent = decodedBytes;
     }
