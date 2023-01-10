@@ -82,7 +82,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <boolean>${exo.app-center.portalConfig.metadata.override:true}</boolean>
             </field>
             <field name="importMode">
-              <string>${exo.app-center.portalConfig.metadata.importmode:insert}</string>
+              <string>${exo.app-center.portalConfig.metadata.importmode:merge}</string>
             </field>
           </object>
         </object-param>
@@ -104,7 +104,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <boolean>${exo.app-center.portalConfig.metadata.override:true}</boolean>
             </field>
             <field name="importMode">
-              <string>${exo.app-center.portalConfig.metadata.importmode:insert}</string>
+              <string>${exo.app-center.portalConfig.metadata.importmode:merge}</string>
             </field>
             <field name="templateLocation">
               <string>war:/conf/app-center/portal</string>
