@@ -15,35 +15,47 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-app class="applicationsAdmin">
-    <v-row class="uiTabNormal uiTabInPage white">
-      <v-col>
-        <v-tabs
-          class="appAdminTabs"
-          background-color="transparent">
-          <v-tab @click="loadApplicationsList">
-            {{ $t('appCenter.adminSetupForm.applications') }}
-          </v-tab>
-          <v-tab>
-            {{ $t('appCenter.adminSetupForm.generalSettings') }}
-          </v-tab>
+  <v-app
+    id="KudosAdminApp"
+    class="applicationsAdmin">
+    <main>
+      <v-layout>
+        <v-flex>
+          <v-tabs
+            v-model="selectedTab"
+            slider-size="4">
+            <v-tab key="applications" href="#applications" @click="loadApplicationsList">
+              {{ $t('appCenter.adminSetupForm.applications') }}
+            </v-tab>
+            <v-tab key="settings" href="#settings">
+              {{ $t('appCenter.adminSetupForm.generalSettings') }}
+            </v-tab>
+          </v-tabs>
 
-          <v-tab-item class="px-4 py-2">
-            <adminSetup-list :key="adminSetupListKey" />
-          </v-tab-item>
-          <v-tab-item class="px-4 py-2">
-            <adminSetup-generalParams />
-          </v-tab-item>
-        </v-tabs>        
-      </v-col>
-    </v-row>
+          <v-tabs-items v-model="selectedTab" class="mt-2">
+            <v-tab-item
+              id="applications"
+              value="applications"
+              class="px-4 py-2">
+              <adminSetup-list :key="adminSetupListKey" />
+            </v-tab-item>
+            <v-tab-item
+              id="settings"
+              value="settings"
+              class="px-4 py-2">
+              <adminSetup-generalParams />
+            </v-tab-item>
+          </v-tabs-items>
+        </v-flex>
+      </v-layout>
+    </main>
   </v-app>
 </template>
-
 <script>
 export default {
   data() {
     return {
+      selectedTab: 'applications',
       adminSetupListKey: 0,
     };
   },
