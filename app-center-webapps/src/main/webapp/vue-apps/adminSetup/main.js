@@ -20,29 +20,18 @@ import './initComponents.js';
 const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
 const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
 
-
-Vue.use(Vuetify);
-const vuetify = new Vuetify({
-  dark: true,
-  iconfont: ''
-});
-
 const appId = 'adminSetup';
 
 export function init(preferences) {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
-    const appElement = document.createElement('div');
-    appElement.id = appId;
-
     Vue.createApp({
       data: {
         preferences: preferences,
       },
       template: `<app-center-admin-setup
-                  id="${appId}"
-                  v-cacheable />`,
-      vuetify,
+                  id="${appId}" />`,
+      vuetify: Vue.prototype.vuetifyOptions,
       i18n,
-    }, appElement, 'Application Center Administration');
+    }, `#${appId}`, 'Application Center Administration');
   });
 }
