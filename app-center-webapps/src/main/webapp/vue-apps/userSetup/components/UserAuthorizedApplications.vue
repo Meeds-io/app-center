@@ -60,7 +60,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           v-for="(authorizedApp) in authorizedApplicationsList"
           :key="authorizedApp.id"
           class="authorizedApplication"
-          outlined>
+          outlined
+          hover>
           <div class="authorisedAppContent">
             <v-list-item class="applicationHeader">
               <div class="image">
