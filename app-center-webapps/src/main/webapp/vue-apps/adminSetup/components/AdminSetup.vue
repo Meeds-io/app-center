@@ -24,7 +24,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-tabs
             v-model="selectedTab"
             slider-size="4">
-            <v-tab key="applications" href="#applications" @click="loadApplicationsList">
+            <v-tab
+              key="applications"
+              href="#applications"
+              @click="loadApplicationsList">
               {{ $t('appCenter.adminSetupForm.applications') }}
             </v-tab>
             <v-tab key="settings" href="#settings">
