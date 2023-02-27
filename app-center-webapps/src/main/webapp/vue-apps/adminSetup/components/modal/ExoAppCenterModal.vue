@@ -15,48 +15,45 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <div class="modal-mask uiPopupWrapper">
-    <div :class="modalClass" class="uiPopup app-center-modal-content">
-      <v-list-item>
-        <v-list-item-content>
-          <span class="PopupTitle popupTitle">{{ title }}</span>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-btn
-            icon
-            class="closeBindingModal"
-            @click="closeModal">
-            <v-icon
-              large
-              color="#5f708a"
-              class="closeIcon">
-              close
-            </v-icon>
-          </v-btn>
-        </v-list-item-action>
-      </v-list-item>
-      <div class="PopupContent popupContent">
-        <slot></slot>
-      </div>
-    </div>
-  </div>
+  <exo-confirm-dialog
+    ref="confirmDialog"
+    :title="title"
+    :message="message"
+    :ok-label="okLabel"
+    :cancel-label="cancelLabel"
+    @ok="$emit('ok')"
+    @dialog-closed="$emit('closed')" />
 </template>
-
 <script>
 export default {
   props: {
-    displayClose: {
-      type: Boolean,
-      default: true
-    },
     title: {
       type: String,
       default: ''
     },
-    modalClass: {
+    message: {
       type: String,
       default: ''
+    },
+    okLabel: {
+      type: String,
+      default: ''
+    },
+    cancelLabel: {
+      type: String,
+      default: ''
+    },
+    open: {
+      type: Boolean,
+      default: false
     }
+  },
+  watch: {
+    open() {
+      if (this.open) {
+        this.$refs.confirmDialog.open();
+      }
+    },
   },
   methods: {
     closeModal() {
