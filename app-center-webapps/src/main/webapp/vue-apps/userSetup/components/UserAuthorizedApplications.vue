@@ -55,108 +55,116 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <div class="userAuthorizedApplications">
         <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp">
           {{ $t("appCenter.adminSetupForm.noApp") }}
-        </div>      
-        <v-card
-          v-for="(authorizedApp) in authorizedApplicationsList"
-          :key="authorizedApp.id"
-          class="authorizedApplication"
-          outlined
-          hover>
-          <div class="authorisedAppContent">
-            <v-list-item class="applicationHeader">
-              <div class="image">
-                <a
-                  :target="authorizedApp.target"
-                  :href="authorizedApp.computedUrl"
-                  @click="logOpenApplication(authorizedApp.id)">
-                  <img
-                    v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
-                    class="appImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
-                  <img
-                    v-else-if="defaultAppImage.fileBody"
-                    class="appImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
-                  <img
-                    v-else
-                    class="appImage"
-                    referrerpolicy="no-referrer"
-                    src="/app-center/skin/images/defaultApp.png">
-                </a>
+        </div>
+        <v-row no-gutters>
+          <v-col
+            v-for="(authorizedApp) in authorizedApplicationsList"
+            :key="authorizedApp.id"
+            cols="12"
+            sm="6"
+            lg="4"
+            xl="3">
+            <v-card
+              class="authorizedApplication"
+              outlined
+              hover>
+              <div class="authorisedAppContent">
+                <v-list-item class="applicationHeader">
+                  <div class="image">
+                    <a
+                      :target="authorizedApp.target"
+                      :href="authorizedApp.computedUrl"
+                      @click="logOpenApplication(authorizedApp.id)">
+                      <img
+                        v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
+                        class="appImage"
+                        referrerpolicy="no-referrer"
+                        :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                      <img
+                        v-else-if="defaultAppImage.fileBody"
+                        class="appImage"
+                        referrerpolicy="no-referrer"
+                        :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                      <img
+                        v-else
+                        class="appImage"
+                        referrerpolicy="no-referrer"
+                        src="/app-center/skin/images/defaultApp.png">
+                    </a>
+                  </div>
+                  <v-list-item-content>
+                    <a
+                      :target="authorizedApp.target"
+                      :href="authorizedApp.computedUrl"
+                      @click="logOpenApplication(authorizedApp.id)">
+                      <h5 class="tooltipContent">
+                        <div
+                          :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
+                          class="appTitle"
+                          :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
+                          {{ authorizedApp.title }}
+                        </div>
+                      </h5>
+                    </a>
+                  </v-list-item-content>
+                  <template v-if="authorizedApp.helpPageURL">
+                    <v-list-item-action class="appHelp">
+                      <v-btn
+                        small
+                        icon
+                        @click="navigateTo(authorizedApp.helpPageURL)">
+                        <v-icon
+                          x-small>
+                          mdi-help
+                        </v-icon>
+                      </v-btn>
+                    </v-list-item-action>
+                  </template>
+                </v-list-item>
+                <v-card-text class="userAppDescription">
+                  <div
+                    :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
+                    class="description">
+                    {{ authorizedApp.description }}
+                  </div>
+                </v-card-text>
+                <v-divider />
+                <v-card-actions class="applicationActions">
+                  <a
+                    :target="authorizedApp.target"
+                    :href="authorizedApp.computedUrl"
+                    @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+                  <div
+                    :title="getTooltip(authorizedApp)">
+                    <v-btn
+                      v-if="authorizedApp.mandatory"
+                      icon
+                      disabled
+                      class="mandatory">
+                      <v-icon
+                        small
+                        color="red">
+                        mdi-star
+                      </v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-else
+                      icon
+                      :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
+                      :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
+                      @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
+                      <v-icon
+                        small
+                        color="red">
+                        {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                      </v-icon>
+                    </v-btn>
+                  </div>
+                </v-card-actions>
               </div>
-              <v-list-item-content>
-                <a
-                  :target="authorizedApp.target"
-                  :href="authorizedApp.computedUrl"
-                  @click="logOpenApplication(authorizedApp.id)">
-                  <h5 class="tooltipContent">
-                    <div 
-                      :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
-                      class="appTitle"
-                      :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
-                      {{ authorizedApp.title }}
-                    </div>
-                  </h5>
-                </a>
-              </v-list-item-content>
-              <template v-if="authorizedApp.helpPageURL">
-                <v-list-item-action class="appHelp">
-                  <v-btn
-                    small
-                    icon
-                    @click="navigateTo(authorizedApp.helpPageURL)">
-                    <v-icon
-                      x-small>
-                      mdi-help
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-              </template>
-            </v-list-item>
-            <v-card-text class="userAppDescription">
-              <div 
-                :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
-                class="description">
-                {{ authorizedApp.description }}
-              </div>
-            </v-card-text>
-            <v-divider />
-            <v-card-actions class="applicationActions">
-              <a
-                :target="authorizedApp.target"
-                :href="authorizedApp.computedUrl"
-                @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-              <div 
-                :title="getTooltip(authorizedApp)">
-                <v-btn
-                  v-if="authorizedApp.mandatory"
-                  icon
-                  disabled
-                  class="mandatory">
-                  <v-icon
-                    small
-                    color="red">
-                    mdi-star
-                  </v-icon>
-                </v-btn>
-                <v-btn
-                  v-else
-                  icon
-                  :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
-                  :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
-                  @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
-                  <v-icon
-                    small
-                    color="red">
-                    {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
-                  </v-icon>
-                </v-btn>
-              </div>
-            </v-card-actions>
-          </div>
-        </v-card>
+            </v-card>
+          </v-col>
+        </v-row>
       </div>
     </div>
     <v-row class="loadMoreContainer" align="center">
