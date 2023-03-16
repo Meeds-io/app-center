@@ -152,25 +152,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
       </app-center-form-drawer>
   
-      <transition name="fade">
-        <app-center-modal
-          v-show="showDeleteApplicationModal"
-          :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
-          @modal-closed="closeDeleteModal">
-          <p>{{ $t('appCenter.adminSetupForm.modal.confirmDelete') }}</p>
-          <div class="uiAction uiActionBorder">
-            <div class="btn" @click="closeDeleteModal">
-              {{ $t("appCenter.adminSetupForm.cancel") }}
-            </div>
-            <div
-              id="deleteBtn"
-              class="btn btn-primary"
-              @click="deleteApplication">
-              {{ $t("appCenter.adminSetupForm.modal.delete") }}
-            </div>
-          </div>
-        </app-center-modal>
-      </transition>
+      <app-center-modal
+        :open="showDeleteApplicationModal"
+        :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+        :message="$t('appCenter.adminSetupForm.modal.confirmDelete')"
+        :ok-label="$t('appCenter.adminSetupForm.modal.delete')"
+        :cancel-label="$t('appCenter.adminSetupForm.cancel')"
+        @ok="deleteApplication"
+        @closed="closeDeleteModal" />
     </div>
   </div>
 </template>
