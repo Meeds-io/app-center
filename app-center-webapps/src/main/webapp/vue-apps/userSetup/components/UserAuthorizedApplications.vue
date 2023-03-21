@@ -63,71 +63,75 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             cols="12"
             sm="6"
             lg="4"
-            xl="3">
+            xl="4">
             <v-card
               class="authorizedApplication"
+              height="180"
+              max-height="180"
               outlined
               hover>
               <div class="authorisedAppContent">
-                <v-list-item class="applicationHeader">
-                  <div class="image">
-                    <a
-                      :target="authorizedApp.target"
-                      :href="authorizedApp.computedUrl"
-                      @click="logOpenApplication(authorizedApp.id)">
-                      <img
-                        v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
-                        class="appImage"
-                        referrerpolicy="no-referrer"
-                        :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
-                      <img
-                        v-else-if="defaultAppImage.fileBody"
-                        class="appImage"
-                        referrerpolicy="no-referrer"
-                        :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
-                      <img
-                        v-else
-                        class="appImage"
-                        referrerpolicy="no-referrer"
-                        src="/app-center/skin/images/defaultApp.png">
-                    </a>
+                <div class="flex flex-column align-center justify-center flex-grow-1">
+                  <div class="applicationHeader">
+                    <div class="image">
+                      <a
+                        :target="authorizedApp.target"
+                        :href="authorizedApp.computedUrl"
+                        @click="logOpenApplication(authorizedApp.id)">
+                        <img
+                          v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
+                          class="appImage"
+                          referrerpolicy="no-referrer"
+                          :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                        <img
+                          v-else-if="defaultAppImage.fileBody"
+                          class="appImage"
+                          referrerpolicy="no-referrer"
+                          :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                        <img
+                          v-else
+                          class="appImage"
+                          referrerpolicy="no-referrer"
+                          src="/app-center/skin/images/defaultApp.png">
+                      </a>
+                    </div>
+                    <div>
+                      <a
+                        :target="authorizedApp.target"
+                        :href="authorizedApp.computedUrl"
+                        @click="logOpenApplication(authorizedApp.id)">
+                        <h5 class="tooltipContent">
+                          <div
+                            :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
+                            class="appTitle"
+                            :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
+                            {{ authorizedApp.title }}
+                          </div>
+                        </h5>
+                      </a>
+                    </div>
+                    <template v-if="authorizedApp.helpPageURL">
+                      <v-list-item-action class="appHelp">
+                        <v-btn
+                          small
+                          icon
+                          @click="navigateTo(authorizedApp.helpPageURL)">
+                          <v-icon
+                            x-small>
+                            mdi-help
+                          </v-icon>
+                        </v-btn>
+                      </v-list-item-action>
+                    </template>
                   </div>
-                  <v-list-item-content>
-                    <a
-                      :target="authorizedApp.target"
-                      :href="authorizedApp.computedUrl"
-                      @click="logOpenApplication(authorizedApp.id)">
-                      <h5 class="tooltipContent">
-                        <div
-                          :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
-                          class="appTitle"
-                          :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
-                          {{ authorizedApp.title }}
-                        </div>
-                      </h5>
-                    </a>
-                  </v-list-item-content>
-                  <template v-if="authorizedApp.helpPageURL">
-                    <v-list-item-action class="appHelp">
-                      <v-btn
-                        small
-                        icon
-                        @click="navigateTo(authorizedApp.helpPageURL)">
-                        <v-icon
-                          x-small>
-                          mdi-help
-                        </v-icon>
-                      </v-btn>
-                    </v-list-item-action>
-                  </template>
-                </v-list-item>
-                <v-card-text class="userAppDescription">
-                  <div
-                    :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
-                    class="description">
-                    {{ authorizedApp.description }}
-                  </div>
-                </v-card-text>
+                  <v-card-text class="userAppDescription">
+                    <div
+                      :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
+                      class="description">
+                      {{ authorizedApp.description }}
+                    </div>
+                  </v-card-text>
+                </div>
                 <v-divider />
                 <v-card-actions class="applicationActions">
                   <a
