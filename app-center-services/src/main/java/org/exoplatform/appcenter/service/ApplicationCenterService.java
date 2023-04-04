@@ -531,9 +531,16 @@ public class ApplicationCenterService implements Startable {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException("username is mandatory");
     }
+    if (offset < 0) {
+      offset = 0;
+    }
     ApplicationList resultApplicationsList = new ApplicationList();
-    List<Application> userApplicationsList = getApplications(offset, limit, keyword, username).stream()
-                                                                                              .collect(Collectors.toList());
+    List<Application> userApplicationsList = new ArrayList<>();
+    List<Application> applications = getApplications(keyword, username).stream().collect(Collectors.toList());
+    if (limit <= 0) {
+      limit = applications.size();
+    }
+    userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
     userApplicationsList = userApplicationsList.stream().map(app -> {
       UserApplication applicationFavorite = new UserApplication(app);
       applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
@@ -544,7 +551,7 @@ public class ApplicationCenterService implements Startable {
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
-    resultApplicationsList.setSize(userApplicationsList.size());
+    resultApplicationsList.setSize(applications.size());
     return resultApplicationsList;
   }
 
@@ -793,23 +800,15 @@ public class ApplicationCenterService implements Startable {
     return defaultAppImageId;
   }
 
-  private List<Application> getApplications(int offset, int limit, String keyword, String username) throws FileStorageException {
-    if (offset < 0) {
-      offset = 0;
-    }
-    List<Application> userApplicationsList = new ArrayList<>();
-
+  private List<Application> getApplications(String keyword, String username) throws FileStorageException {
+    
     List<Application> applications = appCenterStorage.getApplications(keyword);
     applications = applications.stream()
                                .filter(app -> hasPermission(username, app))
                                .filter(Application::isActive)
                                .collect(Collectors.toList());
-    if (limit <= 0) {
-      limit = applications.size();
-    }
-    userApplicationsList = applications.stream().skip(offset).limit(limit).collect(Collectors.toList());
 
-    return userApplicationsList;
+    return applications;
   }
 
 }
