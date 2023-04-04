@@ -826,42 +826,42 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(1, applicationsList.getApplications().size());
-    assertEquals(1, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(1, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(2, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(2, applicationsList.getSize());
 
     ConversationState.setCurrent(simpleState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(3, 0, null, SIMPLE_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
 
     ConversationState.setCurrent(adminState);
     applicationsList = applicationCenterService.getAuthorizedApplicationsList(0, 10, null, ADMIN_USERNAME);
