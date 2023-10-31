@@ -27,7 +27,7 @@
     <access-permissions>*:/platform/administrators</access-permissions>
     <edit-permission>manager:/platform/administrators</edit-permission>
     <container id="singlePageApplicationContainer" template="system:/groovy/portal/webui/container/UIContainer.gtmpl" cssClass="singlePageApplication">
-      <access-permissions>*:/platform/administrators</access-permissions>
+      <access-permissions>Everyone</access-permissions>
       <portlet-application>
         <portlet>
           <application-ref>app-center</application-ref>
@@ -41,7 +41,7 @@
           </preferences>
         </portlet>
         <title>App Center Admin Setup</title>
-        <access-permissions>*:/platform/administrators</access-permissions>
+        <access-permissions>Everyone</access-permissions>
         <show-info-bar>false</show-info-bar>
       </portlet-application>
     </container>
