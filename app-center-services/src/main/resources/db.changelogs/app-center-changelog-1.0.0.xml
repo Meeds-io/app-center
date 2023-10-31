@@ -123,4 +123,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <createSequence sequenceName="SEQ_APPLICATION_ID" startValue="1" />
     <createSequence sequenceName="SEQFAVORITE_APPLICATION_ID" startValue="1" />
   </changeSet>
+  <changeSet author="appCenter" id="1.0.0-10">
+    <modifyDataType columnName="PERMISSIONS"
+                    newDataType="VARCHAR(2000)"
+                    tableName="AC_APPLICATION"/>
+  </changeSet>
 </databaseChangeLog>
