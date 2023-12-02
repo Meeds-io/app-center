@@ -37,13 +37,13 @@ import javax.portlet.RenderResponse;
 public class UserSetupPortlet extends GenericPortlet {
   @Override
   protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/jsp/appCenter/userSetup/view.jsp");
+    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/userSetup/view.jsp");
     dispatcher.forward(request, response);
   }
   
   @Override
   protected void doEdit(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/jsp/appCenter/userSetup/edit.jsp");
+    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/userSetup/edit.jsp");
     dispatcher.forward(request, response);
   }
 

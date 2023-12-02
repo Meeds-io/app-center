@@ -20,7 +20,7 @@ import './initComponents.js';
 //should expose the locale ressources as REST API
 const appId = 'appLauncher';
 
-export function init() {
+export function init(isAdmin) {
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
   const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
   //getting locale ressources
@@ -28,6 +28,7 @@ export function init() {
   Vue.createApp({
     data: {
       i18nPromise: i18nPromise,
+      isAdmin,
     },
     template: `<app-center-launcher-drawer id="${appId}" :i18n-promise="i18nPromise" />`,
     vuetify: Vue.prototype.vuetifyOptions,
