@@ -38,7 +38,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <template slot="title">
         {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
-      <div slot="content" class="content">
+      <div
+        v-if="hasApplications"
+        slot="content"
+        class="content">
         <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
           <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
             <div
@@ -79,10 +82,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </v-col>
         </v-row>
-        <v-row v-if="favoriteApplicationsList.length > 0 && mandatoryApplicationsList.length > 0" class="appsContainer">
+        <v-row v-if="favoriteApplicationsList.length > 0" class="appsContainer">
           <v-divider />
         </v-row>
-        <v-layout class="favorite appsContainer">
+        <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
           <draggable
             v-model="favoriteApplicationsList"
             class="appLauncherList"
@@ -127,7 +130,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </draggable>
         </v-layout>
       </div>
-      <div v-if="applicationsLoaded" slot="footer">
+      <div
+        v-else-if="applicationsLoaded"
+        slot="content"
+        class="content d-flex align-center justify-center">
+        <app-center-launcher-empty class="mt-12" />
+      </div>
+      <div v-if="applicationsLoaded && hasApplications" slot="footer">
         <v-card
           flat
           tile
@@ -206,7 +215,13 @@ export default {
       }
     },
   },
+  computed: {
+    hasApplications() {
+      return this.mandatoryApplicationsList?.length || this.favoriteApplicationsList?.length;
+    },
+  },
   created() {
+    document.addEventListener('app-center-favorite-updated', this.getMandatoryAndFavoriteApplications);
     this.isMobileDevice = this.detectMobile();
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
 

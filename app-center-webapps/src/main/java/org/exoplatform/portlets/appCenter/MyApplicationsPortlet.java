@@ -34,7 +34,7 @@ import javax.portlet.RenderResponse;
 public class MyApplicationsPortlet extends GenericPortlet {
   @Override
   protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/jsp/appCenter/myApplications/view.jsp");
+    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/myApplications/view.jsp");
     dispatcher.forward(request, response);
   }
 
