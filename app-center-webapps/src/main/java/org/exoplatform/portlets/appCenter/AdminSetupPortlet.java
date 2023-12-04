@@ -37,13 +37,13 @@ import javax.portlet.PortletPreferences;
 public class AdminSetupPortlet extends GenericPortlet {
   @Override
   protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/jsp/appCenter/adminSetup/view.jsp");
+    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/adminSetup/view.jsp");
     dispatcher.forward(request, response);
   }
 
   @Override
   protected void doEdit(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/jsp/appCenter/adminSetup/edit.jsp");
+    PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/adminSetup/edit.jsp");
     dispatcher.forward(request, response);
   }
 

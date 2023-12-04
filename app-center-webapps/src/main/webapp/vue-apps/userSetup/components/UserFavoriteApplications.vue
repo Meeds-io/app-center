@@ -235,7 +235,7 @@ export default {
             app => app.id === appId
           );
           this.$parent.$children[0].authorizedApplicationsList[index].favorite = false;
-        });
+        }).finally(() => document.dispatchEvent(new CustomEvent('app-center-favorite-updated')));
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
