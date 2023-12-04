@@ -15,8 +15,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import AppLauncherDrawer from './components/AppLauncherDrawer.vue';
+import AppLauncherEmpty from './components/AppLauncherEmpty.vue';
+
 const components = {
   'app-center-launcher-drawer': AppLauncherDrawer,
+  'app-center-launcher-empty': AppLauncherEmpty,
 };
 
 for (const key in components) {

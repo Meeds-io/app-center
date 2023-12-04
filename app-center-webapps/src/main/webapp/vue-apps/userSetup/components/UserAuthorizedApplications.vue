@@ -335,7 +335,7 @@ export default {
         }).then(() => {
           application.favorite=!application.favorite;
           return this.$parent.$children[1].getFavoriteApplicationsList();
-        });
+        }).finally(() => document.dispatchEvent(new CustomEvent('app-center-favorite-updated')));
       } else {
         this.$parent.$children[1].deleteFavoriteApplication(application.id);
       }
