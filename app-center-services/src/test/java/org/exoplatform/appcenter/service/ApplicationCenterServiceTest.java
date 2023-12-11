@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -145,7 +146,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -177,6 +178,27 @@ public class ApplicationCenterServiceTest {
     } catch (ApplicationAlreadyExistsException e) {
       // Expected
     }
+    //
+    application.setUrl("");
+    application.setTitle("applicationWithEmptyUrl");
+    assertThrows(MalformedURLException.class, () -> applicationCenterService.createApplication(application));
+    //
+    application.setUrl("./url");
+    application.setHelpPageURL("javascript:alert('XSS')");
+    application.setTitle("applicationWithMalFormedHelpPageUrl");
+    assertThrows(MalformedURLException.class, () -> applicationCenterService.createApplication(application));
+    //
+    application.setUrl("/portal/url");
+    application.setHelpPageURL("");
+    application.setTitle("applicationWithValidUrlAndEmptyHelpPageUrl");
+    storedApplication = applicationCenterService.createApplication(application);
+    assertNotNull(storedApplication);
+    //
+    application.setUrl("https://applictaion/url");
+    application.setHelpPageURL("https://help/page/url");
+    application.setTitle("applicationWithValidUrlAndHelpPageUrl");
+    storedApplication = applicationCenterService.createApplication(application);
+    assertNotNull(storedApplication);
   }
 
   @Test
@@ -197,7 +219,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -265,9 +287,9 @@ public class ApplicationCenterServiceTest {
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
     assertEquals(ApplicationCenterService.DEFAULT_USERS_PERMISSION, storedApplication.getPermissions().get(0));
 
-    application.setUrl("url2");
+    application.setUrl("./url2");
     storedApplication = applicationCenterService.updateApplication(application, ADMIN_USERNAME);
-    assertEquals("url2", storedApplication.getUrl());
+    assertEquals("./url2", storedApplication.getUrl());
   }
 
   @Test
@@ -303,7 +325,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -321,7 +343,7 @@ public class ApplicationCenterServiceTest {
 
     application = new Application(null,
                                   "title",
-                                  "url",
+                                  "./url",
                                   "",
                                   0L,
                                   0L,
@@ -434,7 +456,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -485,7 +507,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -526,7 +548,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -543,7 +565,7 @@ public class ApplicationCenterServiceTest {
 
     Application application2 = new Application(null,
                                                "title2",
-                                               "url2",
+                                               "./url2",
                                                "",
                                                0L,
                                                0L,
@@ -593,7 +615,7 @@ public class ApplicationCenterServiceTest {
   public void testGetMandatoryAndFavoriteApplicationsList() throws Exception {
     Application application1 = new Application(null,
                                                "title1",
-                                               "url1",
+                                               "./url1",
                                                "",
                                                0L,
                                                0L,
@@ -609,7 +631,7 @@ public class ApplicationCenterServiceTest {
 
     Application application2 = new Application(null,
                                                "title2",
-                                               "url2",
+                                               "./url2",
                                                "",
                                                0L,
                                                0L,
@@ -625,7 +647,7 @@ public class ApplicationCenterServiceTest {
 
     Application application3 = new Application(null,
                                                "title3",
-                                               "url3",
+                                               "./url3",
                                                "",
                                                0L,
                                                0L,
@@ -641,7 +663,7 @@ public class ApplicationCenterServiceTest {
 
     Application application4 = new Application(null,
                                                "title4",
-                                               "url4",
+                                               "./url4",
                                                "",
                                                0L,
                                                0L,
@@ -657,7 +679,7 @@ public class ApplicationCenterServiceTest {
 
     Application application5 = new Application(null,
                                                "title5",
-                                               "url5",
+                                               "./url5",
                                                "",
                                                0L,
                                                0L,
@@ -690,7 +712,7 @@ public class ApplicationCenterServiceTest {
   public void testUpdateFavoriteApplicationOrder() throws Exception {
     Application application1 = new Application(null,
                                                "title3",
-                                               "url3",
+                                               "./url3",
                                                "",
                                                0L,
                                                0L,
@@ -706,7 +728,7 @@ public class ApplicationCenterServiceTest {
 
     Application application2 = new Application(null,
                                                "title5",
-                                               "url5",
+                                               "./url5",
                                                "",
                                                0L,
                                                0L,
@@ -775,7 +797,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               0L,
                                               0L,
@@ -793,7 +815,7 @@ public class ApplicationCenterServiceTest {
 
     Application application2 = new Application(null,
                                                "title2",
-                                               "url2",
+                                               "./url2",
                                                "",
                                                0L,
                                                0L,
@@ -898,7 +920,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               5L,
                                               0L,
@@ -948,7 +970,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               5L,
                                               0L,
@@ -1005,7 +1027,7 @@ public class ApplicationCenterServiceTest {
 
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               5L,
                                               0L,
@@ -1159,7 +1181,7 @@ public class ApplicationCenterServiceTest {
     applicationParam.setName("application");
     applicationParam.setObject(new Application(null,
                                                "title",
-                                               "url",
+                                               "./url",
                                                "",
                                                5L,
                                                0L,
@@ -1241,7 +1263,7 @@ public class ApplicationCenterServiceTest {
     }
     Application application = new Application(null,
                                               "title",
-                                              "url",
+                                              "./url",
                                               "",
                                               5L,
                                               0L,
