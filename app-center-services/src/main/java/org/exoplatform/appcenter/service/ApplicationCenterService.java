@@ -18,10 +18,12 @@ package org.exoplatform.appcenter.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -266,6 +268,10 @@ public class ApplicationCenterService implements Startable {
     Application existingApplication = appCenterStorage.getApplicationByTitle(application.getTitle());
     if (existingApplication != null) {
       throw new ApplicationAlreadyExistsException("An application with same title already exists");
+    }
+
+    if (!isUrlValid(application.getUrl()) || (!application.getHelpPageURL().isBlank() && !isUrlValid(application.getHelpPageURL()))) {
+      throw new MalformedURLException();
     }
 
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
@@ -809,6 +815,13 @@ public class ApplicationCenterService implements Startable {
                                .collect(Collectors.toList());
 
     return applications;
+  }
+
+  private boolean isUrlValid(String url) {
+    //[-a-zA-Z0-9@:%._\\\\/+~#=] allowed characters
+    String regex = "(http(s)?:\\/\\/.)[-a-zA-Z0-9@:%._\\\\/+~#=]{2,256}";
+    Pattern pattern = Pattern.compile(regex);
+    return url != null && !url.isBlank() && (url.startsWith("/portal/") || url.startsWith("./") || pattern.matcher(url).matches());
   }
 
 }

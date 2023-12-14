@@ -17,6 +17,7 @@
 package org.exoplatform.appcenter.rest;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.*;
 
 import javax.annotation.security.RolesAllowed;
@@ -296,6 +297,9 @@ public class ApplicationCenterREST implements ResourceContainer {
   public Response createApplication(@RequestBody(description = "Application to save", required = true) Application application) {
     try {
       appCenterService.createApplication(application);
+    } catch (MalformedURLException malformedURLException) {
+      LOG.error("The application URL or the application help page URL is malformed: {}", malformedURLException.getMessage());
+      return Response.serverError().build();
     } catch (ApplicationAlreadyExistsException e) {
       LOG.warn(e);
       return Response.serverError().build();
