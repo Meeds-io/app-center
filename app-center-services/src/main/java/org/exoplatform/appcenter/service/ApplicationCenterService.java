@@ -270,7 +270,7 @@ public class ApplicationCenterService implements Startable {
       throw new ApplicationAlreadyExistsException("An application with same title already exists");
     }
 
-    if (!isUrlValid(application.getUrl()) || (!application.getHelpPageURL().isBlank() && !isUrlValid(application.getHelpPageURL()))) {
+    if (!isUrlValid(application.getUrl()) || (application.getHelpPageURL() != null && !application.getHelpPageURL().isBlank() && !isUrlValid(application.getHelpPageURL()))) {
       throw new MalformedURLException();
     }
 
