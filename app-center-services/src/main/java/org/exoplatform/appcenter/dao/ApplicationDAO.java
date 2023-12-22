@@ -18,9 +18,9 @@ package org.exoplatform.appcenter.dao;
 
 import java.util.List;
 
-import javax.persistence.TypedQuery;
+import jakarta.persistence.TypedQuery;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.appcenter.entity.ApplicationEntity;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
