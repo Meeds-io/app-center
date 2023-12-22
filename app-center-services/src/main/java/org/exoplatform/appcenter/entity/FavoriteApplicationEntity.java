@@ -16,7 +16,7 @@
  */
 package org.exoplatform.appcenter.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
