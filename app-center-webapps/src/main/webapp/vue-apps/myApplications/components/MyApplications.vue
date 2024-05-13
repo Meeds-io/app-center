@@ -26,12 +26,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <li v-for="favoriteApp in favoriteApplicationsList" :key="favoriteApp.id">
         <a
           :href="favoriteApp.computedUrl"
-          :target="favoriteApp.target"
-          @click="logOpenApplication(favoriteApp.id)">
+          :target="favoriteApp.target">
           <img
             class="myToolImage"
             referrerpolicy="no-referrer"
-            :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
+            :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
           <span class="myToolTitle tooltipContent">
             <div>{{ favoriteApp.title }}</div>
             <span class="tooltiptext">{{ favoriteApp.description }}</span>
@@ -72,7 +71,7 @@ export default {
 
   methods: {
     getFavoriteApplicationsList() {
-      return fetch('/portal/rest/app-center/applications/favorites', {
+      return fetch('/app-center/rest/favorites', {
         credentials: 'include',
         method: 'GET'
       })
@@ -95,14 +94,8 @@ export default {
           return this.favoriteApplicationsList;
         });
     },
-    logOpenApplication(id) {
-      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-    },
     getMaxFavoriteApps() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })

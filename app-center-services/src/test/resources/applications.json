@@ -1,0 +1,23 @@
+{
+    "descriptors": [
+        {
+            "name": "test-application-injection",
+            "imagePath": "jar:/test.png",
+            "overrideMode": "merge",
+            "override": true,
+            "enabled": false,
+            "application": {
+                "title": "test-application-injection",
+                "description": "test application injection from JSON",
+                "url": "./test",
+                "system": true,
+                "active": true,
+                "isMobile": true,
+                "permissions": [
+                    "*:/platform/analytics",
+                    "*:/platform/administrators"
+                ]
+            }
+        }
+    ]
+}
