@@ -504,26 +504,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 color: @textColorDefault;
               }
             }
-            .appHelp {
-              position: relative;
-              left: 5%;
-              bottom: 41%;
-              margin: 0;
-              
-              .v-icon {
-                color: @greyColorLighten1Default;
-              }
-            }
           }
           .applicationActions {
             height: 22px;
-            justify-content: space-between;
             padding: 0 0 0 8px ~'; /** orientation=lt */ ';
             padding: 0 8px 0 0 ~'; /** orientation=rt */ ';
+            justify-content: space-between;
             a {
               font-weight: 600;
               text-transform: uppercase;
             }
+            .actionsBtn {
+              display: inline-flex;
+            } 
             button {
               padding: 0;
               .v-icon {
@@ -532,6 +525,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             }
             .mandatory .v-icon {
               color: @greyColorLighten1Default!important;
+            }
+            .appHelp {
+              position: relative;
+              margin: 0;
+              .v-icon {
+                color: @greyColorLighten1!important;
+                bottom: -1px;
+              }
             }
           }
         }
