@@ -569,8 +569,13 @@ public class ApplicationCenterService implements Startable {
    *         {@link UserApplication}
    */
   public ApplicationList getMandatoryAndFavoriteApplicationsList(String username) {
-    List<UserApplication> mandatoryAndFavoriteApplications = appCenterStorage.getMandatoryApplications();
-    mandatoryAndFavoriteApplications.addAll(appCenterStorage.getFavoriteApplicationsByUser(username));
+    List<UserApplication> mandatoryAndFavoriteApplications = appCenterStorage.getFavoriteApplicationsByUser(username);
+    List<Long> mandatoryAndFavoriteApplicationsId = mandatoryAndFavoriteApplications.stream().map(userApplication -> userApplication.getId()).collect(Collectors.toList());
+    appCenterStorage.getMandatoryApplications().forEach(userApplication -> {
+      if (!mandatoryAndFavoriteApplicationsId.contains(userApplication.getId())) {
+        mandatoryAndFavoriteApplications.add(userApplication);
+      }
+    });
     List<Application> applications = mandatoryAndFavoriteApplications.stream()
                                                                      .filter(app -> hasPermission(username, app))
                                                                      .collect(Collectors.toList());
