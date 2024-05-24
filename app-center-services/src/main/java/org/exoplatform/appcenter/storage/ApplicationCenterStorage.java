@@ -170,13 +170,14 @@ public class ApplicationCenterStorage {
     favoriteApplicationDAO.create(new FavoriteApplicationEntity(application, username));
   }
 
-  public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) {
+  public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) throws ApplicationNotFoundException {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
-    // check if it is a favorite application and not a system application
-    if (entity != null && !entity.getApplication().isMandatory()) {
-      entity.setOrder(order);
-      favoriteApplicationDAO.update(entity);
+    if (entity == null) {
+      addApplicationToUserFavorite(applicationId, username);
+      entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     }
+    entity.setOrder(order);
+    favoriteApplicationDAO.update(entity);
   }
 
   public void deleteApplicationFavorite(Long applicationId, String username) {
@@ -204,7 +205,7 @@ public class ApplicationCenterStorage {
     List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
     return applications.stream()
                        .map(this::toUserApplicationDTO)
-                       .filter(userApplication -> userApplication.isActive() && !userApplication.isMandatory())
+                       .filter(userApplication -> userApplication.isActive())
                        .collect(Collectors.toList());
   }
 

@@ -177,36 +177,37 @@ export default {
               allApplications.push(...data.applications);
             }
           }
-          const mandatoryApps = allApplications.filter(app => app.mandatory && !app.favorite);
-          const favoriteApps = allApplications.filter(app => app.favorite && !app.mandatory);
-          mandatoryApps.sort((a, b) => {
-            if (a.title < b.title) {
-              return -1;
-            }
+          this.favoriteApplicationsList = allApplications;
 
-            if (a.title > b.title) {
-              return 1;
-            }
-
-            return 0;
-          });
           // check if favorite applications are alphabetically ordered
-          if (!favoriteApps.some(app => app.order !== null)) {
-            favoriteApps.sort((a, b) => {
+          this.favoriteApplicationsList.sort((a, b) => {
+            if (typeof a.order === 'undefined' && typeof b.order === 'undefined') {
               if (a.title < b.title) {
                 return -1;
               }
-
               if (a.title > b.title) {
                 return 1;
               }
-
               return 0;
-            });
-          }
-          this.favoriteApplicationsList = [];
-          this.favoriteApplicationsList.push(...mandatoryApps);
-          this.favoriteApplicationsList.push(...favoriteApps);
+            }
+            if (a.order && typeof b.order === 'undefined') {
+              return -1;
+            }
+            if (typeof a.order === 'undefined' && b.order) {
+              return 1;
+            }
+            if (a.order === b.order) {
+              if (a.title < b.title) {
+                return -1;
+              }
+              if (a.title > b.title) {
+                return 1;
+              }
+              return 0;
+            }
+            return a.order - b.order;
+          });
+
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);

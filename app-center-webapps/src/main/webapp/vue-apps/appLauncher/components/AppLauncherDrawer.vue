@@ -42,49 +42,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         v-if="hasApplications"
         slot="content"
         class="content">
-        <v-row v-if="mandatoryApplicationsList.length > 0" class="mandatory appsContainer">
-          <v-col v-model="mandatoryApplicationsList" class="appLauncherList">
-            <div
-              v-for="(application, index) in mandatoryApplicationsList"
-              :id="'Pos-' + index"
-              :key="index"
-              class="appLauncherItemContainer">
-              <div
-                :id="'App-' + index"
-                class="appLauncherItem">
-                <a
-                  :id="application.id"
-                  :target="application.target"
-                  :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)">
-                  <img
-                    v-if="application.imageFileId && application.imageFileName"
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
-                  <img
-                    v-else-if="defaultAppImage.fileBody"
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
-                  <img
-                    v-else
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    src="/app-center/skin/images/defaultApp.png">
-                  <span
-                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle">
-                    {{ application.title }}
-                  </span>
-                </a>
-              </div>
-            </div>
-          </v-col>
-        </v-row>
-        <v-row v-if="favoriteApplicationsList.length > 0" class="appsContainer">
-          <v-divider />
-        </v-row>
         <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
           <draggable
             v-model="favoriteApplicationsList"
@@ -174,7 +131,6 @@ export default {
       },
       isMobileDevice: false,
       applicationsLoaded: false,
-      mandatoryApplicationsList: [],
       favoriteApplicationsList: [],
       applicationsOrder: null,
       appCenterUserSetupLink: '',
@@ -217,7 +173,7 @@ export default {
   },
   computed: {
     hasApplications() {
-      return this.mandatoryApplicationsList?.length || this.favoriteApplicationsList?.length;
+      return this.favoriteApplicationsList?.length;
     },
   },
   created() {
@@ -275,6 +231,7 @@ export default {
           }
         })
         .then(data => {
+          console.log('getMandatoryAndFavoriteApplications, data=',data);
           // manage system apps localized names
           data.applications.forEach(app => {
             if (app.system) {
@@ -290,46 +247,45 @@ export default {
           } else {
             applications.push(...data.applications);
           }
-          this.mandatoryApplicationsList = applications.filter(app => app.mandatory && !app.favorite);
-          // sort mandatory applications alphabetical
-          this.mandatoryApplicationsList.sort((a, b) => {
-            if (a.title < b.title) {
-              return -1;
-            }
-
-            if (a.title > b.title) {
-              return 1;
-            }
-
-            return 0;
-          });
-          this.favoriteApplicationsList = applications.filter(app => app.favorite && !app.mandatory);
+          this.favoriteApplicationsList = applications.filter(app => app.favorite || app.mandatory);
           // sort favorite applications alphabetically by default
           if (this.favoriteApplicationsList.some(app => app.order !== null)) {
             this.alphabeticalOrder = false;
-          } else {
-            this.favoriteApplicationsList.sort((a, b) => {
+          }
+
+          this.favoriteApplicationsList.sort((a, b) => {
+            if (typeof a.order === 'undefined' && typeof b.order === 'undefined') {
               if (a.title < b.title) {
                 return -1;
               }
-
               if (a.title > b.title) {
                 return 1;
               }
-
               return 0;
-            });            
-          }
+            }
+            if (a.order && typeof b.order === 'undefined') {
+              return -1;
+            }
+            if (typeof a.order === 'undefined' && b.order) {
+              return 1;
+            }
+            if (a.order === b.order) {
+              if (a.title < b.title) {
+                return -1;
+              }
+              if (a.title > b.title) {
+                return 1;
+              }
+              return 0;
+            }
+            return a.order - b.order;
+
+          });
+
           // store favorite applications order
           this.applicationsOrder = {};
           this.favoriteApplicationsList.forEach(app => {
             this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
-          });
-          
-          this.mandatoryApplicationsList.forEach(app => {
-            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
           this.favoriteApplicationsList.forEach(app => {
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
@@ -339,6 +295,7 @@ export default {
         }).finally(() => this.loading = false);
     },
     updateApplicationsOrder(applicationsOrder) {
+      console.log('updateApplicationsOrder=',applicationsOrder);
       return fetch('/portal/rest/app-center/applications/favorites', {
         headers: {
           'Content-Type': 'application/json'
