@@ -110,19 +110,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         </h5>
                       </a>
                     </div>
-                    <template v-if="authorizedApp.helpPageURL">
-                      <v-list-item-action class="appHelp">
-                        <v-btn
-                          small
-                          icon
-                          @click="navigateTo(authorizedApp.helpPageURL)">
-                          <v-icon
-                            x-small>
-                            mdi-help
-                          </v-icon>
-                        </v-btn>
-                      </v-list-item-action>
-                    </template>
                   </div>
                   <v-card-text class="userAppDescription">
                     <div
@@ -138,31 +125,45 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     :target="authorizedApp.target"
                     :href="authorizedApp.computedUrl"
                     @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
-                  <div
-                    :title="getTooltip(authorizedApp)">
+                  <div class="actionsBtn">
                     <v-btn
-                      v-if="authorizedApp.mandatory"
+                      v-if="authorizedApp.helpPageURL"
+                      class="appHelp"
+                      x-small
                       icon
-                      disabled
-                      class="mandatory">
+                      @click="navigateTo(authorizedApp.helpPageURL)">
                       <v-icon
-                        small
-                        color="red">
-                        mdi-star
+                        x-small>
+                        mdi-help
                       </v-icon>
                     </v-btn>
-                    <v-btn
-                      v-else
-                      icon
-                      :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
-                      :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
-                      @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
-                      <v-icon
-                        small
-                        color="red">
-                        {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
-                      </v-icon>
-                    </v-btn>
+                    <div :title="getTooltip(authorizedApp)">
+                      <v-btn
+                        v-if="authorizedApp.mandatory"
+                        x-small
+                        icon
+                        disabled
+                        class="mandatory">
+                        <v-icon
+                          small
+                          color="red">
+                          mdi-star
+                        </v-icon>
+                      </v-btn>
+                      <v-btn
+                        v-else
+                        x-small
+                        icon
+                        :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
+                        :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
+                        @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
+                        <v-icon
+                          small
+                          color="red">
+                          {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                        </v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </v-card-actions>
               </div>
