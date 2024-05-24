@@ -133,8 +133,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                       icon
                       @click="navigateTo(authorizedApp.helpPageURL)">
                       <v-icon
-                        small>
-                        fas fa-question-circle
+                        x-small>
+                        mdi-help
                       </v-icon>
                     </v-btn>
                     <div :title="getTooltip(authorizedApp)">
