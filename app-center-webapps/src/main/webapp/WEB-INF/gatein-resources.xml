@@ -203,6 +203,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <depends>
       <module>jquery</module>
     </depends>
+    <depends>
+      <module>vueDraggable</module>
+    </depends>
   </module>
 
   <module>
@@ -227,5 +230,4 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <module>jquery</module>
     </depends>
   </module>
-
 </gatein-resources>
