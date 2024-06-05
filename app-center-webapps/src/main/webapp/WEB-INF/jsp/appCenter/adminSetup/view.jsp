@@ -2,12 +2,11 @@
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet"%>
 <portlet:defineObjects/>
 <%
-    PortletPreferences preferences = renderRequest.getPreferences();
-    String pageSize = preferences.getValue("pageSize", "");
-    if (pageSize == null) {
-    	pageSize = "";
-    }
-    
+  PortletPreferences preferences = renderRequest.getPreferences();
+  String pageSize = preferences.getValue("pageSize", "");
+  if (pageSize == null) {
+  	pageSize = "";
+  }
 %>
 <div class="VuetifyApp">
   <div data-app="true"
