@@ -307,7 +307,7 @@ export default {
 
     addOrEditApplication() {
       this.$refs.formDrawer.startLoading();
-      return fetch('/portal/rest/app-center/applications', {
+      return fetch('/app-center/rest/applications', {
         credentials: 'include',
         headers: {
           Accept: 'application/json',
@@ -322,7 +322,7 @@ export default {
           description: this.formArray.description,
           active: this.formArray.active,
           mandatory: this.formArray.mandatory,
-          isMobile: this.formArray.mobile,
+          mobile: this.formArray.mobile,
           system: this.formArray.system,
           permissions: this.permissions.map(group => `*:${group}`),
           imageFileBody: this.formArray.imageFileBody,

@@ -19,8 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <div class="image mx-auto">
       <a 
         :target="targetUrl"
-        :href="applicationUrl"
-        @click="logOpenApplication(id)">
+        :href="applicationUrl">
         <v-img
           class="appImage"
           :src="imageUrl"
@@ -33,8 +32,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         class="headline"
         :title="result.title"
         :target="targetUrl"
-        :href="applicationUrl"
-        @click="logOpenApplication(id)">
+        :href="applicationUrl">
         {{ result.title }}
       </a>
     </div>
@@ -71,13 +69,5 @@ export default {
       return this.applicationUrl.indexOf('/') === 0 ? '_self' : '_blank';
     },
   },
-  methods: {
-    logOpenApplication() {
-      fetch(`/portal/rest/app-center/applications/logClickApplication/${this.result.id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-    },
-  }
 };
 </script>

@@ -76,18 +76,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     <div class="image">
                       <a
                         :target="authorizedApp.target"
-                        :href="authorizedApp.computedUrl"
-                        @click="logOpenApplication(authorizedApp.id)">
+                        :href="authorizedApp.computedUrl">
                         <img
                           v-if="authorizedApp.imageFileId && authorizedApp.imageFileName"
                           class="appImage"
                           referrerpolicy="no-referrer"
-                          :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                          :src="`/app-center/rest/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
                         <img
                           v-else-if="defaultAppImage.fileBody"
                           class="appImage"
                           referrerpolicy="no-referrer"
-                          :src="`/portal/rest/app-center/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                          :src="`/app-center/rest/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
                         <img
                           v-else
                           class="appImage"
@@ -98,8 +97,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     <div>
                       <a
                         :target="authorizedApp.target"
-                        :href="authorizedApp.computedUrl"
-                        @click="logOpenApplication(authorizedApp.id)">
+                        :href="authorizedApp.computedUrl">
                         <h5 class="tooltipContent">
                           <div
                             :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
@@ -123,8 +121,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 <v-card-actions class="applicationActions">
                   <a
                     :target="authorizedApp.target"
-                    :href="authorizedApp.computedUrl"
-                    @click="logOpenApplication(authorizedApp.id)">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+                    :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
                   <div class="actionsBtn">
                     <v-btn
                       v-if="authorizedApp.helpPageURL"
@@ -286,7 +283,7 @@ export default {
         offset = 0;
         limit = 0;
       }
-      return fetch(`/portal/rest/app-center/applications/authorized?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
+      return fetch(`/app-center/rest/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -330,7 +327,7 @@ export default {
     },
     addOrDeleteFavoriteApplication(application) {
       if (!application.favorite) {
-        return fetch(`/portal/rest/app-center/applications/favorites/${application.id}`, {
+        return fetch(`/app-center/rest/favorites/${application.id}`, {
           credentials: 'include',
           method: application.favorite ? 'DELETE' : 'POST',
         }).then(() => {
@@ -345,7 +342,7 @@ export default {
       this.getAuthorizedApplicationsList();
     },
     getMaxFavoriteApps() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })
@@ -363,12 +360,6 @@ export default {
     searchAuthorizedApplicationsList() {
       this.authorizedApplicationsList = [];
       this.getAuthorizedApplicationsList(true);
-    },
-    logOpenApplication(id) {
-      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
     },
     navigateTo(link) {
       window.open(link);

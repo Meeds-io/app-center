@@ -1,0 +1,154 @@
+/**
+ * This file is part of the Meeds project (https://meeds.io/).
+ * 
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+package io.meeds.appcenter.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.container.configuration.ConfigurationManager;
+
+import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationDescriptor;
+
+import lombok.SneakyThrows;
+
+@SpringBootTest(classes = { ApplicationCenterInjectService.class })
+@ExtendWith(MockitoExtension.class)
+public class ApplicationCenterInjectServiceTest {
+
+  private static final long              IMAGE_FILE_ID       = 5l;
+
+  private static final long              IMAGE_LAST_MODIFIED = 588l;
+
+  private static final String            HELP_PAGE_URL       = "./helpPageUrl";
+
+  private static final String            URL                 = "./url";
+
+  private static final String            PERMISSIONS_1       = "/permissions1";
+
+  private static final String            DESCRIPTION         = "description";
+
+  private static final String            TITLE               = "title";
+
+  private static final Long              ID                  = 2l;
+
+  @MockBean
+  private ConfigurationManager           configurationManager;
+
+  @MockBean
+  private SettingService                 settingService;
+
+  @MockBean
+  private ApplicationCenterService       applicationCenterService;
+
+  @Autowired
+  private ApplicationCenterInjectService applicationCenterInjectService;
+
+  @Test
+  @SneakyThrows
+  void injectDefaultApplications() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterInjectService.addApplicationPlugin(null));
+
+    applicationCenterInjectService.injectDefaultApplications();
+    assertEquals(1,
+                 applicationCenterInjectService.getDefaultApplications().size(),
+                 "Should have injected data from 'applications.json' file");
+
+    String pluginName = "testapp";
+
+    Application application = application();
+    ApplicationDescriptor applicationPlugin1 = new ApplicationDescriptor(null, application);
+    assertThrows(IllegalStateException.class, () -> applicationCenterInjectService.addApplicationPlugin(applicationPlugin1));
+    applicationPlugin1.setName(pluginName);
+    applicationCenterInjectService.addApplicationPlugin(applicationPlugin1);
+    applicationCenterInjectService.injectDefaultApplications();
+    verify(applicationCenterService, never()).createApplication(any());
+
+    applicationPlugin1.setEnabled(true);
+    try {
+      applicationCenterInjectService.addApplicationPlugin(applicationPlugin1);
+      applicationCenterInjectService.injectDefaultApplications();
+      verify(applicationCenterService).createApplication(applicationPlugin1.getApplication());
+    } finally {
+      applicationCenterInjectService.removeApplicationPlugin(pluginName);
+    }
+
+    ApplicationDescriptor applicationPlugin2 = new ApplicationDescriptor(pluginName,
+                                                                         application,
+                                                                         "jar:/test.png",
+                                                                         "write",
+                                                                         true,
+                                                                         true);
+    try {
+      applicationCenterInjectService.addApplicationPlugin(applicationPlugin2);
+      when(applicationCenterService.getApplicationByTitle(application.getTitle())).thenReturn(application);
+      application.setChangedManually(true);
+      applicationCenterInjectService.injectDefaultApplications();
+      verify(applicationCenterService).updateApplication(application);
+    } finally {
+      applicationCenterInjectService.removeApplicationPlugin(pluginName);
+    }
+
+    // Third start with file attached and override-mode is merge
+    applicationPlugin2 = new ApplicationDescriptor(pluginName, application, "jar:/test.png", "merge", false, true);
+    applicationPlugin2.setName(pluginName);
+    try {
+      applicationCenterInjectService.addApplicationPlugin(applicationPlugin2);
+      applicationCenterInjectService.injectDefaultApplications();
+      verify(configurationManager, atLeast(1)).getInputStream(applicationPlugin2.getImagePath());
+    } finally {
+      applicationCenterInjectService.removeApplicationPlugin(pluginName);
+    }
+  }
+
+  private Application application() {
+    return application(ID);
+  }
+
+  private Application application(Long id) {
+    return new Application(id,
+                           TITLE,
+                           URL,
+                           HELP_PAGE_URL,
+                           IMAGE_FILE_ID,
+                           IMAGE_LAST_MODIFIED,
+                           "",
+                           "",
+                           DESCRIPTION,
+                           false,
+                           true,
+                           false,
+                           true,
+                           false,
+                           PERMISSIONS_1);
+  }
+
+}

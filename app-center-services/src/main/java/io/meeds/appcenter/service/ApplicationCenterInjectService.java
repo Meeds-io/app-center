@@ -1,0 +1,286 @@
+/**
+ * This file is part of the Meeds project (https://meeds.io/).
+ * 
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+package io.meeds.appcenter.service;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.CompletableFuture;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import org.exoplatform.container.configuration.ConfigurationManager;
+import org.exoplatform.container.xml.ComponentPlugin;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+
+import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationDescriptor;
+import io.meeds.appcenter.model.ApplicationDescriptorList;
+import io.meeds.common.ContainerTransactional;
+
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import lombok.SneakyThrows;
+
+/**
+ * A Service to access and store applications
+ */
+@Component
+public class ApplicationCenterInjectService {
+
+  private static final Log         LOG           =
+                                       ExoLogger.getLogger(ApplicationCenterInjectService.class);
+
+  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+  static {
+    // Workaround when Jackson is defined in shared library with different
+    // version and without artifact jackson-datatype-jsr310
+    OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    OBJECT_MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    OBJECT_MAPPER.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+    OBJECT_MAPPER.registerModule(new JavaTimeModule());
+    OBJECT_MAPPER.setDateFormat(new StdDateFormat().withTimeZone(TimeZone.getTimeZone("UTC")));
+  }
+
+  private static final String                DEFAULT_USERS_GROUP      = "/platform/users";
+
+  private static final String                DEFAULT_USERS_PERMISSION = "*:" + DEFAULT_USERS_GROUP;
+
+  private static final String                MERGE_MODE               = "merge";
+
+  @Autowired
+  private ConfigurationManager               configurationManager;
+
+  @Autowired
+  private ApplicationCenterService           applicationCenterService;
+
+  @Getter
+  private Map<String, ApplicationDescriptor> defaultApplications      = new LinkedHashMap<>();
+
+  @PostConstruct
+  public void init() {
+    CompletableFuture.runAsync(this::initTransactional);
+  }
+
+  @ContainerTransactional
+  public void initTransactional() {
+    injectDefaultApplications();
+  }
+
+  /**
+   * Inject a default application using IOC {@link ComponentPlugin} using
+   * configuration
+   *
+   * @param applicationPlugin plugin containing application to inject
+   */
+  public void addApplicationPlugin(ApplicationDescriptor applicationPlugin) {
+    if (applicationPlugin == null) {
+      throw new IllegalArgumentException("'applicationPlugin' is mandatory");
+    }
+    if (StringUtils.isBlank(applicationPlugin.getName())) {
+      throw new IllegalStateException("'applicationPlugin' name is mandatory");
+    }
+    this.defaultApplications.put(applicationPlugin.getName(), applicationPlugin);
+  }
+
+  /**
+   * Delete an injected plugin identified by its name
+   *
+   * @param pluginName plugin name to delete
+   */
+  public void removeApplicationPlugin(String pluginName) {
+    if (StringUtils.isBlank(pluginName)) {
+      throw new IllegalArgumentException("'pluginName' is mandatory");
+    }
+    this.defaultApplications.remove(pluginName);
+  }
+
+  /**
+   * Checks whether the application is a system application injected by
+   * configuration or not
+   *
+   * @param application application to check its state
+   * @return true if the configuration of the application exists with same title
+   *         and URL, else false.
+   */
+  public boolean isDefaultSystemApplication(Application application) {
+    if (application == null) {
+      throw new IllegalArgumentException("'application' is mandatory");
+    }
+    return this.defaultApplications.values()
+                                   .stream()
+                                   .filter(ApplicationDescriptor::isEnabled)
+                                   .anyMatch(app -> StringUtils.equals(app.getApplication().getTitle(), application.getTitle())
+                                                    && StringUtils.equals(app.getApplication().getUrl(), application.getUrl()));
+  }
+
+  protected void injectDefaultApplications() {
+    try {
+      readDescriptorsFromFiles();
+      deleteRemovedSystemApplications();
+      defaultApplications.values()
+                         .stream()
+                         .filter(ApplicationDescriptor::isEnabled)
+                         .forEach(this::injectDefaultApplication);
+    } catch (Exception e) {
+      LOG.warn("An unknown error occurs while retrieving system applications images", e);
+    }
+  }
+
+  private void readDescriptorsFromFiles() throws IOException {
+    Enumeration<URL> descriptorFiles = getClass().getClassLoader()
+                                                 .getResources("applications.json");
+    Collections.list(descriptorFiles)
+               .stream()
+               .map(this::parseDescriptors)
+               .flatMap(List::stream)
+               .forEach(d -> defaultApplications.put(d.getName(), d));
+  }
+
+  private List<ApplicationDescriptor> parseDescriptors(URL url) {
+    try (InputStream inputStream = url.openStream()) {
+      String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+      ApplicationDescriptorList list = fromJsonString(content, ApplicationDescriptorList.class);
+      return list.getDescriptors();
+    } catch (IOException e) {
+      LOG.warn("An unkown error happened while parsing application descriptors from url {}", url, e);
+      return Collections.emptyList();
+    }
+  }
+
+  private void deleteRemovedSystemApplications() {
+    List<Application> systemApplications = applicationCenterService.getSystemApplications();
+    systemApplications.forEach(application -> {
+      if (!isDefaultSystemApplication(application)) {
+        try {
+          LOG.info("Delete application '{}' that was previously injected as system application and that doesn't exist in configuration anymore",
+                   application.getTitle());
+          applicationCenterService.deleteApplication(application.getId());
+        } catch (Exception e) {
+          LOG.warn("An unknown error occurs while deleting not found system application '{}' in store",
+                   application.getTitle(),
+                   e);
+        }
+      }
+    });
+  }
+
+  private void injectDefaultApplication(ApplicationDescriptor applicationPlugin) { // NOSONAR
+    Application application = applicationPlugin.getApplication();
+    String pluginName = applicationPlugin.getName();
+    if (application == null) {
+      LOG.warn("An application plugin '{}' holds an empty application", pluginName);
+      return;
+    }
+
+    String title = application.getTitle();
+    if (StringUtils.isBlank(title)) {
+      LOG.warn("Plugin '{}' has an application with empty title, it will not be injected", pluginName);
+      return;
+    }
+
+    String url = application.getUrl();
+    if (StringUtils.isBlank(url)) {
+      LOG.warn("Plugin '{}' has an application with empty url, it will not be injected", pluginName);
+      return;
+    }
+
+    Application storedApplication = applicationCenterService.getApplicationByTitle(title);
+    if (storedApplication != null && !applicationPlugin.isOverride()
+        && storedApplication.isChangedManually()
+        && (MERGE_MODE.equals(applicationPlugin.getOverrideMode()) || applicationPlugin.getOverrideMode() == null)) {
+      LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
+      return;
+    }
+
+    List<String> permissions = application.getPermissions();
+    if (permissions == null || permissions.isEmpty()) {
+      // Set default permission if empty
+      application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
+    }
+
+    String imagePath = applicationPlugin.getImagePath();
+    if (StringUtils.isNotBlank(imagePath)) {
+      try {
+        InputStream inputStream = configurationManager.getInputStream(imagePath);
+        String fileBody = new String(Base64.getEncoder().encode(IOUtils.toByteArray(inputStream)));
+        application.setImageFileBody(fileBody);
+      } catch (Exception e) {
+        LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
+      }
+    }
+
+    if (StringUtils.isBlank(application.getImageFileName())) {
+      application.setImageFileName(application.getTitle() + ".png");
+    }
+
+    if (storedApplication == null) {
+      try {
+        LOG.info("Create system application '{}'", application.getTitle());
+        application.setSystem(true);
+        application.setChangedManually(false);
+        application.setImageFileId(null);
+        applicationCenterService.createApplication(application);
+      } catch (Exception e) {
+        LOG.error("Error creating application {}", application, e);
+      }
+    } else {
+      try {
+        LOG.info("Update system application '{}'", application.getTitle());
+        application.setSystem(true);
+        application.setChangedManually(false);
+        application.setId(storedApplication.getId());
+        application.setImageFileId(storedApplication.getImageFileId());
+        applicationCenterService.updateApplication(application);
+      } catch (Exception e) {
+        LOG.error("Error updating application {}", application, e);
+      }
+    }
+  }
+
+  @SneakyThrows
+  public <T> T fromJsonString(String value, Class<T> resultClass) {
+    if (StringUtils.isBlank(value)) {
+      return null;
+    }
+    return OBJECT_MAPPER.readValue(value, resultClass);
+  }
+
+}
