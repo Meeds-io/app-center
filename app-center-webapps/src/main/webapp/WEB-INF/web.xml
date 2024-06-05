@@ -1,19 +1,23 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
-This file is part of the Meeds project (https://meeds.io/).
-Copyright (C) 2020 Meeds Association
-contact@meeds.io
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-You should have received a copy of the GNU Lesser General Public License
-along with this program; if not, write to the Free Software Foundation,
-Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+  This file is part of the Meeds project (https://meeds.io/).
+
+  Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
 <web-app version="3.0" metadata-complete="true"
@@ -41,7 +45,21 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
   <filter-mapping>
     <filter-name>ResourceRequestFilter</filter-name>
-    <url-pattern>/*</url-pattern>
+    <url-pattern>*.css</url-pattern>
+    <url-pattern>*.js</url-pattern>
+    <url-pattern>*.html</url-pattern>
+    <url-pattern>/images/*</url-pattern>
   </filter-mapping>
+
+  <servlet>
+    <servlet-name>GateInServlet</servlet-name>
+    <servlet-class>org.gatein.wci.api.GateInServlet</servlet-class>
+    <load-on-startup>0</load-on-startup>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>GateInServlet</servlet-name>
+    <url-pattern>/gateinservlet</url-pattern>
+  </servlet-mapping>
 
 </web-app>

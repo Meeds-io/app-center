@@ -55,7 +55,7 @@ export default {
       this.canAddFavorite = canAddFavorite;
     },
     getAppGeneralSettings() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })
