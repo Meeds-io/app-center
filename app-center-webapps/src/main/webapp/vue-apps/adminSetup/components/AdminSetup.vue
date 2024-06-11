@@ -24,7 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-tabs
             v-model="selectedTab"
             slider-size="4"
-            class="card-border-radius overflow-hidden">
+            class="card-border-radius overflow-hidden app-background-color">
             <v-tab
               key="applications"
               href="#applications"
@@ -36,7 +36,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </v-tab>
           </v-tabs>
 
-          <v-tabs-items v-model="selectedTab" class="mt-2 card-border-radius  overflow-hidden">
+          <v-tabs-items v-model="selectedTab" class="mt-2 card-border-radius app-background-color overflow-hidden">
             <v-tab-item
               id="applications"
               value="applications"
