@@ -58,8 +58,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               <img
                 v-if="props.item.imageFileId && props.item.imageFileName"
                 referrerpolicy="no-referrer"
-                :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?v=${props.item.imageLastModified}`">
-              <img v-else-if="defaultAppImage.fileBody" :src="`/portal/rest/app-center/applications/illustration/${props.item.id}?v=${props.item.imageLastModified}`">
+                :src="`/app-center/rest/applications/illustration/${props.item.id}?v=${props.item.imageLastModified}`">
+              <img v-else-if="defaultAppImage.fileBody" :src="`/app-center/rest/applications/illustration/${props.item.id}?v=${props.item.imageLastModified}`">
               <img v-else src="/app-center/skin/images/defaultApp.png">
             </td>
             <td
@@ -251,7 +251,7 @@ export default {
     getApplicationsList() {
       const offset = 0;
       const limit = 0;
-      return fetch(`/portal/rest/app-center/applications?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
+      return fetch(`/app-center/rest/applications/all?offset=${offset}&limit=${limit}&keyword=${this.searchText}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -298,7 +298,7 @@ export default {
     },
 
     deleteApplication() {
-      return fetch(`/portal/rest/app-center/applications/${this.formArray.id}`,{
+      return fetch(`/app-center/rest/applications/${this.formArray.id}`,{
         method: 'DELETE',
         credentials: 'include',
       })
@@ -382,7 +382,7 @@ export default {
     },
 
     getAppGeneralSettings() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })
@@ -399,7 +399,7 @@ export default {
     },
 
     updateOption(application) {
-      return fetch('/portal/rest/app-center/applications', {
+      return fetch('/app-center/rest/applications', {
         credentials: 'include',
         headers: {
           Accept: 'application/json',
@@ -414,7 +414,7 @@ export default {
           description: application.description,
           active: application.active,
           mandatory: application.mandatory,
-          isMobile: application.mobile,
+          mobile: application.mobile,
           system: application.system,
           permissions: application.permissions,
           imageFileBody: application.imageFileBody,

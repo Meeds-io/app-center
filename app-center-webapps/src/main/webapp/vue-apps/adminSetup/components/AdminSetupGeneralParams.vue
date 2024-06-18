@@ -52,7 +52,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-list-item-action>
           <v-list-item-action class="editMaxFavorite">
             <div
-              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
+              :title="$t('appCenter.adminSetupForm.save')"
               class="saveChanges">
               <a
                 v-if="!isMaxFavoriteAppsView"
@@ -63,7 +63,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </a>
             </div>
             <div
-              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
+              :title="$t('appCenter.adminSetupForm.cancel')"
               class="cancelEdit">
               <a
                 v-if="!isMaxFavoriteAppsView"
@@ -141,7 +141,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-list-item-action>
           <v-list-item-action class="editDefaultImage">
             <div
-              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.save')"
+              :title="$t('appCenter.adminSetupForm.save')"
               class="saveChanges">
               <a
                 v-if="!defaultAppImageViewMode"
@@ -152,7 +152,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               </a>
             </div>
             <div
-              v-exo-tooltip.bottom.body="$t('appCenter.adminSetupForm.cancel')"
+              :title="$t('appCenter.adminSetupForm.cancel')"
               class="cancelEdit">
               <a
                 v-if="!defaultAppImageViewMode"
@@ -193,24 +193,12 @@ export default {
       }
     };
   },
-  watch: {
-    isMaxFavoriteAppsView() {
-      if (this.isMaxFavoriteAppsView) {
-        document.getElementsByClassName('tooltip')[0].remove();
-      }
-    },
-    defaultAppImageViewMode() {
-      if (this.defaultAppImageViewMode) {
-        document.getElementsByClassName('tooltip')[0].remove();
-      }
-    }
-  },
   created() {
     this.getAppGeneralSettings();
   },
   methods: {
     getAppGeneralSettings() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })
@@ -229,7 +217,7 @@ export default {
 
     setMaxFavoriteApps() {
       this.$nextTick()
-        .then(fetch(`/portal/rest/app-center/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
+        .then(fetch(`/app-center/rest/settings/maxFavorites?number=${this.maxFavoriteApps}`, {
           method: 'PATCH',
           credentials: 'include',
         })).then(() => {
@@ -268,7 +256,7 @@ export default {
     },
 
     setDefaultAppImage() {
-      const setDefaultAppImageUrl = '/portal/rest/app-center/settings/image';
+      const setDefaultAppImageUrl = '/app-center/rest/settings/image';
       return fetch(setDefaultAppImageUrl, {
         method: 'PATCH',
         credentials: 'include',

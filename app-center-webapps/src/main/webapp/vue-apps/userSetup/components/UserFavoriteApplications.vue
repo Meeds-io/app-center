@@ -46,18 +46,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <div class="favoriteAppImage">
             <a
               :target="favoriteApp.target"
-              :href="favoriteApp.computedUrl"
-              @click="logOpenApplication(favoriteApp.id)">
+              :href="favoriteApp.computedUrl">
               <img
                 v-if="favoriteApp.imageFileId && favoriteApp.imageFileName"
                 class="appImage"
                 referrerpolicy="no-referrer"
-                :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
+                :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
               <img
                 v-else-if="defaultAppImage.fileBody"
                 class="appImage"
                 referrerpolicy="no-referrer"
-                :src="`/portal/rest/app-center/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
+                :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
               <img
                 v-else
                 class="appImage"
@@ -69,8 +68,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <a
               class="favoriteAppUrl"
               :target="favoriteApp.target"
-              :href="favoriteApp.computedUrl"
-              @click="logOpenApplication(favoriteApp.id)">
+              :href="favoriteApp.computedUrl">
               <div
                 :title="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
                 class="favAppTitle">
@@ -147,7 +145,7 @@ export default {
       });
     },
     getFavoriteApplicationsList() {
-      return fetch('/portal/rest/app-center/applications/favorites', {
+      return fetch('/app-center/rest/favorites', {
         method: 'GET',
         credentials: 'include',
       })
@@ -217,14 +215,8 @@ export default {
           return this.favoriteApplicationsList;
         }).finally(() => this.loading = false);
     },
-    logOpenApplication(id) {
-      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-    },
     deleteFavoriteApplication(appId) {
-      return fetch(`/portal/rest/app-center/applications/favorites/${appId}`, {
+      return fetch(`/app-center/rest/favorites/${appId}`, {
         method: 'DELETE',
         credentials: 'include',
       })

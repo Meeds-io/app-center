@@ -59,18 +59,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 <a
                   :id="application.id"
                   :target="application.target"
-                  :href="application.computedUrl"
-                  @click="logOpenApplication(application.id)">
+                  :href="application.computedUrl">
                   <img
                     v-if="application.imageFileId && application.imageFileName"
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
+                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else-if="defaultAppImage.fileBody"
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
-                    :src="`/portal/rest/app-center/applications/illustration/${application.id}?v=${application.imageLastModified}`">
+                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`">
                   <img
                     v-else
                     class="appLauncherImage"
@@ -102,10 +101,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="text-uppercase caption primary--text seeAllApplicationsBtn"
             outlined
             small
-            :href="appCenterLink"
-            @click="navigateTo('appCenterUserSetup/')"
-            @click.middle="navigateTo('appCenterUserSetup/')"
-            @click.right="navigateTo('appCenterUserSetup/')">
+            :href="appCenterLink">
             {{ $t("appCenter.appLauncher.drawer.viewAll") }}
           </v-btn>
         </v-card>
@@ -219,7 +215,7 @@ export default {
       this.$refs.appLauncherDrawer.open();
     },
     getMandatoryAndFavoriteApplications() {
-      return fetch('/portal/rest/app-center/applications/favorites', {
+      return fetch('/app-center/rest/favorites', {
         method: 'GET',
         credentials: 'include',
       })
@@ -295,7 +291,7 @@ export default {
         }).finally(() => this.loading = false);
     },
     updateApplicationsOrder(applicationsOrder) {
-      return fetch('/portal/rest/app-center/applications/favorites', {
+      return fetch('/app-center/rest/favorites', {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -304,22 +300,8 @@ export default {
         body: JSON.stringify(applicationsOrder)
       });
     },
-    logOpenApplication(id) {
-      fetch(`/portal/rest/app-center/applications/logClickApplication/${id}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-    },
-    navigateTo(link) {
-      if (link==='appCenterUserSetup/') {
-        fetch('/portal/rest/app-center/applications/logClickAllApplications', {
-          method: 'GET',
-          credentials: 'include',
-        });
-      }
-    },
     getAppGeneralSettings() {
-      return fetch('/portal/rest/app-center/settings', {
+      return fetch('/app-center/rest/settings', {
         method: 'GET',
         credentials: 'include',
       })
