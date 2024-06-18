@@ -6,9 +6,7 @@
 
 <portlet:defineObjects/>
 <%
-    ResourceBundle resource = portletConfig.getResourceBundle(renderRequest.getLocale());
-
-
+  ResourceBundle resource = portletConfig.getResourceBundle(renderRequest.getLocale());
 	PortletURL actionURL = renderResponse.createActionURL();
 	PortletPreferences preferences = renderRequest.getPreferences();
 	String pageSize = renderRequest.getParameter("pageSize");
@@ -19,7 +17,6 @@
 		}
 	}
 %>
-
 <div class="editpref-form UIFormWithTitle">
 	<form class="formLogin" action="<%=actionURL%>" method="post">
 		<div class="uiContentBox">
