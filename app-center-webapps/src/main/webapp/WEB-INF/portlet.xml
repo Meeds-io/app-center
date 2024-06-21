@@ -74,6 +74,10 @@
       <name>prefetch.resource.rest</name>
       <value><![CDATA[/app-center/rest/settings,/app-center/rest/applications?offset=0&limit=12&keyword=,/app-center/rest/favorites]]></value>
     </init-param>
+    <init-param>
+      <name>layout-css-class</name>
+      <value>no-layout-background-color no-layout-border-radius no-layout-border</value>
+    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
@@ -132,6 +136,10 @@
     <init-param>
       <name>portlet-view-dispatched-file-path</name>
       <value>/WEB-INF/jsp/appCenter/appLauncher.jsp</value>
+    </init-param>
+    <init-param>
+      <name>layout-css-class</name>
+      <value>no-layout-style</value>
     </init-param>
     <expiration-cache>-1</expiration-cache>
     <supports>
