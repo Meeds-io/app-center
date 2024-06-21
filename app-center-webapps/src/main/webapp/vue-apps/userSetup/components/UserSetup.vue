@@ -15,16 +15,18 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <div class="userApplications">
-    <v-row dense>
-      <v-col class="authorizedApplicationsContainer card-border-radius">
-        <user-authorizedApplications :can-add-favorite="canAddFavorite" :default-app-image="defaultAppImage" />
-      </v-col>
-      <v-col class="userFavoriteApplicationsContainer card-border-radius" sm="3">
-        <user-favoriteApplications :default-app-image="defaultAppImage" @canAddFavorite="setCanAddFavorite" />
-      </v-col>      
-    </v-row>
-  </div>
+  <v-app>
+    <div class="userApplications application-body">
+      <v-row dense>
+        <v-col class="authorizedApplicationsContainer application-background-color application-border application-border-radius">
+          <user-authorizedApplications :can-add-favorite="canAddFavorite" :default-app-image="defaultAppImage" />
+        </v-col>
+        <v-col class="userFavoriteApplicationsContainer application-background-color application-border application-border-radius" sm="3">
+          <user-favoriteApplications :default-app-image="defaultAppImage" @canAddFavorite="setCanAddFavorite" />
+        </v-col>      
+      </v-row>
+    </div>
+  </v-app>
 </template>
 
 <script>

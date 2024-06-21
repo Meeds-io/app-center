@@ -36,6 +36,7 @@ export function init(preferences) {
                    :preferences="preferences"
                    v-cacheable />`,
       i18n,
+      vuetify: Vue.prototype.vuetifyOptions,
     }, appElement, 'User Settings Application Center');
   });
 }
