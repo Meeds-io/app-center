@@ -318,6 +318,9 @@ public class ApplicationCenterService implements Startable {
     if (applicationId == null) {
       throw new ApplicationNotFoundException("Application with null id wasn't found");
     }
+    if (!isUrlValid(application.getUrl())) {
+    throw new IllegalArgumentException("appcenter.malformedUrl");
+    }
     Application storedApplication = appCenterStorage.getApplicationById(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException("Application with id " + applicationId + " wasn't found");
