@@ -198,6 +198,9 @@ public class ApplicationCenterService {
     if (applicationId == null) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
+    if (!isUrlValid(application.getUrl())) {
+      throw new IllegalArgumentException("appcenter.malformedUrl");
+    }
     Application storedApplication = appCenterStorage.getApplicationById(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
