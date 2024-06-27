@@ -16,8 +16,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="d-flex flex-column align-center justify-center mx-5">
-    <v-icon size="40" class="icon-default-color">fa-th</v-icon>
-    <div class="text-sub-title subtitle-1 mt-6">
+    <v-icon size="40" color="tertiary">fa-th</v-icon>
+    <div class="mt-6">
       {{ $t('appCenter.appLauncher.drawer.placeholder') }}
     </div>
     <v-btn
@@ -26,8 +26,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.action') }}</span>
     </v-btn>
     <div v-if="$root.isAdmin" class="mt-10 hidden-xs-only">
-      <v-icon size="18" class="icon-default-color me-2">far fa-lightbulb</v-icon>
-      <span v-html="appCenterAdminPlaceholder" class="text-sub-title subtitle-1"></span>
+      <span v-html="appCenterAdminPlaceholder"></span>
     </div>
   </div>
 </template>
