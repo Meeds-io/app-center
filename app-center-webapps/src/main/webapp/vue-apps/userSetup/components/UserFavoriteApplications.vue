@@ -22,7 +22,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         type="card-heading" />
     </div>
     <div v-else>
-      <div class="favoriteAppsTitle">
+      <div class="favoriteAppsTitle text-title">
         {{ $t("appCenter.userSetup.favorite") }}
       </div>
     </div>
@@ -71,7 +71,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :href="favoriteApp.computedUrl">
               <div
                 :title="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
-                class="favAppTitle">
+                class="favAppTitle text-body">
                 {{ favoriteApp.title }}
               </div>
             </a>
@@ -91,7 +91,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </v-card>
     </div>
     <div v-show="!loading">
-      <div v-if="canAddFavorite" class="maxFavorite">
+      <div v-if="canAddFavorite" class="maxFavorite text-subtitle">
         <v-icon class="notReached">
           info
         </v-icon>

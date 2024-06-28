@@ -24,7 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <div v-else>    
       <v-row class="authorizedApplicationsHeader">
         <v-col sm="8" class="applicationCenterTitle">
-          <div class="userApplicationTitle">
+          <div class="userApplicationTitle text-title">
             {{ $t("appCenter.userSetup.appCenter") }}
           </div>
         </v-col>
@@ -53,7 +53,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </div>
     <div v-else>    
       <div class="userAuthorizedApplications">
-        <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp">
+        <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp text-header">
           {{ $t("appCenter.adminSetupForm.noApp") }}
         </div>
         <v-row no-gutters>
@@ -98,21 +98,21 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                       <a
                         :target="authorizedApp.target"
                         :href="authorizedApp.computedUrl">
-                        <h5 class="tooltipContent">
+                        <div class="tooltipContent">
                           <div
                             :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
-                            class="appTitle"
+                            class="appTitle text-body"
                             :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
                             {{ authorizedApp.title }}
                           </div>
-                        </h5>
+                        </div>
                       </a>
                     </div>
                   </div>
                   <v-card-text class="userAppDescription">
                     <div
                       :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
-                      class="description">
+                      class="description text-subtitle">
                       {{ authorizedApp.description }}
                     </div>
                   </v-card-text>
