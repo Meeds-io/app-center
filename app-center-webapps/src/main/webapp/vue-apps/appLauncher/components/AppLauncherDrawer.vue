@@ -77,7 +77,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     src="/app-center/skin/images/defaultApp.png">
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle">
+                    class="appLauncherTitle text-body">
                     {{ application.title }}
                   </span>
                 </a>

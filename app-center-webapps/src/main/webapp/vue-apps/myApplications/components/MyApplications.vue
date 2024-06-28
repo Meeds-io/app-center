@@ -32,8 +32,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             referrerpolicy="no-referrer"
             :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
           <span class="myToolTitle tooltipContent">
-            <div>{{ favoriteApp.title }}</div>
-            <span class="tooltiptext">{{ favoriteApp.description }}</span>
+            <div class="text-body">{{ favoriteApp.title }}</div>
+            <span class="tooltiptext text-subtitle">{{ favoriteApp.description }}</span>
           </span>
         </a>
       </li>
