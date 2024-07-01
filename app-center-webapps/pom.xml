@@ -24,7 +24,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.exoplatform.addons.app-center</groupId>
+    <groupId>io.meeds.app-center</groupId>
     <artifactId>app-center</artifactId>
     <version>7.0.x-exo-SNAPSHOT</version>
   </parent>
@@ -38,7 +38,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.exoplatform.platform-ui</groupId>
+      <groupId>io.meeds.platform-ui</groupId>
       <artifactId>platform-ui-skin</artifactId>
       <classifier>sources</classifier>
       <scope>provided</scope>

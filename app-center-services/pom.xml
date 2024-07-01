@@ -24,7 +24,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.exoplatform.addons.app-center</groupId>
+    <groupId>io.meeds.app-center</groupId>
     <artifactId>app-center</artifactId>
     <version>7.0.x-exo-SNAPSHOT</version>
   </parent>
@@ -39,7 +39,7 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.exoplatform.social</groupId>
+      <groupId>io.meeds.social</groupId>
       <artifactId>social-component-core</artifactId>
     </dependency>
 
