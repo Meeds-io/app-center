@@ -29,7 +29,36 @@
     <skin-module>appCenter</skin-module>
     <css-path>/skin/css/app-center.css</css-path>
     <css-priority>130</css-priority>
+    <filtered>true</filtered>
   </portal-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterAdminSetupPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterUserSetupPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
 
   <portlet>
     <name>AppCenterAdminSetupPortlet</name>
