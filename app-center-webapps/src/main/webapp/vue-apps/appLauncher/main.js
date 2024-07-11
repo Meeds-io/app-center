@@ -22,7 +22,7 @@ const appId = 'appLauncher';
 
 export function init(isAdmin) {
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-  const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
+  const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
   //getting locale ressources
   const i18nPromise = exoi18n.loadLanguageAsync(lang, url);
   Vue.createApp({
