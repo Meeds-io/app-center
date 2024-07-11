@@ -18,7 +18,7 @@ import './initComponents.js';
 
 //should expose the locale ressources as REST API
 const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-const url = `${eXo.env.portal.context}/${eXo.env.portal.rest}/i18n/bundle/locale.addon.appcenter-${lang}.json`;
+const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
 
 const appId = 'adminSetup';
 
