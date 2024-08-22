@@ -20,16 +20,43 @@
   Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
-<gatein-resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_4 http://www.exoplatform.org/xml/ns/gatein_resources_1_4"
-  xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_4">
+<gatein-resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.exoplatform.org/xml/ns/gatein_resources_1_5 http://www.exoplatform.org/xml/ns/gatein_resources_1_5" xmlns="http://www.exoplatform.org/xml/ns/gatein_resources_1_5">
 
   <portal-skin>
     <skin-name>Enterprise</skin-name>
     <skin-module>appCenter</skin-module>
     <css-path>/skin/css/app-center.css</css-path>
     <css-priority>130</css-priority>
+    <filtered>true</filtered>
   </portal-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterAdminSetupPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterUserSetupPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
 
   <portlet>
     <name>AppCenterAdminSetupPortlet</name>
