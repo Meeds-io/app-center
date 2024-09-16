@@ -44,12 +44,12 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
 
   @Query("""
       SELECT app FROM ApplicationEntity app
-      WHERE LOWER(app.title) LIKE ?1
-      OR LOWER(app.description) like ?1
-      OR LOWER(app.url) LIKE ?1
+      WHERE LOWER(app.title) LIKE %?1%
+      OR LOWER(app.description) like %?1%
+      OR LOWER(app.url) LIKE %?1%
       ORDER BY LOWER(app.title)
       """)
-  List<ApplicationEntity> getApplications(String keyword);
+  List<ApplicationEntity> getApplications(String keyword) ;
 
   @Query("""
       SELECT app FROM ApplicationEntity app
