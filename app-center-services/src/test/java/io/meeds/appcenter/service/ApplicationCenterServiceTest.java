@@ -292,7 +292,7 @@ public class ApplicationCenterServiceTest {
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());
     assertEquals(0, applicationsList.getApplications().size());
-    assertEquals(0, applicationsList.getSize());
+    assertEquals(1, applicationsList.getSize());
     assertEquals(1, applicationsList.getOffset());
     assertEquals(2, applicationsList.getLimit());
 
@@ -303,6 +303,44 @@ public class ApplicationCenterServiceTest {
     assertEquals(1, applicationsList.getSize());
     assertEquals(0, applicationsList.getOffset());
     assertEquals(2, applicationsList.getLimit());
+  }
+
+
+  @Test
+  @SneakyThrows
+  void getPaginatedApplicationsList() {
+    Application application1 = application(11L);
+    Application application2 = application(12L);
+    Application application3 = application(13L);
+    Application application4 = application(14L);
+    Application application5 = application(15L);
+
+    when(appCenterStorage.getApplications(null)).thenReturn(Arrays.asList(application1, application2, application3, application4, application5));
+
+    ApplicationList applicationsList = applicationCenterService.getApplications(0, 2, null);
+    assertNotNull(applicationsList);
+    assertNotNull(applicationsList.getApplications());
+    assertEquals(2, applicationsList.getApplications().size());
+    assertEquals(5, applicationsList.getSize());
+    assertEquals(0, applicationsList.getOffset());
+    assertEquals(2, applicationsList.getLimit());
+
+    applicationsList = applicationCenterService.getApplications(2, 2, null);
+    assertNotNull(applicationsList);
+    assertNotNull(applicationsList.getApplications());
+    assertEquals(2, applicationsList.getApplications().size());
+    assertEquals(5, applicationsList.getSize());
+    assertEquals(2, applicationsList.getOffset());
+    assertEquals(2, applicationsList.getLimit());
+
+    applicationsList = applicationCenterService.getApplications(4, 2, null);
+    assertNotNull(applicationsList);
+    assertNotNull(applicationsList.getApplications());
+    assertEquals(1, applicationsList.getApplications().size());
+    assertEquals(5, applicationsList.getSize());
+    assertEquals(4, applicationsList.getOffset());
+    assertEquals(2, applicationsList.getLimit());
+
   }
 
   @Test
@@ -374,9 +412,9 @@ public class ApplicationCenterServiceTest {
 
     String keyword1 = "keyword1";
     Application application = application();
+    application.setActive(false);
     when(appCenterStorage.getApplications(keyword1)).thenReturn(Collections.singletonList(application));
 
-    application.setActive(false);
     applicationsList = applicationCenterService.getActiveApplications(0, 0, keyword1, ADMIN_USERNAME);
     assertNotNull(applicationsList);
     assertNotNull(applicationsList.getApplications());

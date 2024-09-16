@@ -385,12 +385,13 @@ public class ApplicationCenterService {
   public ApplicationList getApplications(int offset, int limit, String keyword) {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword);
+    int totalApplictions = applications.size();
     if (limit <= 0) {
       limit = applications.size();
     }
     applications = applications.stream().skip(offset).limit(limit).toList();
     applicationList.setApplications(applications);
-    applicationList.setSize(applications.size());
+    applicationList.setSize(totalApplictions);
     applicationList.setOffset(offset);
     applicationList.setLimit(limit);
     return applicationList;
@@ -422,6 +423,7 @@ public class ApplicationCenterService {
     }
     ApplicationList resultApplicationsList = new ApplicationList();
     List<Application> applications = getActiveApplications(keyword, username).stream().toList();
+    int totalApplication = applications.size();
     if (limit > 0) {
       if (offset < 0) {
         offset = 0;
@@ -444,7 +446,7 @@ public class ApplicationCenterService {
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
-    resultApplicationsList.setSize(applications.size());
+    resultApplicationsList.setSize(totalApplication);
     return resultApplicationsList;
   }
 
