@@ -20,6 +20,7 @@ package io.meeds.appcenter.dao;
 
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Component;
@@ -38,9 +39,11 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
 
   @Query("""
       SELECT app FROM ApplicationEntity app
-      ORDER BY LOWER(app.title)
       """)
-  List<ApplicationEntity> getApplications();
+  List<ApplicationEntity> getApplications(Sort sort);
+  default List<ApplicationEntity> getApplications() {
+    return getApplications(Sort.by(Sort.Order.asc("title").ignoreCase()));
+  }
 
   @Query("""
       SELECT app FROM ApplicationEntity app
@@ -49,7 +52,10 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       OR LOWER(app.url) LIKE %?1%
       ORDER BY LOWER(app.title)
       """)
-  List<ApplicationEntity> getApplications(String keyword) ;
+  List<ApplicationEntity> getApplications(String keyword, Sort sort) ;
+  default List<ApplicationEntity> getApplications(String keyword) {
+    return getApplications(keyword, Sort.by(Sort.Order.asc("title").ignoreCase()));
+  }
 
   @Query("""
       SELECT app FROM ApplicationEntity app
@@ -63,4 +69,7 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       """)
   ApplicationEntity getApplicationByTitle(String title);
 
+  default List<ApplicationEntity> findAll() {
+    return findAll(Sort.by(Sort.Order.asc("title").ignoreCase()));
+  }
 }
