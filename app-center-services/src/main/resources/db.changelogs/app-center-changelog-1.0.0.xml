@@ -33,6 +33,7 @@
   <property name="now" value="CURRENT_TIMESTAMP" dbms="mssql" />
 
   <changeSet author="appCenter" id="1.0.0-1" onValidationFail="MARK_RAN">
+    <validCheckSum>ANY</validCheckSum>
     <preConditions onFail="MARK_RAN" onError="MARK_RAN">
       <not>
         <tableExists tableName="AC_APPLICATION" />
@@ -73,7 +74,7 @@
       </column>
     </createTable>
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
+      <append value=" ENGINE=INNODB CHARSET=UTF8MB4 COLLATE utf8mb4_0900_ai_ci" />
     </modifySql>
   </changeSet>
   
@@ -131,5 +132,11 @@
     <modifyDataType columnName="PERMISSIONS"
                     newDataType="VARCHAR(2000)"
                     tableName="AC_APPLICATION"/>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-11" >
+    <sql dbms="mysql">
+      ALTER TABLE AC_FAVORITE_APPLICATION CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+    </sql>
   </changeSet>
 </databaseChangeLog>
