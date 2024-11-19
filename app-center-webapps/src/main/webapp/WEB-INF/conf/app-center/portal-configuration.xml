@@ -44,6 +44,18 @@
           <name>AppCenterAppLauncherApplication</name>
           <description>AppCenter appLauncher portlet</description>
           <object type="org.exoplatform.portal.config.serialize.PortletApplication">
+            <field name="id">
+              <string>appcenter</string>
+            </field>
+            <field name="title">
+              <string>generalSettings.appcenter.name</string>
+            </field>
+            <field name="description">
+              <string>generalSettings.appcenter.description</string>
+            </field>
+            <field name="icon">
+              <string>fa-th</string>
+            </field>
             <field name="state">
               <object type="org.exoplatform.portal.config.model.TransientApplicationState">
                 <field name="contentId">
