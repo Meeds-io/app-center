@@ -283,7 +283,10 @@ public class ApplicationCenterService {
                                                      username,
                                                      application.getTitle()));
     }
-    appCenterStorage.addApplicationToUserFavorite(applicationId, username);
+    boolean isFavoriteApplication = appCenterStorage.isFavoriteApplication(applicationId, username);
+    if (!isFavoriteApplication) {
+      appCenterStorage.addApplicationToUserFavorite(applicationId, username);
+    }
   }
 
   /**
