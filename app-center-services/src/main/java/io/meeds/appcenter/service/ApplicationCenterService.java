@@ -658,7 +658,7 @@ public class ApplicationCenterService {
 
   private boolean isUrlValid(String url) {
     // [-a-zA-Z0-9@:%._\\\\/+~#=] allowed characters
-    String regex = "(http(s)?:\\/\\/.)[-a-zA-Z0-9@:%._\\\\/+~#=?&]{2,256}";
+    String regex = "([a-zA-Z0-9-@:._\\/?&]+:\\/\\/)?http(s)?:\\/\\/[-a-zA-Z0-9@:%._\\\\/+~#=?&]{2,256}";
     Pattern pattern = Pattern.compile(regex);
     return url != null && !url.isBlank()
            && (url.startsWith("/portal/") || url.startsWith("./") || pattern.matcher(url).matches());
