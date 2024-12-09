@@ -18,16 +18,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <v-app flat>
     <v-container px-0 py-0>
       <v-layout class="transparent">
-        <v-btn
-          id="appcenterLauncherButton"
-          :title="$t('appCenter.appLauncher.topbarIcon.tooltip')"
-          icon
-          class="text-xs-center"
-          @click="toggleDrawer()">
-          <v-icon class="appCenterLauncherButtonIcon icon-large-size icon-default-color">
-            mdi-dots-grid
-          </v-icon>
-        </v-btn>
+        <v-tooltip bottom>
+          <template #activator="{on, attrs}">
+            <v-btn
+              id="appcenterLauncherButton"
+              v-on="on"
+              v-bind="attrs"
+              :aria-label="$t('appCenter.appLauncher.topbarIcon.tooltip')"
+              icon
+              class="text-xs-center"
+              @click="toggleDrawer()">
+              <v-icon class="appCenterLauncherButtonIcon icon-default-color" size="20">
+                fa-th
+              </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('appCenter.appLauncher.topbarIcon.tooltip') }}</span>
+        </v-tooltip>
       </v-layout>
     </v-container>
     <exo-drawer

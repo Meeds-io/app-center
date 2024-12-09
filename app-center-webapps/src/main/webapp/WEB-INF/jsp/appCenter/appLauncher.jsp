@@ -18,20 +18,39 @@
     data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="appLauncher">
-    <div class="v-application--wrap">
+    <div class="v-application--wrap d-none">
       <div class="container px-0 py-0">
         <div class="layout transparent">
-          <button
-            type="button"
-            title="<%=tooltip%>"
-            class="text-xs-center v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
-            id="appcenterLauncherButton"
-            onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', <%=isAdmin%>)">
-            <span class="v-btn__content"><i aria-hidden="true"
-              class="v-icon notranslate appCenterLauncherButtonIcon mdi mdi-dots-grid icon-large-size icon-default-color theme--light"></i></span>
-          </button>
+          <v-tooltip bottom>
+            <template #activator="{on, attrs}">
+              <v-btn
+                id="appcenterLauncherButton"
+                v-on="on"
+                v-bind="attrs"
+                aria-label="<%=tooltip%>"
+                icon
+                class="text-xs-center"
+                @click="Vue.startApp('SHARED/appLauncherBundle', 'init', <%=isAdmin%>)">
+                <v-icon class="appCenterLauncherButtonIcon icon-default-color" size="20">
+                  fa-th
+                </v-icon>
+              </v-btn>
+            </template>
+            <span><%=tooltip%></span>
+          </v-tooltip>
         </div>
       </div>
     </div>
+    <script type="text/javascript">
+      require(['SHARED/commonVueComponents', 'SHARED/eXoVueI18n'], () => {
+        new Vue({
+          el: '#appLauncher',
+          vuetify: Vue.prototype.vuetifyOptions,
+          mounted() {
+            document.querySelector('#appLauncher .v-application--wrap').classList.remove('d-none');
+          },
+        });
+      });
+    </script>
   </div>
 </div>
