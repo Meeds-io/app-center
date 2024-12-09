@@ -24,8 +24,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           icon
           class="text-xs-center"
           @click="toggleDrawer()">
-          <v-icon class="appCenterLauncherButtonIcon icon-large-size icon-default-color">
-            mdi-dots-grid
+          <v-icon class="appCenterLauncherButtonIcon" size="20">
+            fa-th
           </v-icon>
         </v-btn>
       </v-layout>

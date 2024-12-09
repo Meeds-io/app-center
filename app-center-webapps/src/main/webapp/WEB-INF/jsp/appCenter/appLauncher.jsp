@@ -24,11 +24,14 @@
           <button
             type="button"
             title="<%=tooltip%>"
-            class="text-xs-center v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
+            class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
             id="appcenterLauncherButton"
             onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', <%=isAdmin%>)">
-            <span class="v-btn__content"><i aria-hidden="true"
-              class="v-icon notranslate appCenterLauncherButtonIcon mdi mdi-dots-grid icon-large-size icon-default-color theme--light"></i></span>
+            <span class="v-btn__content">
+              <i aria-hidden="true"
+                class="v-icon notranslate appCenterLauncherButtonIcon icon-default-color fa fa-th theme--light"
+                style="font-size: 20px;"></i>
+            </span>
           </button>
         </div>
       </div>
