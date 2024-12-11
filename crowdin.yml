@@ -50,7 +50,7 @@ files: [
     "escape_quotes" : 0,
   },
   {
-    "source" : "/app-center-services/src/main/resources/locale/portlet/GeneralSettings_en.properties",
+    "source" : "/app-center-webapps/src/main/resources/locale/portlet/GeneralSettings_en.properties",
     "translation" : "%original_path%/%file_name%!_%locale_with_underscore%.%file_extension%",
     "translation_replace" : {
       "_en!": "","ar_SA": "ar","ar_OM": "aro","az_AZ": "az","ca_ES": "ca","ceb_PH": "ceb",
