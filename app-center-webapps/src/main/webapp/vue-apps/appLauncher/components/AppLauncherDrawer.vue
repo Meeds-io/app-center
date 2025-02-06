@@ -43,7 +43,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         slot="content"
         class="content">
         <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
-          <draggable
+          <component
+            :is="$root.isMobile && 'div' || 'draggable'"
             v-model="favoriteApplicationsList"
             class="appLauncherList"
             @start="drag=true"
@@ -83,7 +84,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 </a>
               </div>
             </div>
-          </draggable>
+          </component>
         </v-layout>
       </div>
       <div

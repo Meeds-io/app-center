@@ -30,6 +30,11 @@ export function init(isAdmin) {
       i18nPromise: i18nPromise,
       isAdmin,
     },
+    computed: {
+      isMobile() {
+        return this.$vuetify.breakpoint.smAndDown;
+      },
+    },
     template: `<app-center-launcher-drawer id="${appId}" :i18n-promise="i18nPromise" />`,
     vuetify: Vue.prototype.vuetifyOptions,
     i18n: exoi18n.i18n,
