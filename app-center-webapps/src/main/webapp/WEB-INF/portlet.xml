@@ -63,10 +63,6 @@
     <display-name xml:lang="EN">App center user setup portlet</display-name>
     <portlet-class>io.meeds.appcenter.portlet.UserSetupPortlet</portlet-class>
     <init-param>
-      <name>prefetch.resources</name>
-      <value>true</value>
-    </init-param>
-    <init-param>
       <name>prefetch.resource.bundles</name>
       <value>locale.addon.appcenter</value>
     </init-param>
