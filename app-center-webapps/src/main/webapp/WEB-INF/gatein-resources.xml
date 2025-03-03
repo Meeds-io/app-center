@@ -67,6 +67,12 @@
         <module>commonVueComponents</module>
       </depends>
       <depends>
+        <module>applicationToolbarComponent</module>
+      </depends>
+      <depends>
+        <module>appLauncherBundle</module>
+      </depends>
+      <depends>
         <module>adminSetupPortletBundle</module>
       </depends>
     </module>
@@ -89,6 +95,62 @@
       </depends>
       <depends>
         <module>userSetupPortletBundle</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>QuickActions</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/quickActions.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>UserQuickActions</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/userQuickActions.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
       </depends>
     </module>
   </portlet>
@@ -128,7 +190,7 @@
     <name>adminSetupPortletBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/adminSetup.bundle.js</path>
+      <path>/js/adminSetup.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -144,6 +206,9 @@
     </depends>
     <depends>
       <module>jquery</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
     </depends>
     <depends>
       <module>suggester</module>
@@ -154,7 +219,7 @@
     <name>userSetupPortletBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/userSetup.bundle.js</path>
+      <path>/js/userSetup.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -167,6 +232,9 @@
     </depends>
     <depends>
       <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
     </depends>
     <depends>
       <module>jquery</module>
@@ -177,7 +245,7 @@
     <name>appLauncherBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/appLauncher.bundle.js</path>
+      <path>/js/appLauncher.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -193,6 +261,9 @@
     </depends>
     <depends>
       <module>jquery</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
     </depends>
     <depends>
       <module>vueDraggable</module>
@@ -203,7 +274,7 @@
     <name>AppCenterSearch</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/applicationSearch.bundle.js</path>
+      <path>/js/applicationSearch.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -218,7 +289,35 @@
       <module>commonVueComponents</module>
     </depends>
     <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>jquery</module>
     </depends>
   </module>
+
+  <module>
+    <name>QuickActionExtensions</name>
+    <load-group>QuickActionsGrp</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/quickActionExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
