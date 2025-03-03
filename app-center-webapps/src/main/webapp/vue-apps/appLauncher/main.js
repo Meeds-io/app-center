@@ -16,27 +16,66 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import './initComponents.js';
+import './services.js';
 
 //should expose the locale ressources as REST API
 const appId = 'appLauncher';
 
-export function init(isAdmin) {
+export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}) {
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-  const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
+  const urls = [
+    `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
+    `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
+  ];
+  window.require(['SHARED/QuickActionExtensions']);
   //getting locale ressources
-  const i18nPromise = exoi18n.loadLanguageAsync(lang, url);
-  Vue.createApp({
-    data: {
-      i18nPromise: i18nPromise,
-      isAdmin,
-    },
-    computed: {
-      isMobile() {
-        return this.$vuetify.breakpoint.smAndDown;
+  const i18n = await exoi18n.loadLanguageAsync(lang, urls);
+  try {
+    await Vue.createApp({
+      data: () => ({
+        isAdmin,
+        quickActionsStatus,
+        pinnedQuickActionNames,
+        quickActionExtensions: [],
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
+      }),
+      computed: {
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        },
+        quickActions() {
+          const quickActions = this.quickActionExtensions
+            .filter(ext => ext.id && !this.quickActionsStatus[ext.id])
+            .map(ext => ({
+              id: ext.id,
+              icon: ext.icon,
+              name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
+              description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
+              click: ext.click,
+              disabled: false,
+              pinned: this.pinnedQuickActionNames.includes(ext.id),
+            }));
+          quickActions.sort((a, b) => this.collator.compare(a.name.toLowerCase(), b.name.toLowerCase()));
+          return quickActions;
+        },
       },
-    },
-    template: `<app-center-launcher-drawer id="${appId}" :i18n-promise="i18nPromise" />`,
-    vuetify: Vue.prototype.vuetifyOptions,
-    i18n: exoi18n.i18n,
-  }, `#${appId}`, 'Application Center Drawer');
+      created() {
+        document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        this.refreshQuickActions();
+      },
+      beforeDestroy() {
+        document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      },
+      methods: {
+        refreshQuickActions() {
+          this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+        },
+      },
+      template: `<app-center-launcher-drawer id="${appId}" />`,
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n: i18n,
+    }, `#${appId}`, 'Application Center Drawer');
+  } finally {
+    Vue.prototype.$utils.includeExtensions('QuickActionExtension');
+  }
 }

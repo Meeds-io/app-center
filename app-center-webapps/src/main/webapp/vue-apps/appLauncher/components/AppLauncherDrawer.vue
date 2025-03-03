@@ -35,92 +35,88 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       :right="!$vuetify.rtl"
       body-classes="hide-scroll"
       class="appCenterDrawer">
-      <template slot="title">
+      <template #title>
         {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
-      <div
-        v-if="hasApplications"
-        slot="content"
-        class="content">
-        <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
-          <component
-            :is="$root.isMobile && 'div' || 'draggable'"
-            v-model="favoriteApplicationsList"
-            class="appLauncherList"
-            @start="drag=true"
-            @end="drag=false">
-            <div
-              v-for="(application, index) in favoriteApplicationsList"
-              :id="'Pos-' + index"
-              :key="index"
-              class="appLauncherItemContainer">
+      <template #content>
+        <template v-if="$root.quickActions?.length">
+          <app-center-launcher-quick-actions />
+          <v-divider />
+        </template>
+        <div v-if="hasApplications" class="content">
+          <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
+            <component
+              :is="$root.isMobile && 'div' || 'draggable'"
+              v-model="favoriteApplicationsList"
+              class="appLauncherList"
+              @start="drag=true"
+              @end="drag=false">
               <div
-                :id="'App-' + index"
-                class="appLauncherItem">
-                <a
-                  :id="application.id"
-                  :target="application.target"
-                  :href="application.computedUrl">
-                  <img
-                    v-if="application.imageFileId && application.imageFileName"
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
-                    alt="">
-                  <img
-                    v-else-if="defaultAppImage.fileBody"
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
-                    alt="">
-                  <img
-                    v-else
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    src="/app-center/skin/images/defaultApp.png"
-                    alt="">
-                  <span 
-                    v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                    class="appLauncherTitle text-body">
-                    {{ application.title }}
-                  </span>
-                </a>
+                v-for="(application, index) in favoriteApplicationsList"
+                :id="'Pos-' + index"
+                :key="index"
+                class="appLauncherItemContainer">
+                <div
+                  :id="'App-' + index"
+                  class="appLauncherItem">
+                  <a
+                    :id="application.id"
+                    :target="application.target"
+                    :href="application.computedUrl">
+                    <img
+                      v-if="application.imageFileId && application.imageFileName"
+                      class="appLauncherImage"
+                      referrerpolicy="no-referrer"
+                      :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
+                      alt="">
+                    <img
+                      v-else-if="defaultAppImage.fileBody"
+                      class="appLauncherImage"
+                      referrerpolicy="no-referrer"
+                      :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
+                      alt="">
+                    <img
+                      v-else
+                      class="appLauncherImage"
+                      referrerpolicy="no-referrer"
+                      src="/app-center/skin/images/defaultApp.png"
+                      alt="">
+                    <span
+                      v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
+                      class="appLauncherTitle text-body">
+                      {{ application.title }}
+                    </span>
+                  </a>
+                </div>
               </div>
-            </div>
-          </component>
-        </v-layout>
-      </div>
-      <div
-        v-else-if="applicationsLoaded"
-        slot="content"
-        class="content d-flex align-center justify-center">
-        <app-center-launcher-empty class="mt-12" />
-      </div>
-      <div v-if="applicationsLoaded && hasApplications" slot="footer">
-        <v-card
-          flat
-          tile
-          class="d-flex flex justify-end mx-2 px-1">
-          <v-btn
-            class="text-uppercase caption primary--text seeAllApplicationsBtn"
-            outlined
-            small
-            :href="appCenterLink">
-            {{ $t("appCenter.appLauncher.drawer.viewAll") }}
-          </v-btn>
-        </v-card>
-      </div>
+            </component>
+          </v-layout>
+        </div>
+        <div v-else-if="applicationsLoaded" class="content d-flex align-center justify-center">
+          <app-center-launcher-empty class="mt-12" />
+        </div>
+      </template>
+      <template #footer>
+        <div v-if="applicationsLoaded && hasApplications">
+          <v-card
+            flat
+            tile
+            class="d-flex flex justify-end mx-2 px-1">
+            <v-btn
+              class="text-uppercase caption primary--text seeAllApplicationsBtn"
+              outlined
+              small
+              :href="appCenterLink">
+              {{ $t("appCenter.appLauncher.drawer.viewAll") }}
+            </v-btn>
+          </v-card>
+        </div>
+      </template>
     </exo-drawer>
   </v-app>
 </template>
 <script>
 export default {
-  props: {
-    i18nPromise: {
-      type: Object,
-      default: null,
-    }
-  },
   data() {
     return {
       defaultAppImage: {
@@ -184,7 +180,6 @@ export default {
     this.applicationsLoaded = false;
     this.getAppGeneralSettings()
       .then(() => this.getMandatoryAndFavoriteApplications())
-      .then(() => this.i18nPromise)
       .finally(() => {
         this.applicationsLoaded = true;
         this.$root.$applicationLoaded();
