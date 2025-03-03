@@ -101,6 +101,32 @@
   </portlet>
 
   <portlet>
+    <name>QuickActions</name>
+    <module>
+      <load-group>QuickActionsGrp</load-group>
+      <script>
+        <minify>false</minify>
+        <path>/js/quickActions.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
     <name>AppCenterMyApplicationsPortlet</name>
     <module>
       <depends>
@@ -125,7 +151,7 @@
     <name>adminSetupPortletBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/adminSetup.bundle.js</path>
+      <path>/js/adminSetup.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -151,7 +177,7 @@
     <name>userSetupPortletBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/userSetup.bundle.js</path>
+      <path>/js/userSetup.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -174,7 +200,7 @@
     <name>myApplicationsBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/myApplications.bundle.js</path>
+      <path>/js/myApplications.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -197,7 +223,7 @@
     <name>appLauncherBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/appLauncher.bundle.js</path>
+      <path>/js/appLauncher.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -223,7 +249,7 @@
     <name>AppCenterSearch</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/applicationSearch.bundle.js</path>
+      <path>/js/applicationSearch.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
