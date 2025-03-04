@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  * 
- * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,13 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import * as quickActionService from './js/QuickActionService.js';
 
-if (!Vue.prototype.$quickActionService) {
-  window.Object.defineProperty(Vue.prototype, '$quickActionService', {
-    value: quickActionService,
-  });
+import UserQuickActions from './components/UserQuickActions.vue';
+
+const components = {
+  'user-quick-actions': UserQuickActions,
+};
+
+for (const key in components) {
+  Vue.component(key, components[key]);
 }
