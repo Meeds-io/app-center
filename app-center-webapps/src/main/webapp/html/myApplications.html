@@ -1,9 +1,7 @@
 <div class="VuetifyApp">
-  <div id="myApplications">
-    <script>
-      require(['SHARED/myApplicationsBundle'], function(myApplicationsPortletApp) {
-        myApplicationsPortletApp.init();
-      });
+  <div id="userQuickActions">
+    <script type="text/javascript">
+    window.require(['PORTLET/app-center/UserQuickActions'], app => app.init());
     </script>
   </div>
 </div>
