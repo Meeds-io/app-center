@@ -16,10 +16,17 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import * as quickActionService from './js/QuickActionService.js';
+import * as quickActionService from '../quick-actions/js/QuickActionService.js';
+import * as userQuickActionService from '../user-quick-actions/js/UserQuickActionService.js';
 
 if (!Vue.prototype.$quickActionService) {
   window.Object.defineProperty(Vue.prototype, '$quickActionService', {
     value: quickActionService,
+  });
+}
+
+if (!Vue.prototype.$userQuickActionService) {
+  window.Object.defineProperty(Vue.prototype, '$userQuickActionService', {
+    value: userQuickActionService,
   });
 }

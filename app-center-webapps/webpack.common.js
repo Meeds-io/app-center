@@ -29,7 +29,9 @@ module.exports = {
     myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
     appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
     applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js",
-    quickActions: "./src/main/webapp/vue-apps/quick-actions/main.js"
+    quickActions: "./src/main/webapp/vue-apps/quick-actions/main.js",
+    quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
+    userQuickActions: "./src/main/webapp/vue-apps/user-quick-actions/main.js",
   },
   output: {
     filename: 'js/[name].bundle.js',
