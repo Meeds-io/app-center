@@ -1,8 +1,12 @@
-<%@page import="org.exoplatform.services.security.ConversationState"%>
 <%@page import="java.util.Locale"%>
-<%@page import="org.exoplatform.container.ExoContainerContext"%>
-<%@page import="org.exoplatform.services.resources.ResourceBundleService"%>
 <%@page import="java.util.ResourceBundle"%>
+<%@page import="org.exoplatform.container.ExoContainerContext"%>
+<%@page import="org.exoplatform.services.security.ConversationState"%>
+<%@page import="org.exoplatform.services.resources.ResourceBundleService"%>
+<%@page import="org.exoplatform.commons.api.settings.SettingService"%>
+<%@page import="org.exoplatform.commons.api.settings.SettingValue"%>
+<%@page import="org.exoplatform.commons.api.settings.data.Scope"%>
+<%@page import="org.exoplatform.commons.api.settings.data.Context"%>
 <%
   ResourceBundle bundle;
   try {
@@ -12,6 +16,13 @@
   }
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
+
+  SettingService settingService = ExoContainerContext.getService(SettingService.class);
+  SettingValue settingValue = settingService.get(Context.GLOBAL.id("QuickActions"), Scope.APPLICATION.id("QuickActions"), "status");
+  String quickActionsStatus = settingValue == null || settingValue.getValue() == null ? "{}" : settingValue.getValue().toString().replace("\"", "");
+
+  settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("QuickActions"), "pins");
+  String pinnedQuickActions = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
 %>
 <div class="VuetifyApp">
   <div
@@ -26,7 +37,7 @@
             title="<%=tooltip%>"
             class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
             id="appcenterLauncherButton"
-            onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', <%=isAdmin%>)">
+            onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: <%=isAdmin%>, quickActionsStatus: <%=quickActionsStatus%>, pinnedQuickActionNames: <%=pinnedQuickActions%>})">
             <span class="v-btn__content">
               <i aria-hidden="true"
                 class="v-icon notranslate appCenterLauncherButtonIcon icon-default-color fa fa-th theme--light"

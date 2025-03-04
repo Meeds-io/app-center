@@ -96,7 +96,6 @@
   <portlet>
     <name>QuickActions</name>
     <module>
-      <load-group>QuickActionsGrp</load-group>
       <script>
         <minify>false</minify>
         <path>/js/quickActions.bundle.js</path>
@@ -115,6 +114,37 @@
       </depends>
       <depends>
         <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>UserQuickActions</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/userQuickActions.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
       </depends>
     </module>
   </portlet>
@@ -172,6 +202,9 @@
       <module>jquery</module>
     </depends>
     <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>suggester</module>
     </depends>
   </module>
@@ -193,6 +226,9 @@
     </depends>
     <depends>
       <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
     </depends>
     <depends>
       <module>jquery</module>
@@ -221,6 +257,9 @@
       <module>jquery</module>
     </depends>
     <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>vueDraggable</module>
     </depends>
   </module>
@@ -244,7 +283,35 @@
       <module>commonVueComponents</module>
     </depends>
     <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>jquery</module>
     </depends>
   </module>
+
+  <module>
+    <name>QuickActionExtensions</name>
+    <load-group>QuickActionsGrp</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/quickActionExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
