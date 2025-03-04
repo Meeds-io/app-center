@@ -16,10 +16,12 @@
  */
 import AppLauncherDrawer from './components/AppLauncherDrawer.vue';
 import AppLauncherEmpty from './components/AppLauncherEmpty.vue';
+import QuickActionList from './components/QuickActionList.vue';
 
 const components = {
   'app-center-launcher-drawer': AppLauncherDrawer,
   'app-center-launcher-empty': AppLauncherEmpty,
+  'app-center-launcher-quick-actions': QuickActionList,
 };
 
 for (const key in components) {

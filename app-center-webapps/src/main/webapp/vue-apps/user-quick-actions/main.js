@@ -1,8 +1,8 @@
-
 /*
  * This file is part of the Meeds project (https://meeds.io/).
- * Copyright (C) 2020 Meeds Association
- * contact@meeds.io
+ * 
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+ * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -11,29 +11,37 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 import './initComponents.js';
 import './services.js';
 
-//should expose the locale ressources as REST API
-const appId = 'appLauncher';
+// get overridden components if exists
+if (extensionRegistry) {
+  const components = extensionRegistry.loadComponents('UserQuickActions');
+  if (components && components.length > 0) {
+    components.forEach(cmp => {
+      Vue.component(cmp.componentName, cmp.componentOptions);
+    });
+  }
+}
 
-export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}) {
-  const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
-  const urls = [
-    `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
-    `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
-  ];
-  window.require(['SHARED/QuickActionExtensions']);
-  //getting locale ressources
-  const i18n = await exoi18n.loadLanguageAsync(lang, urls);
+const lang = eXo?.env.portal.language || 'en';
+const url = `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`;
+
+const appId = 'userQuickActions';
+export async function init(quickActionsStatus, pinnedQuickActionNames) {
+  const i18n = await exoi18n.loadLanguageAsync(lang, url);
   try {
     await Vue.createApp({
+      template: `<user-quick-actions id="${appId}"/>`,
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
       data: () => ({
-        isAdmin,
         quickActionsStatus,
         pinnedQuickActionNames,
         quickActionExtensions: [],
@@ -45,36 +53,42 @@ export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}
         },
         quickActions() {
           const quickActions = this.quickActionExtensions
-            .filter(ext => ext.id && !this.quickActionsStatus[ext.id])
+            .filter(ext => ext.id)
             .map(ext => ({
               id: ext.id,
               icon: ext.icon,
               name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
               description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
+              disabled: this.quickActionsStatus[ext.id] || false,
               click: ext.click,
-              disabled: false,
-              pinned: this.pinnedQuickActionNames.includes(ext.id),
             }));
           quickActions.sort((a, b) => this.collator.compare(a.name.toLowerCase(), b.name.toLowerCase()));
           return quickActions;
         },
+        pinnedQuickActions() {
+          return this.quickActions.filter(ext => this.pinnedQuickActionNames.includes(ext.id));
+        },
       },
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.addEventListener('QuickActionUnpinned', this.refreshPinnedQuickActions);
+        document.addEventListener('QuickActionPinned', this.refreshPinnedQuickActions);
         this.refreshQuickActions();
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.addEventListener('QuickActionUnpinned', this.refreshPinnedQuickActions);
+        document.addEventListener('QuickActionPinned', this.refreshPinnedQuickActions);
       },
       methods: {
         refreshQuickActions() {
           this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
         },
+        async refreshPinnedQuickActions() {
+          this.pinnedQuickActionNames = await this.$userQuickActionService.getQuickActionPins();
+        },
       },
-      template: `<app-center-launcher-drawer id="${appId}" />`,
-      vuetify: Vue.prototype.vuetifyOptions,
-      i18n: i18n,
-    }, `#${appId}`, 'Application Center Drawer');
+    }, `#${appId}`, 'User Quick Actions');
   } finally {
     Vue.prototype.$utils.includeExtensions('QuickActionExtension');
   }
