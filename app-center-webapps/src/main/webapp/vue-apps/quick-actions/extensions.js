@@ -22,74 +22,76 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   icon: 'fa-stream',
   name: 'quickActions.activityComposer.name',
   description: 'quickActions.activityComposer.description',
-  click: () => {
-    window.require(['SHARED/ActivityStream'], () => {
-      const appId = 'activity-stream-quick-actions';
-      if (!document.querySelector(`#${appId}`)) {
-        const parent = document.createElement('div');
-        parent.id = appId;
-        document.querySelector('#vuetify-apps').appendChild(parent);
-      }
-      init(appId, eXo.env.portal.maxFileSize);
-    });
-  },
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'SHARED/ActivityStream'], exoi18n => init(exoi18n, resolve));
+  }),
 });
 
+async function init(exoi18n, callback) {
+  const appId = 'activity-stream-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initApp(appId, exoi18n, eXo.env.portal.maxFileSize);
+  }
+  document.dispatchEvent(new CustomEvent('activity-composer-drawer-open'));
+  callback();
+}
 
-export function init(appId, maxFileSize) {
+function initApp(appId, exoi18n, maxFileSize) {
   const lang = eXo.env.portal.language;
   const urls = [
     `/social/i18n/locale.portlet.Portlets?lang=${lang}`,
     `/social/i18n/locale.commons.Commons?lang=${lang}`,
     `/social/i18n/locale.social.Webui?lang=${lang}`,
   ];
-  exoi18n.loadLanguageAsync(lang, urls)
-    .then(i18n => {
-      Vue.createApp({
-        data: {
-          maxFileSize,
-          activityTypes: {},
-          activityActions: {},
-          commentActions: {},
-          extensionApp: 'activity',
-          activityTypeExtension: 'type',
-          activityActionExtension: 'action',
-          commentActionExtension: 'comment-action',
+  return new Promise(resolveInit => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      data: {
+        maxFileSize,
+        activityTypes: {},
+        activityActions: {},
+        commentActions: {},
+        extensionApp: 'activity',
+        activityTypeExtension: 'type',
+        activityActionExtension: 'action',
+        commentActionExtension: 'comment-action',
+      },
+      computed: {
+        isMobile() {
+          return this.$vuetify?.breakpoint?.mobile;
         },
-        computed: {
-          isMobile() {
-            return this.$vuetify?.breakpoint?.mobile;
-          },
-          drawerParams() {
-            return {
-              activityTypes: this.activityTypes,
-              activityActions: this.activityActions,
-              commentTypes: this.activityTypes,
-              commentActions: this.commentActions,
-            };
-          },
+        drawerParams() {
+          return {
+            activityTypes: this.activityTypes,
+            activityActions: this.activityActions,
+            commentTypes: this.activityTypes,
+            commentActions: this.commentActions,
+          };
         },
-        created() {
-          this.activityTypes = extensionRegistry.loadExtensions(this.extensionApp, this.activityTypeExtension);
-          this.activityActions = extensionRegistry.loadExtensions(this.extensionApp, this.activityActionExtension);
-          this.commentActions = extensionRegistry.loadExtensions(this.extensionApp, this.commentActionExtension);
-        },
-        mounted() {
-          document.dispatchEvent(new CustomEvent('activity-composer-drawer-open'));
-        },
-        template: `
-          <extension-registry-components
-            id="${appId}"
-            :params="drawerParams"
-            name="ActivityStream"
-            type="activity-stream-drawers"
-            parent-element="div"
-            element="div"
-            class="drawer-parent" />
-        `,
-        vuetify: Vue.prototype.vuetifyOptions,
-        i18n,
-      }, `#${appId}`, 'Activity Composer Quick Action');
-    })
-    .finally(() => Vue.prototype.$utils.includeExtensions('ActivityStreamExtension'));
+      },
+      created() {
+        this.activityTypes = extensionRegistry.loadExtensions(this.extensionApp, this.activityTypeExtension);
+        this.activityActions = extensionRegistry.loadExtensions(this.extensionApp, this.activityActionExtension);
+        this.commentActions = extensionRegistry.loadExtensions(this.extensionApp, this.commentActionExtension);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolveInit();
+      },
+      template: `
+        <extension-registry-components
+          id="${appId}"
+          :params="drawerParams"
+          name="ActivityStream"
+          type="activity-stream-drawers"
+          parent-element="div"
+          element="div"
+          class="drawer-parent" />
+      `,
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Activity Composer Quick Action'))
+    .finally(() => Vue.prototype.$utils.includeExtensions('ActivityStreamExtension')));
 }
