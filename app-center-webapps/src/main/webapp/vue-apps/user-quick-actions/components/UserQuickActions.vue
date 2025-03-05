@@ -30,6 +30,7 @@
           <v-btn
             v-on="on"
             v-bind="attrs"
+            :loading="loading[action.id]"
             icon
             @click="clickQuickAction(action)">
             <v-icon size="20">{{ action.icon }}</v-icon>
@@ -42,14 +43,22 @@
 </template>
 <script>
 export default {
+  data: () => ({
+    loading: {},
+  }),
   computed: {
     hasPinnedApps() {
       return this.$root.pinnedQuickActions?.length;
     },
   },
   methods: {
-    clickQuickAction(action) {
-      action.click();
+    async clickQuickAction(action) {
+      this.$set(this.loading, action.id, true);
+      try {
+        await action.click();
+      } finally {
+        window.setTimeout(() => this.$set(this.loading, action.id, false), 200);
+      }
     },
   },
 };
