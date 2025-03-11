@@ -65,17 +65,20 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     v-if="application.imageFileId && application.imageFileName"
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
-                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`">
+                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
+                    alt="">
                   <img
                     v-else-if="defaultAppImage.fileBody"
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
-                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`">
+                    :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
+                    alt="">
                   <img
                     v-else
                     class="appLauncherImage"
                     referrerpolicy="no-referrer"
-                    src="/app-center/skin/images/defaultApp.png">
+                    src="/app-center/skin/images/defaultApp.png"
+                    alt="">
                   <span 
                     v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
                     class="appLauncherTitle text-body">
