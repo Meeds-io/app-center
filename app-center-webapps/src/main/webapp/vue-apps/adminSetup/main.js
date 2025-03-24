@@ -27,6 +27,7 @@ export function init(preferences) {
     Vue.createApp({
       data: {
         preferences: preferences,
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       },
       template: `<app-center-admin-setup
                   id="${appId}" />`,

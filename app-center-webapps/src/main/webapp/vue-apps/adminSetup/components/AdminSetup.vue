@@ -15,57 +15,38 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-app
-    id="KudosAdminApp"
-    class="applicationsAdmin">
-    <main class="application-body">
-      <v-layout>
-        <v-flex>
-          <v-tabs
-            v-model="selectedTab"
-            slider-size="4">
-            <v-tab
-              key="applications"
-              href="#applications"
-              @click="loadApplicationsList">
-              {{ $t('appCenter.adminSetupForm.applications') }}
-            </v-tab>
-            <v-tab key="settings" href="#settings">
-              {{ $t('appCenter.adminSetupForm.generalSettings') }}
-            </v-tab>
-          </v-tabs>
-
-          <v-tabs-items v-model="selectedTab" class="mt-2">
-            <v-tab-item
-              id="applications"
-              value="applications"
-              class="px-4 py-2">
-              <adminSetup-list :key="adminSetupListKey" />
-            </v-tab-item>
-            <v-tab-item
-              id="settings"
-              value="settings"
-              class="px-4 py-2">
-              <adminSetup-generalParams />
-            </v-tab-item>
-          </v-tabs-items>
-        </v-flex>
-      </v-layout>
-    </main>
+  <v-app class="applicationsAdmin">
+    <v-main class="application-body pb-5">
+      <h4 class="text-title px-5 pt-5 ma-0">
+        {{ $t('appCenter.adminSetupForm.applications') }}
+      </h4>
+      <div class="d-flex flex-column flex-sm-row">
+        <div class="d-flex flex-column">
+          <app-center-admin-toolbar
+            ref="toolbar"
+            @filter-changed="keyword = $event"
+            @add="addApp" />
+          <app-center-admin-setup-list
+            ref="adminSetupList"
+            :keyword="keyword" />
+        </div>
+        <v-divider vertical />
+        <div class="ma-5">
+          Preview
+        </div>
+      </div>
+    </v-main>
   </v-app>
 </template>
 <script>
 export default {
-  data() {
-    return {
-      selectedTab: 'applications',
-      adminSetupListKey: 0,
-    };
-  },
+  data: () => ({
+    keyword: null,
+  }),
   methods: {
-    loadApplicationsList() {
-      this.adminSetupListKey++;
-    }
+    addApp() {
+      this.$refs.adminSetupList.showAddApplicationDrawer();
+    },
   },
 };
 </script>
