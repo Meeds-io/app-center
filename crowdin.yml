@@ -42,4 +42,22 @@ files: [
     "escape_special_characters": 0,
     "escape_quotes" : 0,
   },
+  {
+    "source": "/app-center-webapps/src/main/resources/locale/portlet/MyApplications_en.properties",
+    "translation": "%original_path%/%file_name%!_%locale_with_underscore%.%file_extension%",
+    "translation_replace": { YML_CROWDIN_LANGUAGES_ARG },
+    "dest": "hub/app__center/MyApplications.properties",
+    "update_option": "update_as_unapproved",
+    "escape_special_characters": 0,
+    "escape_quotes": 0,
+  },
+  {
+    "source": "/app-center-webapps/src/main/resources/locale/portlet/LayoutEditor_en.properties",
+    "translation": "%original_path%/%file_name%!_%locale_with_underscore%.%file_extension%",
+    "translation_replace": { YML_CROWDIN_LANGUAGES_ARG },
+    "dest": "hub/app__center/LayoutEditor.properties",
+    "update_option": "update_as_unapproved",
+    "escape_special_characters": 0,
+    "escape_quotes": 0,
+  }
 ]
