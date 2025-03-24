@@ -19,23 +19,26 @@
 -->
 
 <template>
-  <v-app>
-    <v-card
-      class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
-      flat>
-      <my-applications-toolbar />
-      <my-applications-list
-        :applications-list="favoriteApplications" />
-    </v-card>
-  </v-app>
+  <div
+    v-if="!applicationsList.length"
+    class="d-flex flex-column justify-center align-center flex-grow-1">
+    <v-icon size="60" class="secondary--text mb-2">
+      fas fa-th
+    </v-icon>
+    <p class="mt-2 mb-0 text-sub-title">
+      {{ $t('myApplications.add.application.label') }}
+    </p>
+  </div>
 </template>
 
 <script>
 export default {
-  data() {
-    return {
-      favoriteApplications: []
-    };
+  props: {
+    applicationsList: {
+      type: Array,
+      default: () => []
+    }
   }
 };
 </script>
+
