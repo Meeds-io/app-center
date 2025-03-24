@@ -1,0 +1,22 @@
+{
+  "descriptors": [
+    {
+      "nameId": "AppCenterMyApplicationsPortlet",
+      "categoryNameId": "tools",
+      "portletName": "AppCenterMyApplicationsPortlet",
+      "names": {
+        "en": "layout.portletInstance.AppCenterMyApplicationsPortlet.name"
+      },
+      "descriptions": {
+        "en": "layout.portletInstance.AppCenterMyApplicationsPortlet.description"
+      },
+      "illustrationPath": "war:/../images/portlets/myApplicationsPortlet.png",
+      "preferences": [
+      ],
+      "permissions": [
+        "*:/platform/users"
+      ],
+      "system": true
+    }
+  ]
+}
