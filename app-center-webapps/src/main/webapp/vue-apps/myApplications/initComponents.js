@@ -18,9 +18,13 @@
   * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   */
 import MyApplicationsApp from './components/MyApplicationsApp.vue';
+import MyApplicationsList from './components/view/MyApplicationsList.vue';
+import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
 
 const components = {
-  'my-applications-app': MyApplicationsApp
+  'my-applications-app': MyApplicationsApp,
+  'my-applications-list': MyApplicationsList,
+  'my-applications-toolbar': MyApplicationsToolbar
 };
 
 for (const key in components) {

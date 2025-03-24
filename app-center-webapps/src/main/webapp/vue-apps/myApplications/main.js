@@ -30,7 +30,7 @@ if (extensionRegistry) {
   }
 }
 
-const lang = eXo && eXo.env.portal.language || 'en';
+const lang = eXo?.env?.portal?.language || 'en';
 const url = `/app-center/i18n/locale.portlet.MyApplications?lang=${lang}`;
 const vuetify = Vue.prototype.vuetifyOptions;
 const appId = 'myApplications';
