@@ -254,97 +254,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       color: #7c4091 !important;
       border-radius: 4px;
     }
-    
-    .next-page button {
-      padding-left: 20px ~'; /** orientation=lt */ ';
-      padding-right: 20px ~'; /** orientation=rt */ ';
-    }
-    
-    .prev-page button {
-      padding-right: 20px ~'; /** orientation=lt */ ';
-      padding-left: 20px ~'; /** orientation=rt */ ';
-    }
   }
-  
   .listApplications {
-    .addApplicationBtn {
-      background-color: @primaryColor!important;
-      color: @baseBackgroundDefault;
-    }
-    .appSearch {
-      .v-input__icon--append-outer{
-        display: none;
-        margin-left: ~'-23px!important; /** orientation=lt */ ';
-        margin-right: ~'-23px!important; /** orientation=rt */ ';
-      }
-      .v-input__prepend-inner {
-        margin-top: 6px!important;
-      }
-      .v-text-field {
-        padding-top: 0!important;
-        margin-top: 0!important;
-        color: @primaryColorDefault;
-      }
-      .v-text-field__slot {
-        &:focus {
-          outline: none!important;
-        }
-        input {
-          margin-top: 6px;
-        }
-      }
-      .v-input__slot {
-        height: 36px!important;
-      }
-      input:focus {
-        box-shadow: none;
-      }
-      i {
-        font-size: 24px;
-      }
-    }
-    .tableAppTitle, .appUrl {
-      max-width: 160px;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .tableAppDescription {
-      max-width: 200px;
-      word-break: break-word;
-      display: -webkit-box;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-    }
-    .tableAppPermissions {
-      max-width: 170px;
-      max-height: 60px;
-      display: -webkit-box;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-box-orient: vertical;
-      
-      .permission {
-        max-width: 140px;
-        word-break: break-word;
-        white-space: nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-    }
-    .text-md-center {
-      .actionsBtn {
-        color: @primaryColor;
-      }
-    }
-    .text-center {
-      span {
-        color: @darkGrey;
-        font-size: 0.9rem;
-      }
-    }
     img {
       width: 50px;
       height: 50px;
@@ -1179,13 +1090,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 .uiDownloadIcon {
   color: #333333;
   font-size: 20px;
-  font-style: normal;
-  cursor: pointer;
-}
-
-.uiTrashIcon {
-  color: white;
-  font-size: 16px;
   font-style: normal;
   cursor: pointer;
 }
