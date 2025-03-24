@@ -67,6 +67,12 @@
         <module>commonVueComponents</module>
       </depends>
       <depends>
+        <module>applicationToolbarComponent</module>
+      </depends>
+      <depends>
+        <module>appLauncherBundle</module>
+      </depends>
+      <depends>
         <module>adminSetupPortletBundle</module>
       </depends>
     </module>
