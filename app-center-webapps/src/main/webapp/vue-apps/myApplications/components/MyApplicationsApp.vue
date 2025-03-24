@@ -23,19 +23,41 @@
     <v-card
       class="application-body position-static pa-5"
       flat>
-      <div>
-        <h4 class="text-header mt-0 ms-auto">
+      <div class="d-flex">
+        <h4 class="widget-text-header my-auto me-auto">
           {{ $t('myApplications.name.label') }}
         </h4>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              :href="userAppSetupUrl"
+              target="_self"
+              class="ms-auto"
+              link
+              icon
+              v-bind="attrs"
+              v-on="on">
+              <v-icon class="icon-default-color icon-default-size">
+                fas fa-plus
+              </v-icon>
+            </v-btn>
+          </template>
+          {{ $t('myApplications.add.application.tooltip') }}
+        </v-tooltip>
       </div>
-      <span class="align-center ma-auto">
-        Not yet implemented
-      </span>
+      <my-applications-list
+        :applications-list="favoriteApplications" />
     </v-card>
   </v-app>
 </template>
 
 <script>
 export default {
+  data() {
+    return {
+      userAppSetupUrl: '/portal/intranet/appCenterUserSetup',
+      favoriteApplications: []
+    };
+  }
 };
 </script>
