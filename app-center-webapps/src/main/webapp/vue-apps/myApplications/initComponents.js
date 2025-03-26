@@ -20,13 +20,24 @@
 import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
+import MyApplicationItem from './components/view/MyApplicationItem.vue';
+
+import * as appCenterService from './appCenterService.js';
 
 const components = {
   'my-applications-app': MyApplicationsApp,
   'my-applications-list': MyApplicationsList,
-  'my-applications-toolbar': MyApplicationsToolbar
+  'my-applications-toolbar': MyApplicationsToolbar,
+  'my-application-item': MyApplicationItem
 };
 
 for (const key in components) {
   Vue.component(key, components[key]);
 }
+
+if (!Vue.prototype.$appCenterService) {
+  window.Object.defineProperty(Vue.prototype, '$appCenterService', {
+    value: appCenterService,
+  });
+}
+
