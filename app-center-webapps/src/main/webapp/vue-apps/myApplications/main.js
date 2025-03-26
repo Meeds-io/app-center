@@ -36,7 +36,6 @@ const vuetify = Vue.prototype.vuetifyOptions;
 const appId = 'myApplications';
 
 export function init() {
-  console.log('hello world');
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     Vue.createApp({
       template: '<my-applications-app />',

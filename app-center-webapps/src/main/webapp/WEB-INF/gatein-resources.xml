@@ -48,7 +48,7 @@
     <application-name>app-center</application-name>
     <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
-    <additional-module>appCenter</additional-module>
+    <css-path>/skin/css/myApplications.css</css-path>
   </portlet-skin>
 
   <portlet-skin>
@@ -121,6 +121,9 @@
       </depends>
       <depends>
         <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>vueDraggable</module>
       </depends>
     </module>
   </portlet>

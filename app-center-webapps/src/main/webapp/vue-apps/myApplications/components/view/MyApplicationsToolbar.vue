@@ -23,19 +23,31 @@
     <h4 class="widget-text-header my-auto me-auto">
       {{ $t('myApplications.name.label') }}
     </h4>
-    <v-tooltip bottom>
+    <v-tooltip
+      :disabled="hasApplications"
+      bottom>
       <template #activator="{ on, attrs }">
         <v-btn
           :href="userAppSetupUrl"
+          :icon="!hasApplications"
+          :text="hasApplications"
+          :class="{'pa-0': hasApplications}"
+          :color="hasApplications && 'primary'"
           target="_self"
           class="ms-auto"
           link
-          icon
           v-bind="attrs"
           v-on="on">
-          <v-icon class="icon-default-color icon-default-size">
+          <v-icon
+            v-if="!hasApplications"
+            class="icon-default-color icon-default-size">
             fas fa-plus
           </v-icon>
+          <span
+            v-else
+            class="primary--text">
+            {{ $t('myApplications.seeMore.label') }}
+          </span>
         </v-btn>
       </template>
       {{ $t('myApplications.add.application.tooltip') }}
@@ -49,6 +61,16 @@ export default {
     return {
       userAppSetupUrl: '/portal/intranet/appCenterUserSetup',
     };
+  },
+  props: {
+    isLoading: {
+      type: Boolean,
+      default: false
+    },
+    hasApplications: {
+      type: Boolean,
+      default: false
+    }
   }
 };
 </script>
