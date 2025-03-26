@@ -22,14 +22,14 @@
   <v-app id="myApplications">
     <v-card
       class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
+      :loading="isLoading"
       flat>
       <my-applications-toolbar
-        :has-applications="hasApplications"
-        :is-loading="isLoading" />
+        v-if="!isLoading"
+        :has-applications="hasApplications" />
       <my-applications-list
         :applications-list="filteredApplications"
         :default-app-image="defaultAppImage"
-        :is-loading="isLoading"
         @list-updated="handleListOrderUpdate" />
     </v-card>
   </v-app>
