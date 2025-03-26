@@ -20,15 +20,7 @@
 
 <template>
   <div
-    v-if="isLoading"
-    class="d-flex flex-column justify-center align-center flex-grow-1">
-    <v-progress-circular
-      class="ma-auto"
-      color="primary"
-      indeterminate />
-  </div>
-  <div
-    v-else-if="!applicationsList.length"
+    v-if="!applicationsList.length"
     class="d-flex flex-column justify-center align-center flex-grow-1">
     <v-icon size="60" class="secondary--text mb-2">
       fas fa-th
@@ -42,19 +34,18 @@
     <component
       :is="isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
-      class="d-flex flex-wrap justify-start"
+      class="d-flex flex-wrap flex-grow-0 justify-start"
       @end="onDragEnd">
       <my-application-item
-        v-for="(application, index) in applicationsList"
+        v-for="application in applicationsList"
         :key="application.id"
-        :position="index"
         :application="application"
         :default-app-image="defaultAppImage"
-        :width="150"
-        :maxWidth="150"
-        :minHeight="150"
+        :width="125"
+        :maxWidth="125"
+        :minHeight="125"
         :maxHeight="150"
-        class="d-flex ma-2 flex-grow-1" />
+        class="d-flex ma-0 flex-grow-1" />
     </component>
   </v-layout>
 </template>
@@ -69,10 +60,6 @@ export default {
     defaultAppImage: {
       type: Object,
       default: null
-    },
-    isLoading: {
-      type: Boolean,
-      default: false
     }
   },
   computed: {

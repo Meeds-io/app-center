@@ -59,14 +59,10 @@
 export default {
   data() {
     return {
-      userAppSetupUrl: '/portal/intranet/appCenterUserSetup',
+      userAppSetupUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`,
     };
   },
   props: {
-    isLoading: {
-      type: Boolean,
-      default: false
-    },
     hasApplications: {
       type: Boolean,
       default: false
