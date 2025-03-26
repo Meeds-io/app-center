@@ -36,8 +36,8 @@
       <v-img
         :src="appImageUrl"
         :alt="applicationTitle"
-        max-width="65"
-        max-height="65"
+        max-width="60"
+        max-height="60"
         contain
         class="mx-auto"
         referrerpolicy="no-referrer" />
