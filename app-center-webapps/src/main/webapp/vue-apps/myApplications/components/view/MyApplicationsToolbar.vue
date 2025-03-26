@@ -19,10 +19,10 @@
 -->
 
 <template>
-  <div class="d-flex">
-    <h4 class="widget-text-header my-auto me-auto">
+  <div class="d-flex align-center justify-space-between">
+    <div class="widget-text-header align-start">
       {{ $t('myApplications.name.label') }}
-    </h4>
+    </div>
     <v-tooltip
       :disabled="hasApplications"
       bottom>
@@ -34,12 +34,14 @@
           :class="{'pa-0': hasApplications}"
           :color="hasApplications && 'primary'"
           target="_self"
-          class="ms-auto"
+          class="align-end my-auto text-font-size"
+          small
           link
           v-bind="attrs"
           v-on="on">
           <v-icon
             v-if="!hasApplications"
+            :size="18"
             class="icon-default-color icon-default-size">
             fas fa-plus
           </v-icon>
