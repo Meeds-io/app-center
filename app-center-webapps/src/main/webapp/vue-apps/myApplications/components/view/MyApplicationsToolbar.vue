@@ -34,7 +34,7 @@
           :class="{'pa-0': hasApplications}"
           :color="hasApplications && 'primary'"
           target="_self"
-          class="align-end my-auto text-font-size"
+          class="align-end text-font-size"
           small
           link
           v-bind="attrs"
@@ -47,7 +47,7 @@
           </v-icon>
           <span
             v-else
-            class="primary--text">
+            class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
         </v-btn>
