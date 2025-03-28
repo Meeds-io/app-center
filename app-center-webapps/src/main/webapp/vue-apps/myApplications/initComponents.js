@@ -21,23 +21,25 @@ import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
+import MyApplicationsSettingsDrawer from './components/settings/MyApplicationsSettingsDrawer.vue';
 
-import * as appCenterService from './appCenterService.js';
+import * as myApplicationsService from './myApplicationsService.js';
 
 const components = {
   'my-applications-app': MyApplicationsApp,
   'my-applications-list': MyApplicationsList,
   'my-applications-toolbar': MyApplicationsToolbar,
-  'my-application-item': MyApplicationItem
+  'my-application-item': MyApplicationItem,
+  'my-applications-settings-drawer': MyApplicationsSettingsDrawer
 };
 
 for (const key in components) {
   Vue.component(key, components[key]);
 }
 
-if (!Vue.prototype.$appCenterService) {
-  window.Object.defineProperty(Vue.prototype, '$appCenterService', {
-    value: appCenterService,
+if (!Vue.prototype.$myApplicationsService) {
+  window.Object.defineProperty(Vue.prototype, '$myApplicationsService', {
+    value: myApplicationsService,
   });
 }
 
