@@ -21,9 +21,9 @@
 <template>
   <v-app id="myApplications">
     <v-hover v-slot="{hover}">
-      <v-card
+      <widget-wrapper
         :loading="isLoading"
-        class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
+        extra-class="application-body position-static border-box-sizing"
         flat>
         <my-applications-toolbar
           v-if="!isLoading"
@@ -37,7 +37,7 @@
           :applications-list="filteredApplications"
           :default-app-image="defaultAppImage"
           @list-updated="handleListOrderUpdate" />
-      </v-card>
+      </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
       v-if="isAdmin"
