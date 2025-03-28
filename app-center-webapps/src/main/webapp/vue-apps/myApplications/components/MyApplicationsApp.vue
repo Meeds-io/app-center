@@ -20,18 +20,30 @@
 
 <template>
   <v-app id="myApplications">
-    <v-card
-      class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
-      :loading="isLoading"
-      flat>
-      <my-applications-toolbar
-        v-if="!isLoading"
-        :has-applications="hasApplications" />
-      <my-applications-list
-        :applications-list="filteredApplications"
-        :default-app-image="defaultAppImage"
-        @list-updated="handleListOrderUpdate" />
-    </v-card>
+    <v-hover v-slot="{hover}">
+      <v-card
+        :loading="isLoading"
+        class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
+        flat>
+        <my-applications-toolbar
+          v-if="!isLoading"
+          :hover="hover"
+          :is-admin="isAdmin"
+          :show-header="showHeader"
+          :header-title="headerTitle"
+          :has-applications="hasApplications"
+          @open-settings="openSettingsDrawer" />
+        <my-applications-list
+          :applications-list="filteredApplications"
+          :default-app-image="defaultAppImage"
+          @list-updated="handleListOrderUpdate" />
+      </v-card>
+    </v-hover>
+    <my-applications-settings-drawer
+      v-if="isAdmin"
+      :settings="$root.settings"
+      ref="settingsDrawer"
+      @settings-updated="settingsUpdated" />
   </v-app>
 </template>
 
@@ -47,28 +59,55 @@ export default {
       alphabeticalOrder: true,
       baseUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`,
       currentUser: eXo.env.portal.userName,
-      initialized: false
+      initialized: false,
+      mobileDevices: /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i
     };
   },
   computed: {
+    isAdmin() {
+      return this.$root.settings?.isAdmin;
+    },
     filteredApplications() {
       return this.isMobileDevice && this.favoriteApplications.filter(application => application.mobile)
                                  || this.favoriteApplications;
     },
     isMobileDevice() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+      return this.mobileDevices.test(navigator.userAgent);
     },
     hasApplications() {
       return this.favoriteApplications?.length > 0;
+    },
+    showHeader() {
+      return this.$root.settings?.showHeader;
+    },
+    headerTitle() {
+      return this.$root.settings?.headerTitle;
+    },
+    maxAppsToList() {
+      return this.$root.settings.maxAppsToList;
     }
   },
   created() {
     this.getFavoriteApplications();
+    this.$root.isLoading = true;
   },
   methods: {
+    openSettingsDrawer() {
+      this.$refs.settingsDrawer.open();
+    },
+    settingsUpdated(settings, headerTitle) {
+      const updateList = Number(this.maxAppsToList) !== settings.maxAppsToList;
+      this.$root.settings.maxAppsToList = settings.maxAppsToList;
+      this.$root.settings.showHeader = settings.showHeader;
+      this.$root.settings.headerTitle = headerTitle;
+      this.$refs.settingsDrawer.close();
+      if (updateList) {
+        this.getFavoriteApplications();
+      }
+    },
     getFavoriteApplications() {
       this.isLoading = true;
-      return this.$appCenterService.getFavoriteApplications()
+      return this.$myApplicationsService.getFavoriteApplications(this.maxAppsToList)
         .then((data) => {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
@@ -130,7 +169,7 @@ export default {
         }
       }
       if (newApplicationsOrders.length) {
-        return await this.$appCenterService.updateApplicationsOrder(newApplicationsOrders);
+        return await this.$myApplicationsService.updateApplicationsOrder(newApplicationsOrders);
       }
     },
     handleListOrderUpdate(applicationList) {

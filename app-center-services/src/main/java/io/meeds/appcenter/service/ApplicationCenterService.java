@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import org.exoplatform.commons.api.settings.SettingService;
@@ -585,6 +586,20 @@ public class ApplicationCenterService {
     return appCenterStorage.getSystemApplications();
   }
 
+  public ApplicationList getMandatoryAndFavoriteApplications(String username, Pageable pageable) {
+    List<Application> applications = appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable)
+                                                     .stream()
+                                                     .filter(app -> hasPermission(username, app))
+                                                     .collect(Collectors.toList());
+    long countFavorites = appCenterStorage.countFavorites(username);
+    int appCount = applications.size();
+    return new ApplicationList().setApplications(applications)
+                                .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
+                                .setLimit(appCount)
+                                .setSize(appCount)
+                                .setOffset(0);
+  }
+  
   private boolean isAdministrator(String username) {
     return hasPermission(username, DEFAULT_ADMINISTRATORS_GROUP);
   }
@@ -672,5 +687,4 @@ public class ApplicationCenterService {
     }
     return identityRegistry;
   }
-
 }

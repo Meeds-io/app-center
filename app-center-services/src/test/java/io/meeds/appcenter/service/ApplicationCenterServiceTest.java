@@ -27,8 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -36,8 +35,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,8 @@ import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 
 import lombok.SneakyThrows;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @SpringBootTest(classes = { ApplicationCenterService.class })
 @ExtendWith(MockitoExtension.class)
@@ -462,6 +465,46 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.getApplicationImageInputStream(application.getId(), TEST_USER));
     InputStream stream = applicationCenterService.getApplicationImageInputStream(application.getId(), ADMIN_USERNAME);
     assertNotNull(stream);
+  }
+
+  @Test
+  @SneakyThrows
+  void testGetMandatoryAndFavoriteApplications() {
+    String username = "testuser";
+    Pageable pageable = PageRequest.of(0, 5);
+
+    UserApplication application1 = new UserApplication(application(1L));
+    UserApplication application2 = new UserApplication(application(2L));
+    UserApplication application3 = new UserApplication(application(3L));
+    UserApplication application4 = new UserApplication(application(4L));
+    UserApplication application5 = new UserApplication(application(5L));
+
+    application1.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application2.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application3.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application4.setPermissions(Collections.singletonList(PERMISSIONS_2));
+
+    when(appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable))
+            .thenReturn(Arrays.asList(application1, application2, application3, application4, application5));
+    when(appCenterStorage.countFavorites(username)).thenReturn(3L);
+
+    applicationCenterService.setMaxFavoriteApps(5);
+
+    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(username, pageable);
+
+    assertNotNull(applicationList);
+    assertNotNull(applicationList.getApplications());
+    assertEquals(4, applicationList.getApplications().size());
+
+    assertTrue(applicationList.isCanAddFavorite());
+
+    assertEquals(4, applicationList.getSize());
+    assertEquals(4, applicationList.getLimit());
+    assertEquals(0, applicationList.getOffset());
+
+    when(appCenterStorage.countFavorites(username)).thenReturn(6L);
+    applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(username, pageable);
+    assertFalse(applicationList.isCanAddFavorite());
   }
 
   private Application application() {
