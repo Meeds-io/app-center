@@ -20,7 +20,7 @@
 
 <template>
   <div
-    v-if="!applicationsList.length"
+    v-if="!applicationsList.length && !isLoading"
     class="d-flex flex-column justify-center align-center flex-grow-1">
     <v-icon size="60" class="secondary--text mb-2">
       fas fa-th
@@ -34,7 +34,10 @@
     <component
       :is="isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
-      class="d-flex flex-wrap flex-grow-0 justify-start">
+      :item-key="'id'"
+      class="d-flex flex-wrap flex-grow-0 justify-start"
+      @start="onDragStart"
+      @end="onDragEnd">
       <my-application-item
         v-for="application in applicationsList"
         :key="application.id"
@@ -59,6 +62,10 @@ export default {
     defaultAppImage: {
       type: Object,
       default: null
+    },
+    isLoading: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -66,8 +73,8 @@ export default {
       return this.$vuetify.breakpoint.smAndDown;
     }
   },
-  watch: {
-    applicationList() {
+  methods: {
+    onDragEnd() {
       this.$emit('list-updated', this.applicationsList);
     }
   }
