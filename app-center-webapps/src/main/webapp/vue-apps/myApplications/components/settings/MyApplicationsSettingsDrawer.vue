@@ -174,7 +174,7 @@ export default {
       this.close();
     },
     restoreSavedSettings() {
-      this.maxAppsToList = this.settings.maxAppsToList;
+      this.maxAppsToList = Number(this.settings.maxAppsToList);
       this.showHeader = this.settings.showHeader;
     }
   }

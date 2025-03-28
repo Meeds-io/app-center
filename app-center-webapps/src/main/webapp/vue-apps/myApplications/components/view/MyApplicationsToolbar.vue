@@ -30,7 +30,7 @@
       class="d-flex align-center ms-auto">
       <template v-if="hasApplications">
         <v-btn
-          v-if="!hover"
+          v-if="!hover || !isAdmin"
           :href="userAppSetupUrl"
           color="primary"
           target="_self"
