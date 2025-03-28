@@ -96,14 +96,14 @@
   <portlet>
     <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
     <display-name xml:lang="EN">App center my applications portlet</display-name>
-    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <portlet-class>io.meeds.appcenter.portlet.MyApplicationsPortlet</portlet-class>
     <init-param>
       <name>portlet-view-dispatched-file-path</name>
-      <value>/html/myApplications.html</value>
+      <value>/WEB-INF/jsp/appCenter/myApplications.jsp</value>
     </init-param>
     <init-param>
       <name>preload.resource.bundles</name>
-      <value>locale.addon.appcenter</value>
+      <value>locale.portlet.MyApplications</value>
     </init-param>
     <init-param>
       <name>preload.resource.rest</name>

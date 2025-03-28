@@ -35,9 +35,14 @@ const url = `/app-center/i18n/locale.portlet.MyApplications?lang=${lang}`;
 const vuetify = Vue.prototype.vuetifyOptions;
 const appId = 'myApplications';
 
-export function init() {
+export function init(settings) {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     Vue.createApp({
+      data() {
+        return {
+          settings: settings
+        };
+      },
       template: '<my-applications-app />',
       vuetify,
       i18n
