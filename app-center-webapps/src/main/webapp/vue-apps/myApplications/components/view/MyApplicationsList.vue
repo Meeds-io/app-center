@@ -34,17 +34,16 @@
     <component
       :is="isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
-      class="d-flex flex-wrap flex-grow-0 justify-start"
-      @end="onDragEnd">
+      class="d-flex flex-wrap flex-grow-0 justify-start">
       <my-application-item
         v-for="application in applicationsList"
         :key="application.id"
         :application="application"
         :default-app-image="defaultAppImage"
         :width="125"
-        :maxWidth="125"
-        :minHeight="125"
-        :maxHeight="150"
+        :max-width="125"
+        :min-height="125"
+        :max-height="150"
         class="d-flex ma-0 flex-grow-1" />
     </component>
   </v-layout>
@@ -67,8 +66,8 @@ export default {
       return this.$vuetify.breakpoint.smAndDown;
     }
   },
-  methods: {
-    onDragEnd() {
+  watch: {
+    applicationList() {
       this.$emit('list-updated', this.applicationsList);
     }
   }

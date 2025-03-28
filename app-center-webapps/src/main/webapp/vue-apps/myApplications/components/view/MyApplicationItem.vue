@@ -28,9 +28,9 @@
       :class="{'background-grey-primary': hover}"
       class="pa-4 d-flex flex-column align-center"
       :width="$attrs.width"
-      :max-width="$attrs.maxWidth"
-      :min-height="$attrs.minHeight"
-      :max-height="$attrs.maxHeight"
+      :max-width="$attrs['max-width']"
+      :min-height="$attrs['min-height']"
+      :max-height="$attrs['max-height']"
       link
       flat>
       <v-img
