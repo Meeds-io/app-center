@@ -42,9 +42,9 @@
         :application="application"
         :default-app-image="defaultAppImage"
         :width="125"
-        :maxWidth="125"
-        :minHeight="125"
-        :maxHeight="150"
+        :max-width="125"
+        :min-height="125"
+        :max-height="150"
         class="d-flex ma-0 flex-grow-1" />
     </component>
   </v-layout>

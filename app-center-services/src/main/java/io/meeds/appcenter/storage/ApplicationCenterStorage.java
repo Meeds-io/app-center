@@ -28,6 +28,8 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.file.model.FileInfo;
@@ -298,6 +300,10 @@ public class ApplicationCenterStorage {
 
   public long countApplications() {
     return applicationDAO.count();
+  }
+
+  public List<Application> getMandatoryAndFavoriteApplications(String username, Pageable pageable) {
+    return applicationDAO.findFavoriteAndMandatoryApplications(username, pageable).map(this::toDTO).getContent();
   }
 
   private Application toDTO(ApplicationEntity applicationEntity) {

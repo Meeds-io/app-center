@@ -20,43 +20,98 @@
 
 <template>
   <div class="d-flex align-center justify-space-between">
-    <div class="widget-text-header align-start">
-      {{ $t('myApplications.name.label') }}
+    <div
+      v-if="showHeader"
+      class="widget-text-header align-start">
+      {{ headerLabel }}
     </div>
-    <v-tooltip
-      :disabled="hasApplications"
-      bottom>
-      <template #activator="{ on, attrs }">
+    <div v-else class="flex-grow-1"></div>
+    <div
+      class="d-flex align-center ms-auto">
+      <template v-if="hasApplications">
         <v-btn
+          v-if="!hover"
           :href="userAppSetupUrl"
-          :icon="!hasApplications"
-          :text="hasApplications"
-          :class="{'pa-0': hasApplications}"
-          :color="hasApplications && 'primary'"
+          color="primary"
           target="_self"
-          class="align-end text-font-size"
+          class="pa-0 text-font-size"
           small
-          link
-          v-bind="attrs"
-          v-on="on">
-          <v-icon
-            v-if="!hasApplications"
-            :size="18"
-            class="icon-default-color icon-default-size">
-            fas fa-plus
-          </v-icon>
-          <span
-            v-else
-            class="primary--text text-none">
+          text
+          link>
+          <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
         </v-btn>
+        <v-tooltip
+          v-else
+          bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              :href="userAppSetupUrl"
+              target="_self"
+              color="primary"
+              class="ms-2 text-font-size"
+              small
+              link
+              icon
+              v-bind="attrs"
+              v-on="on">
+              <v-icon
+                :size="18"
+                class="icon-default-size">
+                fas fa-external-link-alt
+              </v-icon>
+            </v-btn>
+          </template>
+          {{ $t('myApplications.seeMore.tooltip') }}
+        </v-tooltip>
       </template>
-      {{ $t('myApplications.add.application.tooltip') }}
-    </v-tooltip>
+      <v-tooltip
+        v-if="hover && isAdmin"
+        bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            class="ms-2 text-font-size"
+            small
+            link
+            icon
+            v-bind="attrs"
+            v-on="on"
+            @click="$emit('open-settings')">
+            <v-icon
+              :size="18"
+              class="icon-default-size icon-default-color">
+              fas fa-cog
+            </v-icon>
+          </v-btn>
+        </template>
+        {{ $t('myApplications.editSettings.tooltip') }}
+      </v-tooltip>
+      <v-tooltip
+        v-if="!hasApplications"
+        bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            :href="userAppSetupUrl"
+            target="_self"
+            class="ms-2 text-font-size"
+            small
+            link
+            icon
+            v-bind="attrs"
+            v-on="on">
+            <v-icon
+              :size="18"
+              class="icon-default-color icon-default-size">
+              fas fa-plus
+            </v-icon>
+          </v-btn>
+        </template>
+        {{ $t('myApplications.add.application.tooltip') }}
+      </v-tooltip>
+    </div>
   </div>
 </template>
-
 <script>
 export default {
   data() {
@@ -68,6 +123,27 @@ export default {
     hasApplications: {
       type: Boolean,
       default: false
+    },
+    hover: {
+      type: Boolean,
+      default: false
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false
+    },
+    headerTitle: {
+      type: String,
+      default: null
+    },
+    showHeader: {
+      type: Boolean,
+      default: true
+    }
+  },
+  computed: {
+    headerLabel() {
+      return this.headerTitle || this.$t('myApplications.name.label');
     }
   }
 };
