@@ -21,10 +21,9 @@
 <template>
   <v-app id="myApplications">
     <v-hover v-slot="{hover}">
-      <v-card
+      <widget-wrapper
         :loading="isLoading"
-        class="d-flex flex-column application-body position-static pa-5 border-box-sizing"
-        flat>
+        extra-class="application-body position-static border-box-sizing">
         <my-applications-toolbar
           v-if="!isLoading"
           :hover="hover"
@@ -36,8 +35,9 @@
         <my-applications-list
           :applications-list="filteredApplications"
           :default-app-image="defaultAppImage"
+          :is-loading="isLoading"
           @list-updated="handleListOrderUpdate" />
-      </v-card>
+      </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
       v-if="isAdmin"
@@ -169,7 +169,8 @@ export default {
         }
       }
       if (newApplicationsOrders.length) {
-        return await this.$myApplicationsService.updateApplicationsOrder(newApplicationsOrders);
+        await this.$myApplicationsService.updateApplicationsOrder(newApplicationsOrders);
+        this.favoriteApplications = [...applicationList];
       }
     },
     handleListOrderUpdate(applicationList) {
