@@ -46,13 +46,6 @@
 
   <portlet-skin>
     <application-name>app-center</application-name>
-    <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
-    <skin-name>Enterprise</skin-name>
-    <css-path>/skin/css/myApplications.css</css-path>
-  </portlet-skin>
-
-  <portlet-skin>
-    <application-name>app-center</application-name>
     <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
     <additional-module>appCenter</additional-module>
