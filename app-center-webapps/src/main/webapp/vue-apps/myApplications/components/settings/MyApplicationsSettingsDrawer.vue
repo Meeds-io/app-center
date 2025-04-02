@@ -25,7 +25,7 @@
     :right="!$vuetify.rtl"
     @closed="reset">
     <template #title>
-      <div class="align-center text-truncate text-header-title font-weight-bold text-color">
+      <div class="text-truncate text-header-title font-weight-bold text-color">
         {{ $t('myApplications.edit.settings.title') }}
       </div>
     </template>
@@ -57,7 +57,8 @@
                 v-model="showHeader"
                 :disabled="isSaving"
                 color="primary"
-                class="pa-0 my-auto switch-input" />
+                class="pa-0 my-auto"
+                hide-details />
             </div>
           </div>
           <translation-text-field

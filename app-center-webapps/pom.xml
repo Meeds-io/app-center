@@ -101,7 +101,6 @@
               <compress>false</compress>
               <includes>
                 <include>app-center.less</include>
-                <include>myApplications.less</include>
               </includes>
             </configuration>
             <goals>
