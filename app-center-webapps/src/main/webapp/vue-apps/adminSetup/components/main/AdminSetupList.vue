@@ -93,10 +93,6 @@ export default {
       mobile: true,
       system: false,
       permissions: [],
-      imageFileBody: '',
-      imageFileName: '',
-      imageFileId: '',
-      viewMode: true,
       invalidSize: false,
       invalidImage: false,
       invalidImageFormat: false,
@@ -153,7 +149,6 @@ export default {
       }
     }
   },
-
   created() {
     Promise.all([
       this.getApplicationsList(),
@@ -165,7 +160,6 @@ export default {
       }
     });
   },
-
   methods: {
     getApplicationsList() {
       const offset = 0;
@@ -215,7 +209,6 @@ export default {
           }
         });
     },
-
     deleteApplication() {
       return fetch(`/app-center/rest/applications/${this.formArray.id}`,{
         method: 'DELETE',
@@ -233,15 +226,12 @@ export default {
           this.getApplicationsList();
         });
     },
-
     resetForm() {
       this.error = '';
       this.formArray.id = '';
       this.formArray.title = '';
       this.formArray.url = '';
       this.formArray.helpPageURL = '';
-      this.formArray.imageFileName = '';
-      this.formArray.imageFileBody = '';
       this.formArray.description = '';
       this.formArray.mandatory = false;
       this.formArray.system = false;
@@ -253,22 +243,18 @@ export default {
       this.formArray.invalidImageFormat = false;
       this.appToEditOriginalTitle = '';
     },
-
     showAddApplicationDrawer() {
       this.resetForm();
       this.$refs.appFormDrawer.open();
       $('body').addClass('hide-scroll');
       this.addApplication = true;
-      this.formArray.viewMode = true;
     },
-
     showEditApplicationDrawer(item) {
       this.resetForm();
       this.appToEditOriginalTitle = item.title;
-      this.$refs.appFormDrawer.open();
+      this.$refs.appFormDrawer.open(item);
       $('body').addClass('hide-scroll');
       this.addApplication = false;
-      Object.assign(this.formArray, item);
       this.appPermissions = [];
       const allOffset = 2;
       for (const permission of this.formArray.permissions) {
@@ -279,27 +265,22 @@ export default {
         });
       }
     },
-
     toDeleteApplicationModal(item) {
       this.showDeleteApplicationModal = true;
       this.formArray.id = item.id;
       this.formArray.title = item.title;
     },
-
     closeDeleteModal() {
       this.showDeleteApplicationModal = false;
       this.resetForm();
     },
-
     validUrl(app) {
       const url = app && app.url;
       return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
     },
-
     closeDrawer() {
       this.$refs.appFormDrawer.close();
     },
-
     getAppGeneralSettings() {
       return fetch('/app-center/rest/settings', {
         method: 'GET',
@@ -341,8 +322,6 @@ export default {
           mobile: application.mobile,
           system: application.system,
           permissions: application.permissions,
-          imageFileBody: application.imageFileBody,
-          imageFileName: application.imageFileName,
           imageFileId: application.imageFileId,
         })
       })

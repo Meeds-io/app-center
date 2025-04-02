@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.exception.ApplicationAlreadyExistsException;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
@@ -124,7 +125,7 @@ public class ApplicationRest {
   public Application createApplication(
                                        HttpServletRequest request,
                                        @RequestBody
-                                       Application application) {
+                                       ApplicationForm application) {
     try {
       return appCenterService.createApplication(application, request.getRemoteUser());
     } catch (IllegalAccessException e) {
@@ -148,7 +149,7 @@ public class ApplicationRest {
   public void updateApplication(
                                 HttpServletRequest request,
                                 @RequestBody
-                                Application application) {
+                                ApplicationForm application) {
     try {
       application.setChangedManually(true);
       appCenterService.updateApplication(application, request.getRemoteUser());

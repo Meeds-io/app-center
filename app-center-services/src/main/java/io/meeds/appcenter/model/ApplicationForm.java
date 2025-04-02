@@ -18,51 +18,15 @@
  */
 package io.meeds.appcenter.model;
 
-import java.util.List;
-
-import io.meeds.appcenter.constant.ApplicationType;
-
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-public class Application {
+@EqualsAndHashCode(callSuper = true)
+public class ApplicationForm extends Application {
 
-  private Long            id;
-
-  private String          title;
-
-  private String          url;
-
-  private String          helpPageURL;
-
-  private String          description;
-
-  private ApplicationType type;
-
-  private boolean         active;
-
-  private boolean         isMandatory;
-
-  private boolean         isDefault;
-
-  private boolean         isMobile;
-
-  private boolean         system;
-
-  private List<String>    permissions;
-
-  private Long            imageFileId;
-
-  private String          icon;
-
-  private String          imageUrl;
-
-  private Long            order;
-
-  private boolean         isChangedManually;
+  private String imageUploadId;
 
 }

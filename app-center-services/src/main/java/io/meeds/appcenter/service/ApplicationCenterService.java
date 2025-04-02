@@ -42,6 +42,7 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
@@ -126,8 +127,8 @@ public class ApplicationCenterService {
    * @throws IllegalAccessException if user is not allowed to create an
    *           application
    */
-  public Application createApplication(Application application, String username) throws ApplicationAlreadyExistsException,
-                                                                                 IllegalAccessException {
+  public Application createApplication(ApplicationForm application, String username) throws ApplicationAlreadyExistsException,
+                                                                                     IllegalAccessException {
     if (StringUtils.isBlank(username) || !isAdministrator(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
@@ -145,7 +146,7 @@ public class ApplicationCenterService {
    * @return stored {@link Application} in datasource
    * @throws ApplicationAlreadyExistsException when application already exists
    */
-  public Application createApplication(Application application) throws ApplicationAlreadyExistsException {
+  public Application createApplication(ApplicationForm application) throws ApplicationAlreadyExistsException {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
@@ -190,7 +191,7 @@ public class ApplicationCenterService {
    * @throws IllegalAccessException if user is not allowed to update application
    * @throws ApplicationNotFoundException if application wasn't found
    */
-  public Application updateApplication(Application application, String username) throws IllegalAccessException,
+  public Application updateApplication(ApplicationForm application, String username) throws IllegalAccessException,
                                                                                  ApplicationNotFoundException {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
@@ -218,7 +219,7 @@ public class ApplicationCenterService {
     return updateApplication(application);
   }
 
-  public Application updateApplication(Application application) throws ApplicationNotFoundException {
+  public Application updateApplication(ApplicationForm application) throws ApplicationNotFoundException {
     return appCenterStorage.updateApplication(application);
   }
 

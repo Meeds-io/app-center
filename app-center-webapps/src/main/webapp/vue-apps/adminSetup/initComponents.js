@@ -23,7 +23,9 @@ import AdminSetupItem from './components/main/AdminSetupItem.vue';
 import AdminSetupMenu from './components/main/AdminSetupMenu.vue';
 
 import ApplicationFormDrawer from './components/drawer/ApplicationFormDrawer.vue';
-import ExoSuggester from './components/suggester/ExoSuggester.vue';
+import ApplicationPermissions from './components/form/ApplicationPermissions.vue';
+import ApplicationImageInput from './components/form/ApplicationImageInput.vue';
+import ApplicationIcon from './components/view/ApplicationIcon.vue';
 
 import ExoAppCenterModal from './components/modal/ExoAppCenterModal.vue';
 
@@ -35,7 +37,9 @@ const components = {
   'app-center-admin-setup-list': AdminSetupList,
   'app-center-modal': ExoAppCenterModal,
   'app-center-form-drawer': ApplicationFormDrawer,
-  'app-center-suggester': ExoSuggester,
+  'app-center-permissions': ApplicationPermissions,
+  'app-center-image-input': ApplicationImageInput,
+  'app-center-icon': ApplicationIcon,
 };
 
 for (const key in components) {
