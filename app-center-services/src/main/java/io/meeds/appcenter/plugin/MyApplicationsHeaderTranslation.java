@@ -20,16 +20,30 @@
 package io.meeds.appcenter.plugin;
 
 import io.meeds.social.translation.plugin.TranslationPlugin;
+import io.meeds.social.translation.service.TranslationService;
+import jakarta.annotation.PostConstruct;
 import org.exoplatform.portal.config.UserACL;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class MyApplicationsHeaderTranslation extends TranslationPlugin {
 
-  public static final String MY_APPLICATIONS_OBJECT_TYPE = "myApplicationsPortlet";
+  public static final String       MY_APPLICATIONS_OBJECT_TYPE = "myApplicationsPortlet";
 
-  private final UserACL      userACL;
+  private final TranslationService translationService;
 
-  public MyApplicationsHeaderTranslation(UserACL userACL) {
+  private final UserACL            userACL;
+
+  @Autowired
+  public MyApplicationsHeaderTranslation(TranslationService translationService, UserACL userACL) {
+    this.translationService = translationService;
     this.userACL = userACL;
+  }
+
+  @PostConstruct
+  public void init() {
+    translationService.addPlugin(this);
   }
 
   @Override
