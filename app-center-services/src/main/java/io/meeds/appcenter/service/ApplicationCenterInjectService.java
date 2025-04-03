@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.io.IOUtils;
@@ -48,10 +48,12 @@ import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationDescriptor;
 import io.meeds.appcenter.model.ApplicationDescriptorList;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.common.ContainerTransactional;
 
 import jakarta.annotation.PostConstruct;
@@ -87,6 +89,9 @@ public class ApplicationCenterInjectService {
 
   @Autowired
   private ConfigurationManager               configurationManager;
+
+  @Autowired
+  private UploadService                      uploadService;
 
   @Autowired
   private ApplicationCenterService           applicationCenterService;
@@ -202,6 +207,7 @@ public class ApplicationCenterInjectService {
     });
   }
 
+  @SuppressWarnings("deprecation")
   private void injectDefaultApplication(ApplicationDescriptor applicationPlugin) { // NOSONAR
     Application application = applicationPlugin.getApplication();
     String pluginName = applicationPlugin.getName();
@@ -236,41 +242,40 @@ public class ApplicationCenterInjectService {
       application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
     }
 
+    ApplicationForm applicationForm = new ApplicationForm(application);
+
     String imagePath = applicationPlugin.getImagePath();
     if (StringUtils.isNotBlank(imagePath)) {
       try {
+        String uploadId = UUID.randomUUID().toString();
         InputStream inputStream = configurationManager.getInputStream(imagePath);
-        String fileBody = new String(Base64.getEncoder().encode(IOUtils.toByteArray(inputStream)));
-        application.setImageFileBody(fileBody);
+        uploadService.createUploadResource(uploadId, StandardCharsets.UTF_8.name(), "image/png", inputStream.available(), inputStream);
+        applicationForm.setImageUploadId(uploadId);
       } catch (Exception e) {
         LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
       }
     }
 
-    if (StringUtils.isBlank(application.getImageFileName())) {
-      application.setImageFileName(application.getTitle() + ".png");
-    }
-
     if (storedApplication == null) {
       try {
-        LOG.info("Create system application '{}'", application.getTitle());
-        application.setSystem(true);
-        application.setChangedManually(false);
-        application.setImageFileId(null);
-        applicationCenterService.createApplication(application);
+        LOG.info("Create system application '{}'", applicationForm.getTitle());
+        applicationForm.setSystem(true);
+        applicationForm.setChangedManually(false);
+        applicationForm.setImageFileId(null);
+        applicationCenterService.createApplication(applicationForm);
       } catch (Exception e) {
-        LOG.error("Error creating application {}", application, e);
+        LOG.error("Error creating application {}", applicationForm, e);
       }
     } else {
       try {
-        LOG.info("Update system application '{}'", application.getTitle());
-        application.setSystem(true);
-        application.setChangedManually(false);
-        application.setId(storedApplication.getId());
-        application.setImageFileId(storedApplication.getImageFileId());
-        applicationCenterService.updateApplication(application);
+        LOG.info("Update system application '{}'", applicationForm.getTitle());
+        applicationForm.setSystem(true);
+        applicationForm.setChangedManually(false);
+        applicationForm.setId(storedApplication.getId());
+        applicationForm.setImageFileId(storedApplication.getImageFileId());
+        applicationCenterService.updateApplication(applicationForm);
       } catch (Exception e) {
-        LOG.error("Error updating application {}", application, e);
+        LOG.error("Error updating application {}", applicationForm, e);
       }
     }
   }

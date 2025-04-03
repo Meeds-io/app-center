@@ -35,12 +35,15 @@ import org.springframework.stereotype.Component;
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.dao.ApplicationDAO;
 import io.meeds.appcenter.dao.FavoriteApplicationDAO;
 import io.meeds.appcenter.entity.ApplicationEntity;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
@@ -68,6 +71,9 @@ public class ApplicationCenterStorage {
   private FileService            fileService;
 
   @Autowired
+  private UploadService          uploadService;
+
+  @Autowired
   private ApplicationDAO         applicationDAO;
 
   @Autowired
@@ -81,14 +87,13 @@ public class ApplicationCenterStorage {
     return toDTO(applicationentity);
   }
 
-  public Application createApplication(Application application) {
+  public Application createApplication(ApplicationForm application) {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity.setId(null);
-    ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(),
-                                                               application.getImageFileBody());
+    ApplicationImage applicationImage = createAppImageFileItem(application.getImageUploadId());
     if (applicationImage != null) {
       applicationEntity.setImageFileId(applicationImage.getId());
     }
@@ -96,7 +101,7 @@ public class ApplicationCenterStorage {
     return toDTO(applicationEntity);
   }
 
-  public Application updateApplication(Application application) throws ApplicationNotFoundException {
+  public Application updateApplication(ApplicationForm application) throws ApplicationNotFoundException {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
@@ -111,16 +116,15 @@ public class ApplicationCenterStorage {
 
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
 
-    boolean imageRemoved = StringUtils.isBlank(application.getImageFileBody())
-                           && StringUtils.isBlank(application.getImageFileName())
+    boolean imageRemoved = application.getImageFileId() != null
+                           && application.getImageFileId() > 0
                            && oldImageFileId != null
                            && oldImageFileId > 0;
 
-    boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
-                               && StringUtils.isNotBlank(application.getImageFileName());
+    boolean newImageAttached = StringUtils.isNotBlank(application.getImageUploadId());
     // if new image make sure to update it
     if (newImageAttached) {
-      ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
+      ApplicationImage applicationImage = createAppImageFileItem(application.getImageUploadId());
       if (applicationImage != null) {
         application.setImageFileId(applicationImage.getId());
         if (oldImageFileId != null && oldImageFileId > 0) {
@@ -128,15 +132,12 @@ public class ApplicationCenterStorage {
           fileService.deleteFile(oldImageFileId);
         }
       }
-    } else {
-      application.setImageFileId(oldImageFileId);
-    }
-
-    // if image was unset remove it
-    if (imageRemoved) {
+    } else if (imageRemoved) {
       application.setImageFileId(null);
       // Cleanup old useless image
       fileService.deleteFile(oldImageFileId);
+    } else {
+      application.setImageFileId(oldImageFileId);
     }
 
     // if application is mandatory make sure to remove it from users favorites
@@ -180,7 +181,9 @@ public class ApplicationCenterStorage {
     favoriteApplicationDAO.save(new FavoriteApplicationEntity(application, username));
   }
 
-  public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) throws ApplicationNotFoundException {
+  public void updateFavoriteApplicationOrder(long applicationId,
+                                             String username,
+                                             Long order) throws ApplicationNotFoundException {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     if (entity == null) {
       addApplicationToUserFavorite(applicationId, username);
@@ -247,18 +250,9 @@ public class ApplicationCenterStorage {
     return favoriteApplicationDAO.countFavoritesForUser(username);
   }
 
-  public ApplicationImage saveAppImageFileItem(ApplicationImage defaultAppImage) {
-    if (defaultAppImage == null) {
-      throw new IllegalArgumentException("Application image is mandatory");
-    }
-    if (defaultAppImage.getId() == null || defaultAppImage.getId() <= 0) {
-      return createAppImageFileItem(defaultAppImage.getFileName(), defaultAppImage.getFileBody());
-    } else {
-      return updateAppImageFileItem(defaultAppImage.getId(), defaultAppImage.getFileName(), defaultAppImage.getFileBody());
-    }
-  }
-
-  public ApplicationImage createAppImageFileItem(String fileName, String fileBody) {
+  public ApplicationImage createAppImageFileItem(String uploadId) {
+    UploadResource uploadResource = uploadService.getUploadResource(uploadId);
+    String location = uploadResource.getStoreLocation();
     return updateAppImageFileItem(null, fileName, fileBody);
   }
 

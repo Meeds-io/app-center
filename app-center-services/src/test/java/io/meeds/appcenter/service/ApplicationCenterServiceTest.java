@@ -197,56 +197,15 @@ public class ApplicationCenterServiceTest {
     assertEquals(0, applicationCenterService.getMaxFavoriteApps());
   }
 
-  @Test
-  void setDefaultAppImage() {
-    ApplicationImage applicationImage = applicationCenterService.setDefaultAppImage(null);
-    assertNull(applicationImage);
-
-    applicationImage = new ApplicationImage(null, null, null);
-    applicationImage = applicationCenterService.setDefaultAppImage(applicationImage);
-    assertNull(applicationImage);
-
-    applicationImage = new ApplicationImage(null, "name", IMAGE_FILE_CONTENT);
-    when(appCenterStorage.saveAppImageFileItem(applicationImage)).thenAnswer(invocation -> {
-      ApplicationImage img = invocation.getArgument(0);
-      img.setId(IMAGE_FILE_ID);
-      return img;
-    });
-    applicationImage = applicationCenterService.setDefaultAppImage(applicationImage);
-    assertNotNull(applicationImage);
-    assertEquals(IMAGE_FILE_ID, applicationImage.getId());
-  }
-
   @SuppressWarnings({ "unchecked", "rawtypes" })
   @Test
   void getAppGeneralSettings() {
-    applicationCenterService.setDefaultAppImage(null);
-    applicationCenterService.setMaxFavoriteApps(0);
-
+    applicationCenterService.setMaxFavoriteApps(2);
     GeneralSettings generalSettings = applicationCenterService.getSettings();
     assertNotNull(generalSettings);
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNull(generalSettings.getDefaultApplicationImage());
-
-    applicationCenterService.setDefaultAppImage(new ApplicationImage(null, null, null));
+    assertEquals(2, generalSettings.getMaxFavoriteApps());
     generalSettings = applicationCenterService.getSettings();
-
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNull(generalSettings.getDefaultApplicationImage());
-
-    when(appCenterStorage.getAppImageFile(IMAGE_FILE_ID)).thenReturn(new ApplicationImage(IMAGE_FILE_ID,
-                                                                                          "name",
-                                                                                          IMAGE_FILE_CONTENT));
-    when(settingService.get(APP_CENTER_CONTEXT,
-                            APP_CENTER_SCOPE,
-                            DEFAULT_APP_IMAGE_ID)).thenReturn(new SettingValue(String.valueOf(IMAGE_FILE_ID)));
-
-    generalSettings = applicationCenterService.getSettings();
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNotNull(generalSettings.getDefaultApplicationImage());
-    assertEquals("name", generalSettings.getDefaultApplicationImage().getFileName());
-    assertFalse(generalSettings.getDefaultApplicationImage().getFileBody().isEmpty());
-    assertNotNull(generalSettings.getDefaultApplicationImage().getId());
+    assertEquals(2, generalSettings.getMaxFavoriteApps());
   }
 
   @Test

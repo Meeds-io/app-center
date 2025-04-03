@@ -125,21 +125,6 @@ public class ApplicationSettingsRestTest {
     response.andExpect(status().isOk());
   }
 
-  @Test
-  void setDefaultAppImageAnonymously() throws Exception {
-    ResultActions response = mockMvc.perform(patch(SETTINGS_PATH + "/image").content(asJsonString(new ApplicationImage()))
-                                                                            .contentType(MediaType.APPLICATION_JSON));
-    response.andExpect(status().isForbidden());
-  }
-
-  @Test
-  void setDefaultAppImage() throws Exception {
-    ResultActions response = mockMvc.perform(patch(SETTINGS_PATH + "/image").with(testAdminUser())
-                                                                            .content(asJsonString(new ApplicationImage()))
-                                                                            .contentType(MediaType.APPLICATION_JSON));
-    response.andExpect(status().isOk());
-  }
-
   private RequestPostProcessor testAdminUser() {
     return user(ADMIN_USER).password(TEST_PASSWORD)
                            .authorities(new SimpleGrantedAuthority("administrators"));

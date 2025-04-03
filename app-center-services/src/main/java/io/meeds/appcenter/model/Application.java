@@ -55,6 +55,8 @@ public class Application {
 
   private List<String>    permissions;
 
+  private List<Long>      categoryIds;
+
   private Long            imageFileId;
 
   private String          icon;

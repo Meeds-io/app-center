@@ -29,4 +29,24 @@ public class ApplicationForm extends Application {
 
   private String imageUploadId;
 
+  public ApplicationForm(Application application) {
+    super(application.getId(),
+          application.getTitle(),
+          application.getUrl(),
+          application.getHelpPageURL(),
+          application.getDescription(),
+          application.getType(),
+          application.isActive(),
+          application.isMandatory(),
+          application.isDefault(),
+          application.isMobile(),
+          application.isSystem(),
+          application.getPermissions(),
+          application.getImageFileId(),
+          application.getIcon(),
+          application.getImageUrl(),
+          application.getOrder(),
+          application.isChangedManually());
+  }
+
 }

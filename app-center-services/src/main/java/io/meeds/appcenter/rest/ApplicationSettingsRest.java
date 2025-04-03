@@ -22,12 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.service.ApplicationCenterService;
 
@@ -70,21 +68,6 @@ public class ApplicationSettingsRest {
                                  @RequestParam("number")
                                  long number) {
     appCenterService.setMaxFavoriteApps(number);
-  }
-
-  @PatchMapping(path = "image")
-  @Secured("administrators")
-  @Operation(
-             summary = "Modifies default application image setting",
-             method = "PATCH",
-             description = "Modifies default application image setting")
-  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public void setDefaultAppImage(
-                                 @Parameter(description = "Application image id, body and name", required = true)
-                                 @RequestBody
-                                 ApplicationImage defaultAppImage) {
-    appCenterService.setDefaultAppImage(defaultAppImage);
   }
 
 }

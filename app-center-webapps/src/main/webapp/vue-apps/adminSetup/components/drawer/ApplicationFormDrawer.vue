@@ -1,18 +1,23 @@
 <!--
-This file is part of the Meeds project (https://meeds.io/).
-Copyright (C) 2020 Meeds Association
-contact@meeds.io
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-You should have received a copy of the GNU Lesser General Public License
-along with this program; if not, write to the Free Software Foundation,
-Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+  This file is part of the Meeds project (https://meeds.io/).
+
+  Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 -->
 <template>
   <exo-drawer
@@ -37,7 +42,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <translation-text-field
           ref="applicationName"
           id="applicationName"
-          v-model="application.title"
+          v-model="titles"
           :rules="rules.name"
           :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
           :maxlength="maxNameLength"
@@ -54,7 +59,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <translation-text-field
           ref="applicationDescription"
           id="applicationDescription"
-          v-model="application.description"
+          v-model="descriptions"
           :rules="rules.description"
           :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
           :maxlength="maxNameLength"
@@ -65,21 +70,60 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           back-icon
           autofocus
           required />
-        <v-label for="applicationUrl">
-          {{ $t('appCenter.adminSetupForm.url') }}
-        </v-label>
+        <div class="mb-2">
+          {{ $t('appCenter.adminSetupForm.application') }}
+        </div>
+        <v-radio-group
+          v-model="application.type"
+          class="mt-0 pa-0"
+          mandatory>
+          <v-radio value="LINK">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
+            </template>
+          </v-radio>
+          <v-radio value="DRAWER">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
+            </template>
+          </v-radio>
+          <v-radio value="PORTLET">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.portlet') }}</span>
+            </template>
+          </v-radio>
+        </v-radio-group>
         <v-text-field
+          v-if="application.type === 'LINK'"
           ref="applicationUrl"
           id="applicationUrl"
           v-model="application.url"
           :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
           name="applicationUrl"
-          class="border-box-sizing width-auto pt-0 mt-2 mb-4"
+          class="border-box-sizing width-auto pt-0 mb-4"
           type="text"
           hide-details
           mandatory
           outlined
           dense />
+        <quick-action-suggester
+          v-else-if="application.type === 'DRAWER'"
+          ref="applicationUrl"
+          id="applicationUrl"
+          v-model="application.url"
+          name="applicationUrl"
+          class="mb-4" />
+        <portlet-instance-suggester
+          v-else-if="application.type === 'PORTLET'"
+          ref="applicationUrl"
+          id="applicationUrl"
+          v-model="application.url"
+          name="applicationUrl"
+          class="mb-4" />
+        <category-input
+          v-model="application.categoryIds"
+          label="appCenter.adminSetupForm.categories"
+          label-class="" />
         <div class="mb-2">
           {{ $t('appCenter.adminSetupForm.updateTheIcon') }}
         </div>
@@ -114,17 +158,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               v-model="application.default"
               class="ma-0 pa-0"
               name="applicationDefault"
-              hide-details />
-          </div>
-          <div class="d-flex full-width justify-space-between align-center mb-2">
-            <label
-              for="applicationActive"
-              class="text-start flex-grow-1"
-              @click="application.active = !application.active">{{ $t('appCenter.adminSetupForm.active') }}</label>
-            <v-switch
-              v-model="application.active"
-              class="ma-0 pa-0"
-              name="applicationActive"
               hide-details />
           </div>
           <div class="d-flex full-width justify-space-between align-center mb-2">
@@ -191,8 +224,9 @@ export default {
     maxDescriptionLength: 500,
     maxNameLength: 200,
     drawer: false,
+    titles: {},
+    descriptions: {},
     application: {},
-    applicationCategoryIds: [],
   }),
   computed: {
     disabled() {
@@ -202,7 +236,7 @@ export default {
         || (this.application.helpPageURL?.length && !this.validHelpPageUrl);
     },
     validUrl() {
-      return this.application.system || this.$utils.toLinkUrl(this.application?.url, {
+      return this.application.type !== 'LINK' || this.application.system || this.$utils.toLinkUrl(this.application?.url, {
         urls: true,
         email: true,
         phone: true,
@@ -246,8 +280,15 @@ export default {
       };
     },
   },
+  watch: {
+    'application.type': {
+      handler() {
+        this.application.url = null;
+      },
+    },
+  },
   methods: {
-    open(app) {
+    async open(app) {
       this.application = app || {
         icon: null,
         imageUrl: null,
@@ -258,9 +299,24 @@ export default {
         system: false,
         type: 'LINK', // LINK, DRAWER or PORTLET
         permissions: [],
+        categoryIds: [],
       };
-      this.applicationCategoryIds = [];
       this.$refs.formDrawer.open();
+      if (app.id) {
+        this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
+        this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
+        if (!this.titles || !Object.keys(this.titles).length) {
+          this.titles = {};
+          this.titles[eXo.env.portal.defaultLanguage] = app.title || '';
+        }
+        if (!this.descriptions || !Object.keys(this.descriptions).length) {
+          this.descriptions = {};
+          this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
+        }
+      } else {
+        this.titles = {};
+        this.descriptions = {};
+      }
     },
     close() {
       this.$refs.formDrawer.close();

@@ -87,6 +87,9 @@
       <depends>
         <module>categoryVueComponents</module>
       </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
     </module>
   </portlet>
 

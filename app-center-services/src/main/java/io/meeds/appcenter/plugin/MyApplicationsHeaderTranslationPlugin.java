@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MyApplicationsHeaderTranslation extends TranslationPlugin {
+public class MyApplicationsHeaderTranslationPlugin extends TranslationPlugin {
 
   public static final String       MY_APPLICATIONS_OBJECT_TYPE = "myApplicationsPortlet";
 
@@ -36,7 +36,7 @@ public class MyApplicationsHeaderTranslation extends TranslationPlugin {
   private final UserACL            userACL;
 
   @Autowired
-  public MyApplicationsHeaderTranslation(TranslationService translationService, UserACL userACL) {
+  public MyApplicationsHeaderTranslationPlugin(TranslationService translationService, UserACL userACL) {
     this.translationService = translationService;
     this.userACL = userACL;
   }

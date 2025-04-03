@@ -25,6 +25,9 @@ import AdminSetupMenu from './components/main/AdminSetupMenu.vue';
 import ApplicationFormDrawer from './components/drawer/ApplicationFormDrawer.vue';
 import ApplicationPermissions from './components/form/ApplicationPermissions.vue';
 import ApplicationImageInput from './components/form/ApplicationImageInput.vue';
+import QuickActionSuggester from './components/form/QuickActionSuggester.vue';
+import PortletInstanceSuggester from './components/form/PortletInstanceSuggester.vue';
+
 import ApplicationIcon from './components/view/ApplicationIcon.vue';
 
 import ExoAppCenterModal from './components/modal/ExoAppCenterModal.vue';
@@ -40,6 +43,8 @@ const components = {
   'app-center-permissions': ApplicationPermissions,
   'app-center-image-input': ApplicationImageInput,
   'app-center-icon': ApplicationIcon,
+  'quick-action-suggester': QuickActionSuggester,
+  'portlet-instance-suggester': PortletInstanceSuggester,
 };
 
 for (const key in components) {

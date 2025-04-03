@@ -43,7 +43,6 @@ import org.exoplatform.services.security.MembershipEntry;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationForm;
-import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.GeneralSettings;
@@ -73,8 +72,6 @@ public class ApplicationCenterService {
   public static final String       DEFAULT_USERS_PERMISSION            = "*:" + DEFAULT_USERS_GROUP;
 
   public static final String       MAX_FAVORITE_APPS                   = "maxFavoriteApps";
-
-  public static final String       DEFAULT_APP_IMAGE_ID                = "defaultAppImageId";
 
   public static final String       DEFAULT_APP_IMAGE_NAME              = "defaultAppImageName";
 
@@ -339,41 +336,12 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Stores default image for applications not having an attached illustration
-   *
-   * @param defaultAppImage image content and name
-   * @return stored image
-   */
-  public ApplicationImage setDefaultAppImage(ApplicationImage defaultAppImage) {
-    if (defaultAppImage == null
-        || (StringUtils.isBlank(defaultAppImage.getFileName()) && StringUtils.isBlank(defaultAppImage.getFileBody()))) {
-      settingService.remove(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, DEFAULT_APP_IMAGE_ID);
-    } else {
-      ApplicationImage applicationImage = appCenterStorage.saveAppImageFileItem(defaultAppImage);
-      if (applicationImage != null && applicationImage.getId() != null && applicationImage.getId() > 0) {
-        settingService.set(APP_CENTER_CONTEXT,
-                           APP_CENTER_SCOPE,
-                           DEFAULT_APP_IMAGE_ID,
-                           SettingValue.create(String.valueOf(applicationImage.getId())));
-        return applicationImage;
-      }
-    }
-    return null;
-  }
-
-  /**
    * @return {@link GeneralSettings} of application including default image and
    *         maximum favorite applications count
    */
   public GeneralSettings getSettings() { // NOSONAR
     GeneralSettings generalsettings = new GeneralSettings();
     generalsettings.setMaxFavoriteApps(getMaxFavoriteApps());
-
-    Long defaultAppImageId = getDefaultImageId();
-    if (defaultAppImageId != null) {
-      ApplicationImage defaultImage = appCenterStorage.getAppImageFile(defaultAppImageId);
-      generalsettings.setDefaultApplicationImage(defaultImage);
-    }
     return generalsettings;
   }
 
@@ -535,12 +503,8 @@ public class ApplicationCenterService {
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
       return appCenterStorage.getApplicationImageLastUpdated(application.getImageFileId());
     } else {
-      Long defaultImageId = getDefaultImageId();
-      if (defaultImageId != null && defaultImageId > 0) {
-        return appCenterStorage.getApplicationImageLastUpdated(defaultImageId);
-      }
+      return null;
     }
-    return null;
   }
 
   /**
@@ -567,20 +531,11 @@ public class ApplicationCenterService {
     if (!isAdministrator(username) && !hasPermission(username, application)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
     }
-    InputStream applicationImageInputStream = null;
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
-      applicationImageInputStream = appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+      return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+    } else {
+      return null;
     }
-    if (applicationImageInputStream == null) {
-      // result is null if there is no image associated to the application
-      // or if the image is not readable (data corruption, or quarantined by an
-      // antivirus)
-      Long defaultImageId = getDefaultImageId();
-      if (defaultImageId != null && defaultImageId > 0) {
-        applicationImageInputStream = appCenterStorage.getApplicationImageInputStream(defaultImageId);
-      }
-    }
-    return applicationImageInputStream;
   }
 
   public List<Application> getSystemApplications() {
@@ -652,15 +607,6 @@ public class ApplicationCenterService {
     } else {
       return identity;
     }
-  }
-
-  private Long getDefaultImageId() {
-    SettingValue<?> defaultAppImageIdSetting = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, DEFAULT_APP_IMAGE_ID);
-    Long defaultAppImageId = null;
-    if (defaultAppImageIdSetting != null && defaultAppImageIdSetting.getValue() != null) {
-      defaultAppImageId = Long.parseLong(defaultAppImageIdSetting.getValue().toString());
-    }
-    return defaultAppImageId;
   }
 
   private List<Application> getActiveApplications(String keyword, String username) {
