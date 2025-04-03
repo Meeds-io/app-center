@@ -21,6 +21,7 @@ package io.meeds.appcenter.rest;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
@@ -62,8 +63,8 @@ public class ApplicationFavoriteRest {
              description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ApplicationList getFavoriteApplicationsList(HttpServletRequest request) {
-    return appCenterService.getMandatoryAndFavoriteApplicationsList(request.getRemoteUser());
+  public ApplicationList getFavoriteApplicationsList(HttpServletRequest request, Pageable pageable) {
+    return appCenterService.getMandatoryAndFavoriteApplications(request.getRemoteUser(), pageable);
   }
 
   @PostMapping(path = "{applicationId}")

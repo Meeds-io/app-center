@@ -46,13 +46,6 @@
 
   <portlet-skin>
     <application-name>app-center</application-name>
-    <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
-    <skin-name>Enterprise</skin-name>
-    <additional-module>appCenter</additional-module>
-  </portlet-skin>
-
-  <portlet-skin>
-    <application-name>app-center</application-name>
     <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
     <additional-module>appCenter</additional-module>
@@ -103,6 +96,10 @@
   <portlet>
     <name>AppCenterMyApplicationsPortlet</name>
     <module>
+      <script>
+        <minify>false</minify>
+        <path>/javascript/vue/myApplications.bundle.js</path>
+      </script>
       <depends>
         <module>vue</module>
       </depends>
@@ -116,7 +113,13 @@
         <module>commonVueComponents</module>
       </depends>
       <depends>
-        <module>myApplicationsBundle</module>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>translationField</module>
+      </depends>
+      <depends>
+        <module>vueDraggable</module>
       </depends>
     </module>
   </portlet>
@@ -152,29 +155,6 @@
     <script>
       <minify>false</minify>
       <path>/javascript/vue/userSetup.bundle.js</path>
-    </script>
-    <depends>
-      <module>vue</module>
-    </depends>
-    <depends>
-      <module>vuetify</module>
-    </depends>
-    <depends>
-      <module>eXoVueI18n</module>
-    </depends>
-    <depends>
-      <module>commonVueComponents</module>
-    </depends>
-    <depends>
-      <module>jquery</module>
-    </depends>
-  </module>
-
-  <module>
-    <name>myApplicationsBundle</name>
-    <script>
-      <minify>false</minify>
-      <path>/javascript/vue/myApplications.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>

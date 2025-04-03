@@ -20,9 +20,13 @@ package io.meeds.appcenter.dao;
 
 import java.util.List;
 
+import io.meeds.appcenter.entity.FavoriteApplicationEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 
 import io.meeds.appcenter.entity.ApplicationEntity;
@@ -72,4 +76,15 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
   default List<ApplicationEntity> findAll() {
     return findAll(Sort.by(Sort.Order.asc("title").ignoreCase()));
   }
+
+  @Query("""
+      SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order)
+      FROM ApplicationEntity app
+      LEFT JOIN FavoriteApplicationEntity favoriteApp \
+            ON app.id = favoriteApp.application.id AND favoriteApp.userName = :userName
+      WHERE app.active = TRUE AND (favoriteApp.id IS NOT NULL OR app.isMandatory = TRUE)
+      ORDER BY favoriteApp.order NULLS LAST, app.isMandatory DESC
+      """)
+  Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName") String userName, Pageable pageable);
+
 }
