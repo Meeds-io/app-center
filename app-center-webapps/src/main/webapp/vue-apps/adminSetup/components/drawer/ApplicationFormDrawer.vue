@@ -145,7 +145,7 @@
             </label>
             <v-switch
               v-model="application.mandatory"
-              class="mandatoryLabel ma-0 pa-0"
+              class="ma-0 pa-0"
               name="applicationMandatory"
               hide-details />
           </div>
@@ -302,7 +302,7 @@ export default {
         categoryIds: [],
       };
       this.$refs.formDrawer.open();
-      if (app.id) {
+      if (app?.id) {
         this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
         this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
         if (!this.titles || !Object.keys(this.titles).length) {

@@ -19,8 +19,8 @@
 package io.meeds.appcenter.dao;
 
 import java.util.List;
+import java.util.stream.Stream;
 
-import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,52 +30,47 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
 
 import io.meeds.appcenter.entity.ApplicationEntity;
+import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 
 @Component
 public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
 
   @Query("""
-      SELECT app FROM ApplicationEntity app
+      SELECT app.id FROM ApplicationEntity app
       WHERE app.active = TRUE
       AND app.isMandatory = TRUE
       """)
-  List<ApplicationEntity> getMandatoryActiveApps();
+  List<Long> getMandatoryActiveApplicationIds();
+
+  Stream<ApplicationEntity> findByIsSystemAndUrl(String url);
 
   @Query("""
-      SELECT app FROM ApplicationEntity app
+      SELECT app.id FROM ApplicationEntity app
       """)
-  List<ApplicationEntity> getApplications(Sort sort);
-  default List<ApplicationEntity> getApplications() {
-    return getApplications(Sort.by(Sort.Order.asc("title").ignoreCase()));
+  List<Long> getApplicationIds(Sort sort);
+
+  default List<Long> getApplicationIds() {
+    return getApplicationIds(Sort.by(Sort.Order.asc("title").ignoreCase()));
   }
 
   @Query("""
-      SELECT app FROM ApplicationEntity app
+      SELECT app.id FROM ApplicationEntity app
       WHERE LOWER(app.title) LIKE %?1%
       OR LOWER(app.description) like %?1%
       OR LOWER(app.url) LIKE %?1%
       ORDER BY LOWER(app.title)
       """)
-  List<ApplicationEntity> getApplications(String keyword, Sort sort) ;
-  default List<ApplicationEntity> getApplications(String keyword) {
-    return getApplications(keyword, Sort.by(Sort.Order.asc("title").ignoreCase()));
+  List<Long> getApplicationIds(String keyword, Sort sort);
+
+  default List<Long> getApplicationIds(String keyword) {
+    return getApplicationIds(keyword, Sort.by(Sort.Order.asc("title").ignoreCase()));
   }
 
   @Query("""
-      SELECT app FROM ApplicationEntity app
+      SELECT app.id FROM ApplicationEntity app
       WHERE app.system = TRUE
       """)
-  List<ApplicationEntity> getSystemApplications();
-
-  @Query("""
-      SELECT app FROM ApplicationEntity app
-      WHERE app.title = ?1
-      """)
-  ApplicationEntity getApplicationByTitle(String title);
-
-  default List<ApplicationEntity> findAll() {
-    return findAll(Sort.by(Sort.Order.asc("title").ignoreCase()));
-  }
+  List<Long> getSystemApplicationIds();
 
   @Query("""
       SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order)
@@ -85,6 +80,7 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       WHERE app.active = TRUE AND (favoriteApp.id IS NOT NULL OR app.isMandatory = TRUE)
       ORDER BY favoriteApp.order NULLS LAST, app.isMandatory DESC
       """)
-  Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName") String userName, Pageable pageable);
+  Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName")
+  String userName, Pageable pageable);
 
 }

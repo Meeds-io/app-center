@@ -20,6 +20,7 @@ package io.meeds.appcenter.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -27,6 +28,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationForm extends Application {
 
+  @Exclude
   private String imageUploadId;
 
   public ApplicationForm(Application application) {
@@ -42,6 +44,7 @@ public class ApplicationForm extends Application {
           application.isMobile(),
           application.isSystem(),
           application.getPermissions(),
+          application.getCategoryIds(),
           application.getImageFileId(),
           application.getIcon(),
           application.getImageUrl(),

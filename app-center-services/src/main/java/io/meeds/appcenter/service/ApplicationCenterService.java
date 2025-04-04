@@ -42,7 +42,6 @@ import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 
 import io.meeds.appcenter.model.Application;
-import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.GeneralSettings;
@@ -124,7 +123,7 @@ public class ApplicationCenterService {
    * @throws IllegalAccessException if user is not allowed to create an
    *           application
    */
-  public Application createApplication(ApplicationForm application, String username) throws ApplicationAlreadyExistsException,
+  public Application createApplication(Application application, String username) throws ApplicationAlreadyExistsException,
                                                                                      IllegalAccessException {
     if (StringUtils.isBlank(username) || !isAdministrator(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
@@ -143,13 +142,9 @@ public class ApplicationCenterService {
    * @return stored {@link Application} in datasource
    * @throws ApplicationAlreadyExistsException when application already exists
    */
-  public Application createApplication(ApplicationForm application) throws ApplicationAlreadyExistsException {
+  public Application createApplication(Application application) throws ApplicationAlreadyExistsException {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
-    }
-    Application existingApplication = appCenterStorage.getApplicationByTitle(application.getTitle());
-    if (existingApplication != null) {
-      throw new ApplicationAlreadyExistsException("appcenter.sameTitleAlreadyExists");
     }
     if (!isUrlValid(application.getUrl())) {
       throw new IllegalArgumentException("appcenter.malformedUrl");
@@ -168,14 +163,13 @@ public class ApplicationCenterService {
    *
    * @param applicationId application to find
    * @return stored {@link Application} in datasource
-   * @throws ApplicationNotFoundException when application doesn't exists
    */
-  public Application findApplication(long applicationId) throws ApplicationNotFoundException {
-    Application application = appCenterStorage.getApplicationById(applicationId);
-    if (application == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    return application;
+  public Application getApplication(long applicationId) {
+    return appCenterStorage.getApplication(applicationId);
+  }
+
+  public Application findSystemApplicationByUrl(String url) {
+    return appCenterStorage.findSystemApplicationByUrl(url);
   }
 
   /**
@@ -184,12 +178,11 @@ public class ApplicationCenterService {
    *
    * @param application dto to update on store
    * @param username username storing application
-   * @return stored {@link Application} in datasource
    * @throws IllegalAccessException if user is not allowed to update application
    * @throws ApplicationNotFoundException if application wasn't found
    */
-  public Application updateApplication(ApplicationForm application, String username) throws IllegalAccessException,
-                                                                                 ApplicationNotFoundException {
+  public void updateApplication(Application application, String username) throws IllegalAccessException,
+                                                                                     ApplicationNotFoundException {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
@@ -200,7 +193,7 @@ public class ApplicationCenterService {
     if (!isUrlValid(application.getUrl())) {
       throw new IllegalArgumentException("appcenter.malformedUrl");
     }
-    Application storedApplication = appCenterStorage.getApplicationById(applicationId);
+    Application storedApplication = appCenterStorage.getApplication(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
@@ -213,11 +206,11 @@ public class ApplicationCenterService {
       application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
     }
 
-    return updateApplication(application);
+    updateApplication(application);
   }
 
-  public Application updateApplication(ApplicationForm application) throws ApplicationNotFoundException {
-    return appCenterStorage.updateApplication(application);
+  public void updateApplication(Application application) throws ApplicationNotFoundException {
+    appCenterStorage.updateApplication(application);
   }
 
   /**
@@ -238,7 +231,7 @@ public class ApplicationCenterService {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
 
-    Application storedApplication = appCenterStorage.getApplicationById(applicationId);
+    Application storedApplication = appCenterStorage.getApplication(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     } else if (!isAdministrator(username)) {
@@ -273,7 +266,7 @@ public class ApplicationCenterService {
     if (applicationId <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplicationById(applicationId);
+    Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
@@ -368,10 +361,6 @@ public class ApplicationCenterService {
     applicationList.setOffset(offset);
     applicationList.setLimit(limit);
     return applicationList;
-  }
-
-  public Application getApplicationByTitle(String title) {
-    return appCenterStorage.getApplicationByTitle(title);
   }
 
   /**
@@ -469,7 +458,7 @@ public class ApplicationCenterService {
     if (applicationOrder.getId() <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplicationById(applicationOrder.getId());
+    Application application = appCenterStorage.getApplication(applicationOrder.getId());
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationOrder.getId()));
     }
@@ -492,7 +481,7 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplicationById(applicationId);
+    Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
@@ -523,7 +512,7 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplicationById(applicationId);
+    Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
@@ -555,7 +544,7 @@ public class ApplicationCenterService {
                                 .setSize(appCount)
                                 .setOffset(0);
   }
-  
+
   private boolean isAdministrator(String username) {
     return hasPermission(username, DEFAULT_ADMINISTRATORS_GROUP);
   }
@@ -634,4 +623,5 @@ public class ApplicationCenterService {
     }
     return identityRegistry;
   }
+
 }

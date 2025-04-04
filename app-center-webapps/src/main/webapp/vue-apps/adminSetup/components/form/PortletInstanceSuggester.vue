@@ -32,6 +32,7 @@
     width="100%"
     max-width="100%"
     hide-selected
+    hide-details
     outlined
     chips
     dense />

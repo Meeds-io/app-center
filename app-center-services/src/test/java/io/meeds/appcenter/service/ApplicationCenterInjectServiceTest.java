@@ -22,8 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +38,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.container.configuration.ConfigurationManager;
+import org.exoplatform.upload.UploadService;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationDescriptor;
 
@@ -44,21 +50,21 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterInjectServiceTest {
 
-  private static final long              IMAGE_FILE_ID       = 5l;
+  private static final Random            RANDOM        = new Random();
 
-  private static final long              IMAGE_LAST_MODIFIED = 588l;
+  private static final long              IMAGE_FILE_ID = 5l;
 
-  private static final String            HELP_PAGE_URL       = "./helpPageUrl";
+  private static final String            HELP_PAGE_URL = "./helpPageUrl";
 
-  private static final String            URL                 = "./url";
+  private static final String            URL           = "./url";
 
-  private static final String            PERMISSIONS_1       = "/permissions1";
+  private static final String            PERMISSIONS_1 = "/permissions1";
 
-  private static final String            DESCRIPTION         = "description";
+  private static final String            DESCRIPTION   = "description";
 
-  private static final String            TITLE               = "title";
+  private static final String            TITLE         = "title";
 
-  private static final Long              ID                  = 2l;
+  private static final Long              ID            = 2l;
 
   @MockBean
   private ConfigurationManager           configurationManager;
@@ -69,6 +75,9 @@ public class ApplicationCenterInjectServiceTest {
   @MockBean
   private ApplicationCenterService       applicationCenterService;
 
+  @MockBean
+  private UploadService                  uploadService;
+
   @Autowired
   private ApplicationCenterInjectService applicationCenterInjectService;
 
@@ -78,9 +87,7 @@ public class ApplicationCenterInjectServiceTest {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterInjectService.addApplicationPlugin(null));
 
     applicationCenterInjectService.injectDefaultApplications();
-    assertEquals(1,
-                 applicationCenterInjectService.getDefaultApplications().size(),
-                 "Should have injected data from 'applications.json' file");
+    assertEquals(1, applicationCenterInjectService.getDefaultApplications().size());
 
     String pluginName = "testapp";
 
@@ -92,11 +99,17 @@ public class ApplicationCenterInjectServiceTest {
     applicationCenterInjectService.injectDefaultApplications();
     verify(applicationCenterService, never()).createApplication(any());
 
+    when(applicationCenterService.createApplication(any(Application.class))).thenAnswer(invocation -> {
+      Application app = invocation.getArgument(0);
+      app.setId(RANDOM.nextLong());
+      return app;
+    });
+
     applicationPlugin1.setEnabled(true);
     try {
       applicationCenterInjectService.addApplicationPlugin(applicationPlugin1);
       applicationCenterInjectService.injectDefaultApplications();
-      verify(applicationCenterService).createApplication(applicationPlugin1.getApplication());
+      verify(applicationCenterService).createApplication(any());
     } finally {
       applicationCenterInjectService.removeApplicationPlugin(pluginName);
     }
@@ -109,10 +122,10 @@ public class ApplicationCenterInjectServiceTest {
                                                                          true);
     try {
       applicationCenterInjectService.addApplicationPlugin(applicationPlugin2);
-      when(applicationCenterService.getApplicationByTitle(application.getTitle())).thenReturn(application);
+      when(applicationCenterService.findSystemApplicationByUrl(application.getUrl())).thenReturn(application);
       application.setChangedManually(true);
       applicationCenterInjectService.injectDefaultApplications();
-      verify(applicationCenterService).updateApplication(application);
+      verify(applicationCenterService).updateApplication(any());
     } finally {
       applicationCenterInjectService.removeApplicationPlugin(pluginName);
     }
@@ -138,17 +151,20 @@ public class ApplicationCenterInjectServiceTest {
                            TITLE,
                            URL,
                            HELP_PAGE_URL,
-                           IMAGE_FILE_ID,
-                           IMAGE_LAST_MODIFIED,
-                           "",
-                           "",
                            DESCRIPTION,
+                           ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
-                           PERMISSIONS_1);
+                           Collections.singletonList(PERMISSIONS_1),
+                           null,
+                           IMAGE_FILE_ID,
+                           "icon",
+                           null,
+                           0l,
+                           false);
   }
 
 }

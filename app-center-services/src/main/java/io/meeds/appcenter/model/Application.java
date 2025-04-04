@@ -24,6 +24,7 @@ import io.meeds.appcenter.constant.ApplicationType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode.Exclude;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -55,12 +56,14 @@ public class Application {
 
   private List<String>    permissions;
 
+  @Exclude
   private List<Long>      categoryIds;
 
   private Long            imageFileId;
 
   private String          icon;
 
+  @Exclude
   private String          imageUrl;
 
   private Long            order;
