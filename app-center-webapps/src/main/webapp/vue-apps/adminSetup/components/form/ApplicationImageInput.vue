@@ -71,6 +71,7 @@ export default {
     },
   },
   data: () => ({
+    imageData: null,
     iconSize: 34,
     maxFileSize: 102400,
     sending: false,
@@ -79,10 +80,10 @@ export default {
   }),
   computed: {
     iconUrl() {
-      if (this.application?.iconSrc) {
-        return this.$utils.convertImageDataAsSrc(this.application.iconSrc);
+      if (this.imageData) {
+        return this.$utils.convertImageDataAsSrc(this.imageData);
       } else {
-        return this.application?.iconUrl;
+        return this.application?.imageUrl;
       }
     },
     isDefault() {
@@ -105,6 +106,8 @@ export default {
       this.$emit('reset');
       this.sending = false;
       if (this.$refs.iconFileInput) {
+        this.$emit('input', null);
+        this.imageData = null;
         this.resetInput = true;
         this.$nextTick().then(() => this.resetInput = false);
       }
@@ -124,13 +127,13 @@ export default {
         return this.$uploadService.upload(file)
           .then(uploadId => {
             if (uploadId) {
+              this.$emit('input', uploadId);
               const reader = new FileReader();
               reader.onload = (e) => {
-                self.$emit('src', e.target.result);
+                self.imageData = e.target.result;
                 self.$forceUpdate();
               };
               reader.readAsDataURL(file);
-              this.$emit('input', uploadId);
             } else {
               this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.uploadingError'), 'error');
             }

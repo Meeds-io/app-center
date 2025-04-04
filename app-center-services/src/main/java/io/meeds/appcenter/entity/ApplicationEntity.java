@@ -101,36 +101,4 @@ public class ApplicationEntity {
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)
   private Collection<FavoriteApplicationEntity> favorites;
 
-  public ApplicationEntity(Long id, // NOSONAR
-                           String title,
-                           String description,
-                           ApplicationType type,
-                           String url,
-                           String icon,
-                           String helpPageUrl,
-                           Long imageFileId,
-                           boolean active,
-                           boolean isDefault,
-                           boolean isMandatory,
-                           boolean isMobile,
-                           boolean system,
-                           List<String> permissions,
-                           boolean isChangedManually) {
-    this.id = id;
-    this.title = title;
-    this.description = description;
-    this.type = type;
-    this.url = url;
-    this.icon = icon;
-    this.helpPageUrl = helpPageUrl;
-    this.imageFileId = imageFileId;
-    this.active = active;
-    this.isDefault = isDefault;
-    this.isMandatory = isMandatory;
-    this.isMobile = isMobile;
-    this.system = system;
-    this.permissions = permissions;
-    this.isChangedManually = isChangedManually;
-  }
-
 }

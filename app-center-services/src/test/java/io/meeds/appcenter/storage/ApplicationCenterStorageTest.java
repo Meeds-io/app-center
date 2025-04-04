@@ -53,7 +53,6 @@ import io.meeds.appcenter.dao.FavoriteApplicationDAO;
 import io.meeds.appcenter.entity.ApplicationEntity;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import io.meeds.appcenter.model.Application;
-import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 
 import lombok.SneakyThrows;
@@ -208,46 +207,7 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  @SneakyThrows
-  void testGetFavoriteApplicationsByUser() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.getFavoriteApplicationsByUser(null));
-    List<UserApplication> favoriteApplications = applicationCenterStorage.getFavoriteApplicationsByUser(TEST_USER);
-    assertNotNull(favoriteApplications);
-    assertEquals(0, favoriteApplications.size());
-
-    FavoriteApplicationEntity favoriteApplicationEntity = mock(FavoriteApplicationEntity.class);
-    ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
-    when(applicationEntity.getId()).thenReturn(ID);
-
-    when(favoriteApplicationDAO.getFavoriteAppsByUser(TEST_USER)).thenReturn(Collections.singletonList(favoriteApplicationEntity));
-    when(favoriteApplicationEntity.getApplication()).thenReturn(applicationEntity);
-    when(applicationEntity.isActive()).thenReturn(true);
-    assertEquals(0, applicationCenterStorage.getFavoriteApplicationsByUser(TEST_USER).size());
-    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
-    assertEquals(1, applicationCenterStorage.getFavoriteApplicationsByUser(TEST_USER).size());
-
-    when(applicationEntity.isMandatory()).thenReturn(true);
-    assertEquals(1, applicationCenterStorage.getFavoriteApplicationsByUser(TEST_USER).size());
-
-    when(applicationEntity.isActive()).thenReturn(false);
-    assertEquals(0, applicationCenterStorage.getFavoriteApplicationsByUser(TEST_USER).size());
-  }
-
-  @Test
-  void testGetMandatoryApplicationsByUser() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.getFavoriteApplicationsByUser(null));
-
-    List<UserApplication> mandatoryApplications = applicationCenterStorage.getMandatoryApplications();
-    assertNotNull(mandatoryApplications);
-    assertEquals(0, mandatoryApplications.size());
-    when(applicationDAO.getMandatoryActiveApplicationIds()).thenReturn(Collections.singletonList(ID));
-    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity(ID)));
-    assertEquals(1, applicationCenterStorage.getMandatoryApplications().size());
-  }
-
-  @Test
   void testGetApplications() {
-
     List<Application> applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(0, applications.size());
@@ -321,7 +281,8 @@ public class ApplicationCenterStorageTest {
                                  false,
                                  false,
                                  Collections.singletonList(PERMISSIONS_2),
-                                 false);
+                                 false,
+                                 null);
   }
 
   private Application application(Long id) {

@@ -27,8 +27,8 @@
     :loading="loading"
     body-classes="hide-scroll"
     class="appCenterDrawer">
-    <template #title>
-      <slot></slot>
+    <template v-if="drawer" #title>
+      <span class="appLauncherDrawerTitle">{{ drawerTitle }}</span>
     </template>
     <template v-if="drawer" #content>
       <v-form
@@ -131,18 +131,19 @@
           v-model="application.imageUploadId"
           :application="application"
           class="mb-4"
-          @icon="application.icon = $event" />
+          @icon="application.icon = $event"
+          @reset="resetImage" />
         <div class="text-header mb-2">
           {{ $t('appCenter.adminSetupForm.advancedOptions') }}
         </div>
         <div class="mb-2">
           <div class="d-flex full-width align-center mb-2">
-            <label
-              for="applicationMandatory"
-              class="text-start flex-grow-1"
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
               @click="application.mandatory = !application.mandatory">
               {{ $t('appCenter.adminSetupForm.mandatory') }}
-            </label>
+            </v-card>
             <v-switch
               v-model="application.mandatory"
               class="ma-0 pa-0"
@@ -150,10 +151,12 @@
               hide-details />
           </div>
           <div class="d-flex full-width justify-space-between align-center mb-2">
-            <label
-              for="applicationDefault"
-              class="text-start flex-grow-1"
-              @click="application.default = !application.default">{{ $t('appCenter.adminSetupForm.default') }}</label>
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.default = !application.default">
+              {{ $t('appCenter.adminSetupForm.default') }}
+            </v-card>
             <v-switch
               v-model="application.default"
               class="ma-0 pa-0"
@@ -161,10 +164,12 @@
               hide-details />
           </div>
           <div class="d-flex full-width justify-space-between align-center mb-2">
-            <label
-              for="applicationMobile"
-              class="text-start flex-grow-1"
-              @click="application.mobile = !application.mobile">{{ $t('appCenter.adminSetupForm.mobile') }}</label>
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.mobile = !application.mobile">
+              {{ $t('appCenter.adminSetupForm.mobile') }}
+            </v-card>
             <v-switch
               v-model="application.mobile"
               class="ma-0 pa-0"
@@ -214,12 +219,6 @@
 </template>
 <script>
 export default {
-  props: {
-    appToEditOriginalTitle: {
-      type: Object,
-      default: null
-    },
-  },
   data: () => ({
     maxDescriptionLength: 500,
     maxNameLength: 200,
@@ -229,6 +228,9 @@ export default {
     application: {},
   }),
   computed: {
+    drawerTitle() {
+      return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
+    },
     disabled() {
       return !this.application.title?.length
         || this.application.description.length > this.maxDescriptionLength
@@ -282,14 +284,17 @@ export default {
   },
   watch: {
     'application.type': {
-      handler() {
-        this.application.url = null;
+      handler(newVal, oldVal) {
+        if (this.drawer && newVal && oldVal) {
+          this.application.url = null;
+        }
       },
     },
   },
   methods: {
     async open(app) {
-      this.application = app || {
+      this.$root.$emit('close-alert-message');
+      this.application = app && JSON.parse(JSON.stringify(app)) || {
         icon: null,
         imageUrl: null,
         active: false,
@@ -301,27 +306,33 @@ export default {
         permissions: [],
         categoryIds: [],
       };
-      this.$refs.formDrawer.open();
       if (app?.id) {
         this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
         this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
-        if (!this.titles || !Object.keys(this.titles).length) {
-          this.titles = {};
+        if (!this.titles || !Object.keys(this.titles).length || !this.titles[eXo.env.portal.defaultLanguage]?.length) {
+          this.titles = this.titles || {};
           this.titles[eXo.env.portal.defaultLanguage] = app.title || '';
         }
-        if (!this.descriptions || !Object.keys(this.descriptions).length) {
-          this.descriptions = {};
+        if (!this.descriptions || !Object.keys(this.descriptions).length || !this.descriptions[eXo.env.portal.defaultLanguage]?.length) {
+          this.descriptions = this.descriptions || {};
           this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
         }
       } else {
         this.titles = {};
         this.descriptions = {};
       }
+      await this.$nextTick();
+      this.$refs.formDrawer.open();
+    },
+    resetImage() {
+      this.application.imageUrl = null;
+      this.application.imageFileId = null;
     },
     close() {
       this.$refs.formDrawer.close();
     },
     save() {
+      const isNew = !this.application.id;
       this.loading = true;
       return fetch('/app-center/rest/applications', {
         credentials: 'include',
@@ -329,37 +340,33 @@ export default {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        method: this.application.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          id: this.application.id,
-          title: this.application.title,
-          url: this.application.url,
-          helpPageURL: this.application.helpPageURL,
-          description: this.application.description,
-          active: this.application.active,
-          default: this.application.default,
-          mandatory: this.application.mandatory,
-          mobile: this.application.mobile,
-          system: this.application.system,
-          permissions: this.application.permissions,
-          imageFileId: this.application.imageFileId,
-        })
+        method: isNew ? 'POST' : 'PUT',
+        body: JSON.stringify(this.application)
       })
-        .then(() => this.$emit('initApps'))
-        .catch(e => {
-          if (e.response.status === 401) {
-            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
+        .then(resp => {
+          if (resp?.ok) {
+            if (isNew) {
+              return resp.json();
+            } else {
+              return this.application;
+            }
           } else {
-            this.error = this.$t('appCenter.adminSetupForm.error');
+            throw new Error();
           }
         })
-        .finally(() => {
-          this.loading = false;
+        .then(async app => {
+          await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
+          await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
+          this.$root.$emit('app-center-refresh-list');
+          if (isNew) {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
+          } else {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+          }
           this.close();
-        });
-    },
-    appTitleExists(v) {
-      return (v || this.application.title) !== this.appToEditOriginalTitle && this.existingAppNames.includes(v || this.application.title);
+        })
+        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error'))
+        .finally(() => this.loading = false);
     },
   },
 };

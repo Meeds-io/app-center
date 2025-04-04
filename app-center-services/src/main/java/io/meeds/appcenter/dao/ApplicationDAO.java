@@ -19,7 +19,6 @@
 package io.meeds.appcenter.dao;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,14 +34,7 @@ import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 @Component
 public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
 
-  @Query("""
-      SELECT app.id FROM ApplicationEntity app
-      WHERE app.active = TRUE
-      AND app.isMandatory = TRUE
-      """)
-  List<Long> getMandatoryActiveApplicationIds();
-
-  Stream<ApplicationEntity> findByIsSystemAndUrl(String url);
+  List<ApplicationEntity> findBySystemIsTrueAndUrl(String url);
 
   @Query("""
       SELECT app.id FROM ApplicationEntity app

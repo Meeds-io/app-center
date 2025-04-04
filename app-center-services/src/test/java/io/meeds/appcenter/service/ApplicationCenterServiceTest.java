@@ -48,9 +48,8 @@ import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -61,6 +60,7 @@ import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
 
@@ -97,10 +97,10 @@ public class ApplicationCenterServiceTest {
   private SettingService           settingService;
 
   @MockBean
-  private Authenticator            authenticator;
+  private TranslationService       translationService;
 
   @MockBean
-  private IdentityRegistry         identityRegistry;
+  private UserACL                  userAcl;
 
   @MockBean
   private ApplicationCenterStorage appCenterStorage;
@@ -121,24 +121,20 @@ public class ApplicationCenterServiceTest {
     lenient().when(userIdentity.isMemberOf(argThat((ArgumentMatcher<MembershipEntry>) m -> m.getGroup()
                                                                                             .equals(PERMISSIONS_2))))
              .thenReturn(true);
-    lenient().when(identityRegistry.getIdentity(ADMIN_USERNAME)).thenReturn(adminIdentity);
-    lenient().when(identityRegistry.getIdentity(TEST_USER)).thenReturn(userIdentity);
+    lenient().when(userAcl.getUserIdentity(ADMIN_USERNAME)).thenReturn(adminIdentity);
+    lenient().when(userAcl.getUserIdentity(TEST_USER)).thenReturn(userIdentity);
+    lenient().when(userAcl.isAdministrator(adminIdentity)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(adminIdentity, PERMISSIONS_1)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(adminIdentity, PERMISSIONS_2)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, ADMIN_USERNAME)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, PERMISSIONS_2)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, TEST_USER)).thenReturn(true);
   }
 
   @Test
   @SneakyThrows
   void createApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.createApplication(null));
-    Application existingApplication = application();
-    existingApplication.setTitle("title2");
-    existingApplication.setUrl("test");
-    assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.createApplication(existingApplication));
-    existingApplication.setUrl("./test/");
-    existingApplication.setHelpPageURL("test");
-    assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.createApplication(existingApplication));
-
     Application application = application(null);
     applicationCenterService.createApplication(application);
     verify(appCenterStorage).createApplication(application);
@@ -298,38 +294,6 @@ public class ApplicationCenterServiceTest {
 
   @Test
   @SneakyThrows
-  void getMandatoryAndFavoriteApplicationsList() {
-    UserApplication application1 = new UserApplication(application(6l));
-    UserApplication application2 = new UserApplication(application(7l));
-    UserApplication application3 = new UserApplication(application(8l));
-    UserApplication application4 = new UserApplication(application(9l));
-    UserApplication application5 = new UserApplication(application(10l));
-
-    when(appCenterStorage.getMandatoryApplications()).thenReturn(Arrays.asList(application1, application2, application3));
-    when(appCenterStorage.countFavorites(ADMIN_USERNAME)).thenReturn(1l);
-    when(appCenterStorage.getFavoriteApplicationsByUser(ADMIN_USERNAME)).thenReturn(Arrays.asList(application4, application5));
-    applicationCenterService.setMaxFavoriteApps(1);
-
-    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(ADMIN_USERNAME);
-    assertFalse(applicationList.isCanAddFavorite());
-    assertEquals(5, applicationList.getApplications().size());
-    assertEquals(5, applicationList.getSize());
-
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(TEST_USER);
-    assertTrue(applicationList.isCanAddFavorite());
-    assertEquals(0, applicationList.getApplications().size());
-    assertEquals(0, applicationList.getSize());
-
-    application1.setPermissions(Collections.singletonList(PERMISSIONS_2));
-    application2.setPermissions(Collections.singletonList(PERMISSIONS_2));
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(TEST_USER);
-    assertTrue(applicationList.isCanAddFavorite());
-    assertEquals(2, applicationList.getApplications().size());
-    assertEquals(2, applicationList.getSize());
-  }
-
-  @Test
-  @SneakyThrows
   void updateFavoriteApplicationOrder() {
     assertThrows(IllegalArgumentException.class,
                  () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ""));
@@ -439,7 +403,7 @@ public class ApplicationCenterServiceTest {
 
     applicationCenterService.setMaxFavoriteApps(5);
 
-    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(TEST_USER, pageable);
+    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(pageable, TEST_USER, null);
 
     assertNotNull(applicationList);
     assertNotNull(applicationList.getApplications());
@@ -452,7 +416,7 @@ public class ApplicationCenterServiceTest {
     assertEquals(0, applicationList.getOffset());
 
     when(appCenterStorage.countFavorites(TEST_USER)).thenReturn(6L);
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(TEST_USER, pageable);
+    applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(pageable, TEST_USER, null);
     assertFalse(applicationList.isCanAddFavorite());
   }
 

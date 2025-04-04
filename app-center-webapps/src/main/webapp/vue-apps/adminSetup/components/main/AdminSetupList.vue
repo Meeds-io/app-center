@@ -22,13 +22,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       :no-data-text="$t('appCenter.adminSetupForm.noApp')"
       disable-pagination
       hide-default-footer
-      disable-sort>
+      disable-sort
+      dense>
       <template #item="props">
         <app-center-admin-item
           :item="props.item"
           @set-enabled="setEnabled(props.item, $event)"
-          @edit="showEditApplicationDrawer(props.item)"
-          @remove="toDeleteApplicationModal(props.item)" />
+          @edit="editApplication(props.item)"
+          @remove="applicationToDelete = props.item" />
       </template>
       <template v-if="hasMore" #footer>
         <v-btn
@@ -39,26 +40,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </v-btn>
       </template>
     </v-data-table>
-    <app-center-form-drawer
-      ref="appFormDrawer"
-      :form-array="formArray"
-      :app-permissions="appPermissions"
-      :existing-app-names="existingAppNames"
-      :app-to-edit-original-title="appToEditOriginalTitle"
-      @initApps="getApplicationsList"
-      @resetForm="closeDrawer"
-      @closeDrawer="closeDrawer">
-      <span v-if="addApplication" class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.createNewApp") }}</span>
-      <span v-else class="appLauncherDrawerTitle">{{ $t("appCenter.adminSetupForm.editApp") }}</span>
-    </app-center-form-drawer>
-    <app-center-modal
-      :open="showDeleteApplicationModal"
+    <app-center-form-drawer ref="appFormDrawer" />
+    <exo-confirm-dialog
+      ref="deleteConfirmDialog"
       :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
       :message="$t('appCenter.adminSetupForm.modal.confirmDelete')"
       :ok-label="$t('appCenter.adminSetupForm.modal.delete')"
       :cancel-label="$t('appCenter.adminSetupForm.cancel')"
       @ok="deleteApplication"
-      @closed="closeDeleteModal" />
+      @closed="deleteApplication = null" />
   </div>
 </template>
 <script>
@@ -70,40 +60,10 @@ export default {
     },
   },
   data: () => ({
-    initialized: false,
     loading: true,
-    defaultAppImage: {
-      fileBody: '',
-      fileName: '',
-      invalidSize: false,
-      invalidImage: false,
-      invalidImageFormat: false,
-    },
-    searchApp: '',
-    searchDelay: 300,
     applicationsList: [],
-    formArray: {
-      id: 0,
-      title: '',
-      url: '',
-      helpPageURL: '',
-      description: '',
-      active: true,
-      mandatory: false,
-      mobile: true,
-      system: false,
-      permissions: [],
-      invalidSize: false,
-      invalidImage: false,
-      invalidImageFormat: false,
-    },
-    error: '',
+    applicationToDelete: null,
     showDeleteApplicationModal: false,
-    displayAppDelay: 200,
-    addApplication: true,
-    appPermissions: [],
-    existingAppNames: [],
-    appToEditOriginalTitle: '',
     pageSize: 10,
     limit: 10,
   }),
@@ -119,7 +79,7 @@ export default {
     headers() {
       return [{
         text: '',
-        width: '50px',
+        width: '30px',
         class: 'ps-0'
       }, {
         text: this.$t('appCenter.adminSetupList.name'),
@@ -139,28 +99,28 @@ export default {
   },
   watch: {
     keyword() {
-      if (this.keyword && this.keyword.trim().length) {
-        clearTimeout(this.searchApp);
-        this.searchApp = setTimeout(() => {
-          this.getApplicationsList();
-        }, this.searchDelay);
-      } else if (!this.keyword || this.keyword.length !== this.keyword.split(' ').length - 1) {
-        this.getApplicationsList();
+      this.getApplicationsList();
+    },
+    deleteApplication() {
+      if (this.deleteApplication) {
+        this.$refs.deleteConfirmDialog.open();
+      } else {
+        this.$refs.deleteConfirmDialog.close();
       }
-    }
+    },
   },
   created() {
-    Promise.all([
-      this.getApplicationsList(),
-      this.getAppGeneralSettings()
-    ]).finally(() => this.$root.$applicationLoaded());
-    $(document).on('keydown', (event) => {
-      if (event.key === 'Escape' && this && this.closeDeleteModal) {
-        this.closeDeleteModal();
-      }
-    });
+    this.$root.$on('app-center-refresh-list', this.getApplicationsList);
+    this.init();
+  },
+  beforeDestroy() {
+    this.$root.$off('app-center-refresh-list', this.getApplicationsList);
   },
   methods: {
+    init() {
+      return this.getApplicationsList()
+        .finally(() => this.$root.$applicationLoaded());
+    },
     getApplicationsList() {
       const offset = 0;
       const limit = 0;
@@ -172,45 +132,28 @@ export default {
           if (resp && resp.ok) {
             return resp.json();
           } else {
-            throw new Error(
-              'Error when getting the favorite applications list'
-            );
+            throw new Error('Error when getting the favorite applications list');
           }
         })
         .then(data => {
           this.applicationsList = [];
           data.applications.forEach(app => {
-            this.existingAppNames.push(app.title);
             // manage system apps localized names
             if (app.system) {
               const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
-              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
+              if (this.$te(`appCenter.system.application.${appTitle}`)) {
                 data.applications[this.getAppIndex(data.applications, app.id)].displayName = this.$t(`appCenter.system.application.${appTitle}`);
               }
             }
-
             app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-
           this.applicationsList = data.applications;
-          return this.$nextTick();
-        }).finally(() => {
-          this.loading = false;
-          if (!this.initialized) {
-            this.initialized = true;
-            /* Differ replacing cached content
-             To let Vuetify the time to process
-             chevron icons position switch RTL or LTR */
-            window.setTimeout(() => {
-              this.$root.$emit('application-loaded');
-            }, this.displayAppDelay);
-          }
-        });
+        }).finally(() => this.loading = false);
     },
     deleteApplication() {
-      return fetch(`/app-center/rest/applications/${this.formArray.id}`,{
+      return fetch(`/app-center/rest/applications/${this.applicationToDelete.id}`,{
         method: 'DELETE',
         credentials: 'include',
       })
@@ -221,89 +164,11 @@ export default {
             throw new Error('Error when deleting application by id');
           }
         })
-        .then(() => {
-          this.closeDeleteModal();
-          this.getApplicationsList();
-        });
+        .then(() => this.getApplicationsList())
+        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'))
+        .finally(() => this.applicationToDelete = null);
     },
-    resetForm() {
-      this.error = '';
-      this.formArray.id = '';
-      this.formArray.title = '';
-      this.formArray.url = '';
-      this.formArray.helpPageURL = '';
-      this.formArray.description = '';
-      this.formArray.mandatory = false;
-      this.formArray.system = false;
-      this.formArray.active = true;
-      this.formArray.mobile = true;
-      this.formArray.permissions = [];
-      this.formArray.invalidSize = false;
-      this.formArray.invalidImage = false;
-      this.formArray.invalidImageFormat = false;
-      this.appToEditOriginalTitle = '';
-    },
-    showAddApplicationDrawer() {
-      this.resetForm();
-      this.$refs.appFormDrawer.open();
-      $('body').addClass('hide-scroll');
-      this.addApplication = true;
-    },
-    showEditApplicationDrawer(item) {
-      this.resetForm();
-      this.appToEditOriginalTitle = item.title;
-      this.$refs.appFormDrawer.open(item);
-      $('body').addClass('hide-scroll');
-      this.addApplication = false;
-      this.appPermissions = [];
-      const allOffset = 2;
-      for (const permission of this.formArray.permissions) {
-        const groupId = permission.startsWith('*:') ? permission.substr(allOffset, permission.length - allOffset) : permission;
-        this.appPermissions.push({
-          id: groupId,
-          name: groupId,
-        });
-      }
-    },
-    toDeleteApplicationModal(item) {
-      this.showDeleteApplicationModal = true;
-      this.formArray.id = item.id;
-      this.formArray.title = item.title;
-    },
-    closeDeleteModal() {
-      this.showDeleteApplicationModal = false;
-      this.resetForm();
-    },
-    validUrl(app) {
-      const url = app && app.url;
-      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
-    },
-    closeDrawer() {
-      this.$refs.appFormDrawer.close();
-    },
-    getAppGeneralSettings() {
-      return fetch('/app-center/rest/settings', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error getting favorite applications list');
-          }
-        })
-        .then(data => {
-          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
-        });
-    },
-    setEnabled(application, enabled) {
-      return this.updateOption({
-        ...application,
-        active: enabled
-      });
-    },
-    updateOption(application) {
+    updateApplication(application) {
       return fetch('/app-center/rest/applications', {
         credentials: 'include',
         headers: {
@@ -311,28 +176,32 @@ export default {
           'Content-Type': 'application/json'
         },
         method: 'PUT',
-        body: JSON.stringify({
-          id: application.id,
-          title: application.title,
-          url: application.url,
-          helpPageURL: application.helpPageURL,
-          description: application.description,
-          active: application.active,
-          mandatory: application.mandatory,
-          mobile: application.mobile,
-          system: application.system,
-          permissions: application.permissions,
-          imageFileId: application.imageFileId,
-        })
+        body: JSON.stringify(application)
       })
         .catch(e => {
           const UNAUTHORIZED_ERROR_CODE = 401;
           if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
-            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.unauthorized'), 'error');
           } else {
-            this.error = this.$t('appCenter.adminSetupForm.error');
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.error'), 'error');
           }
         });      
+    },
+    editApplication(item) {
+      this.$refs.appFormDrawer.open(item);
+    },
+    setEnabled(application, enabled) {
+      return this.updateApplication({
+        ...application,
+        active: enabled
+      })
+        .then(() => {
+          if (enabled) {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationEnabledSuccessfully'), 'success');
+          } else {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDisabledSuccessfully'), 'success');
+          }
+        });
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);

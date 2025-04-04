@@ -24,6 +24,7 @@
     ref="selectAutoComplete"
     v-model="portletInstanceId"
     :placeholder="$t('appCenter.adminSetupForm.portletPlaceholder')"
+    :loading="loading"
     :items="items"
     item-value="id"
     item-text="label"
@@ -45,11 +46,10 @@ export default {
       default: null,
     },
   },
-  data() {
-    return {
-      portletInstanceId: null,
-    };
-  },
+  data: () => ({
+    loading: false,
+    portletInstanceId: null,
+  }),
   computed: {
     items() {
       return this.$root.portletInstances.map(item => ({
@@ -64,10 +64,16 @@ export default {
     },
   },
   async created() {
-    this.portletInstanceId = this.value;
+    this.portletInstanceId = this.value && Number(this.value) || null;
     if (!this.$root.portletInstances?.length) {
-      this.$root.portletInstances = await this.getPortletInstances();
+      this.loading = true;
+      try {
+        this.$root.portletInstances = await this.getPortletInstances();
+      } finally {
+        this.loading = false;
+      }
     }
+    this.initialized = true;
   },
   methods: {
     getPortletInstances() {

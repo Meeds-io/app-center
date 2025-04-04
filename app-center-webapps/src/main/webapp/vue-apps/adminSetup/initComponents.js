@@ -30,15 +30,12 @@ import PortletInstanceSuggester from './components/form/PortletInstanceSuggester
 
 import ApplicationIcon from './components/view/ApplicationIcon.vue';
 
-import ExoAppCenterModal from './components/modal/ExoAppCenterModal.vue';
-
 const components = {
   'app-center-admin-setup': AdminSetupApp,
   'app-center-admin-toolbar': AdminSetupToolbar,
   'app-center-admin-item': AdminSetupItem,
   'app-center-admin-menu': AdminSetupMenu,
   'app-center-admin-setup-list': AdminSetupList,
-  'app-center-modal': ExoAppCenterModal,
   'app-center-form-drawer': ApplicationFormDrawer,
   'app-center-permissions': ApplicationPermissions,
   'app-center-image-input': ApplicationImageInput,

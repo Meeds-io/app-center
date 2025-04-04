@@ -18,6 +18,10 @@
  */
 package io.meeds.appcenter.service;
 
+import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_CONTEXT;
+import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_SCOPE;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -37,12 +41,11 @@ import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
-import org.exoplatform.commons.api.settings.data.Context;
-import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.model.Application;
@@ -56,16 +59,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 
 /**
- * A Service to access and store applications
+ * A Service to inject applications at startup time
  */
 @Component
 public class ApplicationCenterInjectService {
 
   private static final Log                   LOG                      = ExoLogger.getLogger(ApplicationCenterInjectService.class);
-
-  public static final Context                APP_CENTER_CONTEXT       = Context.GLOBAL.id("APP_CENTER");
-
-  public static final Scope                  APP_CENTER_SCOPE         = Scope.APPLICATION.id("APP_CENTER");
 
   private static final String                DEFAULT_USERS_GROUP      = "/platform/users";
 
@@ -196,7 +195,6 @@ public class ApplicationCenterInjectService {
     });
   }
 
-  @SuppressWarnings("deprecation")
   private void injectDefaultApplication(ApplicationDescriptor applicationDescriptor) { // NOSONAR
     Application application = applicationDescriptor.getApplication();
     String pluginName = applicationDescriptor.getName();
@@ -240,14 +238,18 @@ public class ApplicationCenterInjectService {
     ApplicationForm applicationForm = new ApplicationForm(application);
     String imagePath = applicationDescriptor.getImagePath();
     if (StringUtils.isNotBlank(imagePath)) {
+      String uploadId = UUID.randomUUID().toString();
       try {
-        String uploadId = UUID.randomUUID().toString();
-        InputStream inputStream = configurationManager.getInputStream(imagePath);
-        uploadService.createUploadResource(uploadId,
-                                           StandardCharsets.UTF_8.name(),
-                                           "image/png",
-                                           inputStream.available(),
-                                           inputStream);
+        URL resource = configurationManager.getURL(imagePath);
+        File file = new File(resource.getFile());
+        UploadResource uploadResource = new UploadResource(uploadId,
+                                                           file.getName(),
+                                                           "image/png",
+                                                           file.getAbsolutePath(),
+                                                           0,
+                                                           0,
+                                                           UploadResource.UPLOADED_STATUS);
+        uploadService.createUploadResource(uploadResource);
         applicationForm.setImageUploadId(uploadId);
       } catch (Exception e) {
         LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);

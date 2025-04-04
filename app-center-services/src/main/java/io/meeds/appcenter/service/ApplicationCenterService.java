@@ -19,12 +19,12 @@
 package io.meeds.appcenter.service;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,20 +35,19 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityRegistry;
-import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.services.security.IdentityConstants;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
-import io.meeds.appcenter.model.exception.ApplicationAlreadyExistsException;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
+import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
 
@@ -59,10 +58,6 @@ import lombok.SneakyThrows;
 public class ApplicationCenterService {
 
   private static final String      APPLICATION_IS_MANDATORY_MESSAGE    = "application is mandatory";
-
-  public static final String       DEFAULT_ADMINISTRATORS_GROUP        = "/platform/administrators";
-
-  public static final String       DEFAULT_ADMINISTRATORS_PERMISSION   = "*:" + DEFAULT_ADMINISTRATORS_GROUP;
 
   public static final String       ANY_PERMISSION                      = "any";
 
@@ -94,13 +89,13 @@ public class ApplicationCenterService {
   private SettingService           settingService;
 
   @Autowired
-  private Authenticator            authenticator;
-
-  @Autowired(required = false)
-  private IdentityRegistry         identityRegistry;
+  private UserACL                  userAcl;
 
   @Autowired
   private ApplicationCenterStorage appCenterStorage;
+
+  @Autowired
+  private TranslationService       translationService;
 
   @Value("${appcenter.administrators.expression:*:/platform/administrators}") // NOSONAR
   private String                   defaultAdministratorPermission      = null;
@@ -112,19 +107,15 @@ public class ApplicationCenterService {
   private long                     maxFavoriteApps;
 
   /**
-   * Create new Application that will be available for all users. If the
-   * application already exits an {@link ApplicationAlreadyExistsException} will
-   * be thrown.
+   * Create new Application that will be available for all users.
    *
    * @param application application to create
    * @param username user making the operation
    * @return stored {@link Application} in datasource
-   * @throws ApplicationAlreadyExistsException when application already exists
    * @throws IllegalAccessException if user is not allowed to create an
    *           application
    */
-  public Application createApplication(Application application, String username) throws ApplicationAlreadyExistsException,
-                                                                                     IllegalAccessException {
+  public Application createApplication(Application application, String username) throws IllegalAccessException {
     if (StringUtils.isBlank(username) || !isAdministrator(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
@@ -134,23 +125,14 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Create new Application that will be available for all users. If the
-   * application already exits an {@link ApplicationAlreadyExistsException} will
-   * be thrown.
+   * Create new Application that will be available for all users.
    *
    * @param application application to create
    * @return stored {@link Application} in datasource
-   * @throws ApplicationAlreadyExistsException when application already exists
    */
-  public Application createApplication(Application application) throws ApplicationAlreadyExistsException {
+  public Application createApplication(Application application) {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
-    }
-    if (!isUrlValid(application.getUrl())) {
-      throw new IllegalArgumentException("appcenter.malformedUrl");
-    }
-    if (StringUtils.isNotBlank(application.getHelpPageURL()) && !isUrlValid(application.getHelpPageURL())) {
-      throw new IllegalArgumentException("appcenter.malformedHelpUrl");
     }
     if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
       application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
@@ -182,16 +164,13 @@ public class ApplicationCenterService {
    * @throws ApplicationNotFoundException if application wasn't found
    */
   public void updateApplication(Application application, String username) throws IllegalAccessException,
-                                                                                     ApplicationNotFoundException {
+                                                                          ApplicationNotFoundException {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
     Long applicationId = application.getId();
     if (applicationId == null) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
-    }
-    if (!isUrlValid(application.getUrl())) {
-      throw new IllegalArgumentException("appcenter.malformedUrl");
     }
     Application storedApplication = appCenterStorage.getApplication(applicationId);
     if (storedApplication == null) {
@@ -349,6 +328,21 @@ public class ApplicationCenterService {
    * @return {@link ApplicationList} that contains the list of applications
    */
   public ApplicationList getApplications(int offset, int limit, String keyword) {
+    return getApplications(offset, limit, keyword, null);
+  }
+
+  /**
+   * Retrieves the list of applications with offset, limit and a keyword that
+   * can be empty
+   *
+   * @param offset offset of the query
+   * @param limit limit of the query that can be less or equal to 0, which mean,
+   *          getting all available applications
+   * @param keyword used to search in title and url
+   * @param locale used language to retrieve application title and description
+   * @return {@link ApplicationList} that contains the list of applications
+   */
+  public ApplicationList getApplications(int offset, int limit, String keyword, Locale locale) {
     ApplicationList applicationList = new ApplicationList();
     List<Application> applications = appCenterStorage.getApplications(keyword);
     int totalApplictions = applications.size();
@@ -356,6 +350,7 @@ public class ApplicationCenterService {
       limit = applications.size();
     }
     applications = applications.stream().skip(offset).limit(limit).toList();
+    setApplicationLabels(applications, locale);
     applicationList.setApplications(applications);
     applicationList.setSize(totalApplictions);
     applicationList.setOffset(offset);
@@ -380,6 +375,27 @@ public class ApplicationCenterService {
                                                int limit,
                                                String keyword,
                                                String username) {
+    return getActiveApplications(offset, limit, keyword, null, username);
+  }
+
+  /**
+   * Retrieves the list of applications switch offset and limit of the query, a
+   * keyword to filter on title and url of {@link Application} and the username
+   * to filter on authorized applications
+   *
+   * @param offset offset of the query
+   * @param limit limit of the query that can be less or equal to 0, which mean,
+   *          getting all available applications
+   * @param keyword used to search in title and url
+   * @param username login of user to use to filter on authorized applications
+   * @return {@link ApplicationList} that contains the {@link List} of
+   *         authorized {@link UserApplication}
+   */
+  public ApplicationList getActiveApplications(int offset,
+                                               int limit,
+                                               String keyword,
+                                               Locale locale,
+                                               String username) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
@@ -403,6 +419,7 @@ public class ApplicationCenterService {
                                  return (Application) applicationFavorite;
                                })
                                .toList();
+    setApplicationLabels(applications, locale);
     resultApplicationsList.setApplications(applications);
     long countFavorites = appCenterStorage.countFavorites(username);
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
@@ -410,38 +427,6 @@ public class ApplicationCenterService {
     resultApplicationsList.setLimit(limit);
     resultApplicationsList.setSize(totalApplication);
     return resultApplicationsList;
-  }
-
-  /**
-   * Retrieves all the list of applications for a user
-   *
-   * @param username login of user
-   * @return {@link ApplicationList} that contains {@link List} of
-   *         {@link UserApplication}
-   */
-  public ApplicationList getMandatoryAndFavoriteApplicationsList(String username) {
-    List<UserApplication> mandatoryAndFavoriteApplications =
-                                                           new ArrayList<>(appCenterStorage.getFavoriteApplicationsByUser(username));
-    List<Long> mandatoryAndFavoriteApplicationsId = mandatoryAndFavoriteApplications.stream()
-                                                                                    .map(UserApplication::getId)
-                                                                                    .toList();
-    appCenterStorage.getMandatoryApplications().forEach(userApplication -> {
-      if (!mandatoryAndFavoriteApplicationsId.contains(userApplication.getId())) {
-        mandatoryAndFavoriteApplications.add(userApplication);
-      }
-    });
-
-    List<Application> applications = mandatoryAndFavoriteApplications.stream()
-                                                                     .filter(app -> hasPermission(username, app))
-                                                                     .collect(Collectors.toList());
-    ApplicationList applicationList = new ApplicationList();
-    applicationList.setApplications(applications);
-    long countFavorites = appCenterStorage.countFavorites(username);
-    applicationList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
-    applicationList.setLimit(applications.size());
-    applicationList.setSize(applications.size());
-    applicationList.setOffset(0);
-    return applicationList;
   }
 
   /**
@@ -531,22 +516,24 @@ public class ApplicationCenterService {
     return appCenterStorage.getSystemApplications();
   }
 
-  public ApplicationList getMandatoryAndFavoriteApplications(String username, Pageable pageable) {
+  public ApplicationList getMandatoryAndFavoriteApplications(Pageable pageable, String username, Locale locale) {
     List<Application> applications = appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable)
                                                      .stream()
                                                      .filter(app -> hasPermission(username, app))
                                                      .collect(Collectors.toList());
     long countFavorites = appCenterStorage.countFavorites(username);
     int appCount = applications.size();
-    return new ApplicationList().setApplications(applications)
-                                .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
-                                .setLimit(appCount)
-                                .setSize(appCount)
-                                .setOffset(0);
+    ApplicationList applicationList = new ApplicationList();
+    setApplicationLabels(applications, locale);
+    return applicationList.setApplications(applications)
+                          .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
+                          .setLimit(appCount)
+                          .setSize(appCount)
+                          .setOffset(0);
   }
 
   private boolean isAdministrator(String username) {
-    return hasPermission(username, DEFAULT_ADMINISTRATORS_GROUP);
+    return userAcl.isAdministrator(getUserIdentity(username));
   }
 
   private boolean hasPermission(String username, Application application) {
@@ -554,47 +541,19 @@ public class ApplicationCenterService {
   }
 
   private boolean hasPermission(String username, List<String> storedPermissions) {
-    if (storedPermissions == null) {
+    if (CollectionUtils.isEmpty(storedPermissions)) {
       return true;
     }
-    for (String storedPermission : storedPermissions) {
-      if (hasPermission(username, storedPermission)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean hasPermission(String username, String permissionExpression) {
-    if (StringUtils.isBlank(permissionExpression)) {
-      return true;
-    } else if (StringUtils.isBlank(username)) {
-      return false;
-    }
-
-    // In general case, the user is already loggedin, thus we will get the
-    // Identity from registry without having to compute it again from
-    // OrganisationService, thus the condition (identity == null) will be false
-    // most of the time for better performances
-    MembershipEntry membership = null;
-    if (permissionExpression.contains(":")) {
-      String[] permissionExpressionParts = permissionExpression.split(":");
-      membership = new MembershipEntry(permissionExpressionParts[1], permissionExpressionParts[0]);
-    } else if (permissionExpression.contains("/")) {
-      membership = new MembershipEntry(permissionExpression, MembershipEntry.ANY_TYPE);
-    } else {
-      return StringUtils.equals(username, permissionExpression);
-    }
-    return getUserIdentity(username).isMemberOf(membership);
+    Identity identity = getUserIdentity(username);
+    return storedPermissions.stream().anyMatch(exp -> userAcl.hasPermission(identity, exp));
   }
 
   @SneakyThrows
   private Identity getUserIdentity(String username) {
-    Identity identity = getIdentityRegistry().getIdentity(username);
-    if (identity == null) {
-      return authenticator.createIdentity(username);
+    if (StringUtils.isBlank(username)) {
+      return new Identity(IdentityConstants.ANONIM);
     } else {
-      return identity;
+      return userAcl.getUserIdentity(username);
     }
   }
 
@@ -607,21 +566,27 @@ public class ApplicationCenterService {
 
   }
 
-  private boolean isUrlValid(String url) {
-    // [-a-zA-Z0-9@:%._\\\\/+~#=] allowed characters
-    String regex = "([a-zA-Z0-9-@:._\\/?&]+:\\/\\/)?http(s)?:\\/\\/[-a-zA-Z0-9@:%._\\\\/+~#=?&]{2,256}";
-    Pattern pattern = Pattern.compile(regex);
-    return url != null && !url.isBlank()
-           && (url.startsWith("/portal/") || url.startsWith("./") || pattern.matcher(url).matches());
+  private void setApplicationLabels(List<Application> applications, Locale locale) {
+    if (locale != null) {
+      applications.forEach(application -> setApplicationLabels(application, locale));
+    }
   }
 
-  public IdentityRegistry getIdentityRegistry() {
-    if (identityRegistry == null) {
-      // Kernel Container Service not recognized, thus retrieve it
-      // differently when not possible through @Autowired
-      identityRegistry = ExoContainerContext.getService(IdentityRegistry.class);
+  private void setApplicationLabels(Application application, Locale locale) {
+    String title = translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                                   application.getId(),
+                                                                   "title",
+                                                                   locale);
+    if (StringUtils.isNotBlank(title)) {
+      application.setTitle(title);
     }
-    return identityRegistry;
+    String description = translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                                         application.getId(),
+                                                                         "description",
+                                                                         locale);
+    if (StringUtils.isNotBlank(description)) {
+      application.setDescription(description);
+    }
   }
 
 }

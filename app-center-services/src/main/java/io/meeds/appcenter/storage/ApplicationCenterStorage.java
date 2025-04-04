@@ -88,8 +88,6 @@ public class ApplicationCenterStorage {
     if (application instanceof ApplicationForm applicationForm) {
       Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId());
       applicationEntity.setImageFileId(imageFileId);
-    } else {
-      applicationEntity.setImageFileId(null);
     }
 
     applicationEntity = applicationDAO.save(applicationEntity);
@@ -153,7 +151,8 @@ public class ApplicationCenterStorage {
   }
 
   public Application findSystemApplicationByUrl(String url) {
-    ApplicationEntity applicationEntity = applicationDAO.findByIsSystemAndUrl(url).findFirst().orElse(null);
+    List<ApplicationEntity> list = applicationDAO.findBySystemIsTrueAndUrl(url);
+    ApplicationEntity applicationEntity = list == null ? null : list.get(0);
     return applicationEntity == null ? null : getApplication(applicationEntity.getId());
   }
 
@@ -189,26 +188,6 @@ public class ApplicationCenterStorage {
     if (applicationFavorite != null) {
       favoriteApplicationDAO.delete(applicationFavorite);
     }
-  }
-
-  public List<UserApplication> getMandatoryApplications() {
-    return applicationDAO.getMandatoryActiveApplicationIds()
-                         .stream()
-                         .map(this::toUserApplicationDTO)
-                         .filter(Objects::nonNull)
-                         .toList();
-  }
-
-  public List<UserApplication> getFavoriteApplicationsByUser(String username) {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
-    List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
-    return applications.stream()
-                       .map(this::toUserApplicationDTO)
-                       .filter(Objects::nonNull)
-                       .filter(UserApplication::isActive)
-                       .toList();
   }
 
   public List<Application> getSystemApplications() {
@@ -276,7 +255,7 @@ public class ApplicationCenterStorage {
   @SneakyThrows
   private Long saveImageFileItem(Long imageFileId, String uploadId) {
     UploadResource uploadResource = uploadService.getUploadResource(uploadId);
-    byte[] bytesContent = IOUtil.getResourceAsBytes(uploadResource.getStoreLocation());
+    byte[] bytesContent = IOUtil.getFileContentAsBytes(uploadResource.getStoreLocation());
     FileItem fileItem = new FileItem(imageFileId,
                                      "appCenterIllustration",
                                      "image/png",
@@ -320,7 +299,7 @@ public class ApplicationCenterStorage {
                            null,
                            applicationEntity.getImageFileId(),
                            applicationEntity.getIcon(),
-                           getImageUrl(applicationEntity.getId(), imageLastModified),
+                           getImageUrl(applicationEntity.getImageFileId(), applicationEntity.getId(), imageLastModified),
                            0l,
                            applicationEntity.isChangedManually());
   }
@@ -362,12 +341,13 @@ public class ApplicationCenterStorage {
                                    application.isMobile(),
                                    application.isSystem(),
                                    application.getPermissions(),
-                                   application.isChangedManually());
+                                   application.isChangedManually(),
+                                   null);
     }
   }
 
-  private String getImageUrl(Long id, long imageLastModified) {
-    if (id == null || id.longValue() == 0) {
+  private String getImageUrl(Long imageFileId, Long id, long imageLastModified) {
+    if (imageFileId == null || imageFileId.longValue() == 0) {
       return null;
     } else {
       return String.format("/app-center/rest/applications/illustration/%s?v=%s", id, imageLastModified);

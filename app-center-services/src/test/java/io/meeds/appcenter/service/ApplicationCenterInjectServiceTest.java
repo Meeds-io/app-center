@@ -136,7 +136,7 @@ public class ApplicationCenterInjectServiceTest {
     try {
       applicationCenterInjectService.addApplicationPlugin(applicationPlugin2);
       applicationCenterInjectService.injectDefaultApplications();
-      verify(configurationManager, atLeast(1)).getInputStream(applicationPlugin2.getImagePath());
+      verify(configurationManager, atLeast(1)).getURL(applicationPlugin2.getImagePath());
     } finally {
       applicationCenterInjectService.removeApplicationPlugin(pluginName);
     }
