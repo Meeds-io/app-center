@@ -18,11 +18,13 @@
  */
 package io.meeds.appcenter.model;
 
-import java.util.Arrays;
 import java.util.List;
+
+import io.meeds.appcenter.constant.ApplicationType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode.Exclude;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -30,99 +32,42 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Application {
 
-  private Long         id;
+  private Long            id;
 
-  private String       title;
+  private String          title;
 
-  private String       url;
+  private String          url;
 
-  private String       helpPageURL;
+  private String          helpPageURL;
 
-  private String       description;
+  private String          description;
 
-  private boolean      active;
+  private ApplicationType type;
 
-  private boolean      isMandatory;
+  private boolean         active;
 
-  private boolean      isMobile;
+  private boolean         isMandatory;
 
-  private boolean      system;
+  private boolean         isDefault;
 
-  private List<String> permissions;
+  private boolean         isMobile;
 
-  private String       imageFileBody;
+  private boolean         system;
 
-  private String       imageFileName;
+  private List<String>    permissions;
 
-  private Long         imageFileId;
+  @Exclude
+  private List<Long>      categoryIds;
 
-  private Long         imageLastModified;
+  private Long            imageFileId;
 
-  private Long         order;
+  private String          icon;
 
-  private boolean      isChangedManually;
+  @Exclude
+  private String          imageUrl;
 
-  public Application(Long id, // NOSONAR
-                     String title,
-                     String url,
-                     String helpPageURL,
-                     Long imageFileId,
-                     Long imageLastModified,
-                     String imageFileBody,
-                     String imageFileName,
-                     String description,
-                     boolean isSystem,
-                     boolean active,
-                     boolean isMandatory,
-                     boolean isMobile,
-                     boolean isChangedManually,
-                     String... permissions) {
-    this(id,
-         title,
-         url,
-         helpPageURL,
-         imageFileId,
-         imageLastModified,
-         imageFileBody,
-         imageFileName,
-         description,
-         isSystem,
-         active,
-         isMandatory,
-         isMobile,
-         isChangedManually,
-         permissions == null ? null : Arrays.asList(permissions));
-  }
+  private Long            order;
 
-  public Application(Long id, // NOSONAR
-                     String title,
-                     String url,
-                     String helpPageURL,
-                     Long imageFileId,
-                     Long imageLastModified,
-                     String imageFileBody,
-                     String imageFileName,
-                     String description,
-                     boolean isSystem,
-                     boolean active,
-                     boolean isMandatory,
-                     boolean isMobile,
-                     boolean isChangedManually,
-                     List<String> permissions) {
-    this.id = id;
-    this.title = title;
-    this.url = url;
-    this.helpPageURL = helpPageURL;
-    this.description = description;
-    this.active = active;
-    this.isMandatory = isMandatory;
-    this.isMobile = isMobile;
-    this.system = isSystem;
-    this.permissions = permissions;
-    this.imageFileId = imageFileId;
-    this.imageLastModified = imageLastModified;
-    this.imageFileBody = imageFileBody;
-    this.imageFileName = imageFileName;
-    this.isChangedManually = isChangedManually;
-  }
+  private boolean         isChangedManually;
+
 }

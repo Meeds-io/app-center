@@ -1,405 +1,407 @@
 <!--
-This file is part of the Meeds project (https://meeds.io/).
-Copyright (C) 2020 Meeds Association
-contact@meeds.io
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-You should have received a copy of the GNU Lesser General Public License
-along with this program; if not, write to the Free Software Foundation,
-Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+  This file is part of the Meeds project (https://meeds.io/).
+
+  Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 -->
 <template>
   <exo-drawer
     ref="formDrawer"
+    v-model="drawer"
     :right="!$vuetify.rtl"
+    :loading="loading"
     body-classes="hide-scroll"
     class="appCenterDrawer">
-    <template slot="title">
-      <slot></slot>
+    <template v-if="drawer" #title>
+      <span class="appLauncherDrawerTitle">{{ drawerTitle }}</span>
     </template>
-
-    <div class="content pa-3" slot="content">
-      <v-label for="title">
-        {{ $t('appCenter.adminSetupForm.title') }}*
-      </v-label>
-      <input
-        v-model="formArray.title"
-        type="text"
-        name="title"
-        class="input-block-level ignore-vuetify-classes my-3 required"
-        maxlength="200"
-        :readonly="formArray.system"
-        :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
-        required>
-      <p v-if="!formArray.system && appTitleExists()" class="error">
-        {{ $t('appCenter.adminSetupForm.existingTitle.error') }}
-      </p>
-      <v-label for="url">
-        {{ $t('appCenter.adminSetupForm.url') }}*
-      </v-label>
-      <input
-        v-model="formArray.url"
-        type="url"
-        name="url"
-        class="input-block-level ignore-vuetify-classes my-3 required"
-        maxlength="500"
-        :readonly="formArray.system"
-        :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-        required>
-      <v-row class="uploadImageContainer">
-        <v-col class="uploadImageTitle content-box-sizing" cols="1">
-          <v-label for="image">
-            {{ $t('appCenter.adminSetupForm.image') }}
-          </v-label>
-        </v-col>
-        <v-col
-          v-show="!formArray.imageFileName"
-          class="uploadImage content-box-sizing"
-          cols="3">
-          <label for="imageFile" class="custom-file-upload">
-            <i class="uiIconFolderSearch uiIcon24x24LightGray"></i>
-            <span>
-              {{ $t("appCenter.adminSetupForm.browse") }}
-            </span>
-          </label>
-          <input
-            id="imageFile"
-            ref="image"
-            type="file"
-            accept="image/*"
-            @change="handleFileUpload">
-        </v-col>
-        <v-col
-          v-show="formArray.imageFileName"
-          class="imageSet"
-          cols="4">
-          <v-list-item
-            v-if="formArray.imageFileName != undefined &&
-              formArray.imageFileName != ''"
-            class="file-listing">
-            <v-list-item-content>
-              <div class="imageTitle">
-                {{ formArray.imageFileName }}
-              </div>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-btn
-                class="remove-file"
-                icon
-                :disabled="formArray.system"
-                @click="removeFile">
-                <v-icon small>
-                  mdi-delete
-                </v-icon>
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>             
-        </v-col>
-        <v-col v-if="!formArray.invalidImageFormat" class="uploadImageInfo">
-          <p
-            :class="'sizeInfo' + (formArray.invalidSize ? ' error' : '')">
-            <v-icon small>
-              mdi-information
-            </v-icon>
-            {{ $t("appCenter.adminSetupForm.sizeError") }}
-          </p>
-        </v-col>
-        <v-col v-else class="uploadImageInfo">
-          <p
-            :class="'imageFormat error'">
-            <v-icon small>
-              mdi-information
-            </v-icon>
-            {{ $t("appCenter.adminSetupForm.imageFormatError") }}
-          </p>
-        </v-col>
-      </v-row>
-      <v-label for="description">
-        {{ $t('appCenter.adminSetupForm.description') }}
-      </v-label>
-      <v-textarea
-        v-model="formArray.description"
-        class="appDescription"
-        name="description"
-        rows="20"
-        counter="1000"
-        :rules="rules"
-        :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
-        no-resize />
-      <v-row class="applicationProperties">
-        <v-col>
-          <v-switch
-            v-model="formArray.mandatory"
-            class="mandatoryLabel"
-            :label="$t('appCenter.adminSetupForm.mandatory')" />
-        </v-col>
-        <v-col>
-          <v-switch v-model="formArray.active" :label="$t('appCenter.adminSetupForm.active')" />
-        </v-col>
-        <v-col>
-          <v-switch v-model="formArray.mobile" :label="$t('appCenter.adminSetupForm.mobile')" />
-        </v-col>
-      </v-row>
-      <v-label for="permissions">
-        {{ $t('appCenter.adminSetupForm.permissions') }}
-      </v-label>
-      <app-center-suggester
-        v-model="permissions"
-        class="input-block-level ignore-vuetify-classes my-3"
-        name="permissions"
-        maxlength="200"
-        :options="suggesterOptions"
-        :source-providers="[findGroups]"
-        :application-permissions="appPermissions"
-        :placeholder="$t('appCenter.adminSetupForm.permissionsPlaceHolder')" />
-      <v-label for="helpPage">
-        {{ $t('appCenter.adminSetupForm.helpPage') }}
-      </v-label>
-      <input
-        v-model="formArray.helpPageURL"
-        class="input-block-level ignore-vuetify-classes my-3"
-        type="url"
-        name="name"
-        maxlength="500"
-        :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')">
-    </div>
-    <div slot="footer" class="d-flex">
-      <button
-        type="button"
-        class="btn ms-auto applicationsActionBtn"
-        @click="close">
-        {{ $t('appCenter.adminSetupForm.cancel') }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary ms-6 applicationsActionBtn"
-        :disabled="!canSaveApplication"
-        @click="submitForm">
-        {{ $t('appCenter.adminSetupForm.save') }}
-      </button>
-    </div>
+    <template v-if="drawer" #content>
+      <v-form
+        ref="form"
+        autocomplete="off"
+        class="pa-4"
+        @submit.prevent.stop="0">
+        <v-label for="applicationName">
+          {{ $t('appCenter.adminSetupForm.title') }}
+        </v-label>
+        <translation-text-field
+          ref="applicationName"
+          id="applicationName"
+          v-model="titles"
+          :rules="rules.name"
+          :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
+          :maxlength="maxNameLength"
+          name="applicationName"
+          drawer-title="appCenter.adminSetupForm.titleTranslation"
+          class="width-auto flex-grow-1 mt-2 mb-4"
+          no-expand-icon
+          back-icon
+          autofocus
+          required />
+        <v-label for="applicationDescription">
+          {{ $t('appCenter.adminSetupForm.description') }}
+        </v-label>
+        <translation-text-field
+          ref="applicationDescription"
+          id="applicationDescription"
+          v-model="descriptions"
+          :rules="rules.description"
+          :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
+          :maxlength="maxNameLength"
+          name="applicationDescription"
+          drawer-title="appCenter.adminSetupForm.descriptionTranslation"
+          class="width-auto flex-grow-1 mt-2 mb-4"
+          no-expand-icon
+          back-icon
+          autofocus
+          required />
+        <div class="mb-2">
+          {{ $t('appCenter.adminSetupForm.application') }}
+        </div>
+        <v-radio-group
+          v-model="application.type"
+          class="mt-0 pa-0"
+          mandatory>
+          <v-radio value="LINK">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
+            </template>
+          </v-radio>
+          <v-radio value="DRAWER">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
+            </template>
+          </v-radio>
+          <v-radio value="PORTLET">
+            <template #label>
+              <span class="ms-1">{{ $t('appCenter.adminSetupForm.portlet') }}</span>
+            </template>
+          </v-radio>
+        </v-radio-group>
+        <v-text-field
+          v-if="application.type === 'LINK'"
+          ref="applicationUrl"
+          id="applicationUrl"
+          v-model="application.url"
+          :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+          :rules="rules.url"
+          name="applicationUrl"
+          class="border-box-sizing width-auto pt-0 mb-3"
+          type="text"
+          mandatory
+          outlined
+          dense />
+        <quick-action-suggester
+          v-else-if="application.type === 'DRAWER'"
+          ref="applicationUrl"
+          id="applicationUrl"
+          v-model="application.url"
+          name="applicationUrl"
+          class="mb-4" />
+        <portlet-instance-suggester
+          v-else-if="application.type === 'PORTLET'"
+          ref="applicationUrl"
+          id="applicationUrl"
+          v-model="application.url"
+          name="applicationUrl"
+          class="mb-4" />
+        <category-input
+          v-model="newCategoryIds"
+          label="appCenter.adminSetupForm.categories"
+          label-class="" />
+        <div class="mb-2">
+          {{ $t('appCenter.adminSetupForm.updateTheIcon') }}
+        </div>
+        <app-center-image-input
+          v-model="application.imageUploadId"
+          :application="application"
+          class="mb-4"
+          @icon="application.icon = $event"
+          @reset="resetImage" />
+        <div class="text-header mb-2">
+          {{ $t('appCenter.adminSetupForm.advancedOptions') }}
+        </div>
+        <div class="mb-2">
+          <div class="d-flex full-width align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.mandatory = !application.mandatory">
+              {{ $t('appCenter.adminSetupForm.mandatory') }}
+            </v-card>
+            <v-switch
+              v-model="application.mandatory"
+              class="ma-0 pa-0"
+              name="applicationMandatory"
+              hide-details />
+          </div>
+          <div class="d-flex full-width justify-space-between align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.default = !application.default">
+              {{ $t('appCenter.adminSetupForm.default') }}
+            </v-card>
+            <v-switch
+              v-model="application.default"
+              class="ma-0 pa-0"
+              name="applicationDefault"
+              hide-details />
+          </div>
+          <div class="d-flex full-width justify-space-between align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.mobile = !application.mobile">
+              {{ $t('appCenter.adminSetupForm.mobile') }}
+            </v-card>
+            <v-switch
+              v-model="application.mobile"
+              class="ma-0 pa-0"
+              name="applicationMobile"
+              hide-details />
+          </div>
+        </div>
+        <div class="mb-2">
+          {{ $t('appCenter.adminSetupForm.permissions') }}
+        </div>
+        <app-center-permissions
+          v-model="application.permissions"
+          class="mb-4" />
+        <v-label for="applicationHelpPageURL">
+          {{ $t('appCenter.adminSetupForm.helpPage') }}
+        </v-label>
+        <v-text-field
+          ref="applicationHelpPageURL"
+          id="applicationHelpPageURL"
+          v-model="application.helpPageURL"
+          :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+          :rules="rules.helpUrl"
+          name="applicationHelpPageURL"
+          class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+          type="text"
+          mandatory
+          outlined
+          dense />
+      </v-form>
+    </template>
+    <template #footer>
+      <div class="d-flex">
+        <v-btn
+          class="btn ms-auto applicationsActionBtn"
+          @click="close">
+          {{ $t('appCenter.adminSetupForm.cancel') }}
+        </v-btn>
+        <v-btn
+          :disabled="disabled"
+          class="btn btn-primary ms-6 applicationsActionBtn"
+          @click="save">
+          {{ $t('appCenter.adminSetupForm.save') }}
+        </v-btn>
+      </div>
+    </template>
   </exo-drawer>
 </template>
-
 <script>
 export default {
-  props: {
-    formArray: {
-      type: Object,
-      default: null
-    },
-    appPermissions: {
-      type: Array,
-      default: () => []
-    },
-    existingAppNames: {
-      type: Array,
-      default: () => []
-    },
-    appToEditOriginalTitle: {
-      type: Object,
-      default: null
-    },
-  },
-  data() {
-    const maxDescriptionSize = 1000;
-    const component = this;
-    return {
-      isAppMandatory: false,
-      suggesterOptions: {
-        type: 'tag',
-        plugins: ['remove_button', 'restore_on_backspace'],
-        create: false,
-        createOnBlur: false,
-        highlight: false,
-        openOnFocus: false,
-        valueField: 'value',
-        labelField: 'text',
-        searchField: ['text'],
-        closeAfterSelect: false,
-        dropdownParent: 'body',
-        hideSelected: true,
-        renderMenuItem (item, escape) {
-          return component.renderMenuItem(item, escape);
-        },
-        sortField: [{field: 'order'}, {field: '$score'}],
-      },
-      permissions: [],
-      rules: [v => v.length <= maxDescriptionSize],
-    };
-  },
+  data: () => ({
+    maxDescriptionLength: 500,
+    maxNameLength: 200,
+    drawer: false,
+    titles: {},
+    descriptions: {},
+    application: {},
+    oldCategoryIds: [],
+    newCategoryIds: [],
+  }),
   computed: {
-    canSaveApplication() {
-      const maxDescriptionSize = 1000;
-      return this.formArray.title && this.formArray.title !== '' && !this.appTitleExists() && !this.formArray.invalidSize && !this.formArray.invalidImage &&
-          !this.formArray.invalidImageFormat && this.validUrl(this.formArray) && this.formArray.description.length <= maxDescriptionSize && (this.validHelpPageUrl(this.formArray) || this.formArray.helpPageURL === '');
-    }
+    drawerTitle() {
+      return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
+    },
+    validUrl() {
+      return (
+        this.application?.type === 'LINK'
+        && this.$utils.toLinkUrl(this.application?.url, {
+          urls: true,
+          email: true,
+          phone: true,
+        })?.length
+      ) || (
+        this.application?.type !== 'LINK'
+        && this.application?.url
+      );
+    },
+    validHelpPageUrl() {
+      return !this.application?.helpPageURL
+        || this.$utils.toLinkUrl(this.application?.helpPageURL, {
+          urls: true,
+          email: true,
+          phone: true,
+        })?.length;
+    },
+    rules() {
+      return {
+        name: [
+          v => !!v?.length || ' ',
+          v => !v?.length || v.length < this.maxNameLength || this.$t('appCenter.form.name.exceedsMaxLength', {
+            0: this.maxNameLength,
+          }),
+        ],
+        description: [
+          v => !v?.length || v.length < this.maxDescriptionLength || this.$t('appCenter.form.description.exceedsMaxLength', {
+            0: this.maxDescriptionLength,
+          }),
+        ],
+        url: [
+          () => !!this.application?.url?.length || ' ',
+          () => !!this.validUrl || this.$t('appCenter.form.url.invalidLink'),
+        ],
+        helpUrl: [
+          () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
+        ],
+      };
+    },
+    permissionSuggesterLabels() {
+      return {
+        searchPlaceholder: this.$t('appCenter.adminSetupForm.permissionsPlaceHolder'),
+        placeholder: this.$t('appCenter.adminSetupForm.permissionsPlaceHolder'),
+        noDataLabel: this.$t('appCenter.adminSetupForm.permissionsNoResult'),
+      };
+    },
+    title() {
+      return this.titles[eXo.env.portal.defaultLanguage];
+    },
+    description() {
+      return this.descriptions[eXo.env.portal.defaultLanguage];
+    },
+    disabled() {
+      return !this.title?.length
+        || (this.description?.length && this.description?.length > this.maxDescriptionLength)
+        || !this.validUrl
+        || !this.validHelpPageUrl;
+    },
   },
   watch: {
-    appPermissions() {
-      this.permissions = [];
-      const groups = this.appPermissions.map(permission => permission.id);
-      this.permissions.push(...groups);
+    'application.type': {
+      handler(newVal, oldVal) {
+        if (this.drawer && newVal && oldVal) {
+          this.application.url = null;
+        }
+      },
+    },
+    title(newVal) {
+      if (this.drawer) {
+        this.application.title = newVal;
+      }
+    },
+    description(newVal) {
+      if (this.drawer) {
+        this.application.description = newVal;
+      }
     },
   },
-  mounted () {
-    $('.formContent').on( 'scroll', function(){
-      $('.selectize-dropdown').css('display', 'none');
-      $('.selectize-input').find('input').blur();
-    });
+  created() {
+    this.$root.$on('app-center-drawer-open', this.open);
+  },
+  beforeDestroy() {
+    this.$root.$off('app-center-drawer-open', this.open);
   },
   methods: {
-    open() {
+    async open(app) {
+      this.$root.$emit('close-alert-message');
+      this.application = app && JSON.parse(JSON.stringify(app)) || {
+        icon: null,
+        imageUrl: null,
+        url: null,
+        helpPageURL: null,
+        active: true,
+        default: false,
+        mandatory: false,
+        mobile: false,
+        system: false,
+        type: 'LINK', // LINK, DRAWER or PORTLET
+        permissions: [],
+        categoryIds: [],
+      };
+      this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
+      this.newCategoryIds = this.oldCategoryIds.slice();
+      if (app?.id) {
+        this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
+        this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
+        if (!this.titles || !Object.keys(this.titles).length || !this.titles[eXo.env.portal.defaultLanguage]?.length) {
+          this.titles = this.titles || {};
+          this.titles[eXo.env.portal.defaultLanguage] = app.title || '';
+        }
+        if (!this.descriptions || !Object.keys(this.descriptions).length || !this.descriptions[eXo.env.portal.defaultLanguage]?.length) {
+          this.descriptions = this.descriptions || {};
+          this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
+        }
+      } else {
+        this.titles = {};
+        this.descriptions = {};
+      }
+      await this.$nextTick();
       this.$refs.formDrawer.open();
     },
-
+    resetImage() {
+      this.application.imageUrl = null;
+      this.application.imageFileId = null;
+    },
     close() {
       this.$refs.formDrawer.close();
     },
-
-    validUrl(app) {
-      const url = app && app.url;
-      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
-    },
-
-    validHelpPageUrl(app) {
-      const url = app && app.helpPageURL;
-      return app.system || url && (url.indexOf('/portal/') === 0 || url.indexOf('./') === 0 || url.match(/(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\\+~#=]{2,256}/g));
-    },
-
-    handleFileUpload() {
-      const MAX_FILE_SIZE = 100000;
-      const imageTypeIndex = 6;
-      if (this.$refs.image.files.length > 0) {
-        const imageFormatType = this.$refs.image.files[0].type.substring(imageTypeIndex);
-        if (imageFormatType.includes('svg')) {
-          this.formArray.invalidImageFormat = true;
-        }
-        this.formArray.imageFileName = this.$refs.image.files[0].name;
-        if (this.$refs.image.files[0].size > MAX_FILE_SIZE) {
-          this.formArray.invalidSize = true;
-          return;
-        }
-        this.formArray.invalidImage = false;
-      } else {
-        this.removeFile();
-      }
-    },
-
-    removeFile() {
-      this.formArray.imageFileName = '';
-      this.formArray.imageFileBody = '';
-      this.formArray.imageFileId = '';
-      this.formArray.invalidSize = false;
-      this.formArray.invalidImage = false;
-      this.formArray.invalidImageFormat = false;
-      if (this.$refs.image.files.length > 0) {
-        // remove file from the input
-        document.getElementById('imageFile').value = '';
-      }
-    },
-
-    addOrEditApplication() {
-      this.$refs.formDrawer.startLoading();
+    save() {
+      const isNew = !this.application.id;
+      this.loading = true;
       return fetch('/app-center/rest/applications', {
         credentials: 'include',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        method: this.formArray.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          id: this.formArray.id,
-          title: this.formArray.title,
-          url: this.formArray.url,
-          helpPageURL: this.formArray.helpPageURL,
-          description: this.formArray.description,
-          active: this.formArray.active,
-          mandatory: this.formArray.mandatory,
-          mobile: this.formArray.mobile,
-          system: this.formArray.system,
-          permissions: this.permissions.map(group => `*:${group}`),
-          imageFileBody: this.formArray.imageFileBody,
-          imageFileName: this.formArray.imageFileName,
-          imageFileId: this.formArray.imageFileId,
-        })
+        method: isNew ? 'POST' : 'PUT',
+        body: JSON.stringify(this.application)
       })
-        .then(() => {
-          this.$emit('initApps');
-        })
-        .catch(e => {
-          const UNAUTHORIZED_ERROR_CODE = 401;
-          if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
-            this.error = this.$t('appCenter.adminSetupForm.unauthorized');
+        .then(resp => {
+          if (resp?.ok) {
+            if (isNew) {
+              return resp.json();
+            } else {
+              return this.application;
+            }
           } else {
-            this.error = this.$t('appCenter.adminSetupForm.error');
+            throw new Error();
           }
-        }).finally(() => {
-          this.$refs.formDrawer.endLoading();
+        })
+        .then(async app => {
+          await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
+          await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
+          await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
+          this.$root.$emit('app-center-refresh-list');
+          if (isNew) {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
+          } else {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+          }
           this.close();
-          this.permissions = [];
-        });
-    },
-
-    submitForm() {
-      if (this.$refs.image && this.$refs.image.files.length > 0) {
-        this.formArray.imageFileName = this.$refs.image.files[0].name;
-        const reader = new FileReader();
-        reader.onload = e => {
-          if (!e.target.result.includes('data:image')) {
-            this.formArray.invalidImage = true;
-            return;
-          }
-          this.formArray.imageFileBody = e.target.result;
-          this.addOrEditApplication();
-        };
-        reader.readAsDataURL(this.$refs.image.files[0]);
-      } else {
-        this.addOrEditApplication();
-      }
-    },
-
-    resetForm() {
-      this.permissions = [];
-      this.$emit('c');
-    },
-
-    findGroups (query, callback) {
-      if (!query.length) {
-        return callback();
-      }
-      this.getGroups(query).then(data => {
-        const groups = [];
-        for (const group of data.entities) {
-          groups.push({
-            avatarUrl: null,
-            text: `*:${group.id}`,
-            value: group.id,
-            type: 'group'
-          });
-        }
-        callback(groups);
-      });
-    },
-
-    getGroups(query) {
-      return fetch(`/portal/rest/v1/groups?q=${query}`, { credentials: 'include' }).then(resp => resp.json());
-    },
-
-    renderMenuItem (item, escape) {
-      return `
-        <div class="item">*:${escape(item.value)}</div>
-      `;
-    },
-    
-    appTitleExists() {
-      return this.formArray.title !== this.appToEditOriginalTitle && this.existingAppNames.includes(this.formArray.title);
+        })
+        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error'))
+        .finally(() => this.loading = false);
     },
   },
 };

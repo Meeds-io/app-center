@@ -29,6 +29,4 @@ public class GeneralSettings {
 
   private long             maxFavoriteApps;
 
-  private ApplicationImage defaultApplicationImage;
-
 }
