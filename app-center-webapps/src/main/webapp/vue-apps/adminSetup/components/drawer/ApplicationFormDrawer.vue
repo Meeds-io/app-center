@@ -234,12 +234,17 @@ export default {
       return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
     },
     validUrl() {
-      return this.application.type !== 'LINK'
-        || this.$utils.toLinkUrl(this.application?.url, {
+      return (
+        this.application?.type === 'LINK'
+        && this.$utils.toLinkUrl(this.application?.url, {
           urls: true,
           email: true,
           phone: true,
-        })?.length;
+        })?.length
+      ) || (
+        this.application?.type !== 'LINK'
+        && this.application?.url
+      );
     },
     validHelpPageUrl() {
       return !this.application?.helpPageURL
@@ -322,6 +327,8 @@ export default {
       this.application = app && JSON.parse(JSON.stringify(app)) || {
         icon: null,
         imageUrl: null,
+        url: null,
+        helpPageURL: null,
         active: true,
         default: false,
         mandatory: false,
