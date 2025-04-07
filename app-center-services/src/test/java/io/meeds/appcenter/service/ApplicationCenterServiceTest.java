@@ -70,6 +70,8 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
+  private static final String      SHORTCUT       = "G";
+
   private static final String      KEYWORD        = "keyword";
 
   private static final String      ADMIN_USERNAME = "admin";
@@ -439,12 +441,14 @@ public class ApplicationCenterServiceTest {
                            URL,
                            HELP_PAGE_URL,
                            DESCRIPTION,
+                           SHORTCUT,
                            ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
+                           true,
                            Collections.singletonList(PERMISSIONS_1),
                            null,
                            IMAGE_FILE_ID,
