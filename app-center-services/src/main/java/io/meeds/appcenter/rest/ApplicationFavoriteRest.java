@@ -64,7 +64,7 @@ public class ApplicationFavoriteRest {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
   public ApplicationList getFavoriteApplicationsList(HttpServletRequest request, Pageable pageable) {
-    return appCenterService.getMandatoryAndFavoriteApplications(request.getRemoteUser(), pageable);
+    return appCenterService.getMandatoryAndFavoriteApplications(pageable, request.getRemoteUser(), request.getLocale());
   }
 
   @PostMapping(path = "{applicationId}")

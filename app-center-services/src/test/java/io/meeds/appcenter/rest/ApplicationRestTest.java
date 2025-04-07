@@ -53,6 +53,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -176,20 +177,23 @@ public class ApplicationRestTest {
 
   private Application application() {
     return new Application(1L,
-                           "titre",
+                           "title",
                            "url",
                            "",
-                           0L,
-                           0L,
-                           "",
-                           "",
                            "description",
+                           ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
-                           "");
+                           null,
+                           null,
+                           5l,
+                           "icon",
+                           null,
+                           0l,
+                           false);
   }
 
   @SneakyThrows

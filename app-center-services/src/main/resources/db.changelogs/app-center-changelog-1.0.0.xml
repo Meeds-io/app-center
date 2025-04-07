@@ -132,4 +132,23 @@
                     newDataType="VARCHAR(2000)"
                     tableName="AC_APPLICATION"/>
   </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-01">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_DEFAULT" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-02">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="ICON" type="VARCHAR(500)" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-03">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="APP_TYPE" type="TINYINT" defaultValueNumeric="0" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
