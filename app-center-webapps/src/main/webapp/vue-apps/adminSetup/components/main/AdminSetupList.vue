@@ -61,7 +61,6 @@ export default {
   },
   data: () => ({
     loading: true,
-    applicationsList: [],
     applicationToDelete: null,
     showDeleteApplicationModal: false,
     pageSize: 10,
@@ -69,12 +68,12 @@ export default {
   }),
   computed: {
     sortedApplicationsList() {
-      const applicationsList = this.applicationsList?.filter?.(t => t.title) || [];
+      const applicationsList = this.$root.applications?.filter?.(t => t.title) || [];
       applicationsList.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
       return applicationsList.slice(0, this.limit);
     },
     hasMore() {
-      return this.applicationsList.length > this.limit;
+      return this.$root.applications.length > this.limit;
     },
     headers() {
       return [{
@@ -122,9 +121,7 @@ export default {
         .finally(() => this.$root.$applicationLoaded());
     },
     getApplicationsList() {
-      const offset = 0;
-      const limit = 0;
-      return fetch(`/app-center/rest/applications/all?offset=${offset}&limit=${limit}&keyword=${this.keyword || ''}`, {
+      return fetch(`/app-center/rest/applications/all?keyword=${this.keyword || ''}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -136,7 +133,7 @@ export default {
           }
         })
         .then(data => {
-          this.applicationsList = [];
+          this.$root.applications = [];
           data.applications.forEach(app => {
             // manage system apps localized names
             if (app.system) {
@@ -149,7 +146,7 @@ export default {
             app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
             app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
           });
-          this.applicationsList = data.applications;
+          this.$root.applications = data.applications;
         }).finally(() => this.loading = false);
     },
     deleteApplication() {

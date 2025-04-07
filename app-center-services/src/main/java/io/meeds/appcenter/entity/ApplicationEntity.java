@@ -89,6 +89,12 @@ public class ApplicationEntity {
   @Column(name = "IS_SYSTEM")
   private boolean                               system;
 
+  @Column(name = "IS_PWA")
+  private boolean                               pwa;
+
+  @Column(name = "SHORTCUT")
+  private String                                shortcut;
+
   @Convert(converter = StringListConverter.class)
   @Column(name = "PERMISSIONS", nullable = false)
   private List<String>                          permissions;
