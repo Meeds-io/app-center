@@ -65,11 +65,16 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
   List<Long> getSystemApplicationIds();
 
   @Query("""
-      SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order)
+      SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order, favoriteApp.favorite)
       FROM ApplicationEntity app
-      LEFT JOIN FavoriteApplicationEntity favoriteApp \
-            ON app.id = favoriteApp.application.id AND favoriteApp.userName = :userName
-      WHERE app.active = TRUE AND (favoriteApp.id IS NOT NULL OR app.isMandatory = TRUE)
+      LEFT JOIN FavoriteApplicationEntity favoriteApp
+      ON app.id = favoriteApp.application.id AND favoriteApp.userName = :userName
+      WHERE app.active = TRUE
+      AND (
+        app.isMandatory = TRUE
+        OR (favoriteApp.id IS NOT NULL AND favoriteApp.favorite = TRUE)
+        OR (favoriteApp.id IS NULL AND app.isDefault = TRUE)
+      )
       ORDER BY favoriteApp.order NULLS LAST, app.isMandatory DESC
       """)
   Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName")

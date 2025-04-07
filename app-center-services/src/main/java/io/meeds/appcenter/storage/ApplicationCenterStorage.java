@@ -157,15 +157,24 @@ public class ApplicationCenterStorage {
     return applicationEntity == null ? null : getApplication(applicationEntity.getId());
   }
 
-  public void addApplicationToUserFavorite(long applicationId, String username) throws ApplicationNotFoundException {
+  public FavoriteApplicationEntity addApplicationToUserFavorite(long applicationId,
+                                                                String username) throws ApplicationNotFoundException {
     if (applicationId <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    ApplicationEntity application = applicationDAO.findById(applicationId).orElse(null);
-    if (application == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
+                                                                                                            username);
+    if (applicationFavorite == null) {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      if (applicationEntity == null) {
+        throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+      }
+      applicationFavorite = favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
+    } else {
+      applicationFavorite.setFavorite(true);
+      applicationFavorite = favoriteApplicationDAO.save(applicationFavorite);
     }
-    favoriteApplicationDAO.save(new FavoriteApplicationEntity(application, username));
+    return applicationFavorite;
   }
 
   public void updateFavoriteApplicationOrder(long applicationId,
@@ -173,8 +182,7 @@ public class ApplicationCenterStorage {
                                              Long order) throws ApplicationNotFoundException {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     if (entity == null) {
-      addApplicationToUserFavorite(applicationId, username);
-      entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
+      entity = addApplicationToUserFavorite(applicationId, username);
     }
     entity.setOrder(order);
     favoriteApplicationDAO.save(entity);
@@ -186,8 +194,14 @@ public class ApplicationCenterStorage {
     }
     FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
                                                                                                             username);
-    if (applicationFavorite != null) {
-      favoriteApplicationDAO.delete(applicationFavorite);
+    if (applicationFavorite == null) {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      if (applicationEntity != null) {
+        favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, false));
+      }
+    } else {
+      applicationFavorite.setFavorite(false);
+      favoriteApplicationDAO.save(applicationFavorite);
     }
   }
 
@@ -206,7 +220,14 @@ public class ApplicationCenterStorage {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    return favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username) != null;
+    FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
+                                                                                                            username);
+    if (applicationFavorite != null) {
+      return applicationFavorite.getFavorite().booleanValue();
+    } else {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      return applicationEntity != null && applicationEntity.isDefault();
+    }
   }
 
   public long countFavorites(String username) {
@@ -321,7 +342,9 @@ public class ApplicationCenterStorage {
         return null;
       }
       userApplication.setOrder(favoriteApplicationEntity.getOrder());
-      userApplication.setFavorite(true);
+      userApplication.setFavorite(favoriteApplicationEntity.getFavorite()
+          == null ? favoriteApplicationEntity.getApplication().isDefault() :
+                  favoriteApplicationEntity.getFavorite().booleanValue());
       return userApplication;
     }
   }
