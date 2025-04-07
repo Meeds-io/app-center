@@ -61,6 +61,8 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterStorageTest {
 
+  private static final String      SHORTCUT      = "G";
+
   private static final String      HELP_PAGE_URL = "helpPageUrl";
 
   private static final String      URL           = "url";
@@ -280,6 +282,8 @@ public class ApplicationCenterStorageTest {
                                  false,
                                  false,
                                  false,
+                                 true,
+                                 SHORTCUT,
                                  Collections.singletonList(PERMISSIONS_2),
                                  false,
                                  null);
@@ -291,12 +295,14 @@ public class ApplicationCenterStorageTest {
                            URL,
                            HELP_PAGE_URL,
                            DESCRIPTION,
+                           SHORTCUT,
                            ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
+                           true,
                            Collections.singletonList(PERMISSIONS_1),
                            null,
                            null,
