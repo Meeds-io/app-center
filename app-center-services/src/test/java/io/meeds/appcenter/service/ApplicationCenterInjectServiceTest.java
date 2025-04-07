@@ -50,6 +50,8 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterInjectServiceTest {
 
+  private static final String            SHORTCUT      = "G";
+
   private static final Random            RANDOM        = new Random();
 
   private static final long              IMAGE_FILE_ID = 5l;
@@ -152,12 +154,14 @@ public class ApplicationCenterInjectServiceTest {
                            URL,
                            HELP_PAGE_URL,
                            DESCRIPTION,
+                           SHORTCUT,
                            ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
+                           true,
                            Collections.singletonList(PERMISSIONS_1),
                            null,
                            IMAGE_FILE_ID,

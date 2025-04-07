@@ -151,4 +151,16 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-mip-185-04">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_PWA" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-05">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="SHORTCUT" type="VARCHAR(20)" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
