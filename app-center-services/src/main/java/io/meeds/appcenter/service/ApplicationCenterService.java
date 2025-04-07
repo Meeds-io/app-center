@@ -35,6 +35,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
@@ -45,8 +46,11 @@ import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
+import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.social.category.model.CategoryObject;
+import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
@@ -97,6 +101,11 @@ public class ApplicationCenterService {
   @Autowired
   private TranslationService       translationService;
 
+  @Autowired
+  private PortalContainer          portalContainer;
+
+  private CategoryLinkService      categoryLinkService;
+
   @Value("${appcenter.administrators.expression:*:/platform/administrators}") // NOSONAR
   private String                   defaultAdministratorPermission      = null;
 
@@ -116,7 +125,7 @@ public class ApplicationCenterService {
    *           application
    */
   public Application createApplication(Application application, String username) throws IllegalAccessException {
-    if (StringUtils.isBlank(username) || !isAdministrator(username)) {
+    if (StringUtils.isBlank(username) || !canEdit(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
                                                      application.getTitle()));
@@ -176,7 +185,7 @@ public class ApplicationCenterService {
     if (storedApplication == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
-    if (StringUtils.isBlank(username) || !isAdministrator(username)) {
+    if (StringUtils.isBlank(username) || !canEdit(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
                                                      application.getTitle()));
@@ -213,7 +222,7 @@ public class ApplicationCenterService {
     Application storedApplication = appCenterStorage.getApplication(applicationId);
     if (storedApplication == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    } else if (!isAdministrator(username)) {
+    } else if (!canEdit(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
                                                      storedApplication.getTitle()));
@@ -249,7 +258,7 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
-    if (!hasPermission(username, application)) {
+    if (!canAccess(application, username)) {
       throw new IllegalAccessException(String.format("User %s doesn't have enough permissions to delete application '%s'",
                                                      username,
                                                      application.getTitle()));
@@ -351,6 +360,7 @@ public class ApplicationCenterService {
     }
     applications = applications.stream().skip(offset).limit(limit).toList();
     setApplicationLabels(applications, locale);
+    setApplicationCategories(applications);
     applicationList.setApplications(applications);
     applicationList.setSize(totalApplictions);
     applicationList.setOffset(offset);
@@ -420,6 +430,7 @@ public class ApplicationCenterService {
                                })
                                .toList();
     setApplicationLabels(applications, locale);
+    setApplicationCategories(applications);
     resultApplicationsList.setApplications(applications);
     long countFavorites = appCenterStorage.countFavorites(username);
     resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
@@ -471,7 +482,7 @@ public class ApplicationCenterService {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
     // if user is admin then no need to check for permissions
-    if (!isAdministrator(username) && !hasPermission(username, application)) {
+    if (!canEdit(username) && !canAccess(application, username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
     }
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
@@ -502,7 +513,7 @@ public class ApplicationCenterService {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     }
     // if user is admin then no need to check for permissions
-    if (!isAdministrator(username) && !hasPermission(username, application)) {
+    if (!canEdit(username) && !canAccess(application, username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
     }
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
@@ -519,12 +530,13 @@ public class ApplicationCenterService {
   public ApplicationList getMandatoryAndFavoriteApplications(Pageable pageable, String username, Locale locale) {
     List<Application> applications = appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable)
                                                      .stream()
-                                                     .filter(app -> hasPermission(username, app))
+                                                     .filter(app -> canAccess(app, username))
                                                      .collect(Collectors.toList());
     long countFavorites = appCenterStorage.countFavorites(username);
     int appCount = applications.size();
     ApplicationList applicationList = new ApplicationList();
     setApplicationLabels(applications, locale);
+    setApplicationCategories(applications);
     return applicationList.setApplications(applications)
                           .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
                           .setLimit(appCount)
@@ -532,15 +544,15 @@ public class ApplicationCenterService {
                           .setOffset(0);
   }
 
-  private boolean isAdministrator(String username) {
+  public boolean canAccess(Application application, String username) {
+    return canAccess(application.getPermissions(), username);
+  }
+
+  public boolean canEdit(String username) {
     return userAcl.isAdministrator(getUserIdentity(username));
   }
 
-  private boolean hasPermission(String username, Application application) {
-    return hasPermission(username, application.getPermissions());
-  }
-
-  private boolean hasPermission(String username, List<String> storedPermissions) {
+  private boolean canAccess(List<String> storedPermissions, String username) {
     if (CollectionUtils.isEmpty(storedPermissions)) {
       return true;
     }
@@ -560,7 +572,7 @@ public class ApplicationCenterService {
   private List<Application> getActiveApplications(String keyword, String username) {
     return appCenterStorage.getApplications(keyword)
                            .stream()
-                           .filter(app -> hasPermission(username, app))
+                           .filter(app -> canAccess(app, username))
                            .filter(Application::isActive)
                            .toList();
 
@@ -570,6 +582,17 @@ public class ApplicationCenterService {
     if (locale != null) {
       applications.forEach(application -> setApplicationLabels(application, locale));
     }
+  }
+
+  private void setApplicationCategories(List<Application> applications) {
+    applications.forEach(this::setApplicationCategories);
+  }
+
+  private void setApplicationCategories(Application application) {
+    List<Long> categoryIds = getCategoryLinkService().getLinkedIds(new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                                                      String.valueOf(application.getId()),
+                                                                                      0));
+    application.setCategoryIds(categoryIds);
   }
 
   private void setApplicationLabels(Application application, Locale locale) {
@@ -587,6 +610,13 @@ public class ApplicationCenterService {
     if (StringUtils.isNotBlank(description)) {
       application.setDescription(description);
     }
+  }
+
+  private CategoryLinkService getCategoryLinkService() {
+    if (categoryLinkService == null) {
+      categoryLinkService = portalContainer.getComponentInstanceOfType(CategoryLinkService.class);
+    }
+    return categoryLinkService;
   }
 
 }

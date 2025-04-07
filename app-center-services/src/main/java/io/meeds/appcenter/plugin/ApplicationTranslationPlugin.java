@@ -16,30 +16,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 package io.meeds.appcenter.plugin;
 
-import io.meeds.social.translation.plugin.TranslationPlugin;
-import io.meeds.social.translation.service.TranslationService;
-import jakarta.annotation.PostConstruct;
-import org.exoplatform.portal.config.UserACL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.social.translation.plugin.TranslationPlugin;
+import io.meeds.social.translation.service.TranslationService;
+
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class ApplicationTranslationPlugin extends TranslationPlugin {
 
   public static final String       APPLICATION_OBJECT_TYPE = "appCenter";
 
-  private final TranslationService translationService;
-
-  private final UserACL            userACL;
+  @Autowired
+  private TranslationService       translationService;
 
   @Autowired
-  public ApplicationTranslationPlugin(TranslationService translationService, UserACL userACL) {
-    this.translationService = translationService;
-    this.userACL = userACL;
-  }
+  private ApplicationCenterService applicationCenterService;
 
   @PostConstruct
   public void init() {
@@ -52,13 +49,13 @@ public class ApplicationTranslationPlugin extends TranslationPlugin {
   }
 
   @Override
-  public boolean hasAccessPermission(long objectId, String username) {
+  public boolean hasAccessPermission(long applicationId, String username) {
     return true;
   }
 
   @Override
-  public boolean hasEditPermission(long objectId, String username) {
-    return userACL.isAdministrator(userACL.getUserIdentity(username));
+  public boolean hasEditPermission(long applicationId, String username) {
+    return applicationCenterService.canEdit(username);
   }
 
   @Override

@@ -16,30 +16,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 package io.meeds.appcenter.plugin;
 
-import io.meeds.social.translation.plugin.TranslationPlugin;
-import io.meeds.social.translation.service.TranslationService;
-import jakarta.annotation.PostConstruct;
-import org.exoplatform.portal.config.UserACL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.social.translation.plugin.TranslationPlugin;
+import io.meeds.social.translation.service.TranslationService;
+
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class MyApplicationsHeaderTranslationPlugin extends TranslationPlugin {
 
   public static final String       MY_APPLICATIONS_OBJECT_TYPE = "myApplicationsPortlet";
 
-  private final TranslationService translationService;
-
-  private final UserACL            userACL;
+  @Autowired
+  private TranslationService       translationService;
 
   @Autowired
-  public MyApplicationsHeaderTranslationPlugin(TranslationService translationService, UserACL userACL) {
-    this.translationService = translationService;
-    this.userACL = userACL;
-  }
+  private ApplicationCenterService applicationCenterService;
 
   @PostConstruct
   public void init() {
@@ -58,7 +55,7 @@ public class MyApplicationsHeaderTranslationPlugin extends TranslationPlugin {
 
   @Override
   public boolean hasEditPermission(long objectId, String username) {
-    return userACL.isAdministrator(userACL.getUserIdentity(username));
+    return applicationCenterService.canEdit(username);
   }
 
   @Override

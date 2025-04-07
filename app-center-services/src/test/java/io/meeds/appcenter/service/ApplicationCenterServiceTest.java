@@ -47,6 +47,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
@@ -60,6 +61,7 @@ import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
@@ -105,6 +107,12 @@ public class ApplicationCenterServiceTest {
   @MockBean
   private ApplicationCenterStorage appCenterStorage;
 
+  @MockBean
+  private CategoryLinkService      categoryLinkService;
+
+  @MockBean
+  private PortalContainer          portalContainer;
+
   @Autowired
   private ApplicationCenterService applicationCenterService;
 
@@ -129,6 +137,7 @@ public class ApplicationCenterServiceTest {
     lenient().when(userAcl.hasPermission(userIdentity, ADMIN_USERNAME)).thenReturn(true);
     lenient().when(userAcl.hasPermission(userIdentity, PERMISSIONS_2)).thenReturn(true);
     lenient().when(userAcl.hasPermission(userIdentity, TEST_USER)).thenReturn(true);
+    lenient().when(portalContainer.getComponentInstanceOfType(CategoryLinkService.class)).thenReturn(categoryLinkService);
   }
 
   @Test

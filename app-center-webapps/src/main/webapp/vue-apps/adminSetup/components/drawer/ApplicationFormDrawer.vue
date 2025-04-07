@@ -121,7 +121,7 @@
           name="applicationUrl"
           class="mb-4" />
         <category-input
-          v-model="application.categoryIds"
+          v-model="newCategoryIds"
           label="appCenter.adminSetupForm.categories"
           label-class="" />
         <div class="mb-2">
@@ -226,6 +226,8 @@ export default {
     titles: {},
     descriptions: {},
     application: {},
+    oldCategoryIds: [],
+    newCategoryIds: [],
   }),
   computed: {
     drawerTitle() {
@@ -291,6 +293,12 @@ export default {
       },
     },
   },
+  created() {
+    this.$root.$on('app-center-drawer-open', this.open);
+  },
+  beforeDestroy() {
+    this.$root.$off('app-center-drawer-open', this.open);
+  },
   methods: {
     async open(app) {
       this.$root.$emit('close-alert-message');
@@ -306,6 +314,8 @@ export default {
         permissions: [],
         categoryIds: [],
       };
+      this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
+      this.newCategoryIds = app?.categoryIds?.slice?.() || [];
       if (app?.id) {
         this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
         this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
@@ -357,6 +367,7 @@ export default {
         .then(async app => {
           await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
           await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
+          await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
           this.$root.$emit('app-center-refresh-list');
           if (isNew) {
             this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');

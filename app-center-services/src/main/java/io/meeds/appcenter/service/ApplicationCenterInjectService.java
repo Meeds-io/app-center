@@ -151,9 +151,17 @@ public class ApplicationCenterInjectService {
       defaultApplications.values()
                          .stream()
                          .filter(ApplicationDescriptor::isEnabled)
-                         .forEach(this::injectDefaultApplication);
+                         .forEach(applicationDescriptor -> {
+                           try {
+                             this.injectDefaultApplication(applicationDescriptor);
+                           } catch (Exception e) {
+                             LOG.warn("An error occurred while reimporting system application {}",
+                                      applicationDescriptor.getName(),
+                                      e);
+                           }
+                         });
     } catch (Exception e) {
-      LOG.warn("An unknown error occurs while retrieving system applications images", e);
+      LOG.warn("An unknown error occurs while reimporting system applications", e);
     }
   }
 

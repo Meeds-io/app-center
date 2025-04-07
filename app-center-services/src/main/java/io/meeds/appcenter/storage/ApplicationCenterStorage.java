@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -152,7 +153,7 @@ public class ApplicationCenterStorage {
 
   public Application findSystemApplicationByUrl(String url) {
     List<ApplicationEntity> list = applicationDAO.findBySystemIsTrueAndUrl(url);
-    ApplicationEntity applicationEntity = list == null ? null : list.get(0);
+    ApplicationEntity applicationEntity = CollectionUtils.isEmpty(list) ? null : list.get(0);
     return applicationEntity == null ? null : getApplication(applicationEntity.getId());
   }
 
