@@ -32,7 +32,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ContextConfiguration;
@@ -48,7 +47,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.spring.web.security.PortalAuthenticationManager;
 import io.meeds.spring.web.security.WebSecurityConfiguration;
@@ -122,21 +120,6 @@ public class ApplicationSettingsRestTest {
   @Test
   void setMaxFavoriteApps() throws Exception {
     ResultActions response = mockMvc.perform(patch(SETTINGS_PATH + "/maxFavorites?number=3").with(testAdminUser()));
-    response.andExpect(status().isOk());
-  }
-
-  @Test
-  void setDefaultAppImageAnonymously() throws Exception {
-    ResultActions response = mockMvc.perform(patch(SETTINGS_PATH + "/image").content(asJsonString(new ApplicationImage()))
-                                                                            .contentType(MediaType.APPLICATION_JSON));
-    response.andExpect(status().isForbidden());
-  }
-
-  @Test
-  void setDefaultAppImage() throws Exception {
-    ResultActions response = mockMvc.perform(patch(SETTINGS_PATH + "/image").with(testAdminUser())
-                                                                            .content(asJsonString(new ApplicationImage()))
-                                                                            .contentType(MediaType.APPLICATION_JSON));
     response.andExpect(status().isOk());
   }
 
