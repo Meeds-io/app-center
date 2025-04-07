@@ -41,7 +41,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </template>
     </v-data-table>
     <app-center-form-drawer ref="appFormDrawer" />
-    <exo-confirm-dialog
+    <confirm-dialog
       ref="deleteConfirmDialog"
       :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
       :message="$t('appCenter.adminSetupForm.modal.confirmDelete')"
@@ -101,8 +101,8 @@ export default {
     keyword() {
       this.getApplicationsList();
     },
-    deleteApplication() {
-      if (this.deleteApplication) {
+    applicationToDelete() {
+      if (this.applicationToDelete) {
         this.$refs.deleteConfirmDialog.open();
       } else {
         this.$refs.deleteConfirmDialog.close();
@@ -164,7 +164,10 @@ export default {
             throw new Error('Error when deleting application by id');
           }
         })
-        .then(() => this.getApplicationsList())
+        .then(() => {
+          this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDeletedSuccessfully'), 'success');
+          this.getApplicationsList();
+        })
         .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'))
         .finally(() => this.applicationToDelete = null);
     },

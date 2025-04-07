@@ -77,6 +77,7 @@ export default {
     sending: false,
     resetInput: false,
     icon: null,
+    initialized: false,
   }),
   computed: {
     iconUrl() {
@@ -92,14 +93,23 @@ export default {
   },
   watch: {
     icon() {
-      if (this.icon) {
-        this.reset();
+      if (this.initialized) {
+        if (this.icon) {
+          this.reset();
+        }
+        this.$emit('icon', this.icon);
       }
-      this.$emit('icon', this.icon);
     },
   },
-  mounted() {
+  created() {
+    if (this.application.imageUrl) {
+      this.$emit('icon', null);
+    }
+  },
+  async mounted() {
     this.icon = this.application.icon;
+    await this.$nextTick();
+    this.initialized = true;
   },
   methods: {
     reset() {

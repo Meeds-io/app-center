@@ -99,10 +99,10 @@
           id="applicationUrl"
           v-model="application.url"
           :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+          :rules="rules.url"
           name="applicationUrl"
-          class="border-box-sizing width-auto pt-0 mb-4"
+          class="border-box-sizing width-auto pt-0 mb-3"
           type="text"
-          hide-details
           mandatory
           outlined
           dense />
@@ -191,10 +191,10 @@
           id="applicationHelpPageURL"
           v-model="application.helpPageURL"
           :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+          :rules="rules.helpUrl"
           name="applicationHelpPageURL"
-          class="border-box-sizing width-auto pt-0 mt-2 mb-4"
+          class="border-box-sizing width-auto pt-0 mt-2 mb-3"
           type="text"
-          hide-details
           mandatory
           outlined
           dense />
@@ -233,29 +233,21 @@ export default {
     drawerTitle() {
       return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
     },
-    disabled() {
-      return !this.application.title?.length
-        || this.application.description.length > this.maxDescriptionLength
-        || !this.validUrl
-        || (this.application.helpPageURL?.length && !this.validHelpPageUrl);
-    },
     validUrl() {
-      return this.application.type !== 'LINK' || this.application.system || this.$utils.toLinkUrl(this.application?.url, {
-        urls: true,
-        email: true,
-        phone: true,
-      })?.length;
-    },
-    validHelpPageUrl() {
-      try {
-        return this.application.system || this.$utils.toLinkUrl(this.application?.helpPageURL, {
+      return this.application.type !== 'LINK'
+        || this.$utils.toLinkUrl(this.application?.url, {
           urls: true,
           email: true,
           phone: true,
         })?.length;
-      } catch (e) {
-        return false;
-      }
+    },
+    validHelpPageUrl() {
+      return !this.application?.helpPageURL
+        || this.$utils.toLinkUrl(this.application?.helpPageURL, {
+          urls: true,
+          email: true,
+          phone: true,
+        })?.length;
     },
     rules() {
       return {
@@ -271,8 +263,11 @@ export default {
           }),
         ],
         url: [
-          v => !!v?.length || ' ',
-          v => !!v?.length || !!this.validUrl || this.$t('appCenter.form.url.invalidLink'),
+          () => !!this.application?.url?.length || ' ',
+          () => !!this.validUrl || this.$t('appCenter.form.url.invalidLink'),
+        ],
+        helpUrl: [
+          () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
       };
     },
@@ -283,6 +278,18 @@ export default {
         noDataLabel: this.$t('appCenter.adminSetupForm.permissionsNoResult'),
       };
     },
+    title() {
+      return this.titles[eXo.env.portal.defaultLanguage];
+    },
+    description() {
+      return this.descriptions[eXo.env.portal.defaultLanguage];
+    },
+    disabled() {
+      return !this.title?.length
+        || (this.description?.length && this.description?.length > this.maxDescriptionLength)
+        || !this.validUrl
+        || !this.validHelpPageUrl;
+    },
   },
   watch: {
     'application.type': {
@@ -291,6 +298,16 @@ export default {
           this.application.url = null;
         }
       },
+    },
+    title(newVal) {
+      if (this.drawer) {
+        this.application.title = newVal;
+      }
+    },
+    description(newVal) {
+      if (this.drawer) {
+        this.application.description = newVal;
+      }
     },
   },
   created() {
@@ -305,7 +322,7 @@ export default {
       this.application = app && JSON.parse(JSON.stringify(app)) || {
         icon: null,
         imageUrl: null,
-        active: false,
+        active: true,
         default: false,
         mandatory: false,
         mobile: false,
@@ -315,7 +332,7 @@ export default {
         categoryIds: [],
       };
       this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
-      this.newCategoryIds = app?.categoryIds?.slice?.() || [];
+      this.newCategoryIds = this.oldCategoryIds.slice();
       if (app?.id) {
         this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
         this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');

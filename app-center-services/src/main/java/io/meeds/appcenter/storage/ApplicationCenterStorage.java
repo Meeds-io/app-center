@@ -86,7 +86,7 @@ public class ApplicationCenterStorage {
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity.setId(null);
 
-    if (application instanceof ApplicationForm applicationForm) {
+    if (application instanceof ApplicationForm applicationForm && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
       Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId());
       applicationEntity.setImageFileId(imageFileId);
     }
