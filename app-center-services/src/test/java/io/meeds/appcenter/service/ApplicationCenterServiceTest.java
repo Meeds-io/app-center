@@ -147,7 +147,11 @@ public class ApplicationCenterServiceTest {
   void createApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.createApplication(null));
     Application application = application(null);
-    applicationCenterService.createApplication(application);
+    assertThrows(IllegalAccessException.class, () -> applicationCenterService.createApplication(application, TEST_USER));
+    Identity identity = mock(Identity.class);
+    when(userAcl.getUserIdentity(TEST_USER)).thenReturn(identity);
+    when(userAcl.isAdministrator(identity)).thenReturn(true);
+    applicationCenterService.createApplication(application, TEST_USER);
     verify(appCenterStorage).createApplication(application);
   }
 

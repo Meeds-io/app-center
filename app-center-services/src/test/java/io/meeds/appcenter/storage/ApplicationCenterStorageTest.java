@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -247,16 +248,41 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  @SneakyThrows
   void testIsFavoriteApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(null, null));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(null, TEST_USER));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(0L, TEST_USER));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(1L, null));
-    when(favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(ID,
-                                                                 TEST_USER)).thenReturn(mock(FavoriteApplicationEntity.class));
-    assertFalse(applicationCenterStorage.isFavoriteApplication(1L, TEST_USER));
+    FavoriteApplicationEntity favoriteApplicationEntity = mock(FavoriteApplicationEntity.class);
+    when(favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(ID, TEST_USER)).thenReturn(favoriteApplicationEntity);
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    when(favoriteApplicationEntity.getFavorite()).thenReturn(true);
     assertTrue(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+  }
+
+  @Test
+  void testIsFavoriteApplicationWhenAppIsDefault() {
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
+    lenient().when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    lenient().when(applicationEntity.isDefault()).thenReturn(true);
+    assertTrue(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+  }
+
+  @Test
+  void testIsFavoriteApplicationWhenAppIsDefaultButNotFavorite() {
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    when(applicationEntity.isDefault()).thenReturn(true);
+    assertTrue(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    FavoriteApplicationEntity favoriteApplicationEntity = mock(FavoriteApplicationEntity.class);
+    when(favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(ID, TEST_USER)).thenReturn(favoriteApplicationEntity);
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
+    when(favoriteApplicationEntity.getFavorite()).thenReturn(false);
+    assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
   }
 
   @Test
