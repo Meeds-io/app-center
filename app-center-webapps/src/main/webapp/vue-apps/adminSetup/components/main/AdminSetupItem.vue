@@ -16,20 +16,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <tr>
-    <td colspan="2" class="ps-0 py-2">
+    <td colspan="2" class="px-1 py-2">
       <div class="d-flex">
         <v-card
-          class="transparent"
-          min-width="50"
+          class="transparent d-flex align-center justify-center"
+          min-width="30"
           flat>
-          <img
-            v-if="item.imageFileId && item.imageFileName"
-            :src="`/app-center/rest/applications/illustration/${item.id}?v=${item.imageLastModified}`"
-            referrerpolicy="no-referrer"
-            class="flex-grow-0 flex-shrink-0">
-          <img v-else :src="defaultAppImg">
+          <app-center-icon
+            :icon-url="item.imageUrl"
+            :icon="item.icon"
+            class="flex-grow-0 flex-shrink-0" />
         </v-card>
-        <span :title="item.title" class="tableAppTitle ms-4 text-truncate-2 d-flex align-center text-start">
+        <span :title="item.title" class="tableAppTitle ms-2 text-truncate-2 d-flex align-center text-start">
           {{ displayName }}
         </span>
       </div>
@@ -37,7 +35,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <td class="text-center position-relative">
       <v-switch
         v-model="active"
-        class="ma-0 absolute-all-center"
+        class="ma-0 pa-0 absolute-all-center"
         hide-details
         @change="$emit('set-enabled', active)" />
     </td>

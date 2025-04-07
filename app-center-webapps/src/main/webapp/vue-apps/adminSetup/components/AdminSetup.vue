@@ -24,8 +24,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <div class="d-flex flex-column">
           <app-center-admin-toolbar
             ref="toolbar"
-            @filter-changed="keyword = $event"
-            @add="addApp" />
+            @filter-changed="keyword = $event" />
           <app-center-admin-setup-list
             ref="adminSetupList"
             :keyword="keyword" />
@@ -43,10 +42,5 @@ export default {
   data: () => ({
     keyword: null,
   }),
-  methods: {
-    addApp() {
-      this.$refs.adminSetupList.showAddApplicationDrawer();
-    },
-  },
 };
 </script>
