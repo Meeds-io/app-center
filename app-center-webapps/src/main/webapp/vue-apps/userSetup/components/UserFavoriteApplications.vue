@@ -48,7 +48,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :target="favoriteApp.target"
               :href="favoriteApp.computedUrl">
               <img
-                v-if="favoriteApp.imageFileId && favoriteApp.imageFileName"
+                v-if="favoriteApp.imageFileId"
                 class="appImage"
                 referrerpolicy="no-referrer"
                 :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">

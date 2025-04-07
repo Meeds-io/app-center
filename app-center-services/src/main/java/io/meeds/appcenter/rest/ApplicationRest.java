@@ -43,8 +43,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
-import io.meeds.appcenter.model.exception.ApplicationAlreadyExistsException;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
 
@@ -65,12 +65,9 @@ public class ApplicationRest {
 
   @GetMapping
   @Secured("users")
-  @Operation(
-             summary = "Retrieves all authorized applications for currently authenticated user",
-             method = "GET",
-             description = "Return list of applications in json format")
+  @Operation(summary = "Retrieves all authorized applications for currently authenticated user", method = "GET", description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error") })
+    @ApiResponse(responseCode = "500", description = "Internal server error") })
   public ApplicationList getActiveApplications(
                                                HttpServletRequest request,
                                                @Parameter(description = "Query Offset", required = true)
@@ -79,76 +76,68 @@ public class ApplicationRest {
                                                @Parameter(description = "Query results limit", required = true)
                                                @RequestParam("limit")
                                                Optional<Integer> limit,
-                                               @Parameter(description = "Keyword to search in applications title and url",
-                                                          required = false)
+                                               @Parameter(description = "Keyword to search in applications title and url", required = false)
                                                @RequestParam("keyword")
                                                Optional<String> keyword) {
     return appCenterService.getActiveApplications(offset.orElse(0),
                                                   limit.orElse(0),
                                                   keyword.orElse(null),
+                                                  request.getLocale(),
                                                   request.getRemoteUser());
   }
 
   @GetMapping(path = "all")
   @Secured("administrators")
-  @Operation(
-             summary = "Retrieves all available applications",
-             method = "GET",
-             description = "Return list of applications in json format")
+  @Operation(summary = "Retrieves all available applications", method = "GET", description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error") })
+    @ApiResponse(responseCode = "500", description = "Internal server error") })
   public ApplicationList getApplications(
+                                         HttpServletRequest request,
                                          @Parameter(description = "Query Offset", required = true)
                                          @RequestParam("offset")
                                          Optional<Integer> offset,
                                          @Parameter(description = "Query results limit", required = true)
                                          @RequestParam("limit")
                                          Optional<Integer> limit,
-                                         @Parameter(description = "Keyword to search in applications title and url",
-                                                    required = true)
+                                         @Parameter(description = "Keyword to search in applications title and url", required = true)
                                          @RequestParam("keyword")
                                          Optional<String> keyword) {
-    return appCenterService.getApplications(offset.orElse(0), limit.orElse(0), keyword.orElse(null));
+    return appCenterService.getApplications(offset.orElse(0),
+                                            limit.orElse(0),
+                                            keyword.orElse(null),
+                                            request.getLocale());
   }
 
   @PostMapping
   @Secured("administrators")
-  @Operation(
-             summary = "Creates a new application in application center",
-             method = "GET",
-             description = "Creates a new application in application center and returns an empty response")
+  @Operation(summary = "Creates a new application in application center", method = "GET", description = "Creates a new application in application center and returns an empty response")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "400", description = "Bad Request"),
-                          @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
-                          @ApiResponse(responseCode = "409", description = "Conflict") })
+    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "409", description = "Conflict") })
   public Application createApplication(
                                        HttpServletRequest request,
                                        @RequestBody
-                                       Application application) {
+                                       ApplicationForm application) {
     try {
       return appCenterService.createApplication(application, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-    } catch (ApplicationAlreadyExistsException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
     }
   }
 
   @PutMapping
   @Secured("administrators")
-  @Operation(
-             summary = "Updates an existing application identified by its id or title or url",
-             method = "GET",
-             description = "Updates an existing application identified by its id or title or url")
+  @Operation(summary = "Updates an existing application identified by its id or title or url", method = "GET", description = "Updates an existing application identified by its id or title or url")
   @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error") })
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "500", description = "Internal server error") })
   public void updateApplication(
                                 HttpServletRequest request,
                                 @RequestBody
-                                Application application) {
+                                ApplicationForm application) {
     try {
       application.setChangedManually(true);
       appCenterService.updateApplication(application, request.getRemoteUser());
@@ -163,13 +152,10 @@ public class ApplicationRest {
 
   @DeleteMapping(path = "{applicationId}")
   @Secured("administrators")
-  @Operation(
-             summary = "Deletes an existing application identified by its id",
-             method = "GET",
-             description = "Deletes an existing application identified by its id")
+  @Operation(summary = "Deletes an existing application identified by its id", method = "GET", description = "Deletes an existing application identified by its id")
   @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error") })
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "500", description = "Internal server error") })
   public void deleteApplication(
                                 HttpServletRequest request,
                                 @Parameter(description = "Application technical id to delete", required = true)
@@ -188,22 +174,17 @@ public class ApplicationRest {
 
   @GetMapping(path = "/illustration/{applicationId}")
   @Secured("users")
-  @Operation(
-             summary = "Gets an application illustration by application id",
-             method = "GET",
-             description = "This can only be done by the logged in user.")
+  @Operation(summary = "Gets an application illustration by application id", method = "GET", description = "This can only be done by the logged in user.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "500", description = "Internal server error"),
-                          @ApiResponse(responseCode = "400", description = "Invalid query input"),
-                          @ApiResponse(responseCode = "404", description = "Resource not found") })
+    @ApiResponse(responseCode = "500", description = "Internal server error"),
+    @ApiResponse(responseCode = "400", description = "Invalid query input"),
+    @ApiResponse(responseCode = "404", description = "Resource not found") })
   public ResponseEntity<InputStreamResource> getApplicationIllustration(
                                                                         HttpServletRequest request,
-                                                                        @Parameter(description = "Application id",
-                                                                                   required = true)
+                                                                        @Parameter(description = "Application id", required = true)
                                                                         @PathVariable("applicationId")
                                                                         long applicationId,
-                                                                        @Parameter(description = "Last modified parameter",
-                                                                                   required = false)
+                                                                        @Parameter(description = "Last modified parameter", required = false)
                                                                         @RequestParam(name = "v", required = false)
                                                                         Optional<Long> lastModified) {
     try {
