@@ -37,6 +37,7 @@ public interface FavoriteApplicationDAO extends JpaRepository<FavoriteApplicatio
   @Query("""
       SELECT count(*) FROM FavoriteApplicationEntity favoriteApp
       WHERE favoriteApp.userName = ?1
+      AND favoriteApp.favorite = TRUE
       """)
   long countFavoritesForUser(String username);
 

@@ -51,7 +51,6 @@
           class="width-auto flex-grow-1 mt-2 mb-4"
           no-expand-icon
           back-icon
-          autofocus
           required />
         <v-label for="applicationDescription">
           {{ $t('appCenter.adminSetupForm.description') }}
@@ -68,7 +67,6 @@
           class="width-auto flex-grow-1 mt-2 mb-4"
           no-expand-icon
           back-icon
-          autofocus
           required />
         <div class="mb-2">
           {{ $t('appCenter.adminSetupForm.application') }}

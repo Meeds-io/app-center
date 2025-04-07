@@ -263,10 +263,7 @@ public class ApplicationCenterService {
                                                      username,
                                                      application.getTitle()));
     }
-    boolean isFavoriteApplication = appCenterStorage.isFavoriteApplication(applicationId, username);
-    if (!isFavoriteApplication) {
-      appCenterStorage.addApplicationToUserFavorite(applicationId, username);
-    }
+    appCenterStorage.addApplicationToUserFavorite(applicationId, username);
   }
 
   /**
@@ -424,8 +421,7 @@ public class ApplicationCenterService {
     applications = applications.stream()
                                .map(app -> {
                                  UserApplication applicationFavorite = new UserApplication(app);
-                                 applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(),
-                                                                                                        username));
+                                 applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
                                  return (Application) applicationFavorite;
                                })
                                .toList();
