@@ -26,12 +26,12 @@ const urls = [
 
 const appId = 'adminSetup';
 
-export function init(preferences) {
+export function init() {
   exoi18n.loadLanguageAsync(lang, urls).then(i18n => {
     Vue.createApp({
       template: `<app-center-admin-setup id="${appId}" />`,
       data: () => ({
-        preferences: preferences,
+        applications: [],
         portletInstances: [],
         quickActionExtensions: [],
         quickActionsStatus: {},
