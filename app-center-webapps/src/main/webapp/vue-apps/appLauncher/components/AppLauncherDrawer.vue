@@ -64,17 +64,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     :target="application.target"
                     :href="application.computedUrl">
                     <img
-                      v-if="application.imageFileId"
+                      v-if="application.imageUrl"
+                      :src="application.imageUrl"
                       class="appLauncherImage"
                       referrerpolicy="no-referrer"
-                      :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
                       alt="">
-                    <img
-                      v-else-if="defaultAppImage.fileBody"
-                      class="appLauncherImage"
-                      referrerpolicy="no-referrer"
-                      :src="`/app-center/rest/applications/illustration/${application.id}?v=${application.imageLastModified}`"
-                      alt="">
+                    <v-icon
+                      v-else-if="application.icon"
+                      size="65"
+                      class="appLauncherImage d-flex align-center justify-center">
+                      {{ application.icon }}
+                    </v-icon>
                     <img
                       v-else
                       class="appLauncherImage"
@@ -119,12 +119,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 export default {
   data() {
     return {
-      defaultAppImage: {
-        fileBody: '',
-        fileName: '',
-        invalidSize: false,
-        invalidImage: false
-      },
       isMobileDevice: false,
       applicationsLoaded: false,
       favoriteApplicationsList: [],
@@ -178,8 +172,7 @@ export default {
     this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
 
     this.applicationsLoaded = false;
-    this.getAppGeneralSettings()
-      .then(() => this.getMandatoryAndFavoriteApplications())
+    this.getMandatoryAndFavoriteApplications()
       .finally(() => {
         this.applicationsLoaded = true;
         this.$root.$applicationLoaded();
@@ -298,22 +291,6 @@ export default {
         method: 'PUT',
         body: JSON.stringify(applicationsOrder)
       });
-    },
-    getAppGeneralSettings() {
-      return fetch('/app-center/rest/settings', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error getting favorite applications list');
-          }
-        })
-        .then(data => {
-          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
-        });
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);

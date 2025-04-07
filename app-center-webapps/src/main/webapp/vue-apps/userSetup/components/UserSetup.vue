@@ -19,16 +19,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <div class="userApplications application-body">
       <v-row dense>
         <v-col class="authorizedApplicationsContainer application-background-color application-border application-border-radius">
-          <user-authorizedApplications :can-add-favorite="canAddFavorite" :default-app-image="defaultAppImage" />
+          <user-authorizedApplications :can-add-favorite="canAddFavorite" />
         </v-col>
         <v-col class="userFavoriteApplicationsContainer application-background-color application-border application-border-radius" sm="3">
-          <user-favoriteApplications :default-app-image="defaultAppImage" @canAddFavorite="setCanAddFavorite" />
+          <user-favoriteApplications @canAddFavorite="setCanAddFavorite" />
         </v-col>      
       </v-row>
     </div>
   </v-app>
 </template>
-
 <script>
 export default {
   props: {
@@ -39,39 +38,15 @@ export default {
   },
   data() {
     return {
-      defaultAppImage: {
-        fileBody: '',
-        fileName: '',
-        invalidSize: false,
-        invalidImage: false
-      },
       canAddFavorite: false,
     };
   },
   created() {
-    this.getAppGeneralSettings();
     this.pageSize = this.preferences.pageSize;
   },
   methods: {
     setCanAddFavorite(canAddFavorite) {
       this.canAddFavorite = canAddFavorite;
-    },
-    getAppGeneralSettings() {
-      return fetch('/app-center/rest/settings', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error getting favorite applications list');
-          }
-        })
-        .then(data => {
-          Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
-          return this.$nextTick();
-        });
     },
   },
 };
