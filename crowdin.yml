@@ -25,7 +25,7 @@ files: [
     "escape_quotes" : 0,
   },
   {
-    "source" : "/app-center-services/src/main/resources/locale/addon/appcenter_en.properties",
+    "source" : "/app-center-webapps/src/main/resources/locale/addon/appcenter_en.properties",
     "translation" : "%original_path%/%file_name%!_%locale_with_underscore%.%file_extension%",
     "translation_replace" : {YML_CROWDIN_LANGUAGES_ARG},
     "dest" : "hub/app__center/appCenterPortlets.properties",

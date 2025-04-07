@@ -36,51 +36,20 @@ public class UserApplication extends Application {
           app.getTitle(),
           app.getUrl(),
           app.getHelpPageURL(),
-          app.getImageFileId(),
-          app.getImageLastModified(),
-          app.getImageFileBody(),
-          app.getImageFileName(),
           app.getDescription(),
-          app.isSystem(),
+          app.getType(),
           app.isActive(),
           app.isMandatory(),
+          app.isDefault(),
           app.isMobile(),
-          app.isChangedManually(),
-          app.getPermissions());
-  }
-
-  public UserApplication(Long id, // NOSONAR
-                         String title,
-                         String url,
-                         String helpPageURL,
-                         Long imageFileId,
-                         Long imageLastModified,
-                         String imageFileBody,
-                         String imageFileName,
-                         String description,
-                         boolean isSystem,
-                         boolean active,
-                         boolean isMandatory,
-                         boolean isMobile,
-                         boolean favorite,
-                         boolean isChangedManually,
-                         String... permissions) {
-    super(id,
-          title,
-          url,
-          helpPageURL,
-          imageFileId,
-          imageLastModified,
-          imageFileBody,
-          imageFileName,
-          description,
-          isSystem,
-          active,
-          isMandatory,
-          isMobile,
-          isChangedManually,
-          permissions);
-    this.favorite = favorite;
+          app.isSystem(),
+          app.getPermissions(),
+          app.getCategoryIds(),
+          app.getImageFileId(),
+          app.getIcon(),
+          app.getImageUrl(),
+          app.getOrder(),
+          app.isChangedManually());
   }
 
 }
