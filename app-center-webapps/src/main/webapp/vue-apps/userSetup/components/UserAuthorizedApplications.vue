@@ -78,20 +78,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         :target="authorizedApp.target"
                         :href="authorizedApp.computedUrl">
                         <img
-                          v-if="authorizedApp.imageFileId"
+                          v-if="authorizedApp.imageUrl"
+                          :src="authorizedApp.imageUrl"
                           class="appImage"
                           referrerpolicy="no-referrer"
-                          :src="`/app-center/rest/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
-                        <img
-                          v-else-if="defaultAppImage.fileBody"
-                          class="appImage"
-                          referrerpolicy="no-referrer"
-                          :src="`/app-center/rest/applications/illustration/${authorizedApp.id}?v=${authorizedApp.imageLastModified}`">
+                          alt="">
+                        <v-icon
+                          v-else-if="authorizedApp.icon"
+                          size="45"
+                          class="appImage full-width d-flex align-center justify-center mb-2">
+                          {{ authorizedApp.icon }}
+                        </v-icon>
                         <img
                           v-else
                           class="appImage"
                           referrerpolicy="no-referrer"
-                          src="/app-center/skin/images/defaultApp.png">
+                          src="/app-center/skin/images/defaultApp.png"
+                          alt="">
                       </a>
                     </div>
                     <div>
@@ -193,24 +196,10 @@ export default {
       type: Boolean,
       default: true,
     },
-    defaultAppImage: {
-      type: Object,
-      default: function() { return {}; }
-    },
   },
   data() {
     return {
       loading: true,
-      systemAppNames: [
-        'Agenda',
-        'Drives',
-        'Forum',
-        'News',
-        'Notes',
-        'Tasks',
-        'Wallet',
-        'Wiki',
-      ],
       isMobileDevice: false,
       authorizedApplicationsList: [],
       applicationsListSize: null,

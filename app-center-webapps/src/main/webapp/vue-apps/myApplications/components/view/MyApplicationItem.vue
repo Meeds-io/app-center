@@ -34,8 +34,24 @@
       link
       flat>
       <v-img
-        :src="appImageUrl"
+        v-if="application.imageUrl"
+        :src="application.imageUrl"
         :alt="applicationTitle"
+        max-width="60"
+        max-height="60"
+        contain
+        class="mx-auto"
+        referrerpolicy="no-referrer" />
+      <v-icon
+        v-else-if="application.icon"
+        size="60"
+        class="d-flex align-center justify-center">
+        {{ application.icon }}
+      </v-icon>
+      <v-img
+        v-else
+        :alt="applicationTitle"
+        src="/app-center/skin/images/defaultApp.png"
         max-width="60"
         max-height="60"
         contain
@@ -69,18 +85,8 @@ export default {
       type: Object,
       default: null
     },
-    defaultAppImage: {
-      type: Object,
-      default: null
-    }
   },
   computed: {
-    appImageUrl() {
-      const { imageFileId, imageFileName, id, imageLastModified } = this.application;
-      return (imageFileId && imageFileName) || this.defaultAppImage?.fileBody
-        ? `${this.illustrationBaseUrl}${id}?v=${imageLastModified}`
-        : '/app-center/skin/images/defaultApp.png';
-    },
     applicationUrl() {
       return this.application?.computedUrl;
     },

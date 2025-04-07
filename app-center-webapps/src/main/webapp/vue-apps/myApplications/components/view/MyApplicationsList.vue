@@ -44,7 +44,6 @@
         v-for="application in applicationsList"
         :key="application.id"
         :application="application"
-        :default-app-image="defaultAppImage"
         :width="125"
         :max-width="125"
         :min-height="125"
@@ -60,10 +59,6 @@ export default {
     applicationsList: {
       type: Array,
       default: () => []
-    },
-    defaultAppImage: {
-      type: Object,
-      default: null
     },
     isLoading: {
       type: Boolean,

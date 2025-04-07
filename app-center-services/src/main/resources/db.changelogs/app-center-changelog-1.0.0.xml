@@ -163,4 +163,10 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-mip-185-06">
+    <addColumn tableName="AC_FAVORITE_APPLICATION">
+      <column name="FAVORITE" type="BOOLEAN" defaultValueBoolean="true" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
