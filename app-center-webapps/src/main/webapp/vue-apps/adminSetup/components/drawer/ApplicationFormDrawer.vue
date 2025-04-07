@@ -195,9 +195,53 @@
           name="applicationHelpPageURL"
           class="border-box-sizing width-auto pt-0 mt-2 mb-3"
           type="text"
-          mandatory
           outlined
           dense />
+        <v-label for="applicationShortcut">
+          {{ $t('appCenter.adminSetupForm.shortcut') }}
+        </v-label>
+        <v-text-field
+          ref="applicationShortcut"
+          id="applicationShortcut"
+          v-model="application.shortcut"
+          :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
+          :rules="rules.shortcut"
+          name="applicationShortcut"
+          class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+          type="text"
+          maxlength="1"
+          outlined
+          dense>
+          <template #prepend-inner>
+            <div class="d-flex align-center mt-n1 ms-n1">
+              <v-card
+                class="fill-height grey-lighten1-background white--text px-5 py-2"
+                flat>
+                Ctrl
+              </v-card>
+              <v-icon class="mx-2" size="24">fa-plus</v-icon>
+              <v-card
+                class="fill-height grey-lighten1-background white--text px-5 py-2"
+                flat>
+                Alt
+              </v-card>
+              <v-icon class="mx-2" size="24">fa-plus</v-icon>
+            </div>
+          </template>
+        </v-text-field>
+        <div class="d-flex full-width align-center mb-2">
+          <v-card
+            class="text-start flex-grow-1 clickable transparent"
+            flat
+            @click="application.mandatory = !application.mandatory">
+            {{ $t('appCenter.adminSetupForm.pwa') }}
+          </v-card>
+          <v-switch
+            v-model="application.pwa"
+            class="ma-0 pa-0"
+            name="applicationPwa"
+            hide-details />
+        </div>
       </v-form>
     </template>
     <template #footer>
@@ -274,6 +318,10 @@ export default {
         helpUrl: [
           () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
+        shortcut: [
+          () => !this.application.shortcut?.length || this.application.shortcut.length === 1 || this.$t('appCenter.adminSetupForm.shortcutInvalidLength'),
+          v => !this.shortcutExists(v) || this.$t('appCenter.adminSetupForm.shortcutAlreadyInUse'),
+        ],
       };
     },
     permissionSuggesterLabels() {
@@ -291,9 +339,10 @@ export default {
     },
     disabled() {
       return !this.title?.length
-        || (this.description?.length && this.description?.length > this.maxDescriptionLength)
+        || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
         || !this.validUrl
-        || !this.validHelpPageUrl;
+        || !this.validHelpPageUrl
+        || !!(this.application?.shortcut?.length && this.shortcutExists(this.application.shortcut));
     },
   },
   watch: {
@@ -329,6 +378,7 @@ export default {
         imageUrl: null,
         url: null,
         helpPageURL: null,
+        shortcut: null,
         active: true,
         default: false,
         mandatory: false,
@@ -402,6 +452,9 @@ export default {
         })
         .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error'))
         .finally(() => this.loading = false);
+    },
+    shortcutExists(c) {
+      return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application.id);
     },
   },
 };
