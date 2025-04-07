@@ -42,6 +42,8 @@ public class Application {
 
   private String          description;
 
+  private String          shortcut;
+
   private ApplicationType type;
 
   private boolean         active;
@@ -53,6 +55,8 @@ public class Application {
   private boolean         isMobile;
 
   private boolean         system;
+
+  private boolean         pwa;
 
   private List<String>    permissions;
 
