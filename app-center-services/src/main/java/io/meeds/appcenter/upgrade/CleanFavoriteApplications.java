@@ -65,6 +65,7 @@ public class CleanFavoriteApplications extends UpgradeProductPlugin {
              System.currentTimeMillis() - startupTime);
   }
 
+  @SuppressWarnings("unchecked")
   private List<Object[]> getDuplicatedFavoriteAppsEntityList(EntityManager entityManager) {
     String selectQuery = "SELECT * FROM AC_FAVORITE_APPLICATION favoriteApp "
         + "WHERE (favoriteApp.APPLICATION_ID, favoriteApp.USER_NAME) IN ("

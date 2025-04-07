@@ -18,17 +18,20 @@
  */
 package io.meeds.appcenter.service;
 
+import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_CONTEXT;
+import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_SCOPE;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.io.IOUtils;
@@ -36,48 +39,32 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.container.xml.ComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationDescriptor;
 import io.meeds.appcenter.model.ApplicationDescriptorList;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.common.ContainerTransactional;
+import io.meeds.social.util.JsonUtils;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
-import lombok.SneakyThrows;
 
 /**
- * A Service to access and store applications
+ * A Service to inject applications at startup time
  */
 @Component
 public class ApplicationCenterInjectService {
 
-  private static final Log         LOG           =
-                                       ExoLogger.getLogger(ApplicationCenterInjectService.class);
-
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-  static {
-    // Workaround when Jackson is defined in shared library with different
-    // version and without artifact jackson-datatype-jsr310
-    OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    OBJECT_MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    OBJECT_MAPPER.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-    OBJECT_MAPPER.registerModule(new JavaTimeModule());
-    OBJECT_MAPPER.setDateFormat(new StdDateFormat().withTimeZone(TimeZone.getTimeZone("UTC")));
-  }
+  private static final Log                   LOG                      = ExoLogger.getLogger(ApplicationCenterInjectService.class);
 
   private static final String                DEFAULT_USERS_GROUP      = "/platform/users";
 
@@ -89,7 +76,13 @@ public class ApplicationCenterInjectService {
   private ConfigurationManager               configurationManager;
 
   @Autowired
+  private UploadService                      uploadService;
+
+  @Autowired
   private ApplicationCenterService           applicationCenterService;
+
+  @Autowired
+  private SettingService                     settingService;
 
   @Getter
   private Map<String, ApplicationDescriptor> defaultApplications      = new LinkedHashMap<>();
@@ -158,9 +151,17 @@ public class ApplicationCenterInjectService {
       defaultApplications.values()
                          .stream()
                          .filter(ApplicationDescriptor::isEnabled)
-                         .forEach(this::injectDefaultApplication);
+                         .forEach(applicationDescriptor -> {
+                           try {
+                             this.injectDefaultApplication(applicationDescriptor);
+                           } catch (Exception e) {
+                             LOG.warn("An error occurred while reimporting system application {}",
+                                      applicationDescriptor.getName(),
+                                      e);
+                           }
+                         });
     } catch (Exception e) {
-      LOG.warn("An unknown error occurs while retrieving system applications images", e);
+      LOG.warn("An unknown error occurs while reimporting system applications", e);
     }
   }
 
@@ -177,7 +178,7 @@ public class ApplicationCenterInjectService {
   private List<ApplicationDescriptor> parseDescriptors(URL url) {
     try (InputStream inputStream = url.openStream()) {
       String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-      ApplicationDescriptorList list = fromJsonString(content, ApplicationDescriptorList.class);
+      ApplicationDescriptorList list = JsonUtils.fromJsonString(content, ApplicationDescriptorList.class);
       return list.getDescriptors();
     } catch (IOException e) {
       LOG.warn("An unkown error happened while parsing application descriptors from url {}", url, e);
@@ -202,9 +203,9 @@ public class ApplicationCenterInjectService {
     });
   }
 
-  private void injectDefaultApplication(ApplicationDescriptor applicationPlugin) { // NOSONAR
-    Application application = applicationPlugin.getApplication();
-    String pluginName = applicationPlugin.getName();
+  private void injectDefaultApplication(ApplicationDescriptor applicationDescriptor) { // NOSONAR
+    Application application = applicationDescriptor.getApplication();
+    String pluginName = applicationDescriptor.getName();
     if (application == null) {
       LOG.warn("An application plugin '{}' holds an empty application", pluginName);
       return;
@@ -222,10 +223,16 @@ public class ApplicationCenterInjectService {
       return;
     }
 
-    Application storedApplication = applicationCenterService.getApplicationByTitle(title);
-    if (storedApplication != null && !applicationPlugin.isOverride()
+    long storedAppId = getStoredApplicationId(pluginName);
+    Application storedApplication = storedAppId == 0l ? null : applicationCenterService.getApplication(storedAppId);
+    if (storedApplication == null) {
+      storedApplication = applicationCenterService.findSystemApplicationByUrl(url);
+    }
+
+    if (storedApplication != null
+        && !applicationDescriptor.isOverride()
         && storedApplication.isChangedManually()
-        && (MERGE_MODE.equals(applicationPlugin.getOverrideMode()) || applicationPlugin.getOverrideMode() == null)) {
+        && (MERGE_MODE.equals(applicationDescriptor.getOverrideMode()) || applicationDescriptor.getOverrideMode() == null)) {
       LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
       return;
     }
@@ -236,51 +243,61 @@ public class ApplicationCenterInjectService {
       application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
     }
 
-    String imagePath = applicationPlugin.getImagePath();
+    ApplicationForm applicationForm = new ApplicationForm(application);
+    String imagePath = applicationDescriptor.getImagePath();
     if (StringUtils.isNotBlank(imagePath)) {
+      String uploadId = UUID.randomUUID().toString();
       try {
-        InputStream inputStream = configurationManager.getInputStream(imagePath);
-        String fileBody = new String(Base64.getEncoder().encode(IOUtils.toByteArray(inputStream)));
-        application.setImageFileBody(fileBody);
+        URL resource = configurationManager.getURL(imagePath);
+        File file = new File(resource.getFile());
+        UploadResource uploadResource = new UploadResource(uploadId,
+                                                           file.getName(),
+                                                           "image/png",
+                                                           file.getAbsolutePath(),
+                                                           0,
+                                                           0,
+                                                           UploadResource.UPLOADED_STATUS);
+        uploadService.createUploadResource(uploadResource);
+        applicationForm.setImageUploadId(uploadId);
       } catch (Exception e) {
         LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
       }
     }
 
-    if (StringUtils.isBlank(application.getImageFileName())) {
-      application.setImageFileName(application.getTitle() + ".png");
-    }
-
     if (storedApplication == null) {
       try {
-        LOG.info("Create system application '{}'", application.getTitle());
-        application.setSystem(true);
-        application.setChangedManually(false);
-        application.setImageFileId(null);
-        applicationCenterService.createApplication(application);
+        LOG.info("Create system application '{}'", applicationForm.getTitle());
+        applicationForm.setSystem(true);
+        applicationForm.setChangedManually(false);
+        applicationForm.setImageFileId(null);
+        storedApplication = applicationCenterService.createApplication(applicationForm);
+        saveStoredApplicationId(pluginName, storedApplication.getId());
       } catch (Exception e) {
-        LOG.error("Error creating application {}", application, e);
+        LOG.error("Error creating application {}", applicationForm, e);
       }
     } else {
       try {
-        LOG.info("Update system application '{}'", application.getTitle());
-        application.setSystem(true);
-        application.setChangedManually(false);
-        application.setId(storedApplication.getId());
-        application.setImageFileId(storedApplication.getImageFileId());
-        applicationCenterService.updateApplication(application);
+        LOG.info("Update system application '{}'", applicationForm.getTitle());
+        applicationForm.setSystem(true);
+        applicationForm.setChangedManually(false);
+        applicationForm.setId(storedApplication.getId());
+        applicationForm.setImageFileId(storedApplication.getImageFileId());
+        applicationCenterService.updateApplication(applicationForm);
+        saveStoredApplicationId(pluginName, storedApplication.getId());
       } catch (Exception e) {
-        LOG.error("Error updating application {}", application, e);
+        LOG.error("Error updating application {}", applicationForm, e);
       }
     }
   }
 
-  @SneakyThrows
-  public <T> T fromJsonString(String value, Class<T> resultClass) {
-    if (StringUtils.isBlank(value)) {
-      return null;
-    }
-    return OBJECT_MAPPER.readValue(value, resultClass);
+  private long getStoredApplicationId(String pluginName) {
+    SettingValue<?> settingValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, "systemApp" + pluginName);
+    String appId = settingValue == null || settingValue.getValue() == null ? null : settingValue.getValue().toString();
+    return StringUtils.isBlank(appId) ? 0l : Long.parseLong(appId);
+  }
+
+  private void saveStoredApplicationId(String pluginName, long appId) {
+    settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, "systemApp" + pluginName, SettingValue.create(appId));
   }
 
 }

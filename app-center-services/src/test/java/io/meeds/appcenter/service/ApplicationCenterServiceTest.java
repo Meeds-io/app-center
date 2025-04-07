@@ -18,16 +18,13 @@
  */
 package io.meeds.appcenter.service;
 
-import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_CONTEXT;
-import static io.meeds.appcenter.service.ApplicationCenterService.APP_CENTER_SCOPE;
-import static io.meeds.appcenter.service.ApplicationCenterService.DEFAULT_APP_IMAGE_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,10 +32,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,76 +43,78 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
-import org.exoplatform.commons.api.settings.SettingValue;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
-import org.exoplatform.services.security.Authenticator;
+import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.services.security.MembershipEntry;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
-import io.meeds.appcenter.model.ApplicationImage;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
-import io.meeds.appcenter.model.exception.ApplicationAlreadyExistsException;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.social.category.service.CategoryLinkService;
+import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 @SpringBootTest(classes = { ApplicationCenterService.class })
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
-  private static final String            KEYWORD             = "keyword";
+  private static final String      KEYWORD        = "keyword";
 
-  private static final String            ADMIN_USERNAME      = "admin";
+  private static final String      ADMIN_USERNAME = "admin";
 
-  private static final long              IMAGE_FILE_ID       = 5l;
+  private static final long        IMAGE_FILE_ID  = 5l;
 
-  private static final long              IMAGE_LAST_MODIFIED = 588l;
+  private static final String      HELP_PAGE_URL  = "./helpPageUrl";
 
-  private static final String            IMAGE_FILE_CONTENT  = "content";
+  private static final String      URL            = "./url";
 
-  private static final String            HELP_PAGE_URL       = "./helpPageUrl";
+  private static final String      PERMISSIONS_2  = "/permissions2";
 
-  private static final String            URL                 = "./url";
+  private static final String      PERMISSIONS_1  = "/permissions1";
 
-  private static final String            PERMISSIONS_2       = "/permissions2";
+  private static final String      DESCRIPTION    = "description";
 
-  private static final String            PERMISSIONS_1       = "/permissions1";
+  private static final String      TITLE          = "title";
 
-  private static final String            DESCRIPTION         = "description";
+  private static final String      TEST_USER      = "testuser";
 
-  private static final String            TITLE               = "title";
-
-  private static final String            TEST_USER           = "testuser";
-
-  private static final Long              ID                  = 2l;
+  private static final Long        ID             = 2l;
 
   @MockBean
-  private ConfigurationManager           configurationManager;
+  private ConfigurationManager     configurationManager;
 
   @MockBean
-  private SettingService                 settingService;
+  private SettingService           settingService;
 
   @MockBean
-  private Authenticator                  authenticator;
+  private TranslationService       translationService;
 
   @MockBean
-  private IdentityRegistry               identityRegistry;
+  private UserACL                  userAcl;
 
   @MockBean
-  private ApplicationCenterStorage       appCenterStorage;
+  private ApplicationCenterStorage appCenterStorage;
+
+  @MockBean
+  private CategoryLinkService      categoryLinkService;
+
+  @MockBean
+  private PortalContainer          portalContainer;
 
   @Autowired
-  private ApplicationCenterService       applicationCenterService;
+  private ApplicationCenterService applicationCenterService;
 
   @BeforeEach
   @SneakyThrows
@@ -132,26 +129,22 @@ public class ApplicationCenterServiceTest {
     lenient().when(userIdentity.isMemberOf(argThat((ArgumentMatcher<MembershipEntry>) m -> m.getGroup()
                                                                                             .equals(PERMISSIONS_2))))
              .thenReturn(true);
-    lenient().when(identityRegistry.getIdentity(ADMIN_USERNAME)).thenReturn(adminIdentity);
-    lenient().when(identityRegistry.getIdentity(TEST_USER)).thenReturn(userIdentity);
+    lenient().when(userAcl.getUserIdentity(ADMIN_USERNAME)).thenReturn(adminIdentity);
+    lenient().when(userAcl.getUserIdentity(TEST_USER)).thenReturn(userIdentity);
+    lenient().when(userAcl.isAdministrator(adminIdentity)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(adminIdentity, PERMISSIONS_1)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(adminIdentity, PERMISSIONS_2)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, ADMIN_USERNAME)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, PERMISSIONS_2)).thenReturn(true);
+    lenient().when(userAcl.hasPermission(userIdentity, TEST_USER)).thenReturn(true);
+    lenient().when(portalContainer.getComponentInstanceOfType(CategoryLinkService.class)).thenReturn(categoryLinkService);
   }
 
   @Test
   @SneakyThrows
   void createApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.createApplication(null));
-    Application existingApplication = application();
-    existingApplication.setTitle("title2");
-    when(appCenterStorage.getApplicationByTitle(existingApplication.getTitle())).thenReturn(existingApplication);
-    assertThrows(ApplicationAlreadyExistsException.class, () -> applicationCenterService.createApplication(existingApplication));
-    existingApplication.setTitle("titleTest");
-    existingApplication.setUrl("test");
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.createApplication(existingApplication));
-    existingApplication.setUrl("./test/");
-    existingApplication.setHelpPageURL("test");
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.createApplication(existingApplication));
-
-    Application application = application();
+    Application application = application(null);
     applicationCenterService.createApplication(application);
     verify(appCenterStorage).createApplication(application);
   }
@@ -160,15 +153,16 @@ public class ApplicationCenterServiceTest {
   @SneakyThrows
   void updateApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.updateApplication(null, ADMIN_USERNAME));
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.updateApplication(application(null), null));
-    assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.updateApplication(application(), ADMIN_USERNAME));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updateApplication(application(null), null));
 
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application());
-    assertThrows(IllegalAccessException.class, () -> applicationCenterService.updateApplication(application(), null));
-    assertThrows(IllegalAccessException.class, () -> applicationCenterService.updateApplication(application(), TEST_USER));
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updateApplication(application(ID), null));
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updateApplication(application(ID), TEST_USER));
     verify(appCenterStorage, never()).updateApplication(any());
-    applicationCenterService.updateApplication(application(), ADMIN_USERNAME);
+    applicationCenterService.updateApplication(application(ID), ADMIN_USERNAME);
     verify(appCenterStorage).updateApplication(any());
   }
 
@@ -179,7 +173,7 @@ public class ApplicationCenterServiceTest {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.deleteApplication(null, ADMIN_USERNAME));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.deleteApplication(ID, null));
     assertThrows(ApplicationNotFoundException.class, () -> applicationCenterService.deleteApplication(ID, ADMIN_USERNAME));
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application());
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
     assertThrows(IllegalAccessException.class, () -> applicationCenterService.deleteApplication(ID, TEST_USER));
 
     applicationCenterService.deleteApplication(ID, ADMIN_USERNAME);
@@ -198,55 +192,13 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
-  void setDefaultAppImage() {
-    ApplicationImage applicationImage = applicationCenterService.setDefaultAppImage(null);
-    assertNull(applicationImage);
-
-    applicationImage = new ApplicationImage(null, null, null);
-    applicationImage = applicationCenterService.setDefaultAppImage(applicationImage);
-    assertNull(applicationImage);
-
-    applicationImage = new ApplicationImage(null, "name", IMAGE_FILE_CONTENT);
-    when(appCenterStorage.saveAppImageFileItem(applicationImage)).thenAnswer(invocation -> {
-      ApplicationImage img = invocation.getArgument(0);
-      img.setId(IMAGE_FILE_ID);
-      return img;
-    });
-    applicationImage = applicationCenterService.setDefaultAppImage(applicationImage);
-    assertNotNull(applicationImage);
-    assertEquals(IMAGE_FILE_ID, applicationImage.getId());
-  }
-
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  @Test
   void getAppGeneralSettings() {
-    applicationCenterService.setDefaultAppImage(null);
-    applicationCenterService.setMaxFavoriteApps(0);
-
+    applicationCenterService.setMaxFavoriteApps(2);
     GeneralSettings generalSettings = applicationCenterService.getSettings();
     assertNotNull(generalSettings);
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNull(generalSettings.getDefaultApplicationImage());
-
-    applicationCenterService.setDefaultAppImage(new ApplicationImage(null, null, null));
+    assertEquals(2, generalSettings.getMaxFavoriteApps());
     generalSettings = applicationCenterService.getSettings();
-
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNull(generalSettings.getDefaultApplicationImage());
-
-    when(appCenterStorage.getAppImageFile(IMAGE_FILE_ID)).thenReturn(new ApplicationImage(IMAGE_FILE_ID,
-                                                                                          "name",
-                                                                                          IMAGE_FILE_CONTENT));
-    when(settingService.get(APP_CENTER_CONTEXT,
-                            APP_CENTER_SCOPE,
-                            DEFAULT_APP_IMAGE_ID)).thenReturn(new SettingValue(String.valueOf(IMAGE_FILE_ID)));
-
-    generalSettings = applicationCenterService.getSettings();
-    assertEquals(0, generalSettings.getMaxFavoriteApps());
-    assertNotNull(generalSettings.getDefaultApplicationImage());
-    assertEquals("name", generalSettings.getDefaultApplicationImage().getFileName());
-    assertFalse(generalSettings.getDefaultApplicationImage().getFileBody().isEmpty());
-    assertNotNull(generalSettings.getDefaultApplicationImage().getId());
+    assertEquals(2, generalSettings.getMaxFavoriteApps());
   }
 
   @Test
@@ -258,7 +210,7 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.addFavoriteApplication(ID, TEST_USER));
 
     Application application = application();
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application);
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
     assertThrows(IllegalAccessException.class,
                  () -> applicationCenterService.addFavoriteApplication(ID, TEST_USER));
     applicationCenterService.addFavoriteApplication(ID, ADMIN_USERNAME);
@@ -308,7 +260,6 @@ public class ApplicationCenterServiceTest {
     assertEquals(2, applicationsList.getLimit());
   }
 
-
   @Test
   @SneakyThrows
   void getPaginatedApplicationsList() {
@@ -318,7 +269,11 @@ public class ApplicationCenterServiceTest {
     Application application4 = application(14L);
     Application application5 = application(15L);
 
-    when(appCenterStorage.getApplications(null)).thenReturn(Arrays.asList(application1, application2, application3, application4, application5));
+    when(appCenterStorage.getApplications(null)).thenReturn(Arrays.asList(application1,
+                                                                          application2,
+                                                                          application3,
+                                                                          application4,
+                                                                          application5));
 
     ApplicationList applicationsList = applicationCenterService.getApplications(0, 2, null);
     assertNotNull(applicationsList);
@@ -348,38 +303,6 @@ public class ApplicationCenterServiceTest {
 
   @Test
   @SneakyThrows
-  void getMandatoryAndFavoriteApplicationsList() {
-    UserApplication application1 = new UserApplication(application(6l));
-    UserApplication application2 = new UserApplication(application(7l));
-    UserApplication application3 = new UserApplication(application(8l));
-    UserApplication application4 = new UserApplication(application(9l));
-    UserApplication application5 = new UserApplication(application(10l));
-
-    when(appCenterStorage.getMandatoryApplications()).thenReturn(Arrays.asList(application1, application2, application3));
-    when(appCenterStorage.countFavorites(ADMIN_USERNAME)).thenReturn(1l);
-    when(appCenterStorage.getFavoriteApplicationsByUser(ADMIN_USERNAME)).thenReturn(Arrays.asList(application4, application5));
-    applicationCenterService.setMaxFavoriteApps(1);
-
-    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(ADMIN_USERNAME);
-    assertFalse(applicationList.isCanAddFavorite());
-    assertEquals(5, applicationList.getApplications().size());
-    assertEquals(5, applicationList.getSize());
-
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(TEST_USER);
-    assertTrue(applicationList.isCanAddFavorite());
-    assertEquals(0, applicationList.getApplications().size());
-    assertEquals(0, applicationList.getSize());
-
-    application1.setPermissions(Collections.singletonList(PERMISSIONS_2));
-    application2.setPermissions(Collections.singletonList(PERMISSIONS_2));
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplicationsList(TEST_USER);
-    assertTrue(applicationList.isCanAddFavorite());
-    assertEquals(2, applicationList.getApplications().size());
-    assertEquals(2, applicationList.getSize());
-  }
-
-  @Test
-  @SneakyThrows
   void updateFavoriteApplicationOrder() {
     assertThrows(IllegalArgumentException.class,
                  () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ""));
@@ -388,7 +311,7 @@ public class ApplicationCenterServiceTest {
     assertThrows(ApplicationNotFoundException.class,
                  () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME));
 
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application());
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
     applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME);
     verify(appCenterStorage).updateFavoriteApplicationOrder(ID, ADMIN_USERNAME, 1L);
   }
@@ -440,9 +363,7 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.getApplicationImageLastUpdated(50000L, TEST_USER));
 
     Application application = application();
-    application.setImageFileName("name");
-    application.setImageFileBody(IMAGE_FILE_CONTENT);
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application());
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
     assertThrows(IllegalAccessException.class,
                  () -> applicationCenterService.getApplicationImageLastUpdated(application.getId(), TEST_USER));
     Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(application.getId(), ADMIN_USERNAME);
@@ -457,9 +378,7 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.getApplicationImageInputStream(50000L, TEST_USER));
 
     Application application = application();
-    application.setImageFileName("name");
-    application.setImageFileBody(IMAGE_FILE_CONTENT);
-    when(appCenterStorage.getApplicationById(ID)).thenReturn(application());
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
     when(appCenterStorage.getApplicationImageInputStream(IMAGE_FILE_ID)).thenReturn(mock(InputStream.class));
     assertThrows(IllegalAccessException.class,
                  () -> applicationCenterService.getApplicationImageInputStream(application.getId(), TEST_USER));
@@ -470,7 +389,6 @@ public class ApplicationCenterServiceTest {
   @Test
   @SneakyThrows
   void testGetMandatoryAndFavoriteApplications() {
-    String username = "testuser";
     Pageable pageable = PageRequest.of(0, 5);
 
     UserApplication application1 = new UserApplication(application(1L));
@@ -484,13 +402,17 @@ public class ApplicationCenterServiceTest {
     application3.setPermissions(Collections.singletonList(PERMISSIONS_2));
     application4.setPermissions(Collections.singletonList(PERMISSIONS_2));
 
-    when(appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable))
-            .thenReturn(Arrays.asList(application1, application2, application3, application4, application5));
-    when(appCenterStorage.countFavorites(username)).thenReturn(3L);
+    when(appCenterStorage.getMandatoryAndFavoriteApplications(TEST_USER, pageable))
+                                                                                   .thenReturn(Arrays.asList(application1,
+                                                                                                             application2,
+                                                                                                             application3,
+                                                                                                             application4,
+                                                                                                             application5));
+    when(appCenterStorage.countFavorites(TEST_USER)).thenReturn(3L);
 
     applicationCenterService.setMaxFavoriteApps(5);
 
-    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(username, pageable);
+    ApplicationList applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(pageable, TEST_USER, null);
 
     assertNotNull(applicationList);
     assertNotNull(applicationList.getApplications());
@@ -502,8 +424,8 @@ public class ApplicationCenterServiceTest {
     assertEquals(4, applicationList.getLimit());
     assertEquals(0, applicationList.getOffset());
 
-    when(appCenterStorage.countFavorites(username)).thenReturn(6L);
-    applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(username, pageable);
+    when(appCenterStorage.countFavorites(TEST_USER)).thenReturn(6L);
+    applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(pageable, TEST_USER, null);
     assertFalse(applicationList.isCanAddFavorite());
   }
 
@@ -516,17 +438,20 @@ public class ApplicationCenterServiceTest {
                            TITLE,
                            URL,
                            HELP_PAGE_URL,
-                           IMAGE_FILE_ID,
-                           IMAGE_LAST_MODIFIED,
-                           "",
-                           "",
                            DESCRIPTION,
+                           ApplicationType.LINK,
                            false,
                            true,
                            false,
                            true,
                            false,
-                           PERMISSIONS_1);
+                           Collections.singletonList(PERMISSIONS_1),
+                           null,
+                           IMAGE_FILE_ID,
+                           "icon",
+                           null,
+                           0l,
+                           false);
   }
 
 }

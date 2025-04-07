@@ -23,9 +23,12 @@ import AdminSetupItem from './components/main/AdminSetupItem.vue';
 import AdminSetupMenu from './components/main/AdminSetupMenu.vue';
 
 import ApplicationFormDrawer from './components/drawer/ApplicationFormDrawer.vue';
-import ExoSuggester from './components/suggester/ExoSuggester.vue';
+import ApplicationPermissions from './components/form/ApplicationPermissions.vue';
+import ApplicationImageInput from './components/form/ApplicationImageInput.vue';
+import QuickActionSuggester from './components/form/QuickActionSuggester.vue';
+import PortletInstanceSuggester from './components/form/PortletInstanceSuggester.vue';
 
-import ExoAppCenterModal from './components/modal/ExoAppCenterModal.vue';
+import ApplicationIcon from './components/view/ApplicationIcon.vue';
 
 const components = {
   'app-center-admin-setup': AdminSetupApp,
@@ -33,9 +36,12 @@ const components = {
   'app-center-admin-item': AdminSetupItem,
   'app-center-admin-menu': AdminSetupMenu,
   'app-center-admin-setup-list': AdminSetupList,
-  'app-center-modal': ExoAppCenterModal,
   'app-center-form-drawer': ApplicationFormDrawer,
-  'app-center-suggester': ExoSuggester,
+  'app-center-permissions': ApplicationPermissions,
+  'app-center-image-input': ApplicationImageInput,
+  'app-center-icon': ApplicationIcon,
+  'quick-action-suggester': QuickActionSuggester,
+  'portlet-instance-suggester': PortletInstanceSuggester,
 };
 
 for (const key in components) {

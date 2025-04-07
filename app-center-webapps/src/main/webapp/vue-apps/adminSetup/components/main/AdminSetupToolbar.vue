@@ -35,7 +35,7 @@
         :aria-label="$t('siteManagement.label.btn.add')"
         :class="$root.isMobile && 'px-0'"
         class="btn btn-primary text-truncate"
-        @click="$emit('add')">
+        @click="$root.$emit('app-center-drawer-open')">
         <v-icon size="18">fa-plus</v-icon>
         <span
           class="hidden-sm-and-down text-truncate text-none ms-2">
