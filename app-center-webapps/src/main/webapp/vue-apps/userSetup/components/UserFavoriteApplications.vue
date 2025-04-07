@@ -48,20 +48,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :target="favoriteApp.target"
               :href="favoriteApp.computedUrl">
               <img
-                v-if="favoriteApp.imageFileId"
+                v-if="favoriteApp.imageUrl"
+                :src="favoriteApp.imageUrl"
                 class="appImage"
                 referrerpolicy="no-referrer"
-                :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
-              <img
-                v-else-if="defaultAppImage.fileBody"
-                class="appImage"
-                referrerpolicy="no-referrer"
-                :src="`/app-center/rest/applications/illustration/${favoriteApp.id}?v=${favoriteApp.imageLastModified}`">
+                alt="">
+              <v-icon
+                v-else-if="favoriteApp.icon"
+                size="45"
+                class="appImage d-flex align-center justify-center">
+                {{ favoriteApp.icon }}
+              </v-icon>
               <img
                 v-else
                 class="appImage"
                 referrerpolicy="no-referrer"
-                src="/app-center/skin/images/defaultApp.png">
+                src="/app-center/skin/images/defaultApp.png"
+                alt="">
             </a>
           </div>
           <v-list-item-content>
@@ -110,12 +113,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <script>
 export default {
   name: 'UserFavoriteApplications',
-  props: {
-    defaultAppImage: {
-      type: Object,
-      default: function() { return {}; }
-    },
-  },
   data() {
     return {
       isMobileDevice: false,
@@ -176,6 +173,7 @@ export default {
             }
           }
           this.favoriteApplicationsList = allApplications;
+          console.warn('this.favoriteApplicationsList', this.favoriteApplicationsList.slice());
 
           // check if favorite applications are alphabetically ordered
           this.favoriteApplicationsList.sort((a, b) => {

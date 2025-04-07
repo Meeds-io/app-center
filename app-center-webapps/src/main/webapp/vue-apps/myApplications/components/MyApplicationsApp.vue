@@ -34,7 +34,6 @@
           @open-settings="openSettingsDrawer" />
         <my-applications-list
           :applications-list="filteredApplications"
-          :default-app-image="defaultAppImage"
           :is-loading="isLoading"
           @list-updated="handleListOrderUpdate" />
       </widget-wrapper>
@@ -54,7 +53,6 @@ export default {
     return {
       favoriteApplications: [],
       applicationsOrder: {},
-      defaultAppImage: null,
       isLoading: false,
       alphabeticalOrder: true,
       baseUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`,
@@ -112,7 +110,6 @@ export default {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
             .filter(app => !!app);
-          this.defaultAppImage = data?.defaultApplicationImage;
           this.sortAndStoreApplicationsOrder();
         })
         .finally(() => {
