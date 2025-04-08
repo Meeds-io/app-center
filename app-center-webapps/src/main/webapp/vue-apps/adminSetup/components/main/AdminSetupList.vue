@@ -163,7 +163,7 @@ export default {
         })
         .then(() => {
           this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDeletedSuccessfully'), 'success');
-          this.getApplicationsList();
+          this.$root.$emit('app-center-refresh-list');
         })
         .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'))
         .finally(() => this.applicationToDelete = null);
@@ -201,6 +201,7 @@ export default {
           } else {
             this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDisabledSuccessfully'), 'success');
           }
+          this.$root.$emit('app-center-refresh-enabled', application, enabled);
         });
     },
     getAppIndex(appList, appId) {
