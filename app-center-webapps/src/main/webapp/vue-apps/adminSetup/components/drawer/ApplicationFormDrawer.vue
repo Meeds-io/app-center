@@ -268,6 +268,7 @@ export default {
     titles: {},
     descriptions: {},
     application: {},
+    originalApplication: {},
     oldCategoryIds: [],
     newCategoryIds: [],
   }),
@@ -335,8 +336,20 @@ export default {
     description() {
       return this.descriptions[eXo.env.portal.defaultLanguage];
     },
+    applicationToSave() {
+      return {
+        ...this.application,
+        title: JSON.parse(JSON.stringify(this.titles)),
+        description: JSON.parse(JSON.stringify(this.descriptions)),
+        categoryIds: this.newCategoryIds,
+      };
+    },
+    modified() {
+      return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
+    },
     disabled() {
-      return !this.title?.length
+      return !this.modified
+        || !this.title?.length
         || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
         || !this.validUrl
         || !this.validHelpPageUrl
@@ -403,6 +416,12 @@ export default {
         this.titles = {};
         this.descriptions = {};
       }
+      this.originalApplication = {
+        ...this.application,
+        title: JSON.parse(JSON.stringify(this.titles)),
+        description: JSON.parse(JSON.stringify(this.descriptions)),
+        categoryIds: this.newCategoryIds,
+      };
       await this.$nextTick();
       this.$refs.formDrawer.open();
     },
