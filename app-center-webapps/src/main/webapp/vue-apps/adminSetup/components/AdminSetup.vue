@@ -17,22 +17,33 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <v-app class="applicationsAdmin">
     <v-main class="application-body pb-5">
-      <h4 class="text-title px-5 pt-5 ma-0">
-        {{ $t('appCenter.adminSetupForm.applications') }}
-      </h4>
+      <div class="d-flex align-center px-5 pt-5">
+        <div class="text-title">
+          {{ $t('appCenter.adminSetupForm.applications') }}
+        </div>
+        <v-btn
+          :title="$t('generalSettings.topbar.switchDevicePreview')"
+          class="ms-2"
+          icon
+          @click="$root.mobilePreview = !$root.mobilePreview">
+          <v-icon size="20">{{ $root.mobilePreview && 'fa-desktop' || 'fa-mobile-alt' }}</v-icon>
+        </v-btn>
+      </div>
       <div class="d-flex flex-column flex-sm-row">
         <div class="d-flex flex-column">
           <app-center-admin-toolbar
             ref="toolbar"
             @filter-changed="keyword = $event" />
-          <app-center-admin-setup-list
+          <app-center-admin-list
             ref="adminSetupList"
             :keyword="keyword" />
         </div>
-        <v-divider vertical />
-        <div class="ma-5">
-          Preview
-        </div>
+        <v-card
+          min-width="420"
+          class="ma-5"
+          flat>
+          <app-center-admin-preview />
+        </v-card>
       </div>
     </v-main>
   </v-app>
