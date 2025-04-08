@@ -1,0 +1,76 @@
+/**
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+package io.meeds.appcenter.plugin;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
+import org.exoplatform.services.resources.ResourceBundleService;
+
+import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.pwa.model.PwaShortcut;
+import io.meeds.pwa.model.PwaShortcutIcon;
+import io.meeds.pwa.plugin.PwaShortcutPlugin;
+
+@Service
+public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
+
+  @Autowired
+  private PortalContainer container;
+
+  @Override
+  public List<PwaShortcut> getShortcuts(String username) {
+    ApplicationList applications = container.getComponentInstanceOfType(ApplicationCenterService.class)
+                                            .getMandatoryAndFavoriteApplications(Pageable.unpaged(),
+                                                                                 username,
+                                                                                 getUserLocale(username));
+    return applications.getApplications().stream().filter(Application::isPwa).map(this::toShortcut).toList();
+  }
+
+  private PwaShortcut toShortcut(Application application) {
+    return new PwaShortcut(application.getTitle(),
+                           application.getTitle(),
+                           application.getDescription(),
+                           application.getUrl(),
+                           StringUtils.isBlank(application.getImageUrl()) ? Collections.emptyList() :
+                                                                          Collections.singletonList(new PwaShortcutIcon(application.getImageUrl(),
+                                                                                                                        null,
+                                                                                                                        null,
+                                                                                                                        null)));
+  }
+
+  private Locale getUserLocale(String username) {
+    try {
+      return LocaleContextInfoUtils.getUserLocale(username);
+    } catch (Exception e) {
+      return ResourceBundleService.DEFAULT_CROWDIN_LOCALE;
+    }
+  }
+
+}
