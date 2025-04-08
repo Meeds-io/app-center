@@ -454,6 +454,9 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationOrder.getId()));
     }
+    if (!application.isMandatory()) {
+      appCenterStorage.addApplicationToUserFavorite(applicationOrder.getId(), userName);
+    }
     appCenterStorage.updateFavoriteApplicationOrder(applicationOrder.getId(), userName, applicationOrder.getOrder());
   }
 

@@ -1,0 +1,26 @@
+{
+    "descriptors": [
+        {
+            "name": "addActivity",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "Add a post",
+                "description": "Write a post",
+                "icon": "fa-pen-fancy",
+                "type": "DRAWER",
+                "url": "activityComposer",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": true,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
+        }
+    ]
+}
