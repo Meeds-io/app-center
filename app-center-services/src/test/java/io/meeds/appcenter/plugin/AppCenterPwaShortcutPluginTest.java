@@ -31,12 +31,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.resources.ResourceBundleService;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -44,6 +46,8 @@ import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.pwa.model.PwaShortcut;
+
+import jakarta.servlet.ServletContext;
 
 @SpringBootTest(classes = { AppCenterPwaShortcutPlugin.class })
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +57,9 @@ public class AppCenterPwaShortcutPluginTest {
 
   @MockBean
   private PortalContainer            container;
+
+  @MockBean
+  private UserPortalConfigService    portalConfigService;
 
   @MockBean
   private ApplicationCenterService   applicationCenterService;
