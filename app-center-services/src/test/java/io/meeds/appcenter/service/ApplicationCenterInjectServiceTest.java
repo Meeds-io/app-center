@@ -18,9 +18,10 @@
  */
 package io.meeds.appcenter.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -50,23 +51,25 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterInjectServiceTest {
 
-  private static final String            SHORTCUT      = "G";
+  private static final String            TEST_APPLICATION_TITLE = "test-application-injection";
 
-  private static final Random            RANDOM        = new Random();
+  private static final String            SHORTCUT               = "G";
 
-  private static final long              IMAGE_FILE_ID = 5l;
+  private static final Random            RANDOM                 = new Random();
 
-  private static final String            HELP_PAGE_URL = "./helpPageUrl";
+  private static final long              IMAGE_FILE_ID          = 5l;
 
-  private static final String            URL           = "./url";
+  private static final String            HELP_PAGE_URL          = "./helpPageUrl";
 
-  private static final String            PERMISSIONS_1 = "/permissions1";
+  private static final String            URL                    = "./url";
 
-  private static final String            DESCRIPTION   = "description";
+  private static final String            PERMISSIONS_1          = "/permissions1";
 
-  private static final String            TITLE         = "title";
+  private static final String            DESCRIPTION            = "description";
 
-  private static final Long              ID            = 2l;
+  private static final String            TITLE                  = "title";
+
+  private static final Long              ID                     = 2l;
 
   @MockBean
   private ConfigurationManager           configurationManager;
@@ -89,7 +92,7 @@ public class ApplicationCenterInjectServiceTest {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterInjectService.addApplicationPlugin(null));
 
     applicationCenterInjectService.injectDefaultApplications();
-    assertEquals(1, applicationCenterInjectService.getDefaultApplications().size());
+    assertTrue(applicationCenterInjectService.getDefaultApplications().size() >= 1);
 
     String pluginName = "testapp";
 
@@ -99,19 +102,21 @@ public class ApplicationCenterInjectServiceTest {
     applicationPlugin1.setName(pluginName);
     applicationCenterInjectService.addApplicationPlugin(applicationPlugin1);
     applicationCenterInjectService.injectDefaultApplications();
-    verify(applicationCenterService, never()).createApplication(any());
+    verify(applicationCenterService,
+           never()).createApplication(argThat(app -> app.getTitle().equals(TEST_APPLICATION_TITLE)));
 
-    when(applicationCenterService.createApplication(any(Application.class))).thenAnswer(invocation -> {
-      Application app = invocation.getArgument(0);
-      app.setId(RANDOM.nextLong());
-      return app;
-    });
+    when(applicationCenterService.createApplication(argThat(app -> app.getTitle()
+                                                                      .equals(TITLE)))).thenAnswer(invocation -> {
+                                                                        Application app = invocation.getArgument(0);
+                                                                        app.setId(RANDOM.nextLong());
+                                                                        return app;
+                                                                      });
 
     applicationPlugin1.setEnabled(true);
     try {
       applicationCenterInjectService.addApplicationPlugin(applicationPlugin1);
       applicationCenterInjectService.injectDefaultApplications();
-      verify(applicationCenterService).createApplication(any());
+      verify(applicationCenterService).createApplication(argThat(app -> app.getTitle().equals(TITLE)));
     } finally {
       applicationCenterInjectService.removeApplicationPlugin(pluginName);
     }

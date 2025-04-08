@@ -44,7 +44,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-divider />
         </template>
         <div v-if="hasApplications" class="content">
-          <v-layout v-if="favoriteApplicationsList.length > 0" class="favorite appsContainer">
+          <v-layout v-if="hasApplications" class="favorite appsContainer">
             <component
               :is="$root.isMobile && 'div' || 'draggable'"
               v-model="favoriteApplicationsList"
@@ -124,46 +124,37 @@ export default {
       favoriteApplicationsList: [],
       applicationsOrder: null,
       appCenterUserSetupLink: '',
+      drag: false,
       loading: true,
       draggedElementIndex: null,
-      alphabeticalOrder: true,
       appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
   },
-  watch: {
-    favoriteApplicationsList() {
-      // check if still alphabetically ordered
-      if (this.alphabeticalOrder) {
-        const alphabeticalOrder = {};
-        this.favoriteApplicationsList.forEach(app => {
-          alphabeticalOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
-        });
-        if (JSON.stringify(this.applicationsOrder) !== JSON.stringify(alphabeticalOrder)) {
-          this.alphabeticalOrder = false;
-        }        
-      }
-      // update an store applications order if no more alphabetically ordered
-      if (!this.alphabeticalOrder) {
-        const applicationsToUpdateOrder = [];
-        // check applications order
-        this.favoriteApplicationsList.forEach(app => {
-          if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
-            applicationsToUpdateOrder.push(app);
-            this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
-          }
-        });
-        if (applicationsToUpdateOrder.length) {
-          const applicationsOrder = applicationsToUpdateOrder.map(app => {
-            return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
-          });
-          this.updateApplicationsOrder(applicationsOrder);
-        }
-      }
-    },
-  },
   computed: {
+    sortedApplicationsList() {
+      const apps = this.favoriteApplicationsList || [];
+      apps.sort((a, b) => {
+        if (a.order === null && b.order === null) {
+          return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
+        } else if (a.order === null) {
+          return 1;
+        } else if (b.order === null) {
+          return -1;
+        } else {
+          return a.order - b.order;
+        }
+      });
+      return apps;
+    },
     hasApplications() {
       return this.favoriteApplicationsList?.length;
+    },
+  },
+  watch: {
+    drag() {
+      if (!this.drag) {
+        this.updateApplicationsOrder();
+      }
     },
   },
   created() {
@@ -235,40 +226,7 @@ export default {
             applications.push(...data.applications);
           }
           this.favoriteApplicationsList = applications.filter(app => app.favorite || app.mandatory);
-          // sort favorite applications alphabetically by default
-          if (this.favoriteApplicationsList.some(app => app.order !== null)) {
-            this.alphabeticalOrder = false;
-          }
-
-          this.favoriteApplicationsList.sort((a, b) => {
-            if (a.order === null && b.order === null) {
-              if (a.title < b.title) {
-                return -1;
-              }
-              if (a.title > b.title) {
-                return 1;
-              }
-              return 0;
-            }
-            if (a.order && b.order === null) {
-              return 1;
-            }
-            if (a.order === null && b.order) {
-              return -1;
-            }
-            if (a.order === b.order) {
-              if (a.title < b.title) {
-                return -1;
-              }
-              if (a.title > b.title) {
-
-                return 1;
-              }
-              return 0;
-            }
-            return a.order - b.order;
-
-          });
+          this.favoriteApplicationsList = this.sortedApplicationsList.slice();
 
           // store favorite applications order
           this.applicationsOrder = {};
@@ -282,15 +240,28 @@ export default {
           });
         }).finally(() => this.loading = false);
     },
-    updateApplicationsOrder(applicationsOrder) {
-      return fetch('/app-center/rest/favorites', {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        method: 'PUT',
-        body: JSON.stringify(applicationsOrder)
+    updateApplicationsOrder() {
+      const applicationsToUpdateOrder = [];
+      // check applications order
+      this.favoriteApplicationsList.forEach(app => {
+        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
+          applicationsToUpdateOrder.push(app);
+          this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+        }
       });
+      if (applicationsToUpdateOrder.length) {
+        const applicationsOrder = applicationsToUpdateOrder.map(app => {
+          return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
+        });
+        return fetch('/app-center/rest/favorites', {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          method: 'PUT',
+          body: JSON.stringify(applicationsOrder)
+        });
+      }
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
