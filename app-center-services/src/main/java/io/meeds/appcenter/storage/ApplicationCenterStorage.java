@@ -170,7 +170,7 @@ public class ApplicationCenterStorage {
         throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
       }
       applicationFavorite = favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
-    } else {
+    } else if (applicationFavorite.getFavorite() == null || !applicationFavorite.getFavorite().booleanValue()) {
       applicationFavorite.setFavorite(true);
       applicationFavorite = favoriteApplicationDAO.save(applicationFavorite);
     }
