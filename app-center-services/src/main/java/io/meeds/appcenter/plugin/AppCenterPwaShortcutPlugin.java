@@ -28,9 +28,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.resources.ResourceBundleService;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -38,11 +40,26 @@ import io.meeds.pwa.model.PwaShortcut;
 import io.meeds.pwa.model.PwaShortcutIcon;
 import io.meeds.pwa.plugin.PwaShortcutPlugin;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
 
   @Autowired
-  private PortalContainer container;
+  private PortalContainer         container;
+
+  @Autowired
+  private UserPortalConfigService portalConfigService;
+
+  private String                  defaultPortalPath;
+
+  @PostConstruct
+  public void init() {
+    this.defaultPortalPath = String.format("%s/%s/",
+                                           container.getPortalContext() == null ? "/portal" :
+                                                                                container.getPortalContext().getContextPath(),
+                                           portalConfigService.getMetaPortal());
+  }
 
   @Override
   public List<PwaShortcut> getShortcuts(String username) {
@@ -50,19 +67,42 @@ public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
                                             .getMandatoryAndFavoriteApplications(Pageable.unpaged(),
                                                                                  username,
                                                                                  getUserLocale(username));
-    return applications.getApplications().stream().filter(Application::isPwa).map(this::toShortcut).toList();
+    return applications.getApplications()
+                       .stream()
+                       .filter(Application::isPwa)
+                       .map(app -> toShortcut(app, username))
+                       .toList();
   }
 
-  private PwaShortcut toShortcut(Application application) {
+  private PwaShortcut toShortcut(Application application, String username) {
     return new PwaShortcut(application.getTitle(),
                            application.getTitle(),
                            application.getDescription(),
-                           application.getUrl(),
+                           getUrl(application, username),
                            StringUtils.isBlank(application.getImageUrl()) ? Collections.emptyList() :
                                                                           Collections.singletonList(new PwaShortcutIcon(application.getImageUrl(),
                                                                                                                         null,
                                                                                                                         null,
                                                                                                                         null)));
+  }
+
+  private String getUrl(Application application, String username) {
+    ApplicationType type = application.getType() == null ? ApplicationType.LINK : application.getType();
+    return switch (type) {
+    case LINK: {
+      yield application.getUrl()
+                       .replace("./", this.defaultPortalPath)
+                       .replace("@user@", username == null ? "" : username);
+    }
+    case DRAWER: {
+      yield String.format("%s?appCenterDrawer=%s", this.defaultPortalPath, application.getUrl());
+    }
+    case PORTLET: {
+      yield String.format("%s?appCenterPortlet=%s", this.defaultPortalPath, application.getUrl());
+    }
+    default:
+      yield application.getUrl();
+    };
   }
 
   private Locale getUserLocale(String username) {
