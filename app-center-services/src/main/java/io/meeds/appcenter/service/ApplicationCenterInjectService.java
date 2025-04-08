@@ -48,6 +48,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationDescriptor;
 import io.meeds.appcenter.model.ApplicationDescriptorList;
@@ -239,6 +240,10 @@ public class ApplicationCenterInjectService {
         && (MERGE_MODE.equals(applicationDescriptor.getOverrideMode()) || applicationDescriptor.getOverrideMode() == null)) {
       LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
       return;
+    }
+
+    if (application.getType() == null) {
+      application.setType(ApplicationType.LINK);
     }
 
     ApplicationForm applicationForm = new ApplicationForm(application);
