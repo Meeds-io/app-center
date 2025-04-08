@@ -64,13 +64,14 @@ import lombok.Getter;
 @Component
 public class ApplicationCenterInjectService {
 
-  private static final Log                   LOG                      = ExoLogger.getLogger(ApplicationCenterInjectService.class);
+  private static final Log                   LOG                       =
+                                                 ExoLogger.getLogger(ApplicationCenterInjectService.class);
 
-  private static final String                DEFAULT_USERS_GROUP      = "/platform/users";
+  private static final String                APP_CENTER_APPS_VERSION   = "1";
 
-  private static final String                DEFAULT_USERS_PERMISSION = "*:" + DEFAULT_USERS_GROUP;
+  private static final String                MERGE_MODE                = "merge";
 
-  private static final String                MERGE_MODE               = "merge";
+  private static final String                APP_CENTER_SYSTEM_APP_KEY = "systemApps";
 
   @Autowired
   private ConfigurationManager               configurationManager;
@@ -85,7 +86,7 @@ public class ApplicationCenterInjectService {
   private SettingService                     settingService;
 
   @Getter
-  private Map<String, ApplicationDescriptor> defaultApplications      = new LinkedHashMap<>();
+  private Map<String, ApplicationDescriptor> defaultApplications       = new LinkedHashMap<>();
 
   @PostConstruct
   public void init() {
@@ -160,6 +161,7 @@ public class ApplicationCenterInjectService {
                                       e);
                            }
                          });
+      saveStoredApplicationsVersion();
     } catch (Exception e) {
       LOG.warn("An unknown error occurs while reimporting system applications", e);
     }
@@ -229,18 +231,14 @@ public class ApplicationCenterInjectService {
       storedApplication = applicationCenterService.findSystemApplicationByUrl(url);
     }
 
+    String version = getStoredApplicationsVersion();
     if (storedApplication != null
         && !applicationDescriptor.isOverride()
+        && StringUtils.equals(APP_CENTER_APPS_VERSION, version)
         && storedApplication.isChangedManually()
         && (MERGE_MODE.equals(applicationDescriptor.getOverrideMode()) || applicationDescriptor.getOverrideMode() == null)) {
       LOG.info("Ignore updating system application '{}', override flag is turned off", application.getTitle());
       return;
-    }
-
-    List<String> permissions = application.getPermissions();
-    if (permissions == null || permissions.isEmpty()) {
-      // Set default permission if empty
-      application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
     }
 
     ApplicationForm applicationForm = new ApplicationForm(application);
@@ -291,13 +289,32 @@ public class ApplicationCenterInjectService {
   }
 
   private long getStoredApplicationId(String pluginName) {
-    SettingValue<?> settingValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, "systemApp" + pluginName);
+    SettingValue<?> settingValue = settingService.get(APP_CENTER_CONTEXT,
+                                                      APP_CENTER_SCOPE,
+                                                      APP_CENTER_SYSTEM_APP_KEY + pluginName);
     String appId = settingValue == null || settingValue.getValue() == null ? null : settingValue.getValue().toString();
     return StringUtils.isBlank(appId) ? 0l : Long.parseLong(appId);
   }
 
   private void saveStoredApplicationId(String pluginName, long appId) {
-    settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, "systemApp" + pluginName, SettingValue.create(appId));
+    settingService.set(APP_CENTER_CONTEXT,
+                       APP_CENTER_SCOPE,
+                       APP_CENTER_SYSTEM_APP_KEY + pluginName,
+                       SettingValue.create(appId));
+  }
+
+  private String getStoredApplicationsVersion() {
+    SettingValue<?> settingValue = settingService.get(APP_CENTER_CONTEXT,
+                                                      APP_CENTER_SCOPE,
+                                                      APP_CENTER_APPS_VERSION);
+    return settingValue == null || settingValue.getValue() == null ? null : settingValue.getValue().toString();
+  }
+
+  private void saveStoredApplicationsVersion() {
+    settingService.set(APP_CENTER_CONTEXT,
+                       APP_CENTER_SCOPE,
+                       APP_CENTER_APPS_VERSION,
+                       SettingValue.create(APP_CENTER_APPS_VERSION));
   }
 
 }
