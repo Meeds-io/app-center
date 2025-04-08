@@ -173,7 +173,6 @@ export default {
             }
           }
           this.favoriteApplicationsList = allApplications;
-          console.warn('this.favoriteApplicationsList', this.favoriteApplicationsList.slice());
 
           // check if favorite applications are alphabetically ordered
           this.favoriteApplicationsList.sort((a, b) => {
