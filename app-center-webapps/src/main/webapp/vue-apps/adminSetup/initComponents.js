@@ -17,8 +17,9 @@
 
 import AdminSetupApp from './components/AdminSetup.vue';
 
-import AdminSetupList from './components/main/AdminSetupList.vue';
 import AdminSetupToolbar from './components/main/AdminSetupToolbar.vue';
+import AdminSetupList from './components/main/AdminSetupList.vue';
+import AdminSetupPreview from './components/main/AdminSetupPreview.vue';
 import AdminSetupItem from './components/main/AdminSetupItem.vue';
 import AdminSetupMenu from './components/main/AdminSetupMenu.vue';
 
@@ -35,7 +36,8 @@ const components = {
   'app-center-admin-toolbar': AdminSetupToolbar,
   'app-center-admin-item': AdminSetupItem,
   'app-center-admin-menu': AdminSetupMenu,
-  'app-center-admin-setup-list': AdminSetupList,
+  'app-center-admin-list': AdminSetupList,
+  'app-center-admin-preview': AdminSetupPreview,
   'app-center-form-drawer': ApplicationFormDrawer,
   'app-center-permissions': ApplicationPermissions,
   'app-center-image-input': ApplicationImageInput,

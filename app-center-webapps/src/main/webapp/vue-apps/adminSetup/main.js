@@ -35,6 +35,7 @@ export function init() {
         portletInstances: [],
         quickActionExtensions: [],
         quickActionsStatus: {},
+        mobilePreview: false,
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
