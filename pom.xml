@@ -44,7 +44,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 	<properties>
 		<io.meeds.social.version>7.1.x-exo-SNAPSHOT</io.meeds.social.version>
     <io.meeds.platform-ui.version>7.1.x-exo-SNAPSHOT</io.meeds.platform-ui.version>
-    
+    <addon.meeds.pwa.version>7.1.x-exo-SNAPSHOT</addon.meeds.pwa.version>
     		<!-- Sonar properties -->
     		<sonar.organization>meeds-io</sonar.organization>
 	</properties>
@@ -62,6 +62,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <groupId>io.meeds.platform-ui</groupId>
         <artifactId>platform-ui</artifactId>
         <version>${io.meeds.platform-ui.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.meeds.pwa</groupId>
+        <artifactId>pwa</artifactId>
+        <version>${addon.meeds.pwa.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
