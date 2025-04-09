@@ -115,62 +115,6 @@
   </portlet>
 
   <portlet>
-    <name>QuickActions</name>
-    <module>
-      <script>
-        <minify>false</minify>
-        <path>/js/quickActions.bundle.js</path>
-      </script>
-      <depends>
-        <module>vue</module>
-      </depends>
-      <depends>
-        <module>vuetify</module>
-      </depends>
-      <depends>
-        <module>eXoVueI18n</module>
-      </depends>
-      <depends>
-        <module>commonVueComponents</module>
-      </depends>
-      <depends>
-        <module>extensionRegistry</module>
-      </depends>
-      <depends>
-        <module>QuickActionExtensions</module>
-      </depends>
-    </module>
-  </portlet>
-
-  <portlet>
-    <name>UserQuickActions</name>
-    <module>
-      <script>
-        <minify>false</minify>
-        <path>/js/userQuickActions.bundle.js</path>
-      </script>
-      <depends>
-        <module>vue</module>
-      </depends>
-      <depends>
-        <module>vuetify</module>
-      </depends>
-      <depends>
-        <module>eXoVueI18n</module>
-      </depends>
-      <depends>
-        <module>commonVueComponents</module>
-      </depends>
-      <depends>
-        <module>extensionRegistry</module>
-      </depends>
-      <depends>
-        <module>QuickActionExtensions</module>
-      </depends>
-    </module>
-  </portlet>
-
-  <portlet>
     <name>AppCenterMyApplicationsPortlet</name>
     <module>
       <script>
