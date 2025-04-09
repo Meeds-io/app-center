@@ -39,10 +39,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
       <template #content>
-        <template v-if="$root.quickActions?.length">
-          <app-center-launcher-quick-actions />
-          <v-divider />
-        </template>
         <div v-if="hasApplications" class="content">
           <v-layout v-if="hasApplications" class="favorite appsContainer">
             <component
