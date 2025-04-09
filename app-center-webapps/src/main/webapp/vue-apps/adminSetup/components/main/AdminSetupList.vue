@@ -133,19 +133,6 @@ export default {
           }
         })
         .then(data => {
-          this.$root.applications = [];
-          data.applications.forEach(app => {
-            // manage system apps localized names
-            if (app.system) {
-              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
-              if (this.$te(`appCenter.system.application.${appTitle}`)) {
-                data.applications[this.getAppIndex(data.applications, app.id)].displayName = this.$t(`appCenter.system.application.${appTitle}`);
-              }
-            }
-            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
-          });
           this.$root.applications = data.applications;
         }).finally(() => this.loading = false);
     },
