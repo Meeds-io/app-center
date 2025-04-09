@@ -23,7 +23,7 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   name: 'quickActions.activityComposer.name',
   description: 'quickActions.activityComposer.description',
   click: () => new Promise(resolve => {
-    window.require(['SHARED/eXoVueI18n', 'SHARED/ActivityStream'], exoi18n => init(exoi18n, resolve));
+    window.require(['SHARED/eXoVueI18n', 'SHARED/ActivityStream'], exoi18n => initActivityDrawer(exoi18n, resolve));
   }),
 });
 
@@ -40,19 +40,41 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
-async function init(exoi18n, callback) {
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editLanguage',
+  icon: 'fa-language',
+  name: 'quickActions.editLanguage.name',
+  description: 'quickActions.editLanguage.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/UserSettingLanguage'], exoi18n => initLanguageDrawer(exoi18n, resolve));
+  }),
+});
+
+async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
     const parent = document.createElement('div');
     parent.id = appId;
     document.querySelector('#vuetify-apps').appendChild(parent);
-    await initApp(appId, exoi18n, eXo.env.portal.maxFileSize);
+    await initActivityDrawerApp(appId, exoi18n, eXo.env.portal.maxFileSize);
   }
   document.dispatchEvent(new CustomEvent('activity-composer-drawer-open'));
   callback();
 }
 
-function initApp(appId, exoi18n, maxFileSize) {
+async function initLanguageDrawer(exoi18n, callback) {
+  const appId = 'edit-language-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initLanguageDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-edit-language-drawer'));
+  callback();
+}
+
+function initActivityDrawerApp(appId, exoi18n, maxFileSize) {
   const lang = eXo.env.portal.language;
   const urls = [
     `/social/i18n/locale.portlet.Portlets?lang=${lang}`,
@@ -107,4 +129,59 @@ function initApp(appId, exoi18n, maxFileSize) {
       i18n,
     }, `#${appId}`, 'Activity Composer Quick Action'))
     .finally(() => Vue.prototype.$utils.includeExtensions('ActivityStreamExtension')));
+}
+
+function initLanguageDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.UserSettings?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <user-language-drawer
+          id="${appId}"
+          :value="lang"
+          :languages="supportedLanguages"
+          ref="drawer" />
+      `,
+      data: () => ({
+        lang,
+        translationConfiguration: null,
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
+      }),
+      computed: {
+        isMobile() {
+          return this.$vuetify?.breakpoint?.mobile;
+        },
+        supportedLanguages() {
+          if (this.translationConfiguration?.supportedLanguages) {
+            const supportedLanguages = Object.keys(this.translationConfiguration.supportedLanguages)
+              .map(l => ({
+                value: l,
+                text: this.translationConfiguration.supportedLanguages[l],
+              }));
+            supportedLanguages.sort((a, b) => this.collator.compare(a.text.toLowerCase(), b.text.toLowerCase()));
+            return supportedLanguages;
+          } else {
+            return [];
+          }
+        },
+      },
+      created() {
+        document.addEventListener('quick-action-edit-language-drawer', this.openDrawer);
+      },
+      async mounted() {
+        this.translationConfiguration = await this.$translationService.getTranslationConfiguration();
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-edit-language-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.open(this.supportedLanguages);
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Edit Language Quick Action')));
 }
