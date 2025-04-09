@@ -20,7 +20,7 @@
 -->
 <template>
   <v-avatar
-    :height="iconSize"
+    :height="iconSize + 4"
     :min-width="iconSize"
     :width="iconSize + 8"
     class="d-flex justify-center align-center"
