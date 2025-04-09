@@ -21,71 +21,93 @@
 <template>
   <v-hover v-slot="{hover}">
     <v-card
+      v-bind="application.type === 'LINK' && {
+        href: applicationUrl,
+        target: applicationUrlTarget,
+      } || {
+        loading,
+      }"
+      v-on="application.type !== 'LINK' && {
+        click: () => openApplication(application.type, application.url),
+      }"
       :id="`App${application.id}`"
       :title="applicationDescription"
-      :href="applicationUrl"
-      :target="applicationUrlTarget"
       :class="{'background-grey-primary': hover}"
-      class="pa-4 d-flex flex-column align-center"
-      :width="$attrs.width"
-      :max-width="$attrs['max-width']"
-      :min-height="$attrs['min-height']"
-      :max-height="$attrs['max-height']"
+      :width="width"
+      :max-width="maxWidth"
+      :min-height="minHeight"
+      :max-height="maxHeight"
       link
       flat>
-      <v-img
-        v-if="application.imageUrl"
-        :src="application.imageUrl"
-        :alt="applicationTitle"
-        max-width="60"
-        max-height="60"
-        contain
-        class="mx-auto"
-        referrerpolicy="no-referrer" />
-      <v-icon
-        v-else-if="application.icon"
-        size="60"
-        class="d-flex align-center justify-center">
-        {{ application.icon }}
-      </v-icon>
-      <v-img
-        v-else
-        :alt="applicationTitle"
-        src="/app-center/skin/images/defaultApp.png"
-        max-width="60"
-        max-height="60"
-        contain
-        class="mx-auto"
-        referrerpolicy="no-referrer" />
-      <v-tooltip
-        bottom>
-        <template #activator="{ on, attrs }">
-          <span
-            class="text-truncate-2 mt-2 text-color"
-            v-bind="attrs"
-            v-on="on">
-            {{ applicationTitle }}
-          </span>
-        </template>
-        <span>{{ applicationTitle }}</span>
-      </v-tooltip>
+      <div class="pa-4 d-flex flex-column align-center full-width">
+        <v-img
+          v-if="application.imageUrl"
+          :src="application.imageUrl"
+          :alt="applicationTitle"
+          referrerpolicy="no-referrer"
+          class="mx-auto"
+          max-width="60"
+          max-height="60"
+          contain />
+        <v-icon
+          v-else-if="application.icon"
+          size="60"
+          class="d-flex align-center justify-center">
+          {{ application.icon }}
+        </v-icon>
+        <v-img
+          v-else
+          :alt="applicationTitle"
+          src="/app-center/skin/images/defaultApp.png"
+          max-width="60"
+          max-height="60"
+          contain
+          class="mx-auto"
+          referrerpolicy="no-referrer" />
+        <v-tooltip
+          bottom>
+          <template #activator="{ on, attrs }">
+            <span
+              class="text-truncate-2 mt-2 text-color"
+              v-bind="attrs"
+              v-on="on">
+              {{ applicationTitle }}
+            </span>
+          </template>
+          <span>{{ applicationTitle }}</span>
+        </v-tooltip>
+      </div>
     </v-card>
   </v-hover>
 </template>
-
 <script>
 export default {
-  data() {
-    return {
-      illustrationBaseUrl: '/app-center/rest/applications/illustration/'
-    };
-  },
   props: {
     application: {
       type: Object,
       default: null
     },
+    width: {
+      type: String,
+      default: null
+    },
+    maxWidth: {
+      type: String,
+      default: null
+    },
+    minHeight: {
+      type: String,
+      default: null
+    },
+    maxHeight: {
+      type: String,
+      default: null
+    },
   },
+  data: () => ({
+    illustrationBaseUrl: '/app-center/rest/applications/illustration/',
+    loading: false,
+  }),
   computed: {
     applicationUrl() {
       return this.application?.computedUrl;
@@ -99,6 +121,20 @@ export default {
     applicationDescription() {
       return this.application?.description;
     }
-  }
+  },
+  methods: {
+    async openApplication() {
+      const appType = this.application.type;
+      const appUrl = this.application.url;
+      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+        this.loading = true;
+        try {
+          await this.$root.quickActions[appUrl].click();
+        } finally {
+          window.setTimeout(() => this.loading = false, 500);
+        }
+      }
+    },
+  },
 };
 </script>

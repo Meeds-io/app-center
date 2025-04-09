@@ -25,9 +25,9 @@ const app = 'app-center';
 const exoServerPath = "/exo-server";
 
 module.exports = merge(common, {
-  mode: 'development',
   output: {
     path: path.resolve(`${exoServerPath}/webapps/${app}/`)
   },
+  mode: 'development',
   devtool: 'inline-source-map'
 });

@@ -42,11 +42,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         height="65"
         max-width="auto"
         outlined>
-        <v-list-item>
+        <v-list-item
+          v-bind="favoriteApp.type === 'LINK' && {
+            href: favoriteApp.computedUrl,
+            target: favoriteApp.target,
+          } || {
+            loading: appLoading === favoriteApp.url,
+          }"
+          v-on="favoriteApp.type !== 'LINK' && {
+            click: () => openApplication(favoriteApp.type, favoriteApp.url),
+          }">
           <div class="favoriteAppImage">
-            <a
-              :target="favoriteApp.target"
-              :href="favoriteApp.computedUrl">
+            <a>
               <img
                 v-if="favoriteApp.imageUrl"
                 :src="favoriteApp.imageUrl"
@@ -68,10 +75,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </a>
           </div>
           <v-list-item-content>
-            <a
-              class="favoriteAppUrl"
-              :target="favoriteApp.target"
-              :href="favoriteApp.computedUrl">
+            <a class="favoriteAppUrl">
               <div
                 :title="favoriteApp.title.length > 20 ? favoriteApp.title : ''"
                 class="favAppTitle text-body">
@@ -204,9 +208,16 @@ export default {
           });
 
           this.favoriteApplicationsList.forEach(app => {
-            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
+            if (app.type === 'LINK') {
+              app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+              app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+              app.computedUrl = this.$utils.toLinkUrl(app.computedUrl, {
+                urls: true,
+                email: true,
+                phone: true,
+              });
+              app.target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || app.computedUrl.indexOf('tel:') === 0 || app.computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+            }
           });
           this.$emit('canAddFavorite', this.canAddFavorite);
           return this.favoriteApplicationsList;
@@ -229,6 +240,17 @@ export default {
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
+    },
+    async openApplication(appType, appUrl) {
+      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+        this.appLoading = appUrl;
+        try {
+          await this.$root.quickActions[appUrl].click();
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+        
+      }
     },
   }
 };
