@@ -27,6 +27,19 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'spaceForm',
+  icon: 'fa-layer-group',
+  name: 'quickActions.spaceForm.name',
+  description: 'quickActions.spaceForm.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/spaceForm'], drawer => {
+      drawer.open(null, eXo.env.portal.isExternalFeatureEnabled);
+      resolve();
+    });
+  }),
+});
+
 async function init(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
