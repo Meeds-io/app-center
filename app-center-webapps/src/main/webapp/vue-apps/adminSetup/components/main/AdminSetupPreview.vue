@@ -2,7 +2,7 @@
   <v-card
     class="d-flex flex-column full-width"
     color="transparent"
-    min-height="500"
+    min-height="750"
     elevation="2">
     <v-card class="d-flex align-center transparent pa-5" flat>
       <span class="text-title">{{ $t('appCenter.appLauncher.drawer.title') }}</span>
