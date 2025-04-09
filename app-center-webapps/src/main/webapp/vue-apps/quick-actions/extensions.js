@@ -19,7 +19,7 @@
 
 extensionRegistry.registerExtension('QuickAction', 'Extension', {
   id: 'activityComposer',
-  icon: 'fa-stream',
+  icon: 'fa-pen-fancy',
   name: 'quickActions.activityComposer.name',
   description: 'quickActions.activityComposer.description',
   click: () => new Promise(resolve => {
