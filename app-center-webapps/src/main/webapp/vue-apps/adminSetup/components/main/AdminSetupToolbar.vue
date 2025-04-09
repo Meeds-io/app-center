@@ -27,7 +27,7 @@
       placeholder: $t('appCenter.adminSetupList.filter'),
       tooltip: $t('appCenter.adminSetupList.filter'),
     }"
-    class="border-box-sizing px-1"
+    class="border-box-sizing px-1 flex-grow-0"
     @filter-text-input="$emit('filter-changed', $event)">
     <template v-if="!$root.isMobile" #left>
       <v-btn
