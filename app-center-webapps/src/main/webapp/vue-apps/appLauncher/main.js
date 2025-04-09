@@ -20,7 +20,7 @@ import './initComponents.js';
 //should expose the locale ressources as REST API
 const appId = 'appLauncher';
 
-export async function init(isAdmin) {
+export async function init(isAdmin, noAutoOpen) {
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
   const urls = [
     `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
@@ -33,12 +33,31 @@ export async function init(isAdmin) {
     await Vue.createApp({
       data: () => ({
         isAdmin,
+        noAutoOpen,
         quickActionExtensions: [],
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
         isMobile() {
           return this.$vuetify.breakpoint.smAndDown;
+        },
+        quickActions() {
+          const quickActions = {};
+          this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
+          return quickActions;
+        },
+      },
+      created() {
+        document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        this.refreshQuickActions();
+        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
+      },
+      beforeDestroy() {
+        document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      },
+      methods: {
+        refreshQuickActions() {
+          this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
         },
       },
       template: `<app-center-launcher-drawer id="${appId}" />`,
