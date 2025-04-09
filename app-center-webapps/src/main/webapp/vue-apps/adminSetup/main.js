@@ -39,7 +39,7 @@ export function init() {
       }),
       computed: {
         quickActions() {
-          const quickActions = this.quickActionExtensions
+          return this.quickActionExtensions
             .filter(ext => ext.id)
             .map(ext => ({
               id: ext.id,
@@ -47,8 +47,6 @@ export function init() {
               name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
               description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
             }));
-          quickActions.sort((a, b) => this.collator.compare(a.name.toLowerCase(), b.name.toLowerCase()));
-          return quickActions;
         },
       },
       created() {

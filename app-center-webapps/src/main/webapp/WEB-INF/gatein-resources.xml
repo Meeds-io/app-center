@@ -227,6 +227,9 @@
     <depends>
       <module>vueDraggable</module>
     </depends>
+    <depends>
+      <module>QuickActionExtensions</module>
+    </depends>
   </module>
 
   <module>
