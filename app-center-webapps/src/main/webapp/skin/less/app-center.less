@@ -968,33 +968,30 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     .appLauncherItem {
       transition: all .3s;
       padding: 15px;
-      a {
-        display: block;
 
-        .appLauncherImage {
-          width: 65px;
-          height: 65px;
-          display: block;
-          margin: 8px auto;
-          border: 1px solid #f0f4fe;
-          border-radius: 5px;
-        }
-        &:hover .appLauncherImage {
-          box-shadow: -3px 3px 6px 0px #ececec;
-          transition: all .3s;
-        }
-        .appLauncherTitle {
-          max-width: 100px;
-          word-break: break-word;
-          display: -webkit-box;
-          text-align: center;
-          color: @textColorDefault;
-          height: 42px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          -webkit-line-clamp: 2; /* number of lines to show */
-          -webkit-box-orient: vertical;
-        }
+      .appLauncherImage {
+        width: 65px;
+        height: 65px;
+        display: block;
+        margin: 8px auto;
+        border: 1px solid #f0f4fe;
+        border-radius: 5px;
+      }
+      &:hover .appLauncherImage {
+        box-shadow: -3px 3px 6px 0px #ececec;
+        transition: all .3s;
+      }
+      .appLauncherTitle {
+        max-width: 100px;
+        word-break: break-word;
+        display: -webkit-box;
+        text-align: center;
+        color: @textColorDefault;
+        height: 42px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 2; /* number of lines to show */
+        -webkit-box-orient: vertical;
       }
     }
     .dragged {

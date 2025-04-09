@@ -34,27 +34,22 @@ export function init() {
         applications: [],
         portletInstances: [],
         quickActionExtensions: [],
-        quickActionsStatus: {},
         mobilePreview: false,
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
         quickActions() {
-          const quickActions = this.quickActionExtensions
+          return this.quickActionExtensions
             .filter(ext => ext.id)
             .map(ext => ({
               id: ext.id,
               icon: ext.icon,
               name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
               description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
-              disabled: this.quickActionsStatus[ext.id] || false,
             }));
-          quickActions.sort((a, b) => this.collator.compare(a.name.toLowerCase(), b.name.toLowerCase()));
-          return quickActions;
         },
       },
-      async created() {
-        this.quickActionsStatus = await this.$quickActionService.getQuickActionStatus();
+      created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
         this.refreshQuickActions();
         Vue.prototype.$utils.includeExtensions('QuickActionExtension');
