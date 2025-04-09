@@ -388,7 +388,7 @@ export default {
     async open(app) {
       this.$root.$emit('close-alert-message');
       this.application = app && JSON.parse(JSON.stringify(app)) || {
-        icon: null,
+        icon: 'fa-link',
         imageUrl: null,
         url: null,
         helpPageURL: null,
