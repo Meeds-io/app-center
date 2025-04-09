@@ -1,3 +1,4 @@
+<%@page import="org.exoplatform.portal.application.PortalRequestContext"%>
 <%@page import="org.exoplatform.services.security.ConversationState"%>
 <%@page import="java.util.Locale"%>
 <%@page import="org.exoplatform.container.ExoContainerContext"%>
@@ -12,6 +13,7 @@
   }
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
+  boolean autoInit = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer") != null;
 %>
 <div class="VuetifyApp">
   <div
@@ -33,6 +35,11 @@
                 style="font-size: 20px;"></i>
             </span>
           </button>
+          <% if (autoInit) { %>
+            <script type="text/javascript">
+            window.require(['SHARED/appLauncherBundle'], app => app.init(<%=isAdmin%>, true));
+            </script>
+          <% } %>
         </div>
       </div>
     </div>
