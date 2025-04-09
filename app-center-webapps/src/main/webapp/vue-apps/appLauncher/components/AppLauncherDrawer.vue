@@ -39,10 +39,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
       </template>
       <template #content>
-        <template v-if="$root.quickActions?.length">
-          <app-center-launcher-quick-actions />
-          <v-divider />
-        </template>
         <div v-if="hasApplications" class="content">
           <v-layout v-if="hasApplications" class="favorite appsContainer">
             <component
@@ -56,13 +52,19 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 :id="'Pos-' + index"
                 :key="index"
                 class="appLauncherItemContainer">
-                <div
-                  :id="'App-' + index"
-                  class="appLauncherItem">
-                  <a
-                    :id="application.id"
-                    :target="application.target"
-                    :href="application.computedUrl">
+                <div class="appLauncherItem">
+                  <v-card
+                    v-bind="application.type === 'LINK' && {
+                      href: application.computedUrl,
+                      target: application.target,
+                    } || {
+                      loading: appLoading === application.url,
+                    }"
+                    v-on="application.type !== 'LINK' && {
+                      click: () => openApplication(application.type, application.url),
+                    }"
+                    class="transparent"
+                    flat>
                     <img
                       v-if="application.imageUrl"
                       :src="application.imageUrl"
@@ -86,7 +88,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                       class="appLauncherTitle text-body">
                       {{ application.title }}
                     </span>
-                  </a>
+                  </v-card>
                 </div>
               </div>
             </component>
@@ -126,6 +128,7 @@ export default {
       appCenterUserSetupLink: '',
       drag: false,
       loading: true,
+      appLoading: null,
       draggedElementIndex: null,
       appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
@@ -176,7 +179,13 @@ export default {
     if (!this.applicationsLoaded) {
       this.$refs.appLauncherDrawer.startLoading();
     }
-    this.toggleDrawer();
+    if (!this.$root.noAutoOpen) {
+      this.toggleDrawer();
+    } else {
+      if (this.$utils.getQueryParam('appCenterDrawer')) {
+        this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
+      }
+    }
   },
   methods: {
     detectMobile() {
@@ -265,6 +274,17 @@ export default {
     },
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
+    },
+    async openApplication(appType, appUrl) {
+      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+        this.appLoading = appUrl;
+        try {
+          await this.$root.quickActions[appUrl].click();
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+        
+      }
     },
   }
 };
