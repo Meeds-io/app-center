@@ -63,8 +63,8 @@ export default {
     loading: true,
     applicationToDelete: null,
     showDeleteApplicationModal: false,
-    pageSize: 10,
-    limit: 10,
+    pageSize: 20,
+    limit: 20,
   }),
   computed: {
     sortedApplicationsList() {
