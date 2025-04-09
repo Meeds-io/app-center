@@ -109,7 +109,7 @@ export default {
         .then((data) => {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
-            .filter(app => !!app);
+            .filter(app => app);
           this.sortAndStoreApplicationsOrder();
         })
         .finally(() => {
@@ -118,7 +118,9 @@ export default {
         });
     },
     mapApplication(app) {
-      if (!app) {return null;}
+      if (!app) {
+        return null;
+      }
       const computedApp = this.computeApplicationUrl(app);
       this.i18nSystemApplicationTitle(computedApp);
       return computedApp;
@@ -139,10 +141,23 @@ export default {
       }, {});
     },
     computeApplicationUrl(app) {
-      const computedUrl = app.url.replace(/^\.\//, this.baseUrl)
-        .replace('@user@', this.currentUser);
-      const target = computedUrl.startsWith('/') ? '_self' : '_blank';
-      return { ...app, computedUrl, target };
+      if (app.type === 'LINK') {
+        let computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+        computedUrl = computedUrl.replace('@user@', eXo.env.portal.userName);
+        computedUrl = this.$utils.toLinkUrl(computedUrl, {
+          urls: true,
+          email: true,
+          phone: true,
+        });
+        const target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || computedUrl.indexOf('tel:') === 0 || computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+        return {
+          ...app,
+          computedUrl,
+          target
+        };
+      } else {
+        return app;
+      }
     },
     i18nSystemApplicationTitle(app) {
       if (app.system) {
@@ -175,7 +190,7 @@ export default {
         return;
       }
       this.updateApplicationsOrder(applicationList);
-    }
+    },
   }
 };
 </script>
