@@ -243,9 +243,16 @@ export default {
             this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
           });
           this.favoriteApplicationsList.forEach(app => {
-            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
+            if (app.type === 'LINK') {
+              app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+              app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+              app.computedUrl = this.$utils.toLinkUrl(app.computedUrl, {
+                urls: true,
+                email: true,
+                phone: true,
+              });
+              app.target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || app.computedUrl.indexOf('tel:') === 0 || app.computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+            }
           });
         }).finally(() => this.loading = false);
     },
