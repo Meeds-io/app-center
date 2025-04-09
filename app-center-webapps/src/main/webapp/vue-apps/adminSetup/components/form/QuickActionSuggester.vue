@@ -35,7 +35,14 @@
     hide-details
     outlined
     chips
-    dense />
+    dense>
+    <template #selection="{item}">
+      <v-chip>
+        <v-icon size="18" class="me-2">{{ item.icon }}</v-icon>
+        {{ item.label }}
+      </v-chip>
+    </template>
+  </v-autocomplete>
 </template>
 <script>
 export default {
@@ -54,6 +61,7 @@ export default {
     items() {
       return this.$root.quickActions.map(item => ({
         id: item.id,
+        icon: item.icon,
         label: this.$t(item.name),
       }));
     },
