@@ -21,11 +21,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 	<parent>
 		<artifactId>addons-parent-pom</artifactId>
 		<groupId>io.meeds.addons</groupId>
-		<version>18-M06</version>
+		<version>18</version>
 	</parent>
 	<groupId>io.meeds.app-center</groupId>
 	<artifactId>app-center</artifactId>
-	<version>7.0.0-M38</version>
+	<version>7.0.x-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Add-on:: Application Center - Parent POM</name>
 	<description>Application Center Addon</description>
@@ -38,11 +38,11 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <connection>scm:git:git://github.com/exoplatform/app-center.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/exoplatform/app-center.git</developerConnection>
     <url>https://github.com/exoplatform/app-center</url>
-    <tag>7.0.0-M38</tag>
+    <tag>HEAD</tag>
   </scm>
 	<properties>
-		<io.meeds.social.version>7.0.0-M38</io.meeds.social.version>
-    <io.meeds.platform-ui.version>7.0.0-M38</io.meeds.platform-ui.version>
+		<io.meeds.social.version>7.0.x-SNAPSHOT</io.meeds.social.version>
+    <io.meeds.platform-ui.version>7.0.x-SNAPSHOT</io.meeds.platform-ui.version>
     
     		<!-- Sonar properties -->
     		<sonar.organization>meeds-io</sonar.organization>
