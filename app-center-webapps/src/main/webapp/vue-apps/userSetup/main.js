@@ -29,7 +29,28 @@ export function init(preferences) {
 
     Vue.createApp({
       data: {
-        preferences: preferences
+        preferences: preferences,
+        quickActionExtensions: [],
+      },
+      computed: {
+        quickActions() {
+          const quickActions = {};
+          this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
+          return quickActions;
+        },
+      },
+      created() {
+        document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        this.refreshQuickActions();
+        this.$utils.includeExtensions('QuickActionExtension');
+      },
+      beforeDestroy() {
+        document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      },
+      methods: {
+        refreshQuickActions() {
+          this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+        },
       },
       template: `<app-center-user-setup
                    id="${appId}"

@@ -50,7 +50,7 @@ export async function init(isAdmin, noAutoOpen) {
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
         this.refreshQuickActions();
-        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
+        this.$utils.includeExtensions('QuickActionExtension');
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
