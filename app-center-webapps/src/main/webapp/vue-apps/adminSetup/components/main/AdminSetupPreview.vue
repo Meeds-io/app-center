@@ -25,13 +25,14 @@
             <v-img
               v-if="application.imageUrl"
               :src="application.imageUrl"
+              class="mt-2"
               max-height="65"
               max-width="65"
               width="65" />
             <v-icon
               v-else-if="application.icon"
-              size="65"
-              class="d-flex align-center justify-center">
+              class="d-flex align-center justify-center mt-2"
+              size="65">
               {{ application.icon }}
             </v-icon>
             <v-img
@@ -39,6 +40,7 @@
               src="/app-center/skin/images/defaultApp.png"
               max-height="65"
               max-width="65"
+              class="mt-2"
               width="65" />
             <span class="text-body mt-2">{{ application.title }}</span>
           </v-card>
