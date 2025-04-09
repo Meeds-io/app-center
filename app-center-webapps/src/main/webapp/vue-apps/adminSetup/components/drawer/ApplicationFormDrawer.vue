@@ -36,6 +36,9 @@
         autocomplete="off"
         class="pa-4"
         @submit.prevent.stop="0">
+        <div class="text-header mb-4">
+          {{ $t('appCenter.adminSetupForm.display') }}
+        </div>
         <v-label for="applicationName">
           {{ $t('appCenter.adminSetupForm.title') }}
         </v-label>
