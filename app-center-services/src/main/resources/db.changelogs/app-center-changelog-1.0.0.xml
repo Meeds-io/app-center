@@ -169,4 +169,11 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-mip-185-07" dbms="mysql">
+    <sql>
+      ALTER TABLE AC_APPLICATION MODIFY COLUMN TITLE varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE AC_APPLICATION MODIFY COLUMN DESCRIPTION varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    </sql>
+  </changeSet>
+
 </databaseChangeLog>
