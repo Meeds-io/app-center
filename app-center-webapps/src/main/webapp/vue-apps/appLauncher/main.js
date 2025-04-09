@@ -16,12 +16,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import './initComponents.js';
-import './services.js';
 
 //should expose the locale ressources as REST API
 const appId = 'appLauncher';
 
-export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}) {
+export async function init(isAdmin, noAutoOpen) {
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
   const urls = [
     `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
@@ -34,8 +33,7 @@ export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}
     await Vue.createApp({
       data: () => ({
         isAdmin,
-        quickActionsStatus,
-        pinnedQuickActionNames,
+        noAutoOpen,
         quickActionExtensions: [],
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
@@ -44,24 +42,15 @@ export async function init({isAdmin, quickActionsStatus, pinnedQuickActionNames}
           return this.$vuetify.breakpoint.smAndDown;
         },
         quickActions() {
-          const quickActions = this.quickActionExtensions
-            .filter(ext => ext.id && !this.quickActionsStatus[ext.id])
-            .map(ext => ({
-              id: ext.id,
-              icon: ext.icon,
-              name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
-              description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
-              click: ext.click,
-              disabled: false,
-              pinned: this.pinnedQuickActionNames.includes(ext.id),
-            }));
-          quickActions.sort((a, b) => this.collator.compare(a.name.toLowerCase(), b.name.toLowerCase()));
+          const quickActions = {};
+          this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
           return quickActions;
         },
       },
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
         this.refreshQuickActions();
+        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
