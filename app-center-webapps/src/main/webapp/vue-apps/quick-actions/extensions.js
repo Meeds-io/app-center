@@ -22,6 +22,7 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   icon: 'fa-stream',
   name: 'quickActions.activityComposer.name',
   description: 'quickActions.activityComposer.description',
+  icon: 'fa-pen-fancy',
   click: () => new Promise(resolve => {
     window.require(['SHARED/eXoVueI18n', 'SHARED/ActivityStream'], exoi18n => init(exoi18n, resolve));
   }),
