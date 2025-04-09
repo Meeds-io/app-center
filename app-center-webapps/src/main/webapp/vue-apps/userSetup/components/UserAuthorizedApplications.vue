@@ -65,18 +65,25 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             lg="4"
             xl="4">
             <v-card
+              v-bind="authorizedApp.type === 'LINK' && {
+                href: authorizedApp.computedUrl,
+                target: authorizedApp.target,
+              } || {
+                loading: appLoading === authorizedApp.url,
+              }"
+              v-on="authorizedApp.type !== 'LINK' && {
+                click: () => openApplication(authorizedApp.type, authorizedApp.url),
+              }"
               class="authorizedApplication"
               height="180"
               max-height="180"
               outlined
               hover>
-              <div class="authorisedAppContent">
+              <div class="authorisedAppContent border-box-sizing pt-3">
                 <div class="flex flex-column align-center justify-center flex-grow-1">
                   <div class="applicationHeader">
                     <div class="image">
-                      <a
-                        :target="authorizedApp.target"
-                        :href="authorizedApp.computedUrl">
+                      <a>
                         <img
                           v-if="authorizedApp.imageUrl"
                           :src="authorizedApp.imageUrl"
@@ -98,9 +105,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                       </a>
                     </div>
                     <div>
-                      <a
-                        :target="authorizedApp.target"
-                        :href="authorizedApp.computedUrl">
+                      <a>
                         <div class="tooltipContent">
                           <div
                             :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
@@ -122,16 +127,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 </div>
                 <v-divider />
                 <v-card-actions class="applicationActions">
-                  <a
-                    :target="authorizedApp.target"
-                    :href="authorizedApp.computedUrl">{{ $t("appCenter.userSetup.authorized.open") }}</a>
+                  <a>{{ $t("appCenter.userSetup.authorized.open") }}</a>
                   <div class="actionsBtn">
                     <v-btn
                       v-if="authorizedApp.helpPageURL"
                       class="appHelp"
                       x-small
                       icon
-                      @click="navigateTo(authorizedApp.helpPageURL)">
+                      @click.prevent.stop="navigateTo(authorizedApp.helpPageURL)">
                       <v-icon
                         x-small>
                         mdi-help
@@ -156,7 +159,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         icon
                         :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
                         :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
-                        @click.stop="addOrDeleteFavoriteApplication(authorizedApp)">
+                        @click.prevent.stop="addOrDeleteFavoriteApplication(authorizedApp)">
                         <v-icon
                           small
                           color="red">
@@ -200,6 +203,7 @@ export default {
   data() {
     return {
       loading: true,
+      appLoading: null,
       isMobileDevice: false,
       authorizedApplicationsList: [],
       applicationsListSize: null,
@@ -303,9 +307,16 @@ export default {
           }
           this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
           this.authorizedApplicationsList.forEach(app => {
-            app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-            app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-            app.target = app.computedUrl.indexOf('/') === 0 ? '_self' : '_blank';
+            if (app.type === 'LINK') {
+              app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+              app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
+              app.computedUrl = this.$utils.toLinkUrl(app.computedUrl, {
+                urls: true,
+                email: true,
+                phone: true,
+              });
+              app.target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || app.computedUrl.indexOf('tel:') === 0 || app.computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+            }
           });
           this.applicationsListSize = data.size;
           this.offset += data.applications.length;
@@ -361,6 +372,17 @@ export default {
         return this.$t('appCenter.userSetup.mandatory');
       } else {
         return app.favorite ? this.$t('appCenter.userSetup.remove.from.favorite'): this.$t('appCenter.userSetup.add.to.favorite');
+      }
+    },
+    async openApplication(appType, appUrl) {
+      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+        this.appLoading = appUrl;
+        try {
+          await this.$root.quickActions[appUrl].click();
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+        
       }
     },
   }
