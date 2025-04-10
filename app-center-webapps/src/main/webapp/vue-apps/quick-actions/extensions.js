@@ -70,6 +70,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editContactInfo',
+  icon: 'fa-user',
+  name: 'quickActions.editContactInfo.name',
+  description: 'quickActions.editContactInfo.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileContactInformation'], exoi18n => initContactInfoDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -111,9 +121,73 @@ async function initAboutMeDrawer(exoi18n, callback) {
     const parent = document.createElement('div');
     parent.id = appId;
     document.querySelector('#vuetify-apps').appendChild(parent);
-    await initAboutMeDrawerApp(appId, exoi18n, eXo.env.portal.maxFileSize);
+    await initAboutMeDrawerApp(appId, exoi18n);
   }
   document.dispatchEvent(new CustomEvent('quick-action-about-me-drawer', {detail: callback}));
+}
+
+async function initContactInfoDrawer(exoi18n, callback) {
+  const appId = 'about-contact-info-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initContactInfoDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('portal', 'ImageCropper');
+    await Vue.prototype.$utils.importSkin('social', 'ProfileContactInformation');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-contact-info-drawer', {detail: callback}));
+}
+
+function initContactInfoDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.social.ProfileContactInformation?lang=${lang}`,
+    `/social/i18n/locale.portlet.social.ComplementaryFilter?lang=${lang}`,
+    `/social/i18n/locale.portlet.Portlets?lang=${lang}`
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-contact-information-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      data: () => ({
+        properties: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-contact-info-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-contact-info-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open(this.properties);
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner, 'settings')
+            .then(data => {
+              this.properties = data?.properties.filter(item => item.active && !(item.propertyType === 'user' && eXo.env.portal.isExternal === true)).sort((s1, s2) => ((s1.order > s2.order) ? 1 : (s1.order < s2.order) ? -1 : 0));
+            });
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'About Me Quick Action')));
 }
 
 function initAboutMeDrawerApp(appId, exoi18n) {
