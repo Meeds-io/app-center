@@ -60,6 +60,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editAboutMe',
+  icon: 'fa-user',
+  name: 'quickActions.editAboutMe.name',
+  description: 'quickActions.editAboutMe.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileAboutMe'], exoi18n => initAboutMeDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -93,6 +103,63 @@ async function initMutedSpacesDrawer(exoi18n, callback) {
     await initMutedSpacesDrawerApp(appId, exoi18n);
   }
   document.dispatchEvent(new CustomEvent('quick-action-muted-spaces-drawer', {detail: callback}));
+}
+
+async function initAboutMeDrawer(exoi18n, callback) {
+  const appId = 'about-me-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initAboutMeDrawerApp(appId, exoi18n, eXo.env.portal.maxFileSize);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-about-me-drawer', {detail: callback}));
+}
+
+function initAboutMeDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.ProfileAboutMe?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-about-me-drawer
+          id="${appId}"
+          ref="drawer"
+          :value="aboutMe" />
+      `,
+      data: () => ({
+        aboutMe: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-about-me-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-about-me-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner)
+            .then(user => this.aboutMe = user?.aboutMe || '');
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'About Me Quick Action')));
 }
 
 function initMutedSpacesDrawerApp(appId, exoi18n) {
@@ -245,6 +312,7 @@ function initLanguageDrawerApp(appId, exoi18n) {
       },
       async mounted() {
         this.translationConfiguration = await this.$translationService.getTranslationConfiguration();
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
         resolve();
       },
       beforeDestroy() {
