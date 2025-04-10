@@ -90,6 +90,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'favorites',
+  icon: 'fa-star',
+  name: 'quickActions.favorites.name',
+  description: 'quickActions.favorites.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/TopBarFavorites'], exoi18n => initFavoritesDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -160,6 +170,49 @@ async function initWorkExperienceDrawer(exoi18n, callback) {
     await Vue.prototype.$utils.importSkin('social', 'ProfileWorkExperience');
   }
   document.dispatchEvent(new CustomEvent('quick-action-work-experience-drawer', {detail: callback}));
+}
+
+async function initFavoritesDrawer(exoi18n, callback) {
+  const appId = 'favorites-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initFavoritesDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-favorites-drawer'));
+  callback();
+}
+
+function initFavoritesDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.Portlets?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <top-bar-favorites-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      created() {
+        document.addEventListener('quick-action-favorites-drawer', this.openDrawer);
+      },
+      async mounted() {
+        await Vue.prototype.$utils.includeExtensions('FavoriteDrawerExtension');
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-favorites-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.openDrawer();
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Favorites Quick Action')));
 }
 
 function initWorkExperienceDrawerApp(appId, exoi18n) {
