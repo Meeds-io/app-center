@@ -180,31 +180,15 @@ export default {
 
           // check if favorite applications are alphabetically ordered
           this.favoriteApplicationsList.sort((a, b) => {
-            if (typeof a.order === 'undefined' && typeof b.order === 'undefined') {
-              if (a.title < b.title) {
-                return -1;
-              }
-              if (a.title > b.title) {
-                return 1;
-              }
-              return 0;
-            }
-            if (a.order && typeof b.order === 'undefined') {
-              return -1;
-            }
-            if (typeof a.order === 'undefined' && b.order) {
+            if (a.order === null && b.order === null) {
+              return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
+            } else if (a.order === null) {
               return 1;
+            } else if (b.order === null) {
+              return -1;
+            } else {
+              return a.order - b.order;
             }
-            if (a.order === b.order) {
-              if (a.title < b.title) {
-                return -1;
-              }
-              if (a.title > b.title) {
-                return 1;
-              }
-              return 0;
-            }
-            return a.order - b.order;
           });
 
           this.favoriteApplicationsList.forEach(app => {
