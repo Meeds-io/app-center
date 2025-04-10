@@ -80,6 +80,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editWorkExperience',
+  icon: 'fa-user',
+  name: 'quickActions.editWorkExperience.name',
+  description: 'quickActions.editWorkExperience.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileWorkExperience'], exoi18n => initWorkExperienceDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -139,6 +149,83 @@ async function initContactInfoDrawer(exoi18n, callback) {
   document.dispatchEvent(new CustomEvent('quick-action-contact-info-drawer', {detail: callback}));
 }
 
+async function initWorkExperienceDrawer(exoi18n, callback) {
+  const appId = 'about-work-experience-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initWorkExperienceDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('portal', 'ImageCropper');
+    await Vue.prototype.$utils.importSkin('social', 'ProfileWorkExperience');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-work-experience-drawer', {detail: callback}));
+}
+
+function initWorkExperienceDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.ProfileWorkExperience?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-work-experience-drawer
+          id="${appId}"
+          ref="drawer"
+          :experiences="experiences" />
+      `,
+      data: () => ({
+        experiences: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-work-experience-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-work-experience-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner, 'all')
+            .then(user => this.setExperiences(user && user.experiences));
+        },
+        setExperiences(experiences) {
+          experiences = experiences || [];
+          experiences.sort((a, b) => {
+            if (a?.isCurrent) {
+              return -1;
+            } else if (b?.isCurrent) {
+              return 1;
+            } else if (!a?.startDate && !b?.startDate ) {
+              return 0;
+            } else if (!a?.startDate) {
+              return 1;
+            } else if (!b?.startDate) {
+              return -1;
+            }
+            return (new Date(b.startDate)?.getTime?.() || 0) - (new Date(a.startDate)?.getTime?.() || 0);
+          });
+          this.experiences = experiences;
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Work Experience Quick Action')));
+}
+
 function initContactInfoDrawerApp(appId, exoi18n) {
   const lang = eXo.env.portal.language;
   const urls = [
@@ -187,7 +274,7 @@ function initContactInfoDrawerApp(appId, exoi18n) {
       },
       vuetify: Vue.prototype.vuetifyOptions,
       i18n,
-    }, `#${appId}`, 'About Me Quick Action')));
+    }, `#${appId}`, 'Contact Information Quick Action')));
 }
 
 function initAboutMeDrawerApp(appId, exoi18n) {
