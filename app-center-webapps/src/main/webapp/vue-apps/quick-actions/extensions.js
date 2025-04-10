@@ -135,7 +135,7 @@ async function initLanguageDrawer(exoi18n, callback) {
 }
 
 async function initMutedSpacesDrawer(exoi18n, callback) {
-  const appId = 'spaces-list-quick-actions';
+  const appId = 'muted-spaces-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
     const parent = document.createElement('div');
     parent.id = appId;
@@ -157,7 +157,7 @@ async function initAboutMeDrawer(exoi18n, callback) {
 }
 
 async function initContactInfoDrawer(exoi18n, callback) {
-  const appId = 'about-contact-info-actions';
+  const appId = 'contact-info-actions';
   if (!document.querySelector(`#${appId}`)) {
     const parent = document.createElement('div');
     parent.id = appId;
@@ -170,7 +170,7 @@ async function initContactInfoDrawer(exoi18n, callback) {
 }
 
 async function initWorkExperienceDrawer(exoi18n, callback) {
-  const appId = 'about-work-experience-actions';
+  const appId = 'work-experience-actions';
   if (!document.querySelector(`#${appId}`)) {
     const parent = document.createElement('div');
     parent.id = appId;
@@ -195,7 +195,7 @@ async function initFavoritesDrawer(exoi18n, callback) {
 }
 
 async function initNotificationsDrawer(exoi18n, callback) {
-  const appId = 'favorites-actions';
+  const appId = 'notifications-actions';
   if (!document.querySelector(`#${appId}`)) {
     const parent = document.createElement('div');
     parent.id = appId;
