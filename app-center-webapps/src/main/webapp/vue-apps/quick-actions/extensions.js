@@ -50,6 +50,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'mutedSpaces',
+  icon: 'fa-bell-slash',
+  name: 'quickActions.mutedSpaces.name',
+  description: 'quickActions.mutedSpaces.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/UserSettingNotifications'], exoi18n => initMutedSpacesDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -72,6 +82,71 @@ async function initLanguageDrawer(exoi18n, callback) {
   }
   document.dispatchEvent(new CustomEvent('quick-action-edit-language-drawer'));
   callback();
+}
+
+async function initMutedSpacesDrawer(exoi18n, callback) {
+  const appId = 'spaces-list-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initMutedSpacesDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-muted-spaces-drawer', {detail: callback}));
+}
+
+function initMutedSpacesDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.UserNotificationPortlet?lang=${lang}`,
+    `/social/i18n/locale.portlet.social.UserSettings?lang=${lang}`
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <user-setting-notification-mute-spaces-drawer
+          id="${appId}"
+          ref="drawer"
+          :settings="settings"
+          @refresh="refresh" />
+      `,
+      data: () => ({
+        settings: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-muted-spaces-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-muted-spaces-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            this.$refs.drawer.open();
+            await this.refresh();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notifications/settings/${eXo.env.portal.userName}`, {
+            method: 'GET',
+            credentials: 'include',
+          })
+            .then(resp => resp && resp.ok && resp.json())
+            .then(settings => this.settings = settings);
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Muted Spaces Quick Action')));
 }
 
 function initActivityDrawerApp(appId, exoi18n, maxFileSize) {
