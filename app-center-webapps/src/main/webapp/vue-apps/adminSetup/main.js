@@ -59,7 +59,9 @@ export function init() {
       },
       methods: {
         refreshQuickActions() {
-          this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+          const quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+          quickActionExtensions.sort((a, b) => this.collator.compare(this.$t(a.name).toLowerCase(), this.$t(b.name).toLowerCase()));
+          this.quickActionExtensions = quickActionExtensions;
         },
       },
       vuetify: Vue.prototype.vuetifyOptions,

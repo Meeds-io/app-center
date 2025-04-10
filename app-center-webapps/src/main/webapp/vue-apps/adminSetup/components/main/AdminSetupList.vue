@@ -18,7 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <div class="listApplications px-5">
     <v-data-table
       :headers="headers"
-      :items="sortedApplicationsList"
+      :items="filteredApplicationsList"
       :no-data-text="$t('appCenter.adminSetupForm.noApp')"
       disable-pagination
       hide-default-footer
@@ -72,6 +72,11 @@ export default {
       applicationsList.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
       return applicationsList.slice(0, this.limit);
     },
+    filteredApplicationsList() {
+      return this.keyword
+       && this.sortedApplicationsList.filter(a => a.displayName.toLowerCase().includes(this.keyword.trim().toLowerCase()))
+       || this.sortedApplicationsList;
+    },
     hasMore() {
       return this.$root.applications.length > this.limit;
     },
@@ -97,9 +102,6 @@ export default {
     },
   },
   watch: {
-    keyword() {
-      this.getApplicationsList();
-    },
     applicationToDelete() {
       if (this.applicationToDelete) {
         this.$refs.deleteConfirmDialog.open();
@@ -121,7 +123,7 @@ export default {
         .finally(() => this.$root.$applicationLoaded());
     },
     getApplicationsList() {
-      return fetch(`/app-center/rest/applications/all?keyword=${this.keyword || ''}`, {
+      return fetch(`/app-center/rest/applications/all`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -133,6 +135,17 @@ export default {
           }
         })
         .then(data => {
+          data.applications.forEach(app => {
+            if (app.system) {
+              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (this.$te(`appCenter.system.application.${appTitle}`)) {
+                app.displayName = this.$t(`appCenter.system.application.${appTitle}`);
+              }
+            }
+            if (!app.displayName) {
+              app.displayName = app.title;
+            }
+          });
           this.$root.applications = data.applications;
         }).finally(() => this.loading = false);
     },
