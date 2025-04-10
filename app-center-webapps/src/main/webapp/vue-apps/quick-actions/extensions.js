@@ -100,6 +100,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'notifications',
+  icon: 'fa-bell',
+  name: 'quickActions.notifications.name',
+  description: 'quickActions.notifications.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'SHARED/notificationExtensions', 'PORTLET/social/TopBarNotification'], exoi18n => initNotificationsDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -182,6 +192,87 @@ async function initFavoritesDrawer(exoi18n, callback) {
   }
   document.dispatchEvent(new CustomEvent('quick-action-favorites-drawer'));
   callback();
+}
+
+async function initNotificationsDrawer(exoi18n, callback) {
+  const appId = 'favorites-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initNotificationsDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('social', 'TopBarNotification');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-notifications-drawer', {detail: callback}));
+}
+
+function initNotificationsDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.Portlets?lang=${lang}`,
+    `/social/i18n/locale.notification.template.Notification?lang=${lang}`,
+    `/social/i18n/locale.commons.Commons?lang=${lang}`,
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <top-bar-notification-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      data: () => ({
+        notificationExtensions: {},
+        initialized: true,
+        lastLoadedNotificationIndex: 0,
+        now: Date.now(),
+      }),
+      async created() {
+        await Vue.prototype.$utils.includeExtensions('NotificationPopoverExtension');
+        document.addEventListener('extension-WebNotification-notification-content-extension-updated', this.refreshNotificationExtensions);
+        this.refreshNotificationExtensions();
+        window.setInterval(() => this.now = Date.now(), 60000);
+        document.addEventListener('quick-action-notifications-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-notifications-drawer', this.openDrawer);
+        document.removeEventListener('extension-WebNotification-notification-content-extension-updated', this.refreshNotificationExtensions);
+      },
+      methods: {
+        openDrawer(event) {
+          this.lastLoadedNotificationIndex = 0;
+          window.require(['SHARED/notificationExtensions'], () =>
+            Promise.resolve(this.$utils.includeExtensions('NotificationExtension'))
+              .then(() => {
+                this.$refs.drawer.open();
+                const callback = event?.detail;
+                if (callback) {
+                  callback();
+                }
+              })
+          );
+        },
+        refreshNotificationExtensions() {
+          const notificationExtensions = {};
+          const extensions = extensionRegistry.loadExtensions('WebNotification', 'notification-content-extension');
+          extensions.forEach(extension => {
+            if (extension.type && !this.notificationExtensions[extension.type]) {
+              notificationExtensions[extension.type] = extension;
+            }
+          });
+          this.notificationExtensions = {
+            ...this.notificationExtensions,
+            ...notificationExtensions
+          };
+          document.dispatchEvent(new CustomEvent('notification-extensions-refresh'));
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Notifications Quick Action')));
 }
 
 function initFavoritesDrawerApp(appId, exoi18n) {
