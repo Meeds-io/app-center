@@ -21,6 +21,28 @@
                     "*:/platform/externals"
                 ]
             }
+        },
+        {
+            "name": "listSpaces",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "List Spaces",
+                "description": "List your spaces",
+                "icon": "fa-layer-group",
+                "type": "DRAWER",
+                "url": "spacesList",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
         }
     ]
 }

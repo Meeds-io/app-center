@@ -48,7 +48,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       :ok-label="$t('appCenter.adminSetupForm.modal.delete')"
       :cancel-label="$t('appCenter.adminSetupForm.cancel')"
       @ok="deleteApplication"
-      @closed="deleteApplication = null" />
+      @closed="applicationToDelete = null" />
   </div>
 </template>
 <script>
@@ -105,8 +105,6 @@ export default {
     applicationToDelete() {
       if (this.applicationToDelete) {
         this.$refs.deleteConfirmDialog.open();
-      } else {
-        this.$refs.deleteConfirmDialog.close();
       }
     },
   },
@@ -164,9 +162,9 @@ export default {
         .then(() => {
           this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDeletedSuccessfully'), 'success');
           this.$root.$emit('app-center-refresh-list');
+          this.applicationToDelete = null;
         })
-        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'))
-        .finally(() => this.applicationToDelete = null);
+        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'));
     },
     updateApplication(application) {
       return fetch('/app-center/rest/applications', {
