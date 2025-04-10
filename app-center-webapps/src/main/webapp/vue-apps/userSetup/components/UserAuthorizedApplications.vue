@@ -293,8 +293,8 @@ export default {
           data.applications.forEach(app => {
             if (app.system) {
               const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
-              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
-                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
+              if (this.$te(`appCenter.system.application.${appTitle}`)) {
+                app.title = this.$t(`appCenter.system.application.${appTitle}`);
               }
             }
           });
@@ -306,6 +306,9 @@ export default {
             }
           }
           this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
+          this.authorizedApplicationsList = this.authorizedApplicationsList.sort((a, b) => {
+            return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
+          });
           this.authorizedApplicationsList.forEach(app => {
             if (app.type === 'LINK') {
               app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
