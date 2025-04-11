@@ -178,16 +178,38 @@
               hide-details />
           </div>
         </div>
-        <div class="mb-2">
-          {{ $t('appCenter.adminSetupForm.permissions') }}
+        <div class="d-flex full-width justify-space-between align-center mb-2">
+          <v-card
+            class="text-start flex-grow-1 clickable transparent"
+            flat
+            @click="hasPermissions = !hasPermissions">
+            {{ $t('appCenter.adminSetupForm.permissions') }}
+          </v-card>
+          <v-switch
+            v-model="hasPermissions"
+            class="ma-0 pa-0"
+            name="applicationPermissionsSwitch"
+            hide-details />
         </div>
         <app-center-permissions
+          v-if="hasPermissions"
           v-model="application.permissions"
           class="mb-4" />
-        <v-label for="applicationHelpPageURL">
-          {{ $t('appCenter.adminSetupForm.helpPage') }}
-        </v-label>
+        <div class="d-flex full-width justify-space-between align-center mb-2">
+          <v-card
+            class="text-start flex-grow-1 clickable transparent"
+            flat
+            @click="hasHelpUrl = !hasHelpUrl">
+            {{ $t('appCenter.adminSetupForm.helpPage') }}
+          </v-card>
+          <v-switch
+            v-model="hasHelpUrl"
+            class="ma-0 pa-0"
+            name="applicationHelpUrlSwitch"
+            hide-details />
+        </div>
         <v-text-field
+          v-if="hasHelpUrl"
           ref="applicationHelpPageURL"
           id="applicationHelpPageURL"
           v-model="application.helpPageURL"
@@ -198,10 +220,21 @@
           type="text"
           outlined
           dense />
-        <v-label for="applicationShortcut">
-          {{ $t('appCenter.adminSetupForm.shortcut') }}
-        </v-label>
+        <div class="d-flex full-width justify-space-between align-center mb-2">
+          <v-card
+            class="text-start flex-grow-1 clickable transparent"
+            flat
+            @click="hasShortcut = !hasShortcut">
+            {{ $t('appCenter.adminSetupForm.shortcut') }}
+          </v-card>
+          <v-switch
+            v-model="hasShortcut"
+            class="ma-0 pa-0"
+            name="applicationShortcutSwitch"
+            hide-details />
+        </div>
         <v-text-field
+          v-if="hasShortcut"
           ref="applicationShortcut"
           id="applicationShortcut"
           v-model="application.shortcut"
@@ -272,6 +305,9 @@ export default {
     descriptions: {},
     application: {},
     originalApplication: {},
+    hasPermissions: false,
+    hasHelpUrl: false,
+    hasShortcut: false,
     oldCategoryIds: [],
     newCategoryIds: [],
   }),
@@ -377,6 +413,21 @@ export default {
         this.application.description = newVal;
       }
     },
+    hasPermissions() {
+      if (!this.hasPermissions) {
+        this.application.permissions = null;
+      }
+    },
+    hasHelpUrl() {
+      if (!this.hasHelpUrl) {
+        this.application.helpPageURL = null;
+      }
+    },
+    hasShortcut() {
+      if (!this.hasShortcut) {
+        this.application.shortcut = null;
+      }
+    },
   },
   created() {
     this.$root.$on('app-center-drawer-open', this.open);
@@ -419,6 +470,9 @@ export default {
         this.titles = {};
         this.descriptions = {};
       }
+      this.hasPermissions = !!this.application?.permissions?.length;
+      this.hasHelpUrl = !!this.application?.helpPageURL?.length;
+      this.hasShortcut = this.application?.shortcut?.length;
       this.originalApplication = {
         ...this.application,
         title: JSON.parse(JSON.stringify(this.titles)),
