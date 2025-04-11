@@ -21,16 +21,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       {{ $t('appCenter.appLauncher.drawer.placeholder') }}
     </div>
     <v-btn
-      :href="appCenterLink"
+      :href="$root.appCenterLink"
       class="btn btn-primary mt-6">
       <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.action') }}</span>
     </v-btn>
   </div>
 </template>
-<script>
-export default {
-  data: () => ( {
-    appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/appCenterUserSetup`,
-  }),
-};
-</script>
+<script></script>
