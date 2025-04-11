@@ -18,9 +18,21 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <v-app class="applicationsAdmin">
     <v-main class="application-body pb-5">
       <div class="d-flex align-center px-5 pt-5">
-        <div class="text-title">
-          {{ $t('appCenter.adminSetupForm.applications') }}
-        </div>
+        <help-label
+          label="appCenter.adminSetupForm.applicationsTitle"
+          label-class="text-title"
+          tooltip="appCenter.adminSetupForm.whatIsApplications">
+          <template #helpContent>
+            <p>
+              {{ $t('appCenter.adminSetupForm.whatIsApplications.part1') }}
+            </p>
+            <ul class="reset-style-box">
+              <li>{{ $t('appCenter.adminSetupForm.whatIsApplications.part2') }}</li>
+              <li>{{ $t('appCenter.adminSetupForm.whatIsApplications.part3') }}</li>
+              <li>{{ $t('appCenter.adminSetupForm.whatIsApplications.part4') }}</li>
+            </ul>
+          </template>
+        </help-label>
         <v-btn
           :title="$t('generalSettings.topbar.switchDevicePreview')"
           class="ms-2"
