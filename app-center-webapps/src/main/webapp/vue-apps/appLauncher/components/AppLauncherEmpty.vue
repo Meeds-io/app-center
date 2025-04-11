@@ -25,24 +25,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       class="btn btn-primary mt-6">
       <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.action') }}</span>
     </v-btn>
-    <div v-if="$root.isAdmin" class="mt-10 hidden-xs-only">
-      <span v-html="appCenterAdminPlaceholder"></span>
-    </div>
   </div>
 </template>
 <script>
 export default {
   data: () => ( {
     appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/appCenterUserSetup`,
-    appCenterAdminLink: `${eXo.env.portal.context}/administration/home/general/applicationsCenter`,
   }),
-  computed: {
-    appCenterAdminPlaceholder() {
-      return this.$t('appCenter.appLauncher.drawer.admin.placeholder', {
-        0: `<a href="${this.appCenterAdminLink}" target="_blank" class="primary--text font-weight-bold text-no-wrap">`,
-        1: '</a>',
-      });
-    },
-  },
 };
 </script>
