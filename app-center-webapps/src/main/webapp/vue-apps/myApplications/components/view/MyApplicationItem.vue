@@ -24,6 +24,7 @@
       v-bind="application.type === 'LINK' && {
         href: applicationUrl,
         target: applicationUrlTarget,
+        rel: 'nofollow noreferrer noopener',
       } || {
         loading,
       }"
