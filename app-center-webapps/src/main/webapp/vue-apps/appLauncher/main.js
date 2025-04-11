@@ -35,6 +35,7 @@ export async function init(isAdmin, noAutoOpen) {
         isAdmin,
         noAutoOpen,
         quickActionExtensions: [],
+        appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/appCenterUserSetup`,
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
@@ -60,7 +61,7 @@ export async function init(isAdmin, noAutoOpen) {
           this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
         },
       },
-      template: `<app-center-launcher-drawer id="${appId}" />`,
+      template: `<app-center-launcher id="${appId}" />`,
       vuetify: Vue.prototype.vuetifyOptions,
       i18n: i18n,
     }, `#${appId}`, 'Application Center Drawer');
