@@ -27,40 +27,52 @@
       } || {
         loading,
       }"
-      v-on="application.type !== 'LINK' && {
-        click: () => $emit('open'),
+      v-on="application.type === 'LINK' && {
+        click: addToRecent,
+      } || {
+        click: openApp,
       }"
-      class="appLauncherItemContainer transparent fill-height d-flex flex-column align-center justify-center mb-2"
-      flat>
+      :min-width="minWidth"
+      :max-width="maxWidth"
+      :min-height="minHeight"
+      :max-height="maxHeight"
+      :elevation="elevation"
+      :class="$attrs.class"
+      class="appLauncherItemContainer fill-height transparent d-flex flex-column align-center justify-center">
       <v-avatar
+        :size="imageSize"
         class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-2"
-        size="60"
         tile>
-        <img
+        <v-img
           v-if="application.imageUrl"
           :src="application.imageUrl"
+          :max-height="imageSize"
+          :max-width="imageSize"
           class="appLauncherImage"
-          referrerpolicy="no-referrer"
-          alt="">
+          contain />
         <v-icon
           v-else-if="application.icon"
-          size="45"
+          :size="iconSize"
           class="appLauncherImage d-flex align-center justify-center">
           {{ application.icon }}
         </v-icon>
-        <img
+        <v-img
           v-else
-          class="appLauncherImage"
-          referrerpolicy="no-referrer"
+          :max-height="imageSize"
+          :max-width="imageSize"
           src="/app-center/skin/images/defaultApp.png"
-          alt="">
+          class="appLauncherImage"
+          contain />
       </v-avatar>
-      <div
+      <v-card
+        v-if="displayName"
         :title="application.title"
-        class="appLauncherTitle text-truncate-2 flex-grow-1 flex-shrink-1 mt-2 mx-2">
+        min-height="48"
+        class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1 mt-2 mx-2"
+        flat>
         {{ application.title }}
-      </div>
-      <v-expand-transition>
+      </v-card>
+      <v-expand-transition v-if="displayDescription">
         <v-card
           v-if="hover"
           class="d-flex flex-column text-start transition-fast-in-fast-out v-card--reveal mask-color pa-2"
@@ -77,7 +89,10 @@
               v-if="application.helpPageURL"
               :href="application.helpPageURL"
               small
-              icon>
+              icon
+              mouseup.stop="0"
+              mousedown.stop="0"
+              click.stop="0">
               <v-icon color="white" size="16">fa-question-circle</v-icon>
             </v-btn>
             <v-btn
@@ -103,7 +118,43 @@ export default {
       type: Object,
       default: null,
     },
+    displayName: {
+      type: Boolean,
+      default: false,
+    },
+    displayDescription: {
+      type: Boolean,
+      default: false,
+    },
     loading: {
+      type: Boolean,
+      default: false,
+    },
+    minWidth: {
+      type: String,
+      default: () => 'auto',
+    },
+    maxWidth: {
+      type: String,
+      default: () => 'auto',
+    },
+    minHeight: {
+      type: Number,
+      default: () => 80,
+    },
+    maxHeight: {
+      type: Number,
+      default: () => 137,
+    },
+    imageSize: {
+      type: Number,
+      default: () => 60,
+    },
+    iconSize: {
+      type: Number,
+      default: () => 45,
+    },
+    elevate: {
       type: Boolean,
       default: false,
     },
@@ -112,7 +163,29 @@ export default {
     hover: false,
     favoriteUpdating: false,
   }),
+  computed: {
+    elevation() {
+      return this.hover && this.elevate ? 2 : 0;
+    },
+  },
   methods: {
+    openApp() {
+      this.addToRecent();
+      this.$emit('open');
+    },
+    addToRecent() {
+      const recentAppIdsString = window.localStorage.getItem('meeds-app-center-recent-apps');
+      if (!recentAppIdsString?.length) {
+        window.localStorage.setItem('meeds-app-center-recent-apps', JSON.stringify([this.application.id]));
+      } else {
+        const recentAppIds = JSON.parse(recentAppIdsString);
+        if (recentAppIds.includes(this.application.id)) {
+          recentAppIds.splice(recentAppIds.indexOf(this.application.id), 1);
+        }
+        recentAppIds.unshift(this.application.id);
+        window.localStorage.setItem('meeds-app-center-recent-apps', JSON.stringify(recentAppIds));
+      }
+    },
     toogleFavorite() {
       this.favoriteUpdating = true;
       this.$emit('toogle-favorite');
