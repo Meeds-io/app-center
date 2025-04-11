@@ -110,6 +110,16 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   }),
 });
 
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'search',
+  icon: 'fa-search',
+  name: 'quickActions.search.name',
+  description: 'quickActions.search.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/Search'], exoi18n => initSearchDrawer(exoi18n, resolve));
+  }),
+});
+
 async function initActivityDrawer(exoi18n, callback) {
   const appId = 'activity-stream-quick-actions';
   if (!document.querySelector(`#${appId}`)) {
@@ -204,6 +214,72 @@ async function initNotificationsDrawer(exoi18n, callback) {
     await Vue.prototype.$utils.importSkin('social', 'TopBarNotification');
   }
   document.dispatchEvent(new CustomEvent('quick-action-notifications-drawer', {detail: callback}));
+}
+
+async function initSearchDrawer(exoi18n, callback) {
+  const appId = 'search-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initSearchDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('social', 'Search');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-search-drawer'));
+  callback();
+}
+
+async function initSearchDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const connectors = await fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/v1/social/search`, {
+    credentials: 'include',
+  }).then(resp => resp?.json?.());
+  const basePath = `${eXo.env.portal.context}/${eXo.env.portal.rest}`;
+  const urls = [`/social/i18n/locale.portlet.Portlets?lang=${lang}`];
+  if (connectors.length) {
+    connectors.forEach(connector => {
+      if (connector.i18nBundle) {
+        urls.push(`${basePath}/i18n/bundle/${connector.i18nBundle}-${lang}.json`);
+      }
+    });
+    await Promise.all(connectors.map(c => {
+      if (c?.cssModule?.includes?.('/')) {
+        return c?.cssModule?.split?.('/');
+      }
+    }).filter(c => c).map(p => Vue.prototype.$utils.importSkin(p[0], p[1])));
+  }
+  await new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <div id="${appId}">
+          <search-drawer
+            id="searchDialog"
+            ref="drawer"
+            :connectors="connectors" />
+        </div>
+      `,
+      data: () => ({
+        connectors,
+        skinUrls: [],
+      }),
+      created() {
+        document.addEventListener('quick-action-search-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-search-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.open();
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Search Quick Action')));
 }
 
 function initNotificationsDrawerApp(appId, exoi18n) {
