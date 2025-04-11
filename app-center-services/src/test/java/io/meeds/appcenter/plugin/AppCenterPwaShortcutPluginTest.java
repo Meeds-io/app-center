@@ -31,7 +31,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,8 +45,6 @@ import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.pwa.model.PwaShortcut;
-
-import jakarta.servlet.ServletContext;
 
 @SpringBootTest(classes = { AppCenterPwaShortcutPlugin.class })
 @ExtendWith(MockitoExtension.class)
@@ -87,6 +84,7 @@ public class AppCenterPwaShortcutPluginTest {
     Application application = new Application(1l,
                                               "title",
                                               "url",
+                                              true,
                                               "helpPageURL",
                                               "description",
                                               "s",
