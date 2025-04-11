@@ -83,44 +83,44 @@
               <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
             </template>
           </v-radio>
+          <v-text-field
+            v-if="application.type === 'LINK'"
+            ref="applicationUrl"
+            id="applicationUrl"
+            v-model="application.url"
+            :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+            :rules="rules.url"
+            name="applicationUrl"
+            class="border-box-sizing width-auto pt-0 mb-3"
+            type="text"
+            mandatory
+            outlined
+            dense />
           <v-radio value="DRAWER">
             <template #label>
               <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
             </template>
           </v-radio>
+          <quick-action-suggester
+            v-if="application.type === 'DRAWER'"
+            ref="applicationUrl"
+            id="applicationUrl"
+            v-model="application.url"
+            name="applicationUrl"
+            class="mb-4" />
           <v-radio value="PORTLET">
             <template #label>
               <span class="ms-1">{{ $t('appCenter.adminSetupForm.portlet') }}</span>
             </template>
           </v-radio>
+          <portlet-instance-suggester
+            v-if="application.type === 'PORTLET'"
+            ref="applicationUrl"
+            id="applicationUrl"
+            v-model="application.url"
+            name="applicationUrl"
+            class="mb-4" />
         </v-radio-group>
-        <v-text-field
-          v-if="application.type === 'LINK'"
-          ref="applicationUrl"
-          id="applicationUrl"
-          v-model="application.url"
-          :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-          :rules="rules.url"
-          name="applicationUrl"
-          class="border-box-sizing width-auto pt-0 mb-3"
-          type="text"
-          mandatory
-          outlined
-          dense />
-        <quick-action-suggester
-          v-else-if="application.type === 'DRAWER'"
-          ref="applicationUrl"
-          id="applicationUrl"
-          v-model="application.url"
-          name="applicationUrl"
-          class="mb-4" />
-        <portlet-instance-suggester
-          v-else-if="application.type === 'PORTLET'"
-          ref="applicationUrl"
-          id="applicationUrl"
-          v-model="application.url"
-          name="applicationUrl"
-          class="mb-4" />
         <category-input
           v-model="newCategoryIds"
           label="appCenter.adminSetupForm.categories"
