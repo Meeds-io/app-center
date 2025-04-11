@@ -90,7 +90,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :disabled="favoriteApp.mandatory"
               :class="favoriteApp.mandatory ? 'mandatory' : ''"
               icon
-              @click.stop="deleteFavoriteApplication(favoriteApp.id)">
+              @click.prevent.stop="deleteFavoriteApplication(favoriteApp.id)">
               <v-icon>mdi-star</v-icon>
             </v-btn>
           </v-list-item-action>
