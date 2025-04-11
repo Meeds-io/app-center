@@ -65,6 +65,9 @@ public class ApplicationEntity {
   @Column(name = "URL")
   private String                                url;
 
+  @Column(name = "SAME_TAB")
+  private boolean                               sameTab;
+
   @Column(name = "ICON")
   private String                                icon;
 

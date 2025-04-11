@@ -31,6 +31,7 @@ export function init(preferences) {
       data: {
         preferences: preferences,
         quickActionExtensions: [],
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       },
       computed: {
         quickActions() {
