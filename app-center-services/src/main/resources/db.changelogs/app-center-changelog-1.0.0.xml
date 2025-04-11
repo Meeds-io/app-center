@@ -176,4 +176,10 @@
     </sql>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-mip-185-08">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="SAME_TAB" type="BOOLEAN" defaultValueBoolean="true" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>

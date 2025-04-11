@@ -83,19 +83,33 @@
               <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
             </template>
           </v-radio>
-          <v-text-field
-            v-if="application.type === 'LINK'"
-            ref="applicationUrl"
-            id="applicationUrl"
-            v-model="application.url"
-            :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-            :rules="rules.url"
-            name="applicationUrl"
-            class="border-box-sizing width-auto pt-0 mb-3"
-            type="text"
-            mandatory
-            outlined
-            dense />
+          <template v-if="application.type === 'LINK'">
+            <v-text-field
+              ref="applicationUrl"
+              id="applicationUrl"
+              v-model="application.url"
+              :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+              :rules="rules.url"
+              name="applicationUrl"
+              class="border-box-sizing width-auto pt-0"
+              type="text"
+              mandatory
+              outlined
+              dense />
+            <div class="d-flex full-width justify-space-between align-center mb-3">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.sameTab = !application.sameTab">
+                {{ $t('appCenter.adminSetupForm.openInSameTab') }}
+              </v-card>
+              <v-switch
+                v-model="application.sameTab"
+                class="my-0 me-n2 pa-0"
+                name="applicationSameTabSwitch"
+                hide-details />
+            </div>
+          </template>
           <v-radio value="DRAWER">
             <template #label>
               <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
@@ -442,6 +456,7 @@ export default {
         icon: 'fa-dot-circle',
         imageUrl: null,
         url: null,
+        sameTab: true,
         helpPageURL: null,
         shortcut: null,
         active: true,
