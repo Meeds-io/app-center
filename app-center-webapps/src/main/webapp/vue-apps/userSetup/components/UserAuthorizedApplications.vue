@@ -43,137 +43,128 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </v-col>
       </v-row>
     </div>
-    <div v-if="loading" class="userAuthorizedApplications">
-      <div v-for="n in 12" :key="n">
-        <v-skeleton-loader
-          :key="n"
-          class="authorizedApplication"
-          type="card" />
+    <div class="userAuthorizedApplications">
+      <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp text-header">
+        {{ $t("appCenter.adminSetupForm.noApp") }}
       </div>
-    </div>
-    <div v-else>    
-      <div class="userAuthorizedApplications">
-        <div v-if="!authorizedApplicationsList || !authorizedApplicationsList.length" class="noApp text-header">
-          {{ $t("appCenter.adminSetupForm.noApp") }}
-        </div>
-        <v-row no-gutters>
-          <v-col
-            v-for="(authorizedApp) in authorizedApplicationsList"
-            :key="authorizedApp.id"
-            cols="12"
-            sm="6"
-            lg="4"
-            xl="4">
-            <v-card
-              v-bind="authorizedApp.type === 'LINK' && {
-                href: authorizedApp.computedUrl,
-                target: authorizedApp.target,
-              } || {
-                loading: appLoading === authorizedApp.url,
-              }"
-              v-on="authorizedApp.type !== 'LINK' && {
-                click: () => openApplication(authorizedApp.type, authorizedApp.url),
-              }"
-              class="authorizedApplication"
-              height="180"
-              max-height="180"
-              outlined
-              hover>
-              <div class="authorisedAppContent border-box-sizing pt-3">
-                <div class="flex flex-column align-center justify-center flex-grow-1">
-                  <div class="applicationHeader">
-                    <div class="image">
-                      <a>
-                        <img
-                          v-if="authorizedApp.imageUrl"
-                          :src="authorizedApp.imageUrl"
-                          class="appImage"
-                          referrerpolicy="no-referrer"
-                          alt="">
-                        <v-icon
-                          v-else-if="authorizedApp.icon"
-                          size="45"
-                          class="appImage full-width d-flex align-center justify-center mb-2">
-                          {{ authorizedApp.icon }}
-                        </v-icon>
-                        <img
-                          v-else
-                          class="appImage"
-                          referrerpolicy="no-referrer"
-                          src="/app-center/skin/images/defaultApp.png"
-                          alt="">
-                      </a>
-                    </div>
-                    <div>
-                      <a>
-                        <div class="tooltipContent">
-                          <div
-                            :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
-                            class="appTitle text-body"
-                            :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
-                            {{ authorizedApp.title }}
-                          </div>
-                        </div>
-                      </a>
-                    </div>
+      <v-row no-gutters>
+        <v-col
+          v-for="(authorizedApp) in authorizedApplicationsList"
+          :key="authorizedApp.id"
+          cols="12"
+          sm="6"
+          lg="4"
+          xl="4">
+          <v-card
+            v-bind="authorizedApp.type === 'LINK' && {
+              href: authorizedApp.computedUrl,
+              target: authorizedApp.target,
+              rel: 'nofollow noreferrer noopener',
+            } || {
+              loading: appLoading === authorizedApp.url,
+            }"
+            v-on="authorizedApp.type !== 'LINK' && {
+              click: () => openApplication(authorizedApp.type, authorizedApp.url),
+            }"
+            class="authorizedApplication"
+            height="180"
+            max-height="180"
+            outlined
+            hover>
+            <div class="authorisedAppContent border-box-sizing pt-3">
+              <div class="flex flex-column align-center justify-center flex-grow-1">
+                <div class="applicationHeader">
+                  <div class="image">
+                    <a>
+                      <img
+                        v-if="authorizedApp.imageUrl"
+                        :src="authorizedApp.imageUrl"
+                        class="appImage"
+                        referrerpolicy="no-referrer"
+                        alt="">
+                      <v-icon
+                        v-else-if="authorizedApp.icon"
+                        size="45"
+                        class="appImage full-width d-flex align-center justify-center mb-2">
+                        {{ authorizedApp.icon }}
+                      </v-icon>
+                      <img
+                        v-else
+                        class="appImage"
+                        referrerpolicy="no-referrer"
+                        src="/app-center/skin/images/defaultApp.png"
+                        alt="">
+                    </a>
                   </div>
-                  <v-card-text class="userAppDescription">
-                    <div
-                      :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
-                      class="description text-subtitle">
-                      {{ authorizedApp.description }}
-                    </div>
-                  </v-card-text>
+                  <div>
+                    <a>
+                      <div class="tooltipContent">
+                        <div
+                          :title="authorizedApp.title.length > 10 ? authorizedApp.title : ''"
+                          class="appTitle text-body"
+                          :class="!authorizedApp.helpPageURL ? 'noHelpPage' : ''">
+                          {{ authorizedApp.title }}
+                        </div>
+                      </div>
+                    </a>
+                  </div>
                 </div>
-                <v-divider />
-                <v-card-actions class="applicationActions">
-                  <a>{{ $t("appCenter.userSetup.authorized.open") }}</a>
-                  <div class="actionsBtn">
+                <v-card-text class="userAppDescription">
+                  <div
+                    :title="authorizedApp.description.length > 105 ? authorizedApp.description : ''"
+                    class="description text-subtitle">
+                    {{ authorizedApp.description }}
+                  </div>
+                </v-card-text>
+              </div>
+              <v-divider />
+              <v-card-actions class="applicationActions">
+                <a>{{ $t("appCenter.userSetup.authorized.open") }}</a>
+                <div class="actionsBtn">
+                  <v-btn
+                    v-if="authorizedApp.helpPageURL"
+                    class="appHelp"
+                    x-small
+                    icon
+                    @click.prevent.stop="navigateTo(authorizedApp.helpPageURL)">
+                    <v-icon
+                      x-small>
+                      mdi-help
+                    </v-icon>
+                  </v-btn>
+                  <div :title="getTooltip(authorizedApp)">
                     <v-btn
-                      v-if="authorizedApp.helpPageURL"
-                      class="appHelp"
+                      v-if="authorizedApp.mandatory"
                       x-small
                       icon
-                      @click.prevent.stop="navigateTo(authorizedApp.helpPageURL)">
+                      disabled
+                      class="mandatory">
                       <v-icon
-                        x-small>
-                        mdi-help
+                        small
+                        color="red">
+                        mdi-star
                       </v-icon>
                     </v-btn>
-                    <div :title="getTooltip(authorizedApp)">
-                      <v-btn
-                        v-if="authorizedApp.mandatory"
-                        x-small
-                        icon
-                        disabled
-                        class="mandatory">
-                        <v-icon
-                          small
-                          color="red">
-                          mdi-star
-                        </v-icon>
-                      </v-btn>
-                      <v-btn
-                        v-else
-                        x-small
-                        icon
-                        :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
-                        :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
-                        @click.prevent.stop="addOrDeleteFavoriteApplication(authorizedApp)">
-                        <v-icon
-                          small
-                          color="red">
-                          {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
-                        </v-icon>
-                      </v-btn>
-                    </div>
+                    <v-btn
+                      v-else
+                      x-small
+                      icon
+                      :disabled="authorizedApp.mandatory || (!authorizedApp.favorite && !canAddFavorite)"
+                      :class="authorizedApp.mandatory || authorizedApp.favorite ? 'favorite' : ''"
+                      @click.prevent.stop="addOrDeleteFavoriteApplication(authorizedApp)">
+                      <v-icon
+                        small
+                        color="red">
+                        {{ authorizedApp.mandatory || authorizedApp.favorite ? 'mdi-star' : 'mdi-star-outline' }}
+                      </v-icon>
+                    </v-btn>
                   </div>
-                </v-card-actions>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-      </div>
+                </div>
+              </v-card-actions>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
     </div>
     <v-row class="loadMoreContainer" align="center">
       <v-col>
@@ -305,11 +296,11 @@ export default {
               allApplications.push(...data.applications);
             }
           }
-          this.authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
-          this.authorizedApplicationsList = this.authorizedApplicationsList.sort((a, b) => {
+          const authorizedApplicationsList = this.authorizedApplicationsList.concat(allApplications);
+          authorizedApplicationsList.sort((a, b) => {
             return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
           });
-          this.authorizedApplicationsList.forEach(app => {
+          authorizedApplicationsList.forEach(app => {
             if (app.type === 'LINK') {
               app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
               app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -318,9 +309,10 @@ export default {
                 email: true,
                 phone: true,
               });
-              app.target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || app.computedUrl.indexOf('tel:') === 0 || app.computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+              app.target = app.sameTab ? '_self' : '_blank';
             }
           });
+          this.authorizedApplicationsList = authorizedApplicationsList;
           this.applicationsListSize = data.size;
           this.offset += data.applications.length;
         }).finally(() => {
