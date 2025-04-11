@@ -15,108 +15,87 @@ along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <v-app flat>
-    <v-container px-0 py-0>
-      <v-layout class="transparent">
-        <v-btn
-          id="appcenterLauncherButton"
-          :title="$t('appCenter.appLauncher.topbarIcon.tooltip')"
-          icon
-          class="text-xs-center"
-          @click="toggleDrawer()">
-          <v-icon class="appCenterLauncherButtonIcon" size="20">
-            fa-th
-          </v-icon>
-        </v-btn>
-      </v-layout>
-    </v-container>
-    <exo-drawer
-      ref="appLauncherDrawer"
-      :right="!$vuetify.rtl"
-      body-classes="hide-scroll"
-      class="appCenterDrawer">
-      <template #title>
-        {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
-      </template>
-      <template #content>
-        <div v-if="hasApplications" class="content">
-          <v-layout v-if="hasApplications" class="favorite appsContainer">
-            <component
-              :is="$root.isMobile && 'div' || 'draggable'"
-              v-model="favoriteApplicationsList"
-              class="appLauncherList"
-              @start="drag=true"
-              @end="drag=false">
-              <div
-                v-for="(application, index) in favoriteApplicationsList"
-                :id="'Pos-' + index"
-                :key="index"
-                class="appLauncherItemContainer">
-                <div class="appLauncherItem">
-                  <v-card
-                    v-bind="application.type === 'LINK' && {
-                      href: application.computedUrl,
-                      target: application.target,
-                      rel: 'nofollow noreferrer noopener',
-                    } || {
-                      loading: appLoading === application.url,
-                    }"
-                    v-on="application.type !== 'LINK' && {
-                      click: () => openApplication(application.type, application.url),
-                    }"
-                    class="transparent"
-                    flat>
-                    <img
-                      v-if="application.imageUrl"
-                      :src="application.imageUrl"
-                      class="appLauncherImage"
-                      referrerpolicy="no-referrer"
-                      alt="">
-                    <v-icon
-                      v-else-if="application.icon"
-                      size="65"
-                      class="appLauncherImage d-flex align-center justify-center">
-                      {{ application.icon }}
-                    </v-icon>
-                    <img
-                      v-else
-                      class="appLauncherImage"
-                      referrerpolicy="no-referrer"
-                      src="/app-center/skin/images/defaultApp.png"
-                      alt="">
-                    <span
-                      v-exo-tooltip.bottom.body="application.title.length > 22 ? application.title : ''"
-                      class="appLauncherTitle text-body">
-                      {{ application.title }}
-                    </span>
-                  </v-card>
+  <exo-drawer
+    ref="appLauncherDrawer"
+    :right="!$vuetify.rtl"
+    body-classes="hide-scroll"
+    class="appCenterDrawer">
+    <template #title>
+      {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
+    </template>
+    <template #titleIcons>
+      <v-btn
+        :href="$root.appCenterLink"
+        :title="$t('appCenter.appLauncher.addAppPlaceHolder')"
+        icon
+        class="text-xs-center">
+        <v-icon size="20">fa-plus</v-icon>
+      </v-btn>
+    </template>
+    <template #content>
+      <div v-if="hasApplications" class="content">
+        <v-layout v-if="hasApplications" class="favorite appsContainer mt-4">
+          <component
+            :is="$root.isMobile && 'div' || 'draggable'"
+            v-model="favoriteApplicationsList"
+            class="appLauncherList"
+            @start="drag=true"
+            @end="drag=false">
+            <v-hover
+              v-for="application in favoriteApplicationsList"
+              :key="application.id">
+              <v-card
+                slot-scope="{ hover }"
+                v-bind="application.type === 'LINK' && {
+                  href: application.computedUrl,
+                  target: application.target,
+                  rel: 'nofollow noreferrer noopener',
+                } || {
+                  loading: appLoading === application.url,
+                }"
+                v-on="application.type !== 'LINK' && {
+                  click: () => openApplication(application.type, application.url),
+                }"
+                :elevation="hover && 2 || 0"
+                class="appLauncherItemContainer transparent fill-height d-flex flex-column align-center justify-center mb-2">
+                <v-avatar
+                  class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-2"
+                  size="60"
+                  tile>
+                  <img
+                    v-if="application.imageUrl"
+                    :src="application.imageUrl"
+                    class="appLauncherImage"
+                    referrerpolicy="no-referrer"
+                    alt="">
+                  <v-icon
+                    v-else-if="application.icon"
+                    size="45"
+                    class="appLauncherImage d-flex align-center justify-center">
+                    {{ application.icon }}
+                  </v-icon>
+                  <img
+                    v-else
+                    class="appLauncherImage"
+                    referrerpolicy="no-referrer"
+                    src="/app-center/skin/images/defaultApp.png"
+                    alt="">
+                </v-avatar>
+                <div
+                  :title="application.title"
+                  class="appLauncherTitle text-truncate-2 flex-grow-1 flex-shrink-1 mt-2 mx-2">
+                  {{ application.title }}
                 </div>
-              </div>
-            </component>
-          </v-layout>
-        </div>
-        <div v-else-if="applicationsLoaded" class="content d-flex align-center justify-center">
-          <app-center-launcher-empty class="mt-12" />
-        </div>
-      </template>
-      <template #footer>
-        <div v-if="applicationsLoaded && hasApplications">
-          <v-card
-            flat
-            tile
-            class="d-flex flex justify-end mx-2 px-1">
-            <v-btn
-              class="text-uppercase caption primary--text seeAllApplicationsBtn"
-              outlined
-              small
-              :href="appCenterLink">
-              {{ $t("appCenter.appLauncher.drawer.viewAll") }}
-            </v-btn>
-          </v-card>
-        </div>
-      </template>
-    </exo-drawer>
-  </v-app>
+              </v-card>
+            </v-hover>
+          </component>
+        </v-layout>
+      </div>
+      <div v-else-if="applicationsLoaded" class="content d-flex align-center justify-center">
+        <app-center-launcher-empty class="mt-12" />
+      </div>
+    </template>
+  </exo-drawer>
 </template>
 <script>
 export default {
@@ -131,7 +110,6 @@ export default {
       loading: true,
       appLoading: null,
       draggedElementIndex: null,
-      appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
     };
   },
   computed: {
