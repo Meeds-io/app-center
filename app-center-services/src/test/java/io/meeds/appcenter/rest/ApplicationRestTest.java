@@ -179,6 +179,7 @@ public class ApplicationRestTest {
     return new Application(1L,
                            "title",
                            "url",
+                           true,
                            "",
                            "description",
                            "g",

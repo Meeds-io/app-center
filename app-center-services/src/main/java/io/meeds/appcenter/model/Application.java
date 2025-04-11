@@ -38,6 +38,8 @@ public class Application {
 
   private String          url;
 
+  private boolean         sameTab;
+
   private String          helpPageURL;
 
   private String          description;

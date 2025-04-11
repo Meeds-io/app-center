@@ -35,6 +35,7 @@ public class UserApplication extends Application {
     super(app.getId(),
           app.getTitle(),
           app.getUrl(),
+          app.isSameTab(),
           app.getHelpPageURL(),
           app.getDescription(),
           app.getShortcut(),

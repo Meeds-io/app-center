@@ -46,6 +46,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           v-bind="favoriteApp.type === 'LINK' && {
             href: favoriteApp.computedUrl,
             target: favoriteApp.target,
+            rel: 'nofollow noreferrer noopener',
           } || {
             loading: appLoading === favoriteApp.url,
           }"
@@ -200,7 +201,7 @@ export default {
                 email: true,
                 phone: true,
               });
-              app.target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || app.computedUrl.indexOf('tel:') === 0 || app.computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+              app.target = app.sameTab ? '_self' : '_blank';
             }
           });
           this.$emit('canAddFavorite', this.canAddFavorite);

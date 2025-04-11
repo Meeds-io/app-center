@@ -149,7 +149,7 @@ export default {
           email: true,
           phone: true,
         });
-        const target = app.url.indexOf('/') === 0 || app.url.indexOf('./') === 0 || computedUrl.indexOf('tel:') === 0 || computedUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+        const target = app.sameTab ? '_self' : '_blank';
         return {
           ...app,
           computedUrl,
