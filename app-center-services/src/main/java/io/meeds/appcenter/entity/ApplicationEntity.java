@@ -96,7 +96,7 @@ public class ApplicationEntity {
   private String                                shortcut;
 
   @Convert(converter = StringListConverter.class)
-  @Column(name = "PERMISSIONS", nullable = false)
+  @Column(name = "PERMISSIONS")
   private List<String>                          permissions;
 
   @Column(name = "IS_CHANGED_MANUALLY")
