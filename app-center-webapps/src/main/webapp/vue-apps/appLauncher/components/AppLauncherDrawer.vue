@@ -41,53 +41,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             class="appLauncherList"
             @start="drag=true"
             @end="drag=false">
-            <v-hover
+            <app-center-launcher-item
               v-for="application in favoriteApplicationsList"
-              :key="application.id">
-              <v-card
-                slot-scope="{ hover }"
-                v-bind="application.type === 'LINK' && {
-                  href: application.computedUrl,
-                  target: application.target,
-                  rel: 'nofollow noreferrer noopener',
-                } || {
-                  loading: appLoading === application.url,
-                }"
-                v-on="application.type !== 'LINK' && {
-                  click: () => openApplication(application.type, application.url),
-                }"
-                :elevation="hover && 2 || 0"
-                class="appLauncherItemContainer transparent fill-height d-flex flex-column align-center justify-center mb-2">
-                <v-avatar
-                  class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-2"
-                  size="60"
-                  tile>
-                  <img
-                    v-if="application.imageUrl"
-                    :src="application.imageUrl"
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    alt="">
-                  <v-icon
-                    v-else-if="application.icon"
-                    size="45"
-                    class="appLauncherImage d-flex align-center justify-center">
-                    {{ application.icon }}
-                  </v-icon>
-                  <img
-                    v-else
-                    class="appLauncherImage"
-                    referrerpolicy="no-referrer"
-                    src="/app-center/skin/images/defaultApp.png"
-                    alt="">
-                </v-avatar>
-                <div
-                  :title="application.title"
-                  class="appLauncherTitle text-truncate-2 flex-grow-1 flex-shrink-1 mt-2 mx-2">
-                  {{ application.title }}
-                </div>
-              </v-card>
-            </v-hover>
+              :application="application"
+              :key="application.id"
+              :loading="appLoading === application.url"
+              @open="openApplication(application.type, application.url)"
+              @toogle-favorite="toogleFavorite(application)" />
           </component>
         </v-layout>
       </div>
@@ -271,6 +231,12 @@ export default {
         }
         
       }
+    },
+    toogleFavorite(application) {
+      return fetch(`/app-center/rest/favorites/${application.id}`, {
+        credentials: 'include',
+        method: application.favorite ? 'DELETE' : 'POST',
+      }).then(() => this.getMandatoryAndFavoriteApplications());
     },
   }
 };
