@@ -19,7 +19,6 @@
 package io.meeds.appcenter.service;
 
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -143,9 +142,6 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
-    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
-    }
     return appCenterStorage.createApplication(application);
   }
 
@@ -190,10 +186,6 @@ public class ApplicationCenterService {
                                                      username,
                                                      application.getTitle()));
     }
-    if (application.getPermissions() == null || application.getPermissions().isEmpty()) {
-      application.setPermissions(Collections.singletonList(DEFAULT_USERS_PERMISSION));
-    }
-
     updateApplication(application);
   }
 
@@ -552,11 +544,12 @@ public class ApplicationCenterService {
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {
-    if (CollectionUtils.isEmpty(storedPermissions)) {
-      return true;
-    }
     Identity identity = getUserIdentity(username);
-    return storedPermissions.stream().anyMatch(exp -> userAcl.hasPermission(identity, exp));
+    if (CollectionUtils.isEmpty(storedPermissions)) {
+      return identity != null && userAcl.hasPermission(identity, DEFAULT_USERS_PERMISSION);
+    } else {
+      return storedPermissions.stream().anyMatch(exp -> userAcl.hasPermission(identity, exp));
+    }
   }
 
   @SneakyThrows
