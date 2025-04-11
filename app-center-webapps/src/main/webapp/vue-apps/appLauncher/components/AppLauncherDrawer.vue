@@ -17,6 +17,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <exo-drawer
     ref="appLauncherDrawer"
+    v-model="drawer"
     :right="!$vuetify.rtl"
     body-classes="hide-scroll"
     class="appCenterDrawer">
@@ -32,25 +33,63 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-icon size="20">fa-plus</v-icon>
       </v-btn>
     </template>
-    <template #content>
-      <div v-if="hasApplications" class="content">
-        <v-layout v-if="hasApplications" class="favorite appsContainer mt-4">
-          <component
-            :is="$root.isMobile && 'div' || 'draggable'"
-            v-model="favoriteApplicationsList"
-            class="appLauncherList"
-            @start="drag=true"
-            @end="drag=false">
+    <template v-if="drawer" #content>
+      <v-layout v-if="hasRecentApplications" class="d-flex flex-column flex-wrap mt-5 px-5">
+        <div class="text-header mb-2">
+          {{ $t('appCenter.appLauncher.recentApps') }}
+        </div>
+        <card-carousel class="d-flex max-width-fit">
+          <v-tooltip
+            v-for="application in recentApplications"
+            :key="application.id"
+            bottom>
+            <template #activator="{on, attrs}">
+              <div
+                v-on="on"
+                v-bind="attrs"
+                class="border-color border-radius me-4">
+                <app-center-launcher-item
+                  :application="application"
+                  :loading="appLoading === application.url"
+                  min-width="60"
+                  max-width="60"
+                  max-height="60"
+                  min-height="60"
+                  image-size="24"
+                  icon-size="24"
+                  elevate
+                  @open="openApplication(application.type, application.url)" />
+              </div>
+            </template>
+            <span>{{ application.title }}</span>
+          </v-tooltip>
+        </card-carousel>
+      </v-layout>
+      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer ps-5 pe-3">
+        <div v-if="hasRecentApplications" class="text-header mb-4">
+          {{ $t('appCenter.appLauncher.favoriteApps') }}
+        </div>
+        <component
+          :is="$root.isMobile && 'div' || 'draggable'"
+          v-model="favoriteApplications"
+          class="appLauncherList d-flex flex-wrap me-n2"
+          @start="drag=true"
+          @end="drag=false">
+          <div
+            v-for="application in favoriteApplications"
+            :key="application.id"
+            class="flex-grow-1 flex-shrink-0 col-4 pa-0">
             <app-center-launcher-item
-              v-for="application in favoriteApplicationsList"
               :application="application"
-              :key="application.id"
               :loading="appLoading === application.url"
+              class="mb-2 me-2"
+              display-name
+              display-description
               @open="openApplication(application.type, application.url)"
               @toogle-favorite="toogleFavorite(application)" />
-          </component>
-        </v-layout>
-      </div>
+          </div>
+        </component>
+      </v-layout>
       <div v-else-if="applicationsLoaded" class="content d-flex align-center justify-center">
         <app-center-launcher-empty class="mt-12" />
       </div>
@@ -63,9 +102,11 @@ export default {
     return {
       isMobileDevice: false,
       applicationsLoaded: false,
-      favoriteApplicationsList: [],
+      recentApplicationIds: [],
+      favoriteApplications: [],
       applicationsOrder: null,
       appCenterUserSetupLink: '',
+      drawer: false,
       drag: false,
       loading: true,
       appLoading: null,
@@ -74,7 +115,7 @@ export default {
   },
   computed: {
     sortedApplicationsList() {
-      const apps = this.favoriteApplicationsList || [];
+      const apps = this.favoriteApplications || [];
       apps.sort((a, b) => {
         if (a.order === null && b.order === null) {
           return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
@@ -89,13 +130,31 @@ export default {
       return apps;
     },
     hasApplications() {
-      return this.favoriteApplicationsList?.length;
+      return this.favoriteApplications?.length;
+    },
+    recentApplications() {
+      const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id));
+      recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
+      return recentApplications;
+    },
+    hasRecentApplications() {
+      return this.recentApplications?.length;
     },
   },
   watch: {
     drag() {
       if (!this.drag) {
         this.updateApplicationsOrder();
+      }
+    },
+    drawer() {
+      if (this.drawer) {
+        const recentAppIdsString = window.localStorage.getItem('meeds-app-center-recent-apps');
+        if (!recentAppIdsString?.length) {
+          this.recentApplicationIds = [];
+        } else {
+          this.recentApplicationIds = JSON.parse(recentAppIdsString);
+        }
       }
     },
   },
@@ -173,15 +232,15 @@ export default {
           } else {
             applications.push(...data.applications);
           }
-          this.favoriteApplicationsList = applications.filter(app => app.favorite || app.mandatory);
-          this.favoriteApplicationsList = this.sortedApplicationsList.slice();
+          this.favoriteApplications = applications.filter(app => app.favorite || app.mandatory);
+          this.favoriteApplications = this.sortedApplicationsList.slice();
 
           // store favorite applications order
           this.applicationsOrder = {};
-          this.favoriteApplicationsList.forEach(app => {
-            this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+          this.favoriteApplications.forEach(app => {
+            this.applicationsOrder[`${app.id}`] = this.favoriteApplications.indexOf(app);
           });
-          this.favoriteApplicationsList.forEach(app => {
+          this.favoriteApplications.forEach(app => {
             if (app.type === 'LINK') {
               app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
               app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
@@ -198,10 +257,10 @@ export default {
     updateApplicationsOrder() {
       const applicationsToUpdateOrder = [];
       // check applications order
-      this.favoriteApplicationsList.forEach(app => {
-        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplicationsList.indexOf(app)) {
+      this.favoriteApplications.forEach(app => {
+        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplications.indexOf(app)) {
           applicationsToUpdateOrder.push(app);
-          this.applicationsOrder[`${app.id}`] = this.favoriteApplicationsList.indexOf(app);
+          this.applicationsOrder[`${app.id}`] = this.favoriteApplications.indexOf(app);
         }
       });
       if (applicationsToUpdateOrder.length) {
