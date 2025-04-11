@@ -16,11 +16,13 @@
  */
 import AppLauncher from './components/AppLauncher.vue';
 import AppLauncherDrawer from './components/AppLauncherDrawer.vue';
+import AppLauncherItem from './components/AppLauncherItem.vue';
 import AppLauncherEmpty from './components/AppLauncherEmpty.vue';
 
 const components = {
   'app-center-launcher': AppLauncher,
   'app-center-launcher-drawer': AppLauncherDrawer,
+  'app-center-launcher-item': AppLauncherItem,
   'app-center-launcher-empty': AppLauncherEmpty,
 };
 
