@@ -19,6 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     v-bind="result.type === 'LINK' && {
       href: applicationUrl,
       target: targetUrl,
+      rel: 'nofollow noreferrer noopener',
     } || {
       loading,
     }"
@@ -88,7 +89,7 @@ export default {
       return computedUrl;
     },
     targetUrl() {
-      return this.result.url.indexOf('/') === 0 || this.result.url.indexOf('./') === 0 || this.applicationUrl.indexOf('tel:') === 0 || this.applicationUrl.indexOf('mailto:') === 0 ? '_self' : '_blank';
+      return this.result.sameTab ? '_self' : '_blank';
     },
   },
   methods: {

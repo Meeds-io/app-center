@@ -443,6 +443,7 @@ public class ApplicationCenterServiceTest {
     return new Application(id,
                            TITLE,
                            URL,
+                           true,
                            HELP_PAGE_URL,
                            DESCRIPTION,
                            SHORTCUT,
