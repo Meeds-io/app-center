@@ -37,6 +37,7 @@ public class ApplicationForm extends Application {
     super(application.getId(),
           application.getTitle(),
           application.getUrl(),
+          application.isSameTab(),
           application.getHelpPageURL(),
           application.getDescription(),
           application.getShortcut(),
