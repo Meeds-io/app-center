@@ -39,7 +39,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <template v-if="drawer" #content>
       <v-expand-transition v-if="hasRecentApplications">
         <div v-show="!expanded">
-          <v-layout class="d-flex flex-column flex-wrap mt-5 px-5">
+          <v-layout class="d-flex flex-column flex-wrap px-4 mt-4">
             <div class="text-header mb-2">
               {{ $t('appCenter.appLauncher.recentApps') }}
             </div>
@@ -69,24 +69,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 <span>{{ application.title }}</span>
               </v-tooltip>
             </card-carousel>
-            <div class="text-header mb-2">
+            <div class="text-header mb-n2">
               {{ $t('appCenter.appLauncher.favoriteApps') }}
             </div>
           </v-layout>
         </div>
       </v-expand-transition>
-      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer px-5">
+      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer px-4 mt-4">
         <component
           :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
           v-model="favoriteApplications"
-          :class="cardDisplay && 'mt-5'"
           class="appLauncherList d-flex flex-wrap me-n2"
           @start="drag=true"
           @end="drag=false">
           <div
             v-for="application in applications"
             :key="application.id"
-            :class="cardDisplay && 'mb-5' || 'mb-2'"
+            :class="cardDisplay && 'mb-4' || 'mb-3'"
             class="flex-grow-1 flex-shrink-0 col-4 pa-0">
             <app-center-launcher-item
               :application="application"
@@ -94,7 +93,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :card="cardDisplay"
               :min-height="cardDisplay && 227 || 'auto'"
               :max-height="cardDisplay && 227 || 'auto'"
-              :class="cardDisplay && 'me-5' || 'me-2'"
+              :class="cardDisplay && 'me-4' || 'me-3'"
               display-name
               display-description
               @open="openApplication(application.type, application.url)"
