@@ -84,6 +84,12 @@
         class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1"
         flat>
         {{ application.title }}
+        <v-icon
+          v-if="!card && !application.sameTab"
+          class="ms-1"
+          size="12">
+          fa-external-link-alt
+        </v-icon>
       </v-card>
       <v-expand-transition v-if="displayDescription || card">
         <v-card
