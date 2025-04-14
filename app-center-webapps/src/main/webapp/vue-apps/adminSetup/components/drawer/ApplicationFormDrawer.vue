@@ -265,13 +265,13 @@
               <v-card
                 class="fill-height grey-lighten1-background white--text px-5 py-2"
                 flat>
-                Ctrl
+                {{ $t('appCenter.adminSetupForm.ctrl') }}
               </v-card>
               <v-icon class="mx-2" size="24">fa-plus</v-icon>
               <v-card
                 class="fill-height grey-lighten1-background white--text px-5 py-2"
                 flat>
-                Alt
+                {{ $t('appCenter.adminSetupForm.shift') }}
               </v-card>
               <v-icon class="mx-2" size="24">fa-plus</v-icon>
             </div>
