@@ -21,8 +21,8 @@
   <v-hover v-model="hover">
     <v-card
       v-bind="application.type === 'LINK' && {
-        href: application.computedUrl,
-        target: application.target,
+        href: computedUrl,
+        target: target,
         rel: 'nofollow noreferrer noopener',
       } || {
         loading,
@@ -37,10 +37,19 @@
       :min-height="minHeight"
       :max-height="maxHeight"
       :elevation="elevation"
-      :class="$attrs.class"
-      class="appLauncherItemContainer fill-height transparent d-flex flex-column align-center justify-center">
+      :class="[
+        $attrs.class,
+        {
+          'flex-wrap': card,
+          'flex-column': !card,
+          'border-color': card,
+          'transparent': !card,
+        }
+      ]"
+      class="appLauncherItemContainer fill-height d-flex align-center justify-center">
       <v-avatar
         :size="imageSize"
+        :class="card && 'ms-4'"
         class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-2"
         tile>
         <v-img
@@ -67,21 +76,34 @@
       <v-card
         v-if="displayName"
         :title="application.title"
+        :class="{
+          'd-flex justify-start align-center ma-4': card,
+          'mt-2 mx-2': !card,
+        }"
         min-height="48"
-        class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1 mt-2 mx-2"
+        class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1"
         flat>
         {{ application.title }}
       </v-card>
-      <v-expand-transition v-if="displayDescription">
+      <v-expand-transition v-if="displayDescription || card">
         <v-card
-          v-if="hover"
-          class="d-flex flex-column text-start transition-fast-in-fast-out v-card--reveal mask-color pa-2"
-          height="100%"
+          v-if="hover || card"
+          :class="{
+            'transition-fast-in-fast-out v-card--reveal mask-color pa-2': !card,
+            'px-4 py-2': card,
+          }"
+          :height="card ? 135 : '100%'"
+          :width="card ? '100%' : 'auto'"
+          class="d-flex flex-column text-start"
           flat>
-          <div class="text-truncate white--text mb-1">
+          <div v-if="!card" class="text-truncate white--text mb-1">
             {{ application.title }}
           </div>
-          <div class="text-font-small-size text-truncate-4 white--text">
+          <div
+            :class="{
+              'text-font-small-size white--text': !card,
+            }"
+            class="text-truncate-4">
             {{ application.description }}
           </div>
           <div class="d-flex justify-end mt-auto">
@@ -96,7 +118,6 @@
               <v-icon color="white" size="16">fa-question-circle</v-icon>
             </v-btn>
             <v-btn
-              :loading="favoriteUpdating"
               :disabled="application.mandatory"
               small
               icon
@@ -158,12 +179,32 @@ export default {
       type: Boolean,
       default: false,
     },
+    card: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     hover: false,
-    favoriteUpdating: false,
   }),
   computed: {
+    computedUrl() {
+      if (this.application.type === 'LINK') {
+        const computedUrl = this.application.url
+          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+          .replace('@user@', eXo.env.portal.userName);
+        return this.$utils.toLinkUrl(computedUrl, {
+          urls: true,
+          email: true,
+          phone: true,
+        });
+      } else {
+        return null;
+      }
+    },
+    target() {
+      return this.application.sameTab ? '_self' : '_blank';
+    },
     elevation() {
       return this.hover && this.elevate ? 2 : 0;
     },
@@ -187,7 +228,6 @@ export default {
       }
     },
     toogleFavorite() {
-      this.favoriteUpdating = true;
       this.$emit('toogle-favorite');
     },
   },
