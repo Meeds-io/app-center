@@ -16,73 +16,85 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <exo-drawer
-    ref="appLauncherDrawer"
+    ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
+    :allow-expand="expanded"
+    :loading="drawerLoading"
     body-classes="hide-scroll"
-    class="appCenterDrawer">
+    class="appCenterDrawer"
+    @expand-updated="expanded = $event">
     <template #title>
       {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
     </template>
-    <template #titleIcons>
+    <template v-if="!expanded && !$root.isMobile" #titleIcons>
       <v-btn
-        :href="$root.appCenterLink"
         :title="$t('appCenter.appLauncher.addAppPlaceHolder')"
         icon
-        class="text-xs-center">
+        class="text-xs-center"
+        @click="expandDrawer">
         <v-icon size="20">fa-plus</v-icon>
       </v-btn>
     </template>
     <template v-if="drawer" #content>
-      <v-layout v-if="hasRecentApplications" class="d-flex flex-column flex-wrap mt-5 px-5">
-        <div class="text-header mb-2">
-          {{ $t('appCenter.appLauncher.recentApps') }}
+      <v-expand-transition v-if="hasRecentApplications">
+        <div v-show="!expanded">
+          <v-layout class="d-flex flex-column flex-wrap mt-5 px-5">
+            <div class="text-header mb-2">
+              {{ $t('appCenter.appLauncher.recentApps') }}
+            </div>
+            <card-carousel class="d-flex max-width-fit">
+              <v-tooltip
+                v-for="application in recentApplications"
+                :key="application.id"
+                bottom>
+                <template #activator="{on, attrs}">
+                  <div
+                    v-on="on"
+                    v-bind="attrs"
+                    class="border-color border-radius me-4">
+                    <app-center-launcher-item
+                      :application="application"
+                      :loading="appLoading === application.url"
+                      min-width="60"
+                      max-width="60"
+                      max-height="60"
+                      min-height="60"
+                      image-size="24"
+                      icon-size="24"
+                      elevate
+                      @open="openApplication(application.type, application.url)" />
+                  </div>
+                </template>
+                <span>{{ application.title }}</span>
+              </v-tooltip>
+            </card-carousel>
+            <div class="text-header mb-2">
+              {{ $t('appCenter.appLauncher.favoriteApps') }}
+            </div>
+          </v-layout>
         </div>
-        <card-carousel class="d-flex max-width-fit">
-          <v-tooltip
-            v-for="application in recentApplications"
-            :key="application.id"
-            bottom>
-            <template #activator="{on, attrs}">
-              <div
-                v-on="on"
-                v-bind="attrs"
-                class="border-color border-radius me-4">
-                <app-center-launcher-item
-                  :application="application"
-                  :loading="appLoading === application.url"
-                  min-width="60"
-                  max-width="60"
-                  max-height="60"
-                  min-height="60"
-                  image-size="24"
-                  icon-size="24"
-                  elevate
-                  @open="openApplication(application.type, application.url)" />
-              </div>
-            </template>
-            <span>{{ application.title }}</span>
-          </v-tooltip>
-        </card-carousel>
-      </v-layout>
-      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer ps-5 pe-3">
-        <div v-if="hasRecentApplications" class="text-header mb-4">
-          {{ $t('appCenter.appLauncher.favoriteApps') }}
-        </div>
+      </v-expand-transition>
+      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer px-5">
         <component
-          :is="$root.isMobile && 'div' || 'draggable'"
+          :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
           v-model="favoriteApplications"
+          :class="cardDisplay && 'mt-5'"
           class="appLauncherList d-flex flex-wrap me-n2"
           @start="drag=true"
           @end="drag=false">
           <div
-            v-for="application in favoriteApplications"
+            v-for="application in applications"
             :key="application.id"
+            :class="cardDisplay && 'mb-5' || 'mb-2'"
             class="flex-grow-1 flex-shrink-0 col-4 pa-0">
             <app-center-launcher-item
               :application="application"
               :loading="appLoading === application.url"
-              class="mb-2 me-2"
+              :card="cardDisplay"
+              :min-height="cardDisplay && 227 || 'auto'"
+              :max-height="cardDisplay && 227 || 'auto'"
+              :class="cardDisplay && 'me-5' || 'me-2'"
               display-name
               display-description
               @open="openApplication(application.type, application.url)"
@@ -90,7 +102,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </div>
         </component>
       </v-layout>
-      <div v-else-if="applicationsLoaded" class="content d-flex align-center justify-center">
+      <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
         <app-center-launcher-empty class="mt-12" />
       </div>
     </template>
@@ -98,39 +110,36 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 </template>
 <script>
 export default {
-  data() {
-    return {
-      isMobileDevice: false,
-      applicationsLoaded: false,
-      recentApplicationIds: [],
-      favoriteApplications: [],
-      applicationsOrder: null,
-      appCenterUserSetupLink: '',
-      drawer: false,
-      drag: false,
-      loading: true,
-      appLoading: null,
-      draggedElementIndex: null,
-    };
-  },
+  data: () => ({
+    expanded: false,
+    loading: false,
+    applicationsLoaded: false,
+    recentApplicationIds: [],
+    availableApplications: [],
+    favoriteApplications: [],
+    applicationsOrder: null,
+    drawer: false,
+    drag: false,
+    appLoading: null,
+    draggedElementIndex: null,
+  }),
   computed: {
+    applications() {
+      return this.expanded ? this.availableApplications : this.favoriteApplications;
+    },
     sortedApplicationsList() {
-      const apps = this.favoriteApplications || [];
-      apps.sort((a, b) => {
-        if (a.order === null && b.order === null) {
-          return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
-        } else if (a.order === null) {
-          return 1;
-        } else if (b.order === null) {
-          return -1;
-        } else {
-          return a.order - b.order;
-        }
-      });
-      return apps;
+      const apps = this.applications?.slice?.() || [];
+      this.sortApplications(apps);
+      return this.$root.isMobile ? apps.filter(app => app.mobile) : apps;
+    },
+    drawerLoading() {
+      return this.loading || !this.applicationsLoaded;
+    },
+    cardDisplay() {
+      return this.expanded && !this.$root.isMobile;
     },
     hasApplications() {
-      return this.favoriteApplications?.length;
+      return this.applications?.length;
     },
     recentApplications() {
       const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id));
@@ -159,53 +168,54 @@ export default {
     },
   },
   created() {
-    document.addEventListener('app-center-favorite-updated', this.getMandatoryAndFavoriteApplications);
-    this.isMobileDevice = this.detectMobile();
-    this.appCenterUserSetupLink = `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`;
+    this.$root.$on('app-center-add-app', this.expandDrawer);
+    document.addEventListener('app-center-favorite-updated', this.retrieveApplications);
 
-    this.applicationsLoaded = false;
-    this.getMandatoryAndFavoriteApplications()
-      .finally(() => {
-        this.applicationsLoaded = true;
-        this.$root.$applicationLoaded();
-        if (this.$refs.appLauncherDrawer) {
-          this.$refs.appLauncherDrawer.endLoading();
-        }
-      });
+    this.init();
   },
   mounted() {
-    if (!this.applicationsLoaded) {
-      this.$refs.appLauncherDrawer.startLoading();
-    }
     if (!this.$root.noAutoOpen) {
-      this.toggleDrawer();
-    } else {
-      if (this.$utils.getQueryParam('appCenterDrawer')) {
-        this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
-      }
+      this.open();
+    } else if (this.$utils.getQueryParam('appCenterDrawer')) {
+      this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
     }
   },
+  beforeDestroy() {
+    this.$root.$off('app-center-add-app', this.expandDrawer);
+  },
   methods: {
-    detectMobile() {
-      const toMatch = [
-        /Android/i,
-        /webOS/i,
-        /iPhone/i,
-        /iPad/i,
-        /iPod/i,
-        /BlackBerry/i,
-        /Windows Phone/i
-      ];
-
-      return toMatch.some((toMatchItem) => {
-        return navigator.userAgent.match(toMatchItem);
-      });
+    init() {
+      this.applicationsLoaded = false;
+      this.retrieveApplications()
+        .finally(() => {
+          this.applicationsLoaded = true;
+          this.$root.$applicationLoaded();
+        });
     },
-    toggleDrawer() {
-      this.$refs.appLauncherDrawer.open();
+    retrieveApplications() {
+      this.loading = true;
+      return this.getApplications(!this.expanded)
+        .then(data => {
+          const applications = data.applications;
+          // manage system apps localized names
+          applications.forEach(app => {
+            if (app.system) {
+              const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (this.$te(`appCenter.system.application.${title}`)) {
+                app.title = this.$t(`appCenter.system.application.${title}`);
+              }
+            }
+          });
+          this.sortApplications(applications);
+          if (this.expanded) {
+            this.availableApplications = applications;
+          } else {
+            this.favoriteApplications = applications;
+          }
+        }).finally(() => this.loading = false);
     },
-    getMandatoryAndFavoriteApplications() {
-      return fetch('/app-center/rest/favorites', {
+    getApplications(favorites) {
+      return fetch(favorites && '/app-center/rest/favorites' || '/app-center/rest/applications', {
         method: 'GET',
         credentials: 'include',
       })
@@ -215,58 +225,14 @@ export default {
           } else {
             throw new Error('Error getting favorite applications list');
           }
-        })
-        .then(data => {
-          // manage system apps localized names
-          data.applications.forEach(app => {
-            if (app.system) {
-              const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
-              if (!this.$t(`appCenter.system.application.${appTitle}`).startsWith('appCenter.system.application')) {
-                data.applications[this.getAppIndex(data.applications, app.id)].title = this.$t(`appCenter.system.application.${appTitle}`);
-              }
-            }
-          });
-          const applications = [];
-          if (this.isMobileDevice) {
-            applications.push(...data.applications.filter(app => app.mobile));
-          } else {
-            applications.push(...data.applications);
-          }
-          this.favoriteApplications = applications.filter(app => app.favorite || app.mandatory);
-          this.favoriteApplications = this.sortedApplicationsList.slice();
-
-          // store favorite applications order
-          this.applicationsOrder = {};
-          this.favoriteApplications.forEach(app => {
-            this.applicationsOrder[`${app.id}`] = this.favoriteApplications.indexOf(app);
-          });
-          this.favoriteApplications.forEach(app => {
-            if (app.type === 'LINK') {
-              app.computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
-              app.computedUrl = app.computedUrl.replace('@user@', eXo.env.portal.userName);
-              app.computedUrl = this.$utils.toLinkUrl(app.computedUrl, {
-                urls: true,
-                email: true,
-                phone: true,
-              });
-              app.target = app.sameTab ? '_self' : '_blank';
-            }
-          });
-        }).finally(() => this.loading = false);
+        });
     },
     updateApplicationsOrder() {
-      const applicationsToUpdateOrder = [];
-      // check applications order
-      this.favoriteApplications.forEach(app => {
-        if (this.applicationsOrder[`${app.id}`] !== this.favoriteApplications.indexOf(app)) {
-          applicationsToUpdateOrder.push(app);
-          this.applicationsOrder[`${app.id}`] = this.favoriteApplications.indexOf(app);
-        }
-      });
-      if (applicationsToUpdateOrder.length) {
-        const applicationsOrder = applicationsToUpdateOrder.map(app => {
-          return {id: app.id, order: this.applicationsOrder[`${app.id}`]};
-        });
+      const applicationsOrder = this.favoriteApplications.map((app, index) => ({
+        id: app.id,
+        order: index,
+      }));
+      if (applicationsOrder.length) {
         return fetch('/app-center/rest/favorites', {
           headers: {
             'Content-Type': 'application/json'
@@ -276,9 +242,6 @@ export default {
           body: JSON.stringify(applicationsOrder)
         });
       }
-    },
-    getAppIndex(appList, appId) {
-      return appList.findIndex(app => app.id === appId);
     },
     async openApplication(appType, appUrl) {
       if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
@@ -291,11 +254,43 @@ export default {
         
       }
     },
+    sortApplications(apps) {
+      apps.sort((a, b) => {
+        if (a.order === null && b.order === null) {
+          return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
+        } else if (a.order === null) {
+          return 1;
+        } else if (b.order === null) {
+          return -1;
+        } else {
+          return a.order - b.order;
+        }
+      });
+    },
     toogleFavorite(application) {
+      this.loading = true;
       return fetch(`/app-center/rest/favorites/${application.id}`, {
         credentials: 'include',
         method: application.favorite ? 'DELETE' : 'POST',
-      }).then(() => this.getMandatoryAndFavoriteApplications());
+      })
+        .then(() => this.retrieveApplications())
+        .then(() => {
+          if (application.favorite) {
+            this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteRemoved'), 'success');
+          } else {
+            this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteAdded'), 'success');
+          }
+        })
+        .finally(() => this.loading = false);
+    },
+    async expandDrawer() {
+      this.expanded = true;
+      await this.$nextTick();
+      this.$refs.drawer.toogleExpand();
+      this.retrieveApplications();
+    },
+    open() {
+      this.$refs.drawer.open();
     },
   }
 };
