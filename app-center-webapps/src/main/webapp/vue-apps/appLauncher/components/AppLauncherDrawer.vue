@@ -211,6 +211,8 @@ export default {
     },
     drawer() {
       if (this.drawer) {
+        this.init();
+
         const recentAppIdsString = window.localStorage.getItem('meeds-app-center-recent-apps');
         if (!recentAppIdsString?.length) {
           this.recentApplicationIds = [];
@@ -235,10 +237,12 @@ export default {
   },
   created() {
     this.$root.$on('app-center-add-app', this.expandDrawer);
-    this.init();
+    window.addEventListener('keypress', this.openApplicationByShortcutEvent);
   },
   mounted() {
-    if (!this.$root.noAutoOpen) {
+    if (this.$root.shortcut) {
+      this.openApplicationByShortcut(this.$root.shortcut);
+    } else if (!this.$root.noAutoOpen) {
       this.open();
     } else if (this.$utils.getQueryParam('appCenterDrawer')) {
       this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
@@ -246,6 +250,7 @@ export default {
   },
   beforeDestroy() {
     this.$root.$off('app-center-add-app', this.expandDrawer);
+    window.removeEventListener('keypress', this.openApplicationByShortcutEvent);
   },
   methods: {
     init() {
@@ -280,6 +285,7 @@ export default {
           } else {
             this.availableApplications = applications;
           }
+          this.$root.shortcuts = applications.filter(a => a.shortcut).map(a => a.shortcut);
         }).finally(() => this.loading = false);
     },
     getApplications(favorites) {
@@ -311,6 +317,43 @@ export default {
         });
       }
     },
+    openApplicationByShortcutEvent(e) {
+      if (e.ctrlKey && e.shiftKey && e.key) {
+        window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
+      }
+    },
+    async openApplicationByShortcut(shortcut) {
+      if (!this.$root.shortcuts?.includes?.(shortcut) && !this.$root.shortcuts?.includes?.(shortcut.toLowerCase())) {
+        return;
+      }
+      if (!this.applications?.length) {
+        await this.retrieveApplications();
+      }
+      const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
+      if (application?.type === 'LINK') {
+        const computedUrl = application.url
+          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+          .replace('@user@', eXo.env.portal.userName);
+        const url = this.$utils.toLinkUrl(computedUrl, {
+          urls: true,
+          email: true,
+          phone: true,
+        });
+        if (application.sameTab) {
+          if (url?.startsWith?.('/')) {
+            window.location.href = `${window.location.origin}${url}`;
+          } else {
+            window.location.href = url;
+          }
+        } else  if (url?.startsWith?.('/')) {
+          window.open(`${window.location.origin}${url}`);
+        } else {
+          window.open(url);
+        }
+      } else if (application?.type === 'DRAWER') {
+        this.openApplication(application?.type, application?.url);
+      }
+    },
     async openApplication(appType, appUrl) {
       if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
         this.appLoading = appUrl;
@@ -319,7 +362,6 @@ export default {
         } finally {
           window.setTimeout(() => this.appLoading = null, 500);
         }
-        
       }
     },
     sortApplicationsByOrder(apps) {
