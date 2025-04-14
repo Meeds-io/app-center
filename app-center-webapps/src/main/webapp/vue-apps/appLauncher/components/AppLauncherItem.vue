@@ -24,8 +24,6 @@
         href: computedUrl,
         target: target,
         rel: 'nofollow noreferrer noopener',
-      } || {
-        loading,
       }"
       v-on="application.type === 'LINK' && {
         click: addToRecent,
@@ -47,6 +45,10 @@
         }
       ]"
       class="appLauncherItemContainer fill-height d-flex align-center justify-center">
+      <v-progress-linear
+        v-if="loading"
+        class="position-absolute t-0 full-width z-index-two"
+        indeterminate />
       <v-avatar
         :size="imageSize"
         :class="card && 'ms-4'"
