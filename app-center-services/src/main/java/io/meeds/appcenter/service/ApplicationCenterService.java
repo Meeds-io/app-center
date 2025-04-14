@@ -535,6 +535,15 @@ public class ApplicationCenterService {
                           .setOffset(0);
   }
 
+  public List<String> getMandatoryAndFavoriteApplicationShortcuts(String username) {
+    return appCenterStorage.getMandatoryAndFavoriteApplications(username, Pageable.unpaged())
+                           .stream()
+                           .filter(app -> canAccess(app, username))
+                           .map(Application::getShortcut)
+                           .filter(StringUtils::isNotBlank)
+                           .toList();
+  }
+
   public boolean canAccess(Application application, String username) {
     return canAccess(application.getPermissions(), username);
   }
