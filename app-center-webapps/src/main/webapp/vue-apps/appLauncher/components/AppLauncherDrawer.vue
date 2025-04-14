@@ -108,7 +108,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <component
           :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
           v-model="favoriteApplications"
-          class="appLauncherList d-flex flex-wrap me-n2"
+          class="appLauncherList d-flex flex-wrap me-n3"
           @start="drag=true"
           @end="drag=false">
           <div
