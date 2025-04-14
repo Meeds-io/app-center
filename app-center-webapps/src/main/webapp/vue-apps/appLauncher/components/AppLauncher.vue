@@ -26,7 +26,7 @@
           :title="$t('appCenter.appLauncher.topbarIcon.tooltip')"
           icon
           class="text-xs-center"
-          @click="$refs.appDrawer.toggleDrawer()">
+          @click="$refs.appDrawer.open()">
           <v-icon class="appCenterLauncherButtonIcon" size="20">
             fa-th
           </v-icon>

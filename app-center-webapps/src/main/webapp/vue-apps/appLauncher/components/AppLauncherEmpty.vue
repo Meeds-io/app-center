@@ -21,8 +21,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       {{ $t('appCenter.appLauncher.drawer.placeholder') }}
     </div>
     <v-btn
-      :href="$root.appCenterLink"
-      class="btn btn-primary mt-6">
+      class="btn btn-primary mt-6"
+      @click="$root.$emit('app-center-add-app')">
       <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.action') }}</span>
     </v-btn>
   </div>
