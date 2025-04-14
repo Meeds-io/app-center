@@ -89,14 +89,14 @@
         <v-card
           v-if="hover || card"
           :class="{
-            'transition-fast-in-fast-out v-card--reveal mask-color pa-2': !card,
+            'transition-fast-in-fast-out v-card--reveal mask-color px-2 pt-2 pb-1': !card,
             'px-4 py-2': card,
           }"
           :height="card ? 135 : '100%'"
-          :width="card ? '100%' : 'auto'"
+          width="100%"
           class="d-flex flex-column text-start"
           flat>
-          <div v-if="!card" class="text-truncate white--text mb-1">
+          <div v-if="!card" class="text-truncate white--text">
             {{ application.title }}
           </div>
           <div
