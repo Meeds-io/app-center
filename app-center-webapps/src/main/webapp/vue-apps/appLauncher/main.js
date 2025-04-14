@@ -20,13 +20,18 @@ import './initComponents.js';
 //should expose the locale ressources as REST API
 const appId = 'appLauncher';
 
-export async function init(isAdmin, noAutoOpen) {
+let initialized = false;
+
+export async function init(isAdmin, noAutoOpen, shortcuts, shortcut) {
+  if (initialized) {
+    return;
+  }
+  initialized = true;
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
   const urls = [
     `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
     `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
   ];
-  window.require(['SHARED/QuickActionExtensions']);
   //getting locale ressources
   const i18n = await exoi18n.loadLanguageAsync(lang, urls);
   try {
@@ -34,6 +39,8 @@ export async function init(isAdmin, noAutoOpen) {
       data: () => ({
         isAdmin,
         noAutoOpen,
+        shortcut,
+        shortcuts,
         quickActionExtensions: [],
         appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/appCenterUserSetup`,
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),

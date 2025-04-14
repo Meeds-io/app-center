@@ -1,3 +1,7 @@
+<%@page import="org.apache.commons.lang3.StringUtils"%>
+<%@page import="org.apache.commons.collections4.CollectionUtils"%>
+<%@page import="io.meeds.appcenter.service.ApplicationCenterService"%>
+<%@page import="java.util.List"%>
 <%@page import="org.exoplatform.portal.application.PortalRequestContext"%>
 <%@page import="org.exoplatform.services.security.ConversationState"%>
 <%@page import="java.util.Locale"%>
@@ -14,6 +18,8 @@
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
   boolean autoInit = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer") != null;
+  List<String> shortcuts = ExoContainerContext.getService(ApplicationCenterService.class).getMandatoryAndFavoriteApplicationShortcuts(PortalRequestContext.getCurrentInstance().getRemoteUser());
+  String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "[]" : String.format("['%s']", StringUtils.join(shortcuts, "', '"));
 %>
 <div class="VuetifyApp">
   <div
@@ -35,11 +41,13 @@
                 style="font-size: 20px;"></i>
             </span>
           </button>
-          <% if (autoInit) { %>
             <script type="text/javascript">
-            window.require(['SHARED/appLauncherBundle'], app => app.init(<%=isAdmin%>, true));
+            <% if (autoInit) { %>
+            window.require(['SHARED/appLauncherBundle'], app => app.init(<%=isAdmin%>, true, <%=shortcutListString%>));
+            <% } else { %>
+            window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init(<%=isAdmin%>, true, <%=shortcutListString%>, shortcut))));
+            <% } %>
             </script>
-          <% } %>
         </div>
       </div>
     </div>
