@@ -37,7 +37,33 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       </v-btn>
     </template>
     <template v-if="drawer" #content>
-      <v-expand-transition v-if="hasRecentApplications">
+      <div v-if="cardDisplay" class="d-flex justify-space-between">
+        <div class="col-6 pa-0">
+          <div class="ms-4">
+            <categories-filter v-model="categoryId" class="mt-4" />
+          </div>
+        </div>
+        <div class="col-6 pa-0">
+          <application-toolbar
+            id="appLauncherToolbar"
+            :right-text-filter="{
+              minCharacters: 1,
+              placeholder: $t('appCenter.appLauncher.filterPlaceholder'),
+              tooltip: $t('appCenter.appLauncher.filterPlaceholder'),
+              minWidth: 'min(calc(100% - 100px), 275px)',
+            }"
+            :right-select-box="{
+              selected: filter,
+              items: filters,
+            }"
+            class="border-box-sizing px-1 flex-grow-0"
+            hide-left
+            hide-center
+            @filter-text-input="keyword = $event"
+            @filter-select-change="filter = $event" />
+        </div>
+      </div>
+      <v-expand-transition v-else-if="hasRecentApplications">
         <div v-show="!expanded">
           <v-layout class="d-flex flex-column flex-wrap px-4 mt-4">
             <div class="text-header mb-2">
@@ -75,7 +101,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-layout>
         </div>
       </v-expand-transition>
-      <v-layout v-if="hasApplications" class="d-flex flex-column favorite appsContainer px-4 mt-4">
+      <v-layout
+        v-if="hasApplications"
+        :class="!expanded && 'mt-4'"
+        class="d-flex flex-column favorite appsContainer px-4">
         <component
           :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
           v-model="favoriteApplications"
@@ -83,7 +112,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           @start="drag=true"
           @end="drag=false">
           <div
-            v-for="application in applications"
+            v-for="application in filteredApplications"
             :key="application.id"
             :class="cardDisplay && 'mb-4' || 'mb-3'"
             class="flex-grow-1 flex-shrink-0 col-4 pa-0">
@@ -119,17 +148,30 @@ export default {
     applicationsOrder: null,
     drawer: false,
     drag: false,
+    filter: 'ALL',
+    categoryId: null,
     appLoading: null,
+    keyword: null,
     draggedElementIndex: null,
   }),
   computed: {
+    isFavoriteFilter() {
+      return !this.expanded || this.filter === 'FAVORITES';
+    },
     applications() {
-      return this.expanded ? this.availableApplications : this.favoriteApplications;
+      return (this.isFavoriteFilter ? this.favoriteApplications : this.availableApplications) || [];
     },
     sortedApplicationsList() {
-      const apps = this.applications?.slice?.() || [];
-      this.sortApplications(apps);
-      return this.$root.isMobile ? apps.filter(app => app.mobile) : apps;
+      return this.$root.isMobile ? this.applications.filter(app => app.mobile) : this.applications;
+    },
+    filteredApplications() {
+      return this.expanded && (this.keyword || this.categoryId)
+        && this.sortedApplicationsList
+          .filter(c => !this.keyword
+            || c.title.toLowerCase().includes(this.keyword.trim().toLowerCase())
+            || c.description?.toLowerCase?.()?.includes?.(this.keyword.trim().toLowerCase()))
+          .filter(c => !this.categoryId || c.categoryIds?.includes?.(this.categoryId))
+        || this.sortedApplicationsList;
     },
     drawerLoading() {
       return this.loading || !this.applicationsLoaded;
@@ -148,6 +190,15 @@ export default {
     hasRecentApplications() {
       return this.recentApplications?.length;
     },
+    filters() {
+      return [{
+        text: this.$t('appCenter.appLauncher.filter.all'),
+        value: 'ALL',
+      },{
+        text: this.$t('appCenter.appLauncher.filter.favorites'),
+        value: 'FAVORITES',
+      }];
+    },
   },
   watch: {
     drag() {
@@ -164,6 +215,15 @@ export default {
           this.recentApplicationIds = JSON.parse(recentAppIdsString);
         }
       }
+    },
+    expanded() {
+      if (!this.expanded) {
+        this.keyword = null;
+        this.filter = 'ALL';
+      }
+    },
+    filter() {
+      this.retrieveApplications();
     },
   },
   created() {
@@ -193,7 +253,7 @@ export default {
     },
     retrieveApplications() {
       this.loading = true;
-      return this.getApplications(!this.expanded)
+      return this.getApplications(this.isFavoriteFilter)
         .then(data => {
           const applications = data.applications;
           // manage system apps localized names
@@ -205,11 +265,15 @@ export default {
               }
             }
           });
-          this.sortApplications(applications);
           if (this.expanded) {
-            this.availableApplications = applications;
+            this.sortApplicationsByTitle(applications);
           } else {
+            this.sortApplicationsByOrder(applications);
+          }
+          if (this.isFavoriteFilter) {
             this.favoriteApplications = applications;
+          } else {
+            this.availableApplications = applications;
           }
         }).finally(() => this.loading = false);
     },
@@ -253,7 +317,7 @@ export default {
         
       }
     },
-    sortApplications(apps) {
+    sortApplicationsByOrder(apps) {
       apps.sort((a, b) => {
         if (a.order === null && b.order === null) {
           return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
@@ -265,6 +329,9 @@ export default {
           return a.order - b.order;
         }
       });
+    },
+    sortApplicationsByTitle(apps) {
+      apps.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
     },
     toogleFavorite(application) {
       this.loading = true;

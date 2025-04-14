@@ -110,19 +110,29 @@
             <v-btn
               v-if="application.helpPageURL"
               :href="application.helpPageURL"
+              :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
+              :class="card && 'ms-2'"
               small
               icon
               mouseup.stop="0"
               mousedown.stop="0"
               click.stop="0">
-              <v-icon color="white" size="16">fa-question-circle</v-icon>
+              <v-icon
+                :color="!card && 'white'"
+                :size="card && 20 || 16">
+                fa-question-circle
+              </v-icon>
             </v-btn>
             <v-btn
               :disabled="application.mandatory"
+              :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
+              :class="card && 'ms-2'"
               small
               icon
               @click.prevent.stop="toogleFavorite">
-              <v-icon :color="application.favorite && 'yellow'" size="16">
+              <v-icon
+                :color="application.favorite && 'yellow'"
+                :size="card && 20 || 16">
                 {{ (application.favorite || application.mandatory) && 'fa-star' || 'far fa-star' }}
               </v-icon>
             </v-btn>
