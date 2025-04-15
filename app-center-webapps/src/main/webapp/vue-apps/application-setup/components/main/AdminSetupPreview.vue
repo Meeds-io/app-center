@@ -17,7 +17,7 @@
           v-for="application in filteredApplications"
           :key="application.id"
           class="flex-grow-1 flex-shrink-0 col-4 mb-3 pa-0">
-          <app-center-launcher-item
+          <app-center-item
             :application="application"
             class="me-3"
             display-description

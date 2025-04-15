@@ -52,41 +52,6 @@
     </portlet-preferences>
   </portlet>
   <!-- ================================================================ -->
-  <!-- = App Center User Setup Portlet = -->
-  <!-- ================================================================== -->
-  <portlet>
-    <portlet-name>AppCenterUserSetupPortlet</portlet-name>
-    <display-name xml:lang="EN">App center user setup portlet</display-name>
-    <portlet-class>io.meeds.appcenter.portlet.UserSetupPortlet</portlet-class>
-    <init-param>
-      <name>prefetch.resource.bundles</name>
-      <value>locale.addon.appcenter</value>
-    </init-param>
-    <init-param>
-      <name>prefetch.resource.rest</name>
-      <value><![CDATA[/app-center/rest/settings,/app-center/rest/applications?offset=0&limit=12&keyword=,/app-center/rest/favorites]]></value>
-    </init-param>
-    <init-param>
-      <name>layout-css-class</name>
-      <value>no-layout-background-color no-layout-border-radius no-layout-border</value>
-    </init-param>
-    <supports>
-      <mime-type>text/html</mime-type>
-      <portlet-mode>edit</portlet-mode>
-    </supports>
-    <portlet-info>
-      <title>App center user setup portlet</title>
-      <keywords>App center portlets</keywords>
-    </portlet-info>
-    <portlet-preferences>
-      <preference>
-        <name>pageSize</name>
-        <value>10</value>
-        <read-only>false</read-only>
-      </preference>
-    </portlet-preferences>
-  </portlet>
-  <!-- ================================================================ -->
   <!-- = App center My Applications Portlet = -->
   <!-- ================================================================== -->
   <portlet>
