@@ -21,7 +21,6 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     :right="!$vuetify.rtl"
     :allow-expand="expanded"
     :loading="drawerLoading"
-    body-classes="hide-scroll"
     class="appCenterDrawer"
     @expand-updated="expanded = $event">
     <template #title>
@@ -79,7 +78,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                     v-on="on"
                     v-bind="attrs"
                     class="border-color border-radius me-4">
-                    <app-center-launcher-item
+                    <app-center-item
                       :application="application"
                       :loading="appLoading === application.url"
                       min-width="60"
@@ -116,7 +115,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :key="application.id"
             :class="cardDisplay && 'mb-4' || 'mb-3'"
             class="flex-grow-1 flex-shrink-0 col-4 pa-0">
-            <app-center-launcher-item
+            <app-center-item
               :application="application"
               :loading="appLoading === application.url"
               :card="cardDisplay"
@@ -133,6 +132,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
         <app-center-launcher-empty class="mt-12" />
       </div>
+      <app-center-portlet-instance-drawer
+        ref="portletInstanceDrawer" />
     </template>
   </exo-drawer>
 </template>
@@ -246,6 +247,8 @@ export default {
       this.open();
     } else if (this.$utils.getQueryParam('appCenterDrawer')) {
       this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
+    } else if (this.$utils.getQueryParam('appCenterPortlet')) {
+      this.openApplication('PORTLET', this.$utils.getQueryParam('appCenterPortlet'));
     }
   },
   beforeDestroy() {
@@ -350,12 +353,19 @@ export default {
         } else {
           window.open(url);
         }
-      } else if (application?.type === 'DRAWER') {
+      } else {
         this.openApplication(application?.type, application?.url);
       }
     },
     async openApplication(appType, appUrl) {
-      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+      if (appType === 'PORTLET') {
+        this.appLoading = appUrl;
+        try {
+          await this.$refs.portletInstanceDrawer.open(appUrl);
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+      } else if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
         this.appLoading = appUrl;
         try {
           await this.$root.quickActions[appUrl].click();
