@@ -127,7 +127,14 @@ export default {
     async openApplication() {
       const appType = this.application.type;
       const appUrl = this.application.url;
-      if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+      if (appType === 'PORTLET') {
+        this.appLoading = appUrl;
+        try {
+          this.$emit('open-portlet', appUrl);
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+      } else if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
         this.loading = true;
         try {
           await this.$root.quickActions[appUrl].click();
