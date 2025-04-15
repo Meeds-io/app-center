@@ -195,7 +195,7 @@ public class ApplicationRestTest {
                            5l,
                            "icon",
                            null,
-                           0l,
+                           null,
                            false);
   }
 
