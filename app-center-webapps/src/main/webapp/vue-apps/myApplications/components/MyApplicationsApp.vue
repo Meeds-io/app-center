@@ -35,7 +35,8 @@
         <my-applications-list
           :applications-list="filteredApplications"
           :is-loading="isLoading"
-          @list-updated="handleListOrderUpdate" />
+          @list-updated="handleListOrderUpdate"
+          @open-portlet="$refs.portletInstanceDrawer.open($event)" />
       </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
@@ -43,6 +44,8 @@
       :settings="$root.settings"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated" />
+    <app-center-portlet-instance-drawer
+      ref="portletInstanceDrawer" />
   </v-app>
 </template>
 

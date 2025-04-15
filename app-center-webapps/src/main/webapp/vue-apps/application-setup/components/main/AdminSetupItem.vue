@@ -64,7 +64,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         v-model="active"
         class="ma-0 pa-0 absolute-all-center"
         hide-details
-        @change="$emit('set-enabled', active)" />
+        @change="$emit('set-enabled', !active)" />
     </td>
     <td class="text-center">
       <app-center-admin-menu
@@ -100,7 +100,6 @@ export default {
     },
   },
   data: () => ({
-    active: true,
     movingUpIndex: -1,
     movingDownIndex: -1,
     defaultAppImg: '/app-center/skin/images/defaultApp.png',
@@ -109,9 +108,9 @@ export default {
     displayName() {
       return this.item.displayName || this.item.title;
     },
-  },
-  created() {
-    this.active = this.item.active;
+    active() {
+      return this.item.active;
+    },
   },
 };
 </script>
