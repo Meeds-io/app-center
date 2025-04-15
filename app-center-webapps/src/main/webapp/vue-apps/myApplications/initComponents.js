@@ -21,6 +21,8 @@ import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
+import MyApplicationsDrawer from './components/view/MyApplicationsDrawer.vue';
+
 import MyApplicationsSettingsDrawer from './components/settings/MyApplicationsSettingsDrawer.vue';
 
 import * as myApplicationsService from './myApplicationsService.js';
@@ -30,6 +32,7 @@ const components = {
   'my-applications-list': MyApplicationsList,
   'my-applications-toolbar': MyApplicationsToolbar,
   'my-application-item': MyApplicationItem,
+  'my-applications-drawer': MyApplicationsDrawer,
   'my-applications-settings-drawer': MyApplicationsSettingsDrawer
 };
 
