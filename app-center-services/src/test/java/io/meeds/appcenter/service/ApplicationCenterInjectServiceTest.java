@@ -173,7 +173,7 @@ public class ApplicationCenterInjectServiceTest {
                            IMAGE_FILE_ID,
                            "icon",
                            null,
-                           0l,
+                           null,
                            false);
   }
 

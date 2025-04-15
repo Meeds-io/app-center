@@ -75,7 +75,7 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
         OR (favoriteApp.id IS NOT NULL AND favoriteApp.favorite = TRUE)
         OR (favoriteApp.id IS NULL AND app.isDefault = TRUE)
       )
-      ORDER BY favoriteApp.order NULLS LAST, app.isMandatory DESC
+      ORDER BY favoriteApp.order NULLS LAST, app.order NULLS LAST, app.isMandatory DESC
       """)
   Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName")
   String userName, Pageable pageable);
