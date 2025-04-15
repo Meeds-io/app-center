@@ -325,7 +325,7 @@ public class ApplicationCenterStorage {
                            applicationEntity.getImageFileId(),
                            applicationEntity.getIcon(),
                            getImageUrl(applicationEntity.getImageFileId(), applicationEntity.getId(), imageLastModified),
-                           0l,
+                           applicationEntity.getOrder(),
                            applicationEntity.isChangedManually());
   }
 
@@ -342,7 +342,9 @@ public class ApplicationCenterStorage {
       if (userApplication == null) {
         return null;
       }
-      userApplication.setOrder(favoriteApplicationEntity.getOrder());
+      if (favoriteApplicationEntity.getOrder() != null) {
+        userApplication.setOrder(favoriteApplicationEntity.getOrder());
+      }
       userApplication.setFavorite(favoriteApplicationEntity.getFavorite()
           == null ? favoriteApplicationEntity.getApplication().isDefault() :
                   favoriteApplicationEntity.getFavorite().booleanValue());
@@ -372,6 +374,7 @@ public class ApplicationCenterStorage {
                                    application.getShortcut(),
                                    application.getPermissions(),
                                    application.isChangedManually(),
+                                   application.getOrder(),
                                    null);
     }
   }
