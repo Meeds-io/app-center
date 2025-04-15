@@ -32,7 +32,7 @@
     <template v-if="!$root.isMobile" #left>
       <v-btn
         id="applicationToolbarLeftButton"
-        :aria-label="$t('siteManagement.label.btn.add')"
+        :aria-label="$t('appCenter.adminSetupForm.add')"
         :class="$root.isMobile && 'px-0'"
         class="btn btn-primary text-truncate"
         @click="$root.$emit('app-center-drawer-open')">
