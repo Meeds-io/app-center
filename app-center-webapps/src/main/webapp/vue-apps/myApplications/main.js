@@ -41,7 +41,9 @@ export function init(settings) {
     Vue.createApp({
       data: () => ({
         settings,
+        noAutoOpen: true,
         quickActionExtensions: [],
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
         quickActions() {
