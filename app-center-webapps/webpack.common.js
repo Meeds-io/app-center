@@ -24,10 +24,9 @@ module.exports = {
   // can use multiple entry
 
   entry: {
-    adminSetup: "./src/main/webapp/vue-apps/adminSetup/main.js",
-    userSetup: "./src/main/webapp/vue-apps/userSetup/main.js",
+    adminSetup: "./src/main/webapp/vue-apps/application-setup/main.js",
     myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
-    appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
+    appLauncher: "./src/main/webapp/vue-apps/application-launcher/main.js",
     applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js",
     quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
   },

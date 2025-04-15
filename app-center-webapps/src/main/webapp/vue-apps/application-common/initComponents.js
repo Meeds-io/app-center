@@ -14,9 +14,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import './initComponents.js';
-import '../application-common/initComponents.js';
+import AppPortletInstanceDrawer from './components/AppPortletInstanceDrawer.vue';
+import AppItem from './components/AppItem.vue';
 
-export function formatSearchResult(result) {
-  return result && result.applications;
+const components = {
+  'app-center-item': AppItem,
+  'app-center-portlet-instance-drawer': AppPortletInstanceDrawer,
+};
+
+for (const key in components) {
+  Vue.component(key, components[key]);
 }
