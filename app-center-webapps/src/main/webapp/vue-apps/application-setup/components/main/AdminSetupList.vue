@@ -29,7 +29,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <app-center-admin-item
           :item="props.item"
           :index="props.index"
-          :length="filteredApplicationsList.length"
+          :length="filteredApplications.length"
           :moving-up="movingUpId === props.item.id"
           :moving-down="movingDownId === props.item.id"
           @set-enabled="setEnabled(props.item, $event)"
@@ -77,15 +77,18 @@ export default {
   }),
   computed: {
     applications() {
-      return this.$root.applications.slice(0, this.limit);
+      return this.$root.applications || [];
     },
-    filteredApplicationsList() {
+    filteredApplications() {
       return this.keyword
        && this.applications.filter(a => a.displayName.toLowerCase().includes(this.keyword.trim().toLowerCase()))
        || this.applications;
     },
+    filteredApplicationsList() {
+      return this.filteredApplications.slice(0, this.limit);
+    },
     hasMore() {
-      return this.$root.applications.length > this.limit;
+      return this.filteredApplications.length > this.limit;
     },
     headers() {
       return this.$root.isMobile && [{
