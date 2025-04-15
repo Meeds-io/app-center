@@ -213,7 +213,7 @@ export default {
       if (this.drawer) {
         this.init();
 
-        const recentAppIdsString = window.localStorage.getItem('meeds-app-center-recent-apps');
+        const recentAppIdsString = window.localStorage.getItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`);
         if (!recentAppIdsString?.length) {
           this.recentApplicationIds = [];
         } else {
