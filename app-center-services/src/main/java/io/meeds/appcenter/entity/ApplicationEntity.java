@@ -105,6 +105,9 @@ public class ApplicationEntity {
   @Column(name = "IS_CHANGED_MANUALLY")
   private boolean                               isChangedManually;
 
+  @Column(name = "APPLICATION_ORDER", nullable = true)
+  private Long                                  order;
+
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)

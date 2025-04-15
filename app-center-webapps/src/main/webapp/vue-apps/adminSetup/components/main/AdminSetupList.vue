@@ -20,16 +20,23 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       :headers="headers"
       :items="filteredApplicationsList"
       :no-data-text="$t('appCenter.adminSetupForm.noApp')"
-      disable-pagination
+      item-key="id"
       hide-default-footer
+      disable-pagination
       disable-sort
       dense>
       <template #item="props">
         <app-center-admin-item
           :item="props.item"
+          :index="props.index"
+          :length="filteredApplicationsList.length"
+          :moving-up="movingUpId === props.item.id"
+          :moving-down="movingDownId === props.item.id"
           @set-enabled="setEnabled(props.item, $event)"
           @edit="editApplication(props.item)"
-          @remove="applicationToDelete = props.item" />
+          @remove="applicationToDelete = props.item"
+          @move-up="moveUp(props.item)"
+          @move-down="moveDown(props.item)" />
       </template>
       <template v-if="hasMore" #footer>
         <v-btn
@@ -61,32 +68,54 @@ export default {
   },
   data: () => ({
     loading: true,
+    movingUpId: null,
+    movingDownId: null,
     applicationToDelete: null,
     showDeleteApplicationModal: false,
     pageSize: 20,
     limit: 20,
   }),
   computed: {
-    sortedApplicationsList() {
-      const applicationsList = this.$root.applications?.filter?.(t => t.title) || [];
-      applicationsList.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
-      return applicationsList.slice(0, this.limit);
+    applications() {
+      return this.$root.applications.slice(0, this.limit);
     },
     filteredApplicationsList() {
       return this.keyword
-       && this.sortedApplicationsList.filter(a => a.displayName.toLowerCase().includes(this.keyword.trim().toLowerCase()))
-       || this.sortedApplicationsList;
+       && this.applications.filter(a => a.displayName.toLowerCase().includes(this.keyword.trim().toLowerCase()))
+       || this.applications;
     },
     hasMore() {
       return this.$root.applications.length > this.limit;
     },
     headers() {
-      return [{
+      return this.$root.isMobile && [{
         text: '',
         width: '30px',
         class: 'ps-0'
       }, {
         text: this.$t('appCenter.adminSetupList.name'),
+        class: 'pa-0'
+      }, {
+        text: this.$t('appCenter.adminSetupForm.active'),
+        width: '70px',
+        align: 'center',
+        class: 'px-0'
+      }, {
+        text: this.$t('appCenter.adminSetupList.actions'),
+        width: '70px',
+        align: 'center',
+        class: 'px-0'
+      }] || [{
+        text: '',
+        width: '30px',
+        class: 'ps-0'
+      }, {
+        text: this.$t('appCenter.adminSetupList.name'),
+        class: 'pa-0'
+      }, {
+        text: this.$t('appCenter.adminSetupList.move'),
+        width: '88px',
+        align: 'center',
         class: 'pa-0'
       }, {
         text: this.$t('appCenter.adminSetupForm.active'),
@@ -144,7 +173,10 @@ export default {
               app.displayName = app.title;
             }
           });
-          this.$root.applications = data.applications;
+          const applications = data?.applications?.filter?.(t => t.title) || [];
+          this.sortApplicationsByOrder(applications);
+          applications.forEach((app, index) => app.order = index);
+          this.$root.applications = applications;
         }).finally(() => this.loading = false);
     },
     deleteApplication() {
@@ -202,11 +234,61 @@ export default {
           this.$root.$emit('app-center-refresh-enabled', application, enabled);
         });
     },
-    getAppIndex(appList, appId) {
-      return appList.findIndex(app => app.id === appId);
-    },
     loadMore() {
       this.limit += this.pageSize;
+    },
+    async moveDown(app) {
+      const index = this.$root.applications.indexOf(app);
+      if (index >= 0) {
+        this.movingDownId = app.id;
+        try {
+          await this.updateItemOrder(this.$root.applications[index], index + 1);
+          await this.updateItemOrder(this.$root.applications[index + 1], index);
+          await this.getApplicationsList();
+        } finally {
+          this.movingDownId = null;
+        }
+      }
+    },
+    async moveUp(app) {
+      const index = this.$root.applications.indexOf(app);
+      if (index >= 0) {
+        this.movingUpId = app.id;
+        try {
+          await this.updateItemOrder(this.$root.applications[index], index - 1);
+          await this.updateItemOrder(this.$root.applications[index - 1], index);
+          await this.getApplicationsList();
+        } finally {
+          this.movingUpId = null;
+        }
+      }
+    },
+    updateItemOrder(app, order) {
+      return fetch('/app-center/rest/applications', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'PUT',
+        body: JSON.stringify({
+          ...app,
+          order,
+        })
+      });
+    },
+    sortApplicationsByOrder(apps) {
+      apps.sort((a, b) => {
+        if (a.order === null && b.order === null) {
+          return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
+        } else if (a.order === null) {
+          return 1;
+        } else if (b.order === null) {
+          return -1;
+        } else {
+          return a.order - b.order;
+        }
+      });
     },
   }
 };

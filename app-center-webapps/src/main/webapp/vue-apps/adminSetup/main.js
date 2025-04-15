@@ -38,6 +38,9 @@ export function init() {
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        },
         quickActions() {
           return this.quickActionExtensions
             .filter(ext => ext.id)

@@ -313,6 +313,7 @@ public class ApplicationCenterStorageTest {
                                  SHORTCUT,
                                  Collections.singletonList(PERMISSIONS_2),
                                  false,
+                                 null,
                                  null);
   }
 
@@ -336,7 +337,7 @@ public class ApplicationCenterStorageTest {
                            null,
                            "icon",
                            null,
-                           0l,
+                           null,
                            false);
   }
 
