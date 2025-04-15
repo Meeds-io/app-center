@@ -20,7 +20,7 @@
 <template>
   <v-hover v-model="hover">
     <v-card
-      v-bind="application.type === 'LINK' && {
+      v-bind="application.type === 'LINK' && !readonly && {
         href: computedUrl,
         target: target,
         rel: 'nofollow noreferrer noopener',
@@ -139,9 +139,9 @@
               icon
               @click.prevent.stop="toogleFavorite">
               <v-icon
-                :color="application.favorite && 'yellow'"
+                :color="(application.favorite || readonly) && 'yellow'"
                 :size="card && 20 || 16">
-                {{ (application.favorite || application.mandatory) && 'fa-star' || 'far fa-star' }}
+                {{ (application.favorite || application.mandatory || readonly) && 'fa-star' || 'far fa-star' }}
               </v-icon>
             </v-btn>
           </div>
@@ -201,6 +201,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    readonly: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     hover: false,
@@ -233,16 +237,19 @@ export default {
       this.$emit('open');
     },
     addToRecent() {
-      const recentAppIdsString = window.localStorage.getItem('meeds-app-center-recent-apps');
+      if (this.readonly) {
+        return;
+      }
+      const recentAppIdsString = window.localStorage.getItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`);
       if (!recentAppIdsString?.length) {
-        window.localStorage.setItem('meeds-app-center-recent-apps', JSON.stringify([this.application.id]));
+        window.localStorage.setItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`, JSON.stringify([this.application.id]));
       } else {
         const recentAppIds = JSON.parse(recentAppIdsString);
         if (recentAppIds.includes(this.application.id)) {
           recentAppIds.splice(recentAppIds.indexOf(this.application.id), 1);
         }
         recentAppIds.unshift(this.application.id);
-        window.localStorage.setItem('meeds-app-center-recent-apps', JSON.stringify(recentAppIds));
+        window.localStorage.setItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`, JSON.stringify(recentAppIds));
       }
     },
     toogleFavorite() {
