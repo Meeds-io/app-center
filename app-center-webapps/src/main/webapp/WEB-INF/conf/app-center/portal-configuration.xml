@@ -45,7 +45,7 @@
           <description>AppCenter appLauncher portlet</description>
           <object type="org.exoplatform.portal.config.serialize.PortletApplication">
             <field name="id">
-              <string>appcenter</string>
+              <string>mandatory-appcenter</string>
             </field>
             <field name="title">
               <string>generalSettings.appcenter.name</string>
