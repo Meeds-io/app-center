@@ -11,40 +11,19 @@
       <v-icon size="20" class="ms-5">fa-times</v-icon>
     </v-card>
     <v-divider />
-    <div class="d-flex flex-wrap ma-5">
-      <div
-        v-for="application in filteredApplications"
-        :key="application.id"
-        class="col-4 pa-0 mt-4">
-        <v-hover>
-          <v-card
-            slot-scope="{ hover }"
-            :flat="!hover"
-            :class="{'z-index-one': hover}"
-            class="d-flex flex-column align-center fill-height">
-            <v-img
-              v-if="application.imageUrl"
-              :src="application.imageUrl"
-              class="mt-2"
-              max-height="65"
-              max-width="65"
-              width="65" />
-            <v-icon
-              v-else-if="application.icon"
-              class="d-flex align-center justify-center mt-2"
-              size="65">
-              {{ application.icon }}
-            </v-icon>
-            <v-img
-              v-else
-              src="/app-center/skin/images/defaultApp.png"
-              max-height="65"
-              max-width="65"
-              class="mt-2"
-              width="65" />
-            <span class="text-body mt-2">{{ application.title }}</span>
-          </v-card>
-        </v-hover>
+    <div class="d-flex flex-wrap my-4 ms-4 me-1">
+      <div class="appLauncherList d-flex flex-wrap border-box-sizing">
+        <div
+          v-for="application in filteredApplications"
+          :key="application.id"
+          class="flex-grow-1 flex-shrink-0 col-4 mb-3 pa-0">
+          <app-center-launcher-item
+            :application="application"
+            class="me-3"
+            display-description
+            display-name
+            readonly />
+        </div>
       </div>
     </div>
   </v-card>
