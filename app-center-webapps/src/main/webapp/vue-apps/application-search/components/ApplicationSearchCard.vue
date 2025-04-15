@@ -20,14 +20,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       href: applicationUrl,
       target: targetUrl,
       rel: 'nofollow noreferrer noopener',
-    } || {
-      loading,
     }"
     v-on="result.type !== 'LINK' && {
       click: openApplication,
     }"
     class="searchApplicationCard d-flex flex-column"
     outlined>
+    <v-progress-linear
+      v-if="loading"
+      class="position-absolute t-0 full-width z-index-two"
+      indeterminate />
     <div class="image mx-auto">
       <a>
         <v-img
@@ -56,6 +58,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       class="mx-auto text-subtitle text-truncate-2 px-2 pt-2 pb-4">
       {{ result.description }}
     </div>
+    <app-center-portlet-instance-drawer
+      v-if="openPortletDrawer"
+      ref="portletInstanceDrawer"
+      @closed="closePortletDrawer" />
   </v-card>
 </template>
 <script>
@@ -73,6 +79,7 @@ export default {
   },
   data: () => ({
     loading: false,
+    openPortletDrawer: false,
   }),
   computed: {
     imageUrl() {
@@ -94,10 +101,21 @@ export default {
   },
   methods: {
     openApplication() {
+      const appType = this.result.type;
+      const appUrl = this.result.url;
       window.require(['SHARED/QuickActionExtensions'], () => {
-        const appType = this.result.type;
-        const appUrl = this.result.url;
-        if (appType === 'DRAWER') {
+        if (appType === 'PORTLET') {
+          window.setTimeout(async () => {
+            this.loading = true;
+            try {
+              this.openPortletDrawer = true;
+              await this.$nextTick();
+              await this.$refs?.portletInstanceDrawer?.open?.(appUrl);
+            } finally {
+              window.setTimeout(() => this.loading = false, 500);
+            }
+          }, 10);
+        } else if (appType === 'DRAWER') {
           this.$utils.includeExtensions('QuickActionExtension');
           const quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
           const ext = quickActionExtensions.find(ext => ext.id === appUrl);
@@ -111,6 +129,9 @@ export default {
           }
         }
       });
+    },
+    closePortletDrawer() {
+      window.setTimeout(() => this.openPortletDrawer = false, 200);
     },
   },
 };

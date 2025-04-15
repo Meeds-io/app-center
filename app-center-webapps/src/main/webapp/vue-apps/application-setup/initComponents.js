@@ -31,8 +31,6 @@ import PortletInstanceSuggester from './components/form/PortletInstanceSuggester
 
 import ApplicationIcon from './components/view/ApplicationIcon.vue';
 
-import AppLauncherItem from '../appLauncher/components/AppLauncherItem.vue';
-
 const components = {
   'app-center-admin-setup': AdminSetupApp,
   'app-center-admin-toolbar': AdminSetupToolbar,
@@ -46,7 +44,6 @@ const components = {
   'app-center-icon': ApplicationIcon,
   'quick-action-suggester': QuickActionSuggester,
   'portlet-instance-suggester': PortletInstanceSuggester,
-  'app-center-launcher-item': AppLauncherItem,
 };
 
 for (const key in components) {

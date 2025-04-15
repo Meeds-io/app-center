@@ -14,14 +14,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import UserAuthorizedApplications from './components/UserAuthorizedApplications.vue';
-import UserFavoriteApplications from './components/UserFavoriteApplications.vue';
-import AppCenterUserSetup from './components/UserSetup.vue';
+import AppLauncher from './components/AppLauncher.vue';
+import AppLauncherDrawer from './components/AppLauncherDrawer.vue';
+import AppLauncherEmpty from './components/AppLauncherEmpty.vue';
 
 const components = {
-  'user-authorizedApplications': UserAuthorizedApplications,
-  'user-favoriteApplications': UserFavoriteApplications,
-  'app-center-user-setup': AppCenterUserSetup,
+  'app-center-launcher': AppLauncher,
+  'app-center-launcher-empty': AppLauncherEmpty,
+
+  'app-center-launcher-drawer': AppLauncherDrawer,
 };
 
 for (const key in components) {

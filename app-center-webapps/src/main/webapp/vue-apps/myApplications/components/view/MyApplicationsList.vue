@@ -48,7 +48,8 @@
         :max-width="125"
         :min-height="125"
         :max-height="150"
-        class="d-flex ma-0 flex-grow-1" />
+        class="d-flex ma-0 flex-grow-1"
+        @open-portlet="$emit('open-portlet', $event)" />
     </component>
   </v-layout>
 </template>

@@ -17,7 +17,7 @@
   }
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
-  boolean autoInit = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer") != null;
+  boolean autoInit = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer") != null || PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterPortlet") != null;
   List<String> shortcuts = ExoContainerContext.getService(ApplicationCenterService.class).getMandatoryAndFavoriteApplicationShortcuts(PortalRequestContext.getCurrentInstance().getRemoteUser());
   String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "[]" : String.format("['%s']", StringUtils.join(shortcuts, "', '"));
 %>
