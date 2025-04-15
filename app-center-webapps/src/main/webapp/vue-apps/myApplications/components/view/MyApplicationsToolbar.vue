@@ -31,13 +31,13 @@
       <template v-if="hasApplications">
         <v-btn
           v-if="!hover || !isAdmin"
-          :href="userAppSetupUrl"
+          :loading="loading === 'seeMore'"
           color="primary"
-          target="_self"
           class="pa-0 text-font-size"
           small
           text
-          link>
+          link
+          @click="openApplications('seeMore')">
           <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
@@ -47,15 +47,15 @@
           bottom>
           <template #activator="{ on, attrs }">
             <v-btn
-              :href="userAppSetupUrl"
-              target="_self"
+              v-bind="attrs"
+              v-on="on"
+              :loading="loading === 'seeMoreIcon'"
               color="primary"
               class="ms-2 text-font-size"
               small
               link
               icon
-              v-bind="attrs"
-              v-on="on">
+              @click="openApplications('seeMoreIcon')">
               <v-icon
                 :size="18"
                 class="icon-default-size">
@@ -71,12 +71,12 @@
         bottom>
         <template #activator="{ on, attrs }">
           <v-btn
+            v-bind="attrs"
+            v-on="on"
             class="ms-2 text-font-size"
             small
             link
             icon
-            v-bind="attrs"
-            v-on="on"
             @click="$emit('open-settings')">
             <v-icon
               :size="18"
@@ -92,14 +92,14 @@
         bottom>
         <template #activator="{ on, attrs }">
           <v-btn
-            :href="userAppSetupUrl"
-            target="_self"
+            v-bind="attrs"
+            v-on="on"
+            :loading="loading === 'addAppIcon'"
             class="ms-2 text-font-size"
             small
             link
             icon
-            v-bind="attrs"
-            v-on="on">
+            @click="openApplications('seeMoreIcon')">
             <v-icon
               :size="18"
               class="icon-default-color icon-default-size">
@@ -110,15 +110,13 @@
         {{ $t('myApplications.add.application.tooltip') }}
       </v-tooltip>
     </div>
+    <my-applications-drawer
+      v-if="applicationsDrawer"
+      ref="applicationsDrawer" />
   </div>
 </template>
 <script>
 export default {
-  data() {
-    return {
-      userAppSetupUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup`,
-    };
-  },
   props: {
     hasApplications: {
       type: Boolean,
@@ -141,10 +139,34 @@ export default {
       default: true
     }
   },
+  data: () => ({
+    loading: false,
+    applicationsDrawer: false,
+  }),
   computed: {
     headerLabel() {
       return this.headerTitle || this.$t('myApplications.name.label');
-    }
-  }
+    },
+  },
+  methods: {
+    openApplications(app) {
+      this.loading = app;
+      window.require(['SHARED/appLauncherBundle'], this.openApplicationsDrawer);
+    },
+    openApplicationsDrawer() {
+      this.applicationsDrawer = true;
+      this.$nextTick()
+        .then(() => {
+          const lang = eXo.env.portal.language;
+          const urls = [
+            `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
+            `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
+          ];
+          return exoi18n.loadLanguageAsync(lang, urls);
+        })
+        .then(() => this.$refs.applicationsDrawer.open())
+        .finally(() => this.loading = null);
+    },
+  },
 };
 </script>
