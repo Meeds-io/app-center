@@ -32,6 +32,33 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </span>
       </div>
     </td>
+    <td class="pa-0" width="88px">
+      <div class="d-flex justify-center">
+        <v-card
+          class="d-flex"
+          width="88"
+          flat>
+          <v-btn
+            v-if="index > 0"
+            :title="$t('appCenter.adminSetupList.moveUp')"
+            :loading="movingUp"
+            class="ms-1 me-auto"
+            icon
+            @click="$emit('move-up')">
+            <v-icon size="20">fa-arrow-up</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="index < (length - 1)"
+            :title="$t('appCenter.adminSetupList.moveDown')"
+            :loading="movingDown"
+            class="me-1 ms-auto"
+            icon
+            @click="$emit('move-down')">
+            <v-icon size="20">fa-arrow-down</v-icon>
+          </v-btn>
+        </v-card>
+      </div>
+    </td>
     <td class="text-center position-relative">
       <v-switch
         v-model="active"
@@ -54,10 +81,28 @@ export default {
     item: {
       type: Object,
       default: null,
-    }
+    },
+    index: {
+      type: Number,
+      default: () => 0,
+    },
+    length: {
+      type: Number,
+      default: () => 0,
+    },
+    movingUp: {
+      type: Boolean,
+      default: false,
+    },
+    movingDown: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     active: true,
+    movingUpIndex: -1,
+    movingDownIndex: -1,
     defaultAppImg: '/app-center/skin/images/defaultApp.png',
   }),
   computed: {

@@ -51,64 +51,15 @@
 </template>
 <script>
 export default {
-  data: () => ({
-    applications: [],
-  }),
-  created() {
-    this.$root.$on('app-center-refresh-list', this.refresh);
-    this.$root.$on('app-center-refresh-enabled', this.refresh);
-    this.refresh();
-  },
-  beforeDestroy() {
-    this.$root.$off('app-center-refresh-list', this.refresh);
-    this.$root.$off('app-center-refresh-enabled', this.refresh);
-  },
   computed: {
-    sortedApplications() {
-      const apps = this.applications || [];
-      apps.sort((a, b) => {
-        if (a.order === null && b.order === null) {
-          return this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase());
-        } else if (a.order === null) {
-          return 1;
-        } else if (b.order === null) {
-          return -1;
-        } else {
-          return a.order - b.order;
-        }
-      });
-      return apps;
+    favoriteApplications() {
+      return this.$root.applications?.filter?.(app => app.default || app.mandatory) || [];
     },
     filteredApplications() {
-      return this.sortedApplications.filter(app => !this.$root.mobilePreview || app.mobile);
+      return this.favoriteApplications.filter(app => !this.$root.mobilePreview || app.mobile);
     },
     hasApplications() {
-      return this.applications?.length;
-    },
-  },
-  methods: {
-    refresh() {
-      return fetch('/app-center/rest/favorites', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error getting favorite applications list');
-          }
-        })
-        .then(data => {
-          // manage system apps localized names
-          data.applications.forEach(app => {
-            const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
-            if (this.$te(`appCenter.system.application.${appTitle}`)) {
-              app.title = this.$t(`appCenter.system.application.${appTitle}`);
-            }
-          });
-          this.applications = [...data.applications];
-        }).finally(() => this.loading = false);
+      return this.filteredApplications?.length;
     },
   },
 };
