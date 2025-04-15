@@ -182,4 +182,11 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-mip-185-09">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="APPLICATION_ORDER" type="BIGINT">
+      </column>
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>
