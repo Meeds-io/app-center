@@ -18,42 +18,6 @@
 * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-export function getFavoriteApplications(size) {
-  return fetch(`/app-center/rest/favorites?size=${size}`, {
-    credentials: 'include',
-    method: 'GET'
-  })
-    .then(resp => {
-      if (resp?.ok) {
-        return resp.json();
-      } else {
-        throw new Error(
-          'Error when getting the favorite applications list'
-        );
-      }
-    });
-}
-
-export async function updateApplicationsOrder(applicationsOrder) {
-  try {
-    const response = await fetch('/app-center/rest/favorites', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      method: 'PUT',
-      body: JSON.stringify(applicationsOrder),
-    });
-    if (!response.ok) {
-      console.error(`Failed to update applications order, status: ${response.status}`);
-    }
-    return true;
-  } catch (error) {
-    console.error('Error updating applications order:', error);
-    return false;
-  }
-}
-
 export function saveSettings(saveSettingsURL, settings) {
   const formData = new FormData();
   if (settings) {
