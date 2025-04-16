@@ -22,7 +22,7 @@ const appId = 'appLauncher';
 
 let initialized = false;
 
-export async function init(isAdmin, noAutoOpen, shortcuts, shortcut) {
+export async function init({isAdmin, pinnedApplicationIds}, noAutoOpen, shortcuts, shortcut) {
   if (initialized) {
     return;
   }
@@ -41,6 +41,7 @@ export async function init(isAdmin, noAutoOpen, shortcuts, shortcut) {
         noAutoOpen,
         shortcut,
         shortcuts,
+        pinnedApplicationIds,
         quickActionExtensions: [],
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),

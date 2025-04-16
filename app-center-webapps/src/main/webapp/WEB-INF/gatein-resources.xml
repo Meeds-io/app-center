@@ -126,6 +126,37 @@
     </module>
   </portlet>
 
+  <portlet>
+    <name>UserPinnedApplications</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/appCenterTopbarPinnedApplication.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
+    </module>
+  </portlet>
+
   <module>
     <name>adminSetupPortletBundle</name>
     <script>
