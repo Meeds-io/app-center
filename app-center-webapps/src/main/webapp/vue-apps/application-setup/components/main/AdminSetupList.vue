@@ -141,29 +141,19 @@ export default {
     },
   },
   created() {
-    this.$root.$on('app-center-refresh-list', this.getApplicationsList);
+    this.$root.$on('app-center-refresh-list', this.getApplications);
     this.init();
   },
   beforeDestroy() {
-    this.$root.$off('app-center-refresh-list', this.getApplicationsList);
+    this.$root.$off('app-center-refresh-list', this.getApplications);
   },
   methods: {
     init() {
-      return this.getApplicationsList()
+      return this.getApplications()
         .finally(() => this.$root.$applicationLoaded());
     },
-    getApplicationsList() {
-      return fetch('/app-center/rest/applications/all', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error when getting the favorite applications list');
-          }
-        })
+    getApplications() {
+      return this.$applicationService.getApplications(true)
         .then(data => {
           data.applications.forEach(app => {
             if (app.system) {
@@ -183,17 +173,7 @@ export default {
         }).finally(() => this.loading = false);
     },
     deleteApplication() {
-      return fetch(`/app-center/rest/applications/${this.applicationToDelete.id}`,{
-        method: 'DELETE',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json;
-          } else {
-            throw new Error('Error when deleting application by id');
-          }
-        })
+      return this.$applicationService.deleteApplication(this.applicationToDelete.id)
         .then(() => {
           this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationDeletedSuccessfully'), 'success');
           this.$root.$emit('app-center-refresh-list');
@@ -202,15 +182,7 @@ export default {
         .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorDeletingApplication'), 'error'));
     },
     updateApplication(application) {
-      return fetch('/app-center/rest/applications', {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'PUT',
-        body: JSON.stringify(application)
-      })
+      return this.$applicationService.updateApplication(application)
         .catch(e => {
           const UNAUTHORIZED_ERROR_CODE = 401;
           if (e.response.status === UNAUTHORIZED_ERROR_CODE) {
@@ -247,7 +219,7 @@ export default {
         try {
           await this.updateItemOrder(this.$root.applications[index], index + 1);
           await this.updateItemOrder(this.$root.applications[index + 1], index);
-          await this.getApplicationsList();
+          await this.getApplications();
         } finally {
           this.movingDownId = null;
         }
@@ -260,24 +232,16 @@ export default {
         try {
           await this.updateItemOrder(this.$root.applications[index], index - 1);
           await this.updateItemOrder(this.$root.applications[index - 1], index);
-          await this.getApplicationsList();
+          await this.getApplications();
         } finally {
           this.movingUpId = null;
         }
       }
     },
     updateItemOrder(app, order) {
-      return fetch('/app-center/rest/applications', {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'PUT',
-        body: JSON.stringify({
-          ...app,
-          order,
-        })
+      return this.$applicationService.updateApplication({
+        ...app,
+        order,
       });
     },
     sortApplicationsByOrder(apps) {
