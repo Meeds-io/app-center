@@ -19,6 +19,7 @@
 -->
 <template>
   <v-btn
+    v-if="!hidden"
     v-bind="application?.type === 'LINK' && !readonly && {
       href: computedUrl,
       target: target,
@@ -61,6 +62,10 @@ export default {
     application: {
       type: Object,
       default: null,
+    },
+    hidden: {
+      type: Boolean,
+      default: false,
     },
   },
   data: () => ({
