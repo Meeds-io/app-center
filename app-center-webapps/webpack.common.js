@@ -24,11 +24,14 @@ module.exports = {
   // can use multiple entry
 
   entry: {
+    appCenterCommon: "./src/main/webapp/vue-apps/application-common/main.js",
     adminSetup: "./src/main/webapp/vue-apps/application-setup/main.js",
     myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
     appLauncher: "./src/main/webapp/vue-apps/application-launcher/main.js",
     applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js",
     quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
+    appCenterTopbarExtension: "./src/main/webapp/vue-apps/topbar-extension/extensions.js",
+    appCenterTopbarApplication: "./src/main/webapp/vue-apps/topbar-application/main.js",
   },
   output: {
     filename: 'js/[name].bundle.js',
