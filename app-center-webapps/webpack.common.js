@@ -32,6 +32,7 @@ module.exports = {
     quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
     appCenterTopbarExtension: "./src/main/webapp/vue-apps/topbar-extension/extensions.js",
     appCenterTopbarApplication: "./src/main/webapp/vue-apps/topbar-application/main.js",
+    appCenterTopbarPinnedApplication: "./src/main/webapp/vue-apps/topbar-pinned-applications/main.js",
   },
   output: {
     filename: 'js/[name].bundle.js',
