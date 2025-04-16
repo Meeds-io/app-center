@@ -67,6 +67,46 @@
         </object-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>addPlugin</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.commons.addons.AddOnPluginImpl</type>
+      <init-params>
+        <value-param>
+          <name>priority</name>
+          <value>15</value>
+        </value-param>
+        <value-param>
+          <name>containerName</name>
+          <value>middle-topNavigation-container</value>
+        </value-param>
+        <object-param>
+          <name>AppCenterPinnedApplications</name>
+          <description>AppCenter User Pinned Applications</description>
+          <object type="org.exoplatform.portal.config.serialize.PortletApplication">
+            <field name="id">
+              <string>mandatory-user-pinned-applications</string>
+            </field>
+            <field name="title">
+              <string>generalSettings.appcenterPinnedApplications.name</string>
+            </field>
+            <field name="description">
+              <string>generalSettings.appcenterPinnedApplications.description</string>
+            </field>
+            <field name="icon">
+              <string>fas fa-thumbtack</string>
+            </field>
+            <field name="state">
+              <object type="org.exoplatform.portal.config.model.TransientApplicationState">
+                <field name="contentId">
+                  <string>app-center/UserPinnedApplications</string>
+                </field>
+              </object>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
 </configuration>

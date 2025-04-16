@@ -108,4 +108,22 @@
       <keywords>App center portlets</keywords>
     </portlet-info>
   </portlet>
+  <portlet>
+    <portlet-name>UserPinnedApplications</portlet-name>
+    <display-name xml:lang="EN">User Pinned Applications</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/WEB-INF/jsp/appCenter/appPins.jsp</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.QuickActions</resource-bundle>
+    <portlet-info>
+      <title>User Pinned Applications</title>
+      <keywords>Pinned Applications</keywords>
+    </portlet-info>
+  </portlet>
 </portlet-app>
