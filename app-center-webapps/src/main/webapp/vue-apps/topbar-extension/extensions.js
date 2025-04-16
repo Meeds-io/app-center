@@ -25,7 +25,7 @@ extensionRegistry.registerExtension('Topbar', 'ApplicationExtension', {
   loadApplication: async topbarApplication => {
     const applications = await getApplications();
     const application = applications.find(app => app.id === Number(topbarApplication?.properties?.applicationId));
-    if (application) {
+    if (application?.active) {
       return Object.assign(topbarApplication, {
         name: application.title,
         description: application.description,
