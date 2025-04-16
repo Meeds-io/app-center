@@ -504,46 +504,34 @@ export default {
     close() {
       this.$refs.formDrawer.close();
     },
-    save() {
-      const isNew = !this.application.id;
-      this.loading = true;
-      return fetch('/app-center/rest/applications', {
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: isNew ? 'POST' : 'PUT',
-        body: JSON.stringify(this.application)
-      })
-        .then(resp => {
-          if (resp?.ok) {
-            if (isNew) {
-              return resp.json();
-            } else {
-              return this.application;
-            }
-          } else {
-            throw new Error();
-          }
-        })
-        .then(async app => {
-          await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
-          await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
-          await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
-          this.$root.$emit('app-center-refresh-list');
-          if (isNew) {
-            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
-          } else {
-            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
-          }
-          this.close();
-        })
-        .catch(() => this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error'))
-        .finally(() => this.loading = false);
-    },
     shortcutExists(c) {
       return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application.id);
+    },
+    async save() {
+      const isNew = !this.application.id;
+      this.loading = true;
+      try {
+        let app = this.application;
+        if (isNew) {
+          app = await this.$applicationService.createApplication(this.application);
+        } else {
+          await this.$applicationService.updateApplication(this.application);
+        }
+        await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
+        await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
+        await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
+        this.$root.$emit('app-center-refresh-list');
+        if (isNew) {
+          this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
+        } else {
+          this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+        }
+        this.close();
+      } catch (e) {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error');
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };
