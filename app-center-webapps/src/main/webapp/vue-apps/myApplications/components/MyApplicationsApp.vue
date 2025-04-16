@@ -108,7 +108,7 @@ export default {
     },
     getFavoriteApplications() {
       this.isLoading = true;
-      return this.$myApplicationsService.getFavoriteApplications(this.maxAppsToList)
+      return this.$applicationFavoriteService.getFavorites(this.maxAppsToList)
         .then((data) => {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
@@ -184,7 +184,7 @@ export default {
         }
       }
       if (newApplicationsOrders.length) {
-        await this.$myApplicationsService.updateApplicationsOrder(newApplicationsOrders);
+        await this.$applicationFavoriteService.updateFavoritesOrder(newApplicationsOrders);
         this.favoriteApplications = [...applicationList];
       }
     },
