@@ -83,6 +83,9 @@
       <depends>
         <module>QuickActionExtensions</module>
       </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
     </module>
   </portlet>
 
@@ -117,6 +120,9 @@
       <depends>
         <module>QuickActionExtensions</module>
       </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
     </module>
   </portlet>
 
@@ -146,6 +152,9 @@
     </depends>
     <depends>
       <module>suggester</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
     </depends>
   </module>
 
@@ -185,6 +194,9 @@
     <depends>
       <module>QuickActionExtensions</module>
     </depends>
+    <depends>
+      <module>appCenterCommon</module>
+    </depends>
   </module>
 
   <module>
@@ -204,6 +216,9 @@
     </depends>
     <depends>
       <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
     </depends>
     <depends>
       <module>extensionRegistry</module>
@@ -234,6 +249,85 @@
     </depends>
     <depends>
       <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>AppCenterTopbarExtension</name>
+    <load-group>generalSettingsGrp</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterTopbarExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>appCenterCommon</name>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterCommon.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>topbarApplication</name>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterTopbarApplication.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>QuickActionExtensions</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
     </depends>
   </module>
 
