@@ -292,33 +292,14 @@ export default {
         }).finally(() => this.loading = false);
     },
     getApplications(favorites) {
-      return fetch(favorites && '/app-center/rest/favorites' || '/app-center/rest/applications', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error getting favorite applications list');
-          }
-        });
+      return favorites ? this.$applicationFavoriteService.getFavorites() : this.$applicationService.getApplications(false);
     },
     updateApplicationsOrder() {
       const applicationsOrder = this.favoriteApplications.map((app, index) => ({
         id: app.id,
         order: index,
       }));
-      if (applicationsOrder.length) {
-        return fetch('/app-center/rest/favorites', {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          method: 'PUT',
-          body: JSON.stringify(applicationsOrder)
-        });
-      }
+      return this.$applicationFavoriteService.updateFavoritesOrder(applicationsOrder);
     },
     openApplicationByShortcutEvent(e) {
       if (e.ctrlKey && e.shiftKey && e.key) {
@@ -390,21 +371,23 @@ export default {
     sortApplicationsByTitle(apps) {
       apps.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
     },
-    toogleFavorite(application) {
+    async toogleFavorite(application) {
       this.loading = true;
-      return fetch(`/app-center/rest/favorites/${application.id}`, {
-        credentials: 'include',
-        method: application.favorite ? 'DELETE' : 'POST',
-      })
-        .then(() => this.retrieveApplications())
-        .then(() => {
+      try {
+        if (application.favorite) {
+          await this.$applicationFavoriteService.deleteFavorite(application.id);
+        } else {
+          await this.$applicationFavoriteService.addFavorite(application.id);
           if (application.favorite) {
             this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteRemoved'), 'success');
           } else {
             this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteAdded'), 'success');
           }
-        })
-        .finally(() => this.loading = false);
+          await this.retrieveApplications();
+        }
+      } finally {
+        this.loading = false;
+      }
     },
     async expandDrawer() {
       this.expanded = true;
