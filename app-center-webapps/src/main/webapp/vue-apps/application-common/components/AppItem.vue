@@ -135,7 +135,7 @@
           </div>
           <div class="d-flex justify-end mt-auto">
             <v-btn
-              v-if="card"
+              v-if="card && canPinApps"
               :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
               class="ms-2"
               small
@@ -265,10 +265,13 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.canPinApps && this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
+    },
+    canPinApps() {
+      return this.$root.canPinApps;
     },
   },
   methods: {
