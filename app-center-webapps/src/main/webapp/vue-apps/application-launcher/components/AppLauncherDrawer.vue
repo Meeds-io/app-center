@@ -166,6 +166,9 @@ export default {
     draggedElementIndex: null,
   }),
   computed: {
+    canPinApps() {
+      return this.$root.canPinApps;
+    },
     isFavoriteFilter() {
       return !this.expanded || this.filter === 'FAVORITES';
     },
@@ -216,13 +219,13 @@ export default {
     recentApplications() {
       const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id) && (!this.$root.isMobile || !this.$root.pinnedApplicationIds.includes(a.id)));
       recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
-      return !this.$root.isMobile ? recentApplications : [...this.pinnedApplications, ...recentApplications].filter(app => app && app.mobile);
+      return (!this.$root.isMobile || !this.canPinApps) ? recentApplications : [...this.pinnedApplications, ...recentApplications].filter(app => app && app.mobile);
     },
     hasRecentApplications() {
       return this.recentApplications?.length;
     },
     filters() {
-      return [{
+      return this.canPinApps && [{
         text: this.$t('appCenter.appLauncher.filter.all'),
         value: 'ALL',
       },{
@@ -231,6 +234,12 @@ export default {
       },{
         text: this.$t('appCenter.appLauncher.filter.pinned'),
         value: 'PINNED',
+      }] || [{
+        text: this.$t('appCenter.appLauncher.filter.all'),
+        value: 'ALL',
+      },{
+        text: this.$t('appCenter.appLauncher.filter.favorites'),
+        value: 'FAVORITES',
       }];
     },
   },
