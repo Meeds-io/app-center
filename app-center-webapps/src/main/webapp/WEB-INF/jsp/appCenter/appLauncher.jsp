@@ -52,7 +52,7 @@
             <script type="text/javascript">
             <% if (autoInit) { %>
             window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>));
-            <% } else { %>
+            <% } else if (CollectionUtils.isNotEmpty(shortcuts)) { %>
             window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>, shortcut))));
             <% } %>
             </script>
