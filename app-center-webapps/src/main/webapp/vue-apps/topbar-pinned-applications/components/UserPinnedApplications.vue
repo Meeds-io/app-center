@@ -20,8 +20,8 @@
 
 -->
 <template>
-  <v-app v-if="hasPinnedApps">
-    <div class="d-flex align-center justify-center">
+  <v-app>
+    <div v-if="hasPinnedApps" class="d-flex align-center justify-center">
       <v-btn
         v-for="application in $root.pinnedApplications"
         :key="application.id"
