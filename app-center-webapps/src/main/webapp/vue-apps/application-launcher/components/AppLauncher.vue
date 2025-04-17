@@ -33,7 +33,109 @@
         </v-btn>
       </v-layout>
     </v-container>
-    <app-center-launcher-drawer ref="appDrawer" />
+    <app-center-launcher-drawer
+      ref="appDrawer"
+      @open-app="openApplication"
+      @apps-loaded="applications = $event" />
+    <app-center-portlet-instance-drawer
+      ref="portletInstanceDrawer"
+      :app-loading="appLoading" />
   </v-app>
 </template>
-<script></script>
+<script>
+export default {
+  data: () => ({
+    applications: null,
+    appLoading: null,
+  }),
+  created() {
+    window.addEventListener('keydown', this.openApplicationByShortcutEvent);
+    eXo.env.portal.portalLauncherInitialized = true;
+  },
+  mounted() {
+    if (this.$root.shortcut) {
+      this.openApplicationByShortcut(this.$root.shortcut);
+    } else if (!this.$root.noAutoOpen) {
+      this.$refs.appDrawer.open();
+    } else if (this.$utils.getQueryParam('appCenterDrawer')) {
+      this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
+    } else if (this.$utils.getQueryParam('appCenterPortlet')) {
+      this.openApplication('PORTLET', this.$utils.getQueryParam('appCenterPortlet'));
+    }
+  },
+  beforeDestroy() {
+    window.removeEventListener('keydown', this.openApplicationByShortcutEvent);
+  },
+  methods: {
+    openApplicationByShortcutEvent(e) {
+      if (e.ctrlKey
+          && e.shiftKey
+          && e.key
+          && this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
+      }
+    },
+    async openApplicationByShortcut(shortcut) {
+      if (!shortcut || !this.$root.shortcuts?.includes?.(shortcut.toLowerCase())) {
+        return;
+      }
+      if (!this.applications?.length) {
+        await this.$refs.appDrawer.init();
+        await this.$nextTick();
+      }
+      const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
+      if (application?.type === 'LINK') {
+        const computedUrl = application.url
+          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+          .replace('@user@', eXo.env.portal.userName);
+        const url = this.$utils.toLinkUrl(computedUrl, {
+          urls: true,
+          email: true,
+          phone: true,
+        });
+        if (application.sameTab) {
+          if (url?.startsWith?.('/')) {
+            window.location.href = `${window.location.origin}${url}`;
+          } else {
+            window.location.href = url;
+          }
+        } else  if (url?.startsWith?.('/')) {
+          window.open(`${window.location.origin}${url}`);
+        } else {
+          window.open(url);
+        }
+      } else {
+        this.openApplication(application?.type, application?.url);
+      }
+    },
+    async openApplication(appType, appUrl) {
+      if (appType === 'PORTLET') {
+        this.appLoading = appUrl;
+        try {
+          if (this.$refs.portletInstanceDrawer) {
+            await this.$refs.portletInstanceDrawer.open(appUrl);
+          } else {
+            const interval = window.setInterval(() => {
+              if (this.$refs.portletInstanceDrawer) {
+                window.clearInterval(interval);
+                this.$refs.portletInstanceDrawer.open(appUrl);
+              }
+            }, 200);
+          }
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+      } else if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
+        this.appLoading = appUrl;
+        try {
+          await this.$root.quickActions[appUrl].click();
+        } finally {
+          window.setTimeout(() => this.appLoading = null, 500);
+        }
+      }
+    },
+  },
+};
+</script>
