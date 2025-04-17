@@ -51,7 +51,15 @@ export function init(parentElementId, topbarApplication) {
     methods: {
       init() {
         appCenterApplicationsFetch
-          .then(data => this.application = data?.applications?.find?.(app => app.id === this.applicationId))
+          .then(data => {
+            this.application = data?.applications?.find?.(app => app.id === this.applicationId);
+            if (this.application?.system) {
+              const title = /\s/.test(this.application.title) ? this.application.title.replace(/ /g,'.').toLowerCase() : this.application.title.toLowerCase();
+              if (this.$te(`appCenter.system.application.${title}`)) {
+                this.application.title = this.$t(`appCenter.system.application.${title}`);
+              }
+            }
+          })
           .finally(() => this.hidden = !this.application?.active);
       },
       refreshQuickActions() {
