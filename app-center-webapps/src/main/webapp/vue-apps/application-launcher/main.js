@@ -42,6 +42,7 @@ export async function init({isAdmin, pinnedApplicationIds}, noAutoOpen, shortcut
         shortcut,
         shortcuts: shortcuts?.filter?.(c => c?.length)?.map?.(c => c.toLowerCase()) || [],
         pinnedApplicationIds,
+        canPinApps: !!document.querySelector('#userPinnedApplications'),
         quickActionExtensions: [],
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),

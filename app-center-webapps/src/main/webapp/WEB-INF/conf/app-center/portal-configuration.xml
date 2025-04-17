@@ -85,7 +85,7 @@
           <description>AppCenter User Pinned Applications</description>
           <object type="org.exoplatform.portal.config.serialize.PortletApplication">
             <field name="id">
-              <string>mandatory-user-pinned-applications</string>
+              <string>user-pinned-applications</string>
             </field>
             <field name="title">
               <string>generalSettings.appcenterPinnedApplications.name</string>
