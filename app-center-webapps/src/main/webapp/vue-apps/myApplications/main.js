@@ -50,6 +50,9 @@ export function init(settings) {
           this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
           return quickActions;
         },
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        }
       },
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);

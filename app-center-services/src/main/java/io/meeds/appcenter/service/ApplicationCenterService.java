@@ -413,7 +413,8 @@ public class ApplicationCenterService {
     applications = applications.stream()
                                .map(app -> {
                                  UserApplication applicationFavorite = new UserApplication(app);
-                                 applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(), username));
+                                 applicationFavorite.setFavorite(appCenterStorage.isFavoriteApplication(applicationFavorite.getId(),
+                                                                                                        username));
                                  return (Application) applicationFavorite;
                                })
                                .toList();
@@ -535,13 +536,11 @@ public class ApplicationCenterService {
                           .setOffset(0);
   }
 
-  public List<String> getMandatoryAndFavoriteApplicationShortcuts(String username) {
-    return appCenterStorage.getMandatoryAndFavoriteApplications(username, Pageable.unpaged())
-                           .stream()
-                           .filter(app -> canAccess(app, username))
-                           .map(Application::getShortcut)
-                           .filter(StringUtils::isNotBlank)
-                           .toList();
+  public List<String> getApplicationShortcuts(String username) {
+    return getActiveApplications(null, username).stream()
+                                                .map(Application::getShortcut)
+                                                .filter(StringUtils::isNotBlank)
+                                                .toList();
   }
 
   public boolean canAccess(Application application, String username) {
