@@ -186,10 +186,13 @@ export default {
     hasApplications() {
       return this.applications?.length;
     },
+    pinnedApplications() {
+      return this.$root.pinnedApplicationIds?.map?.(id => this.availableApplications?.find?.(app => app.id === id)) || [];
+    },
     recentApplications() {
       const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id));
       recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
-      return recentApplications;
+      return !this.$root.isMobile ? recentApplications : [...pinnedApplications, ...recentApplications];
     },
     hasRecentApplications() {
       return this.recentApplications?.length;
@@ -227,10 +230,10 @@ export default {
         this.keyword = null;
         this.filter = 'ALL';
       }
-      this.retrieveApplications();
+      this.retrieveApplications(this.isFavoriteFilter);
     },
     filter() {
-      this.retrieveApplications();
+      this.retrieveApplications(this.isFavoriteFilter);
     },
     categoryId() {
       this.retrieveSubCategoryIds();
@@ -256,17 +259,21 @@ export default {
     window.removeEventListener('keypress', this.openApplicationByShortcutEvent);
   },
   methods: {
-    init() {
+    async init() {
       this.applicationsLoaded = false;
-      this.retrieveApplications()
-        .finally(() => {
-          this.applicationsLoaded = true;
-          this.$root.$applicationLoaded();
-        });
+      try {
+        await Promise.all([
+          this.retrieveApplications(true),
+          this.retrieveApplications(false)
+        ]);
+      } finally {
+        this.applicationsLoaded = true;
+        this.$root.$applicationLoaded();
+      };
     },
-    retrieveApplications() {
+    retrieveApplications(isFavoriteFilter) {
       this.loading = true;
-      return this.getApplications(this.isFavoriteFilter)
+      return this.getApplications(isFavoriteFilter)
         .then(data => {
           const applications = data.applications;
           // manage system apps localized names
@@ -278,14 +285,11 @@ export default {
               }
             }
           });
-          if (this.expanded) {
-            this.sortApplicationsByTitle(applications);
-          } else {
+          if (isFavoriteFilter) {
             this.sortApplicationsByOrder(applications);
-          }
-          if (this.isFavoriteFilter) {
             this.favoriteApplications = applications;
           } else {
+            this.sortApplicationsByTitle(applications);
             this.availableApplications = applications;
           }
           this.$root.shortcuts = applications.filter(a => a.shortcut).map(a => a.shortcut);
@@ -311,7 +315,7 @@ export default {
         return;
       }
       if (!this.applications?.length) {
-        await this.retrieveApplications();
+        await this.retrieveApplications(this.isFavoriteFilter);
       }
       const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
       if (application?.type === 'LINK') {
@@ -383,7 +387,7 @@ export default {
           } else {
             this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteAdded'), 'success');
           }
-          await this.retrieveApplications();
+          await this.retrieveApplications(this.isFavoriteFilter);
         }
       } finally {
         this.loading = false;
