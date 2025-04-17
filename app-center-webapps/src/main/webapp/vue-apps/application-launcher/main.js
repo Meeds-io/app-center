@@ -57,15 +57,22 @@ export async function init({isAdmin, pinnedApplicationIds}, noAutoOpen, shortcut
       },
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
+        document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
         this.refreshQuickActions();
         this.$utils.includeExtensions('QuickActionExtension');
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
+        document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       },
       methods: {
         refreshQuickActions() {
           this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+        },
+        async refreshPinnedApplications() {
+          this.pinnedApplicationIds = await this.$applicationPinService.getPinnedApplications();
         },
       },
       template: `<app-center-launcher id="${appId}" />`,

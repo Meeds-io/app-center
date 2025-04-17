@@ -18,13 +18,29 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <div class="d-flex flex-column align-center justify-center mx-5">
     <v-icon size="40" color="tertiary">fa-th</v-icon>
     <div class="mt-6">
-      {{ $t('appCenter.appLauncher.drawer.placeholder') }}
+      {{ hasApplications && $t('appCenter.appLauncher.drawer.placeholder') || $t('appCenter.appLauncher.drawer.placeholder.noApplicationsFound') }}
     </div>
     <v-btn
+      v-if="hasApplications"
       class="btn btn-primary mt-6"
-      @click="$root.$emit('app-center-add-app')">
+      @click="$emit('reset')">
+      <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.reset') }}</span>
+    </v-btn>
+    <v-btn
+      v-else
+      class="btn btn-primary mt-6"
+      @click="$emit('expand')">
       <span class="text-none">{{ $t('appCenter.appLauncher.drawer.placeholder.action') }}</span>
     </v-btn>
   </div>
 </template>
-<script></script>
+<script>
+export default {
+  props: {
+    hasApplications: {
+      type: Boolean,
+      default: false,
+    },
+  },
+};
+</script>
