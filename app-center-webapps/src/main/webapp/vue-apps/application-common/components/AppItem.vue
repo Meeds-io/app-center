@@ -97,7 +97,7 @@
         <template #activator="{on, attrs}">
           <div
             :class="$vuetify.rtl && 'l-0' || 'r-0'"
-            class="position-absolute z-index-two t-0 mt-1 pe-1">
+            class="position-absolute z-index-two t-0 mt-1 me-5">
             <v-btn
               v-bind="attrs"
               v-on="on"
@@ -112,7 +112,7 @@
         </template>
         <span>{{ pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication') }}</span>
       </v-tooltip>
-      <v-expand-transition v-if="displayDescription || card">
+      <v-expand-transition v-if="!$root.isMobile && (displayDescription || card)">
         <v-card
           v-if="hover || card"
           :class="{
@@ -265,7 +265,7 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
