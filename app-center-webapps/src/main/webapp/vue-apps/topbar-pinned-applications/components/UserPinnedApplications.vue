@@ -21,41 +21,43 @@
 -->
 <template>
   <v-app v-if="hasPinnedApps">
-    <v-btn
-      v-for="application in $root.pinnedApplications"
-      :key="application.id"
-      v-bind="application?.type === 'LINK' && !readonly && {
-        href: computedUrl,
-        target: target,
-        rel: 'nofollow noreferrer noopener',
-      }"
-      v-on="application?.type !== 'LINK' && {
-        click: () => openApplication(application),
-      }"
-      :title="application?.title"
-      :loading="loading[application?.id]"
-      icon>
-      <v-icon
-        v-if="application?.icon && !application?.imageUrl"
-        size="20"
-        class="d-flex align-center justify-center">
-        {{ application.icon }}
-      </v-icon>
-      <v-card
-        v-else
-        color="transparent"
-        height="20"
-        width="20"
-        flat>
-        <img
-          v-if="application?.imageUrl"
-          :src="application?.imageUrl"
-          class="max-width-fit max-height-fit"
-          height="auto"
-          width="auto"
-          alt="">
-      </v-card>
-    </v-btn>
+    <div class="d-flex align-center justify-center">
+      <v-btn
+        v-for="application in $root.pinnedApplications"
+        :key="application.id"
+        v-bind="application?.type === 'LINK' && {
+          href: application.computedUrl,
+          target: application.sameTab ? '_self' : '_blank',
+          rel: 'nofollow noreferrer noopener',
+        }"
+        v-on="application?.type !== 'LINK' && {
+          click: () => openApplication(application),
+        }"
+        :title="application?.title"
+        :loading="loading[application?.id]"
+        icon>
+        <v-icon
+          v-if="application?.icon && !application?.imageUrl"
+          size="20"
+          class="d-flex align-center justify-center">
+          {{ application.icon }}
+        </v-icon>
+        <v-card
+          v-else
+          color="transparent"
+          height="20"
+          width="20"
+          flat>
+          <img
+            v-if="application?.imageUrl"
+            :src="application?.imageUrl"
+            class="max-width-fit max-height-fit"
+            height="auto"
+            width="auto"
+            alt="">
+        </v-card>
+      </v-btn>
+    </div>
     <app-center-portlet-instance-drawer
       v-if="openPortletDrawer"
       ref="portletInstanceDrawer" />
@@ -76,8 +78,8 @@ export default {
     async openApplication(application) {
       this.$set(this.loading, application.id, true);
       try {
-        const appType = this.result.type;
-        const appUrl = this.result.url;
+        const appType = application.type;
+        const appUrl = application.url;
         if (appType === 'PORTLET') {
           this.openPortletDrawer = true;
           await this.$nextTick();
