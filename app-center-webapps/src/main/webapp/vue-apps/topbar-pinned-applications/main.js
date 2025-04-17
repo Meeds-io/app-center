@@ -18,7 +18,6 @@
  */
 
 import './initComponents.js';
-import './services.js';
 
 const appId = 'userPinnedApplications';
 export async function init(pinnedApplicationIds) {
@@ -63,15 +62,34 @@ export async function init(pinnedApplicationIds) {
     methods: {
       async init() {
         if (this.pinnedApplicationIds?.length) {
-          this.applications = await this.$applicationService.getApplications();
+          const data = await this.$applicationService.getApplications();
+          this.applications = data?.applications || [];
+          this.applications.forEach(app => {
+            if (app.system) {
+              const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+              if (this.$te(`appCenter.system.application.${title}`)) {
+                app.title = this.$t(`appCenter.system.application.${title}`);
+              }
+            }
+            if (app.type === 'LINK' && app.url) {
+              const computedUrl = app.url
+                .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+                .replace('@user@', eXo.env.portal.userName);
+              app.computedUrl = this.$utils.toLinkUrl(computedUrl, {
+                urls: true,
+                email: true,
+                phone: true,
+              });
+            }
+          });
         }
       },
       refreshQuickActions() {
         this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
       },
       async refreshPinnedApplications() {
-        this.applications = await this.$applicationService.getApplications();
         this.pinnedApplicationIds = await this.$applicationPinService.getPinnedApplications();
+        await this.init();
       },
     },
   }, `#${appId}`, 'User Pinned Applications');
