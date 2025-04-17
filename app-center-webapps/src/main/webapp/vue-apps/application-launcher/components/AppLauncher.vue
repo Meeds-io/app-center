@@ -35,11 +35,11 @@
     </v-container>
     <app-center-launcher-drawer
       ref="appDrawer"
+      :app-loading="appLoading"
       @open-app="openApplication"
       @apps-loaded="applications = $event" />
     <app-center-portlet-instance-drawer
-      ref="portletInstanceDrawer"
-      :app-loading="appLoading" />
+      ref="portletInstanceDrawer" />
   </v-app>
 </template>
 <script>
