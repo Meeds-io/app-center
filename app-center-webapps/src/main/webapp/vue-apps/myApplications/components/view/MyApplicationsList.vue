@@ -31,11 +31,10 @@
   <v-layout
     v-else>
     <component
-      :is="isMobile && 'div' || 'draggable'"
+      :is="$root.isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
-      :item-key="'id'"
+      item-key="id"
       class="d-flex flex-wrap flex-grow-0 justify-start"
-      @start="onDragStart"
       @end="onDragEnd">
       <my-application-item
         v-for="application in applicationsList"
@@ -50,7 +49,6 @@
     </component>
   </v-layout>
 </template>
-
 <script>
 export default {
   props: {
@@ -61,11 +59,6 @@ export default {
     isLoading: {
       type: Boolean,
       default: false
-    }
-  },
-  computed: {
-    isMobile() {
-      return this.$vuetify.breakpoint.smAndDown;
     }
   },
   methods: {
