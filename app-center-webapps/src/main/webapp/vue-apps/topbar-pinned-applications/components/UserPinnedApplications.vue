@@ -69,7 +69,7 @@ export default {
   }),
   computed: {
     hasPinnedApps() {
-      return this.$root.pinnedApplications?.length;
+      return this.$root.pinnedApplications?.length && !this.$root.isMobile;
     },
   },
   methods: {
