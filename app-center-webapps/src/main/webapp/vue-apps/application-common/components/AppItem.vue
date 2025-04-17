@@ -93,6 +93,25 @@
           fa-external-link-alt
         </v-icon>
       </v-card>
+      <v-tooltip v-if="displayPinButton" bottom>
+        <template #activator="{on, attrs}">
+          <div
+            :class="$vuetify.rtl && 'l-0' || 'r-0'"
+            class="position-absolute z-index-two t-0 mt-1 pe-1">
+            <v-btn
+              v-bind="attrs"
+              v-on="on"
+              class="white"
+              elevation="2"
+              x-small
+              icon
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+              <v-icon size="12">fa-thumbtack</v-icon>
+            </v-btn>
+          </div>
+        </template>
+        <span>{{ pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication') }}</span>
+      </v-tooltip>
       <v-expand-transition v-if="displayDescription || card">
         <v-card
           v-if="hover || card"
@@ -116,6 +135,21 @@
           </div>
           <div class="d-flex justify-end mt-auto">
             <v-btn
+              v-if="card"
+              :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+              class="ms-2"
+              small
+              icon
+              mouseup.stop="0"
+              mousedown.stop="0"
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+              <v-icon
+                :color="pinnedApplication && 'primary'"
+                size="20">
+                fa-thumbtack
+              </v-icon>
+            </v-btn>
+            <v-btn
               v-if="application.helpPageURL"
               :href="application.helpPageURL"
               :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
@@ -137,7 +171,7 @@
               :class="card && 'ms-2'"
               small
               icon
-              @click.prevent.stop="toogleFavorite">
+              @click.prevent.stop="$emit('toogle-favorite')">
               <v-icon
                 :color="(application.favorite || readonly) && 'yellow'"
                 :size="card && 20 || 16">
@@ -230,6 +264,12 @@ export default {
     elevation() {
       return this.hover && this.elevate ? 2 : 0;
     },
+    displayPinButton() {
+      return this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
+    },
+    pinnedApplication() {
+      return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
+    },
   },
   methods: {
     openApp() {
@@ -251,9 +291,6 @@ export default {
         recentAppIds.unshift(this.application.id);
         window.localStorage.setItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`, JSON.stringify(recentAppIds));
       }
-    },
-    toogleFavorite() {
-      this.$emit('toogle-favorite');
     },
   },
 };

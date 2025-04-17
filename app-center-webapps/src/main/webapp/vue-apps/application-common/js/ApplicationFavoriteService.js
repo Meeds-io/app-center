@@ -50,9 +50,7 @@ export function addFavorite(id) {
     credentials: 'include',
   })
     .then(resp => {
-      if (resp?.ok) {
-        return resp.json();
-      } else {
+      if (!resp?.ok) {
         throw new Error('Error when marking application as favorite');
       }
     });      
