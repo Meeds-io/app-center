@@ -45,6 +45,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <div class="col-6 pa-0">
           <application-toolbar
             id="appLauncherToolbar"
+            ref="appLauncherToolbar"
             :right-text-filter="{
               minCharacters: 1,
               placeholder: $t('appCenter.appLauncher.filterPlaceholder'),
@@ -125,12 +126,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               display-name
               display-description
               @open="openApplication(application.type, application.url)"
-              @toogle-favorite="toogleFavorite(application)" />
+              @toogle-favorite="toogleFavorite(application)"
+              @toogle-pin="tooglePin(application, $event)" />
           </div>
         </component>
       </v-layout>
       <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
-        <app-center-launcher-empty class="mt-12" />
+        <app-center-launcher-empty
+          :has-applications="hasAvailableApplications"
+          class="mt-12"
+          @expand="expandDrawer"
+          @reset="resetFilter" />
       </div>
       <app-center-portlet-instance-drawer
         ref="portletInstanceDrawer" />
@@ -160,8 +166,17 @@ export default {
     isFavoriteFilter() {
       return !this.expanded || this.filter === 'FAVORITES';
     },
+    isPinFilter() {
+      return !this.expanded || this.filter === 'PINNED';
+    },
     applications() {
-      return (this.isFavoriteFilter ? this.favoriteApplications : this.availableApplications) || [];
+      if (this.isFavoriteFilter) {
+        return this.favoriteApplications;
+      } else if (this.isPinFilter) {
+        return this.pinnedApplications;
+      } else {
+        return this.availableApplications;
+      }
     },
     sortedApplicationsList() {
       return this.$root.isMobile ? this.applications.filter(app => app.mobile) : this.applications;
@@ -184,15 +199,18 @@ export default {
       return this.expanded && !this.$root.isMobile;
     },
     hasApplications() {
-      return this.applications?.length;
+      return this.filteredApplications?.length;
+    },
+    hasAvailableApplications() {
+      return this.availableApplications?.length;
     },
     pinnedApplications() {
       return this.$root.pinnedApplicationIds?.map?.(id => this.availableApplications?.find?.(app => app.id === id)) || [];
     },
     recentApplications() {
-      const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id));
+      const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id) && (!this.$root.isMobile || !this.$root.pinnedApplicationIds.includes(a.id)));
       recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
-      return !this.$root.isMobile ? recentApplications : [...pinnedApplications, ...recentApplications];
+      return !this.$root.isMobile ? recentApplications : [...this.pinnedApplications, ...recentApplications];
     },
     hasRecentApplications() {
       return this.recentApplications?.length;
@@ -204,6 +222,9 @@ export default {
       },{
         text: this.$t('appCenter.appLauncher.filter.favorites'),
         value: 'FAVORITES',
+      },{
+        text: this.$t('appCenter.appLauncher.filter.pinned'),
+        value: 'PINNED',
       }];
     },
   },
@@ -227,8 +248,7 @@ export default {
     },
     expanded() {
       if (!this.expanded) {
-        this.keyword = null;
-        this.filter = 'ALL';
+        this.resetFilter();
       }
       this.retrieveApplications(this.isFavoriteFilter);
     },
@@ -240,8 +260,8 @@ export default {
     },
   },
   created() {
-    this.$root.$on('app-center-add-app', this.expandDrawer);
-    window.addEventListener('keypress', this.openApplicationByShortcutEvent);
+    window.addEventListener('keydown', this.openApplicationByShortcutEvent);
+    eXo.env.portal.portalLauncherInitialized = true;
   },
   mounted() {
     if (this.$root.shortcut) {
@@ -255,21 +275,23 @@ export default {
     }
   },
   beforeDestroy() {
-    this.$root.$off('app-center-add-app', this.expandDrawer);
-    window.removeEventListener('keypress', this.openApplicationByShortcutEvent);
+    window.removeEventListener('keydown', this.openApplicationByShortcutEvent);
   },
   methods: {
     async init() {
       this.applicationsLoaded = false;
       try {
-        await Promise.all([
-          this.retrieveApplications(true),
-          this.retrieveApplications(false)
-        ]);
+        await this.refresh();
       } finally {
         this.applicationsLoaded = true;
         this.$root.$applicationLoaded();
-      };
+      }
+    },
+    async refresh() {
+      await Promise.all([
+        this.retrieveApplications(true),
+        this.retrieveApplications(false)
+      ]);
     },
     retrieveApplications(isFavoriteFilter) {
       this.loading = true;
@@ -306,12 +328,17 @@ export default {
       return this.$applicationFavoriteService.updateFavoritesOrder(applicationsOrder);
     },
     openApplicationByShortcutEvent(e) {
-      if (e.ctrlKey && e.shiftKey && e.key) {
+      if (e.ctrlKey
+          && e.shiftKey
+          && e.key
+          && this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
+        e.stopPropagation();
+        e.preventDefault();
         window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
       }
     },
     async openApplicationByShortcut(shortcut) {
-      if (!this.$root.shortcuts?.includes?.(shortcut) && !this.$root.shortcuts?.includes?.(shortcut.toLowerCase())) {
+      if (!shortcut || !this.$root.shortcuts?.includes?.(shortcut.toLowerCase())) {
         return;
       }
       if (!this.applications?.length) {
@@ -382,15 +409,39 @@ export default {
           await this.$applicationFavoriteService.deleteFavorite(application.id);
         } else {
           await this.$applicationFavoriteService.addFavorite(application.id);
-          if (application.favorite) {
-            this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteRemoved'), 'success');
-          } else {
-            this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteAdded'), 'success');
-          }
-          await this.retrieveApplications(this.isFavoriteFilter);
         }
+        if (application.favorite) {
+          this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteRemoved'), 'success');
+        } else {
+          this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.favoriteAdded'), 'success');
+        }
+        await this.init();
       } finally {
         this.loading = false;
+      }
+    },
+    async tooglePin(application, pin) {
+      this.loading = true;
+      try {
+        if (pin) {
+          await this.$applicationPinService.pinApplication(application.id);
+          this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.pinAdded'), 'success');
+          document.dispatchEvent(new CustomEvent('app-center-application-unpinned', {detail: this.application}));
+        } else {
+          await this.$applicationPinService.unpinApplication(application.id);
+          this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.pinRemoved'), 'success');
+          document.dispatchEvent(new CustomEvent('app-center-application-pinned', {detail: this.application}));
+        }
+        await this.refresh();
+      } finally {
+        this.loading = false;
+      }
+    },
+    resetFilter() {
+      this.filter = 'ALL';
+      this.keyword = null;
+      if (this.$refs?.appLauncherToolbar) {
+        this.$refs.appLauncherToolbar.reset();
       }
     },
     async expandDrawer() {
