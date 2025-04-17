@@ -89,7 +89,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                       image-size="24"
                       icon-size="24"
                       elevate
-                      @open="openApplication(application.type, application.url)" />
+                      @open="$emit('open-app', application.type, application.url)" />
                   </div>
                 </template>
                 <span>{{ application.title }}</span>
@@ -125,7 +125,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :class="cardDisplay && 'me-4' || 'me-3'"
               display-name
               display-description
-              @open="openApplication(application.type, application.url)"
+              @open="$emit('open-app', application.type, application.url)"
               @toogle-favorite="toogleFavorite(application)"
               @toogle-pin="tooglePin(application, $event)" />
           </div>
@@ -138,13 +138,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           @expand="expandDrawer"
           @reset="resetFilter" />
       </div>
-      <app-center-portlet-instance-drawer
-        ref="portletInstanceDrawer" />
     </template>
   </exo-drawer>
 </template>
 <script>
 export default {
+  props: {
+    appLoading: {
+      type: String,
+      default: null,
+    },
+  },
   data: () => ({
     expanded: false,
     loading: false,
@@ -158,7 +162,6 @@ export default {
     filter: 'ALL',
     categoryId: null,
     subCategoryIds: null,
-    appLoading: null,
     keyword: null,
     draggedElementIndex: null,
   }),
@@ -205,12 +208,15 @@ export default {
       return this.availableApplications?.length;
     },
     pinnedApplications() {
-      return this.$root.pinnedApplicationIds?.map?.(id => this.availableApplications?.find?.(app => app.id === id)) || [];
+      return this.$root.pinnedApplicationIds
+        ?.map?.(id => this.availableApplications?.find?.(app => app.id === id))
+        ?.filter?.(app => app)
+        || [];
     },
     recentApplications() {
       const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id) && (!this.$root.isMobile || !this.$root.pinnedApplicationIds.includes(a.id)));
       recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
-      return !this.$root.isMobile ? recentApplications : [...this.pinnedApplications, ...recentApplications];
+      return !this.$root.isMobile ? recentApplications : [...this.pinnedApplications, ...recentApplications].filter(app => app && app.mobile);
     },
     hasRecentApplications() {
       return this.recentApplications?.length;
@@ -258,24 +264,9 @@ export default {
     categoryId() {
       this.retrieveSubCategoryIds();
     },
-  },
-  created() {
-    window.addEventListener('keydown', this.openApplicationByShortcutEvent);
-    eXo.env.portal.portalLauncherInitialized = true;
-  },
-  mounted() {
-    if (this.$root.shortcut) {
-      this.openApplicationByShortcut(this.$root.shortcut);
-    } else if (!this.$root.noAutoOpen) {
-      this.open();
-    } else if (this.$utils.getQueryParam('appCenterDrawer')) {
-      this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
-    } else if (this.$utils.getQueryParam('appCenterPortlet')) {
-      this.openApplication('PORTLET', this.$utils.getQueryParam('appCenterPortlet'));
-    }
-  },
-  beforeDestroy() {
-    window.removeEventListener('keydown', this.openApplicationByShortcutEvent);
+    availableApplications() {
+      this.$emit('apps-loaded', this.availableApplications);
+    },
   },
   methods: {
     async init() {
@@ -313,8 +304,8 @@ export default {
           } else {
             this.sortApplicationsByTitle(applications);
             this.availableApplications = applications;
+            this.$root.shortcuts = this.availableApplications.filter(a => a.shortcut).map(a => a.shortcut);
           }
-          this.$root.shortcuts = applications.filter(a => a.shortcut).map(a => a.shortcut);
         }).finally(() => this.loading = false);
     },
     getApplications(favorites) {
@@ -326,65 +317,6 @@ export default {
         order: index,
       }));
       return this.$applicationFavoriteService.updateFavoritesOrder(applicationsOrder);
-    },
-    openApplicationByShortcutEvent(e) {
-      if (e.ctrlKey
-          && e.shiftKey
-          && e.key
-          && this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
-        e.stopPropagation();
-        e.preventDefault();
-        window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
-      }
-    },
-    async openApplicationByShortcut(shortcut) {
-      if (!shortcut || !this.$root.shortcuts?.includes?.(shortcut.toLowerCase())) {
-        return;
-      }
-      if (!this.applications?.length) {
-        await this.retrieveApplications(this.isFavoriteFilter);
-      }
-      const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
-      if (application?.type === 'LINK') {
-        const computedUrl = application.url
-          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
-          .replace('@user@', eXo.env.portal.userName);
-        const url = this.$utils.toLinkUrl(computedUrl, {
-          urls: true,
-          email: true,
-          phone: true,
-        });
-        if (application.sameTab) {
-          if (url?.startsWith?.('/')) {
-            window.location.href = `${window.location.origin}${url}`;
-          } else {
-            window.location.href = url;
-          }
-        } else  if (url?.startsWith?.('/')) {
-          window.open(`${window.location.origin}${url}`);
-        } else {
-          window.open(url);
-        }
-      } else {
-        this.openApplication(application?.type, application?.url);
-      }
-    },
-    async openApplication(appType, appUrl) {
-      if (appType === 'PORTLET') {
-        this.appLoading = appUrl;
-        try {
-          await this.$refs.portletInstanceDrawer.open(appUrl);
-        } finally {
-          window.setTimeout(() => this.appLoading = null, 500);
-        }
-      } else if (appType === 'DRAWER' && this.$root.quickActions[appUrl]) {
-        this.appLoading = appUrl;
-        try {
-          await this.$root.quickActions[appUrl].click();
-        } finally {
-          window.setTimeout(() => this.appLoading = null, 500);
-        }
-      }
     },
     sortApplicationsByOrder(apps) {
       apps.sort((a, b) => {
