@@ -61,7 +61,6 @@ export default {
       baseUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`,
       currentUser: eXo.env.portal.userName,
       initialized: false,
-      mobileDevices: /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i
     };
   },
   computed: {
@@ -69,11 +68,8 @@ export default {
       return this.$root.settings?.isAdmin;
     },
     filteredApplications() {
-      return this.isMobileDevice && this.favoriteApplications.filter(application => application.mobile)
+      return this.$root.isMobile && this.favoriteApplications.filter(application => application.mobile)
                                  || this.favoriteApplications;
-    },
-    isMobileDevice() {
-      return this.mobileDevices.test(navigator.userAgent);
     },
     hasApplications() {
       return this.favoriteApplications?.length > 0;
