@@ -85,7 +85,9 @@
         min-height="48"
         class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1"
         flat>
-        {{ application.title }}
+        <span :class="card && 'font-weight-bold'">
+          {{ application.title }}
+        </span>
         <v-icon
           v-if="!card && application.type === 'LINK' && !application.sameTab"
           class="ms-1"
@@ -133,22 +135,13 @@
             class="text-truncate-4">
             {{ application.description }}
           </div>
-          <div class="d-flex justify-end mt-auto">
-            <v-btn
-              v-if="card && canPinApps"
-              :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
-              class="ms-2"
-              small
-              icon
-              mouseup.stop="0"
-              mousedown.stop="0"
-              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
-              <v-icon
-                :color="pinnedApplication && 'primary'"
-                size="20">
-                fa-thumbtack
-              </v-icon>
-            </v-btn>
+          <div class="d-flex align-center mt-auto">
+            <app-center-shortcut
+              v-if="application.shortcut"
+              :shortcut="application.shortcut"
+              class="align-md-center align-self-end mb-2 mb-md-0"
+              small />
+            <v-spacer />  
             <v-btn
               v-if="application.helpPageURL"
               :href="application.helpPageURL"
@@ -163,6 +156,21 @@
                 :color="!card && 'white'"
                 :size="card && 20 || 16">
                 fa-question-circle
+              </v-icon>
+            </v-btn>
+            <v-btn
+              v-if="card && canPinApps"
+              :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+              class="ms-2"
+              small
+              icon
+              mouseup.stop="0"
+              mousedown.stop="0"
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+              <v-icon
+                :class="!pinnedApplication && 'fa-rotate-45'"
+                size="20">
+                fa-thumbtack
               </v-icon>
             </v-btn>
             <v-btn
