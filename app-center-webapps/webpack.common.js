@@ -33,6 +33,7 @@ module.exports = {
     appCenterTopbarExtension: "./src/main/webapp/vue-apps/topbar-extension/extensions.js",
     appCenterTopbarApplication: "./src/main/webapp/vue-apps/topbar-application/main.js",
     appCenterTopbarPinnedApplication: "./src/main/webapp/vue-apps/topbar-pinned-applications/main.js",
+    appCenterUserSettings: "./src/main/webapp/vue-apps/application-user-settings/main.js",
   },
   output: {
     filename: 'js/[name].bundle.js',
