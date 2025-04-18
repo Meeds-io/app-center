@@ -53,7 +53,7 @@
       <v-avatar
         :size="imageSize"
         :class="card && 'ms-4'"
-        class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-2"
+        class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-1 pa-1"
         tile>
         <v-img
           v-if="application.imageUrl"
@@ -115,81 +115,78 @@
         </template>
         <span>{{ pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication') }}</span>
       </v-tooltip>
-      <v-expand-transition v-if="!$root.isMobile && (displayDescription || card)">
-        <v-card
-          v-if="hover || card"
+      <v-card
+        v-if="card && !mobile"
+        :class="{
+          'transition-fast-in-fast-out v-card--reveal mask-color px-2 pt-2 pb-1': !card,
+          'px-4 my-2': card,
+        }"
+        :height="card ? 135 : '100%'"
+        width="100%"
+        class="d-flex flex-column text-start"
+        flat>
+        <div v-if="!card" class="text-truncate white--text">
+          {{ application.title }}
+        </div>
+        <div
           :class="{
-            'transition-fast-in-fast-out v-card--reveal mask-color px-2 pt-2 pb-1': !card,
-            'px-4 py-2': card,
+            'text-font-small-size white--text': !card,
           }"
-          :height="card ? 135 : '100%'"
-          width="100%"
-          class="d-flex flex-column text-start"
-          flat>
-          <div v-if="!card" class="text-truncate white--text">
-            {{ application.title }}
-          </div>
-          <div
-            :class="{
-              'text-font-small-size white--text': !card,
-            }"
-            class="text-truncate-4">
-            {{ application.description }}
-          </div>
-          <div class="d-flex align-center mt-auto">
-            <app-center-shortcut
-              v-if="application.shortcut"
-              :shortcut="application.shortcut"
-              class="align-md-center align-self-end mb-2 mb-md-0"
-              small />
-            <v-spacer />  
-            <v-btn
-              v-if="application.helpPageURL"
-              :href="application.helpPageURL"
-              :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
-              :class="card && 'ms-2'"
-              small
-              icon
-              mouseup.stop="0"
-              mousedown.stop="0"
-              click.stop="0">
-              <v-icon
-                :color="!card && 'white'"
-                :size="card && 20 || 16">
-                fa-question-circle
-              </v-icon>
-            </v-btn>
-            <v-btn
-              v-if="card && canPinApps"
-              :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
-              class="ms-2"
-              small
-              icon
-              mouseup.stop="0"
-              mousedown.stop="0"
-              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
-              <v-icon
-                :class="!pinnedApplication && 'fa-rotate-45'"
-                size="20">
-                fa-thumbtack
-              </v-icon>
-            </v-btn>
-            <v-btn
-              :disabled="application.mandatory"
-              :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
-              :class="card && 'ms-2'"
-              small
-              icon
-              @click.prevent.stop="$emit('toogle-favorite')">
-              <v-icon
-                :color="(application.favorite || readonly) && 'yellow'"
-                :size="card && 20 || 16">
-                {{ (application.favorite || application.mandatory || readonly) && 'fa-star' || 'far fa-star' }}
-              </v-icon>
-            </v-btn>
-          </div>
-        </v-card>
-      </v-expand-transition>
+          class="text-truncate-4">
+          {{ application.description }}
+        </div>
+        <div class="d-flex align-center mt-auto mb-1">
+          <app-center-shortcut
+            v-if="application.shortcut && !$root.isMobile"
+            :shortcut="application.shortcut"
+            class="align-md-center align-self-md-center align-self-end mb-2 mb-md-0" />
+          <v-spacer />  
+          <v-btn
+            v-if="application.helpPageURL"
+            :href="application.helpPageURL"
+            :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
+            :class="card && 'ms-2'"
+            small
+            icon
+            mouseup.stop="0"
+            mousedown.stop="0"
+            click.stop="0">
+            <v-icon
+              :color="!card && 'white'"
+              :size="card && 20 || 16">
+              fa-question-circle
+            </v-icon>
+          </v-btn>
+          <v-btn
+            v-if="card && canPinApps"
+            :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+            class="ms-2"
+            small
+            icon
+            mouseup.stop="0"
+            mousedown.stop="0"
+            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+            <v-icon
+              :class="!pinnedApplication && 'fa-rotate-45'"
+              size="20">
+              fa-thumbtack
+            </v-icon>
+          </v-btn>
+          <v-btn
+            :disabled="application.mandatory"
+            :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
+            :class="card && 'ms-2'"
+            small
+            icon
+            @click.prevent.stop="$emit('toogle-favorite')">
+            <v-icon
+              :color="(application.favorite || readonly) && 'yellow'"
+              :size="card && 20 || 16">
+              {{ (application.favorite || application.mandatory || readonly) && 'fa-star' || 'far fa-star' }}
+            </v-icon>
+          </v-btn>
+        </div>
+      </v-card>
     </v-card>
   </v-hover>
 </template>
@@ -248,6 +245,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    mobile: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     hover: false,
@@ -274,13 +275,13 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.canPinApps && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.canPinApps && this.displayName && !this.card && (this.hover || this.pinnedApplication);
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
     },
     canPinApps() {
-      return this.$root.canPinApps;
+      return this.$root.canPinApps && !this.$root.isMobile;
     },
   },
   methods: {
