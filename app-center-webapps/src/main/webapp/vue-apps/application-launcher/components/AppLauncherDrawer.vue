@@ -19,21 +19,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
-    :allow-expand="expanded"
     :loading="drawerLoading"
     class="appCenterDrawer"
+    allow-expand
     @expand-updated="expanded = $event">
     <template #title>
       {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
-    </template>
-    <template v-if="!expanded && !$root.isMobile" #titleIcons>
-      <v-btn
-        :title="$t('appCenter.appLauncher.addAppPlaceHolder')"
-        icon
-        class="text-xs-center"
-        @click="expandDrawer">
-        <v-icon size="20">fa-plus</v-icon>
-      </v-btn>
     </template>
     <template v-if="drawer" #content>
       <div v-if="cardDisplay" class="d-flex justify-space-between">
@@ -137,6 +128,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           class="mt-12"
           @expand="expandDrawer"
           @reset="resetFilter" />
+      </div>
+    </template>
+    <template v-if="!expanded" #footer>
+      <div class="d-flex align-center justify-end">
+        <v-btn
+          :title="$t('appCenter.userSetup.seeAll')"
+          color="primary"
+          elevation="0"
+          outlined
+          @click="expandDrawer">
+          {{ $t('appCenter.userSetup.seeAll') }}
+        </v-btn>
       </div>
     </template>
   </exo-drawer>
