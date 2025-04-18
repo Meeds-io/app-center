@@ -36,8 +36,10 @@
       v-model="applicationsList"
       :item-key="'id'"
       class="d-flex flex-wrap flex-grow-0 justify-start"
-      @start="onDragStart"
-      @end="onDragEnd">
+      v-bind="isMobile ? {} : {
+        onStart: onDragStart,
+        onEnd: onDragEnd
+      }">
       <my-application-item
         v-for="application in applicationsList"
         :key="application.id"
