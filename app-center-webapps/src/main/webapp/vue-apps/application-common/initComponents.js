@@ -16,9 +16,11 @@
  */
 import AppPortletInstanceDrawer from './components/AppPortletInstanceDrawer.vue';
 import AppItem from './components/AppItem.vue';
+import AppShortcut from './components/AppShortcut.vue';
 
 const components = {
   'app-center-item': AppItem,
+  'app-center-shortcut': AppShortcut,
   'app-center-portlet-instance-drawer': AppPortletInstanceDrawer,
 };
 
