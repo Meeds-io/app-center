@@ -68,7 +68,7 @@ public class ApplicationCenterInjectService {
   private static final Log                   LOG                       =
                                                  ExoLogger.getLogger(ApplicationCenterInjectService.class);
 
-  private static final String                APP_CENTER_APPS_VERSION   = "2";
+  private static final String                APP_CENTER_APPS_VERSION   = "4";
 
   private static final String                MERGE_MODE                = "merge";
 
@@ -311,14 +311,14 @@ public class ApplicationCenterInjectService {
   private String getStoredApplicationsVersion() {
     SettingValue<?> settingValue = settingService.get(APP_CENTER_CONTEXT,
                                                       APP_CENTER_SCOPE,
-                                                      APP_CENTER_APPS_VERSION);
+                                                      APP_CENTER_SYSTEM_APP_KEY);
     return settingValue == null || settingValue.getValue() == null ? null : settingValue.getValue().toString();
   }
 
   private void saveStoredApplicationsVersion() {
     settingService.set(APP_CENTER_CONTEXT,
                        APP_CENTER_SCOPE,
-                       APP_CENTER_APPS_VERSION,
+                       APP_CENTER_SYSTEM_APP_KEY,
                        SettingValue.create(APP_CENTER_APPS_VERSION));
   }
 
