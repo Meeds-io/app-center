@@ -241,42 +241,48 @@
             @click="hasShortcut = !hasShortcut">
             {{ $t('appCenter.adminSetupForm.shortcut') }}
           </v-card>
-          <v-switch
-            v-model="hasShortcut"
-            class="ma-0 pa-0"
-            name="applicationShortcutSwitch"
-            hide-details />
+          <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+            <v-switch
+              v-model="hasShortcut"
+              :disabled="application.system"
+              class="ma-0 pa-0"
+              name="applicationShortcutSwitch"
+              hide-details />
+          </div>
         </div>
-        <v-text-field
-          v-if="hasShortcut"
-          ref="applicationShortcut"
-          id="applicationShortcut"
-          v-model="application.shortcut"
-          :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
-          :rules="rules.shortcut"
-          name="applicationShortcut"
-          class="border-box-sizing width-auto pt-0 mt-2 mb-3"
-          type="text"
-          maxlength="1"
-          outlined
-          dense>
-          <template #prepend-inner>
-            <div class="d-flex align-center mt-n1 ms-n1">
-              <v-card
-                class="fill-height grey-lighten1-background white--text px-5 py-2"
-                flat>
-                {{ $t('appCenter.adminSetupForm.ctrl') }}
-              </v-card>
-              <v-icon class="mx-2" size="24">fa-plus</v-icon>
-              <v-card
-                class="fill-height grey-lighten1-background white--text px-5 py-2"
-                flat>
-                {{ $t('appCenter.adminSetupForm.shift') }}
-              </v-card>
-              <v-icon class="mx-2" size="24">fa-plus</v-icon>
-            </div>
-          </template>
-        </v-text-field>
+        <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+          <v-text-field
+            v-if="hasShortcut"
+            ref="applicationShortcut"
+            id="applicationShortcut"
+            v-model="application.shortcut"
+            :disabled="application.system"
+            :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
+            :rules="rules.shortcut"
+            name="applicationShortcut"
+            class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+            type="text"
+            maxlength="1"
+            outlined
+            dense>
+            <template #prepend-inner>
+              <div class="d-flex align-center mt-n1 ms-n1">
+                <v-card
+                  class="fill-height grey-lighten1-background white--text px-5 py-2"
+                  flat>
+                  {{ $t('appCenter.adminSetupForm.ctrl') }}
+                </v-card>
+                <v-icon class="mx-2" size="24">fa-plus</v-icon>
+                <v-card
+                  class="fill-height grey-lighten1-background white--text px-5 py-2"
+                  flat>
+                  {{ $t('appCenter.adminSetupForm.shift') }}
+                </v-card>
+                <v-icon class="mx-2" size="24">fa-plus</v-icon>
+              </div>
+            </template>
+          </v-text-field>
+        </div>
         <div class="d-flex full-width align-center mb-2">
           <v-card
             class="text-start flex-grow-1 clickable transparent"
