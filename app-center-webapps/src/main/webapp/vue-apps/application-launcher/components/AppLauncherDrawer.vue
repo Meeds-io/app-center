@@ -27,108 +27,119 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
     </template>
     <template v-if="drawer" #content>
-      <div v-if="cardDisplay" class="d-flex justify-space-between">
-        <div class="col-6 pa-0">
-          <div class="ms-4">
-            <categories-filter v-model="categoryId" class="mt-4" />
-          </div>
-        </div>
-        <div class="col-6 pa-0">
-          <application-toolbar
-            id="appLauncherToolbar"
-            ref="appLauncherToolbar"
-            :right-text-filter="{
-              minCharacters: 1,
-              placeholder: $t('appCenter.appLauncher.filterPlaceholder'),
-              tooltip: $t('appCenter.appLauncher.filterPlaceholder'),
-              minWidth: 'min(calc(100% - 100px), 275px)',
-            }"
-            :right-select-box="{
-              selected: filter,
-              items: filters,
-            }"
-            class="border-box-sizing px-1 flex-grow-0"
-            hide-left
-            hide-center
-            @filter-text-input="keyword = $event"
-            @filter-select-change="filter = $event" />
-        </div>
-      </div>
-      <v-expand-transition v-else-if="hasRecentApplications">
-        <div v-show="!expanded">
-          <v-layout class="d-flex flex-column flex-wrap px-4 mt-4">
-            <div class="text-header mb-2">
-              {{ $t('appCenter.appLauncher.recentApps') }}
+      <v-card
+        :class="cardDisplay && 'pa-4'"
+        class="d-flex light-grey-background-color"
+        min-height="100%"
+        flat>
+        <v-card
+          class="singlePageApplication pa-0 d-flex flex-column fill-height white card-border-radius overflow-hidden"
+          min-height="100%"
+          flat>
+          <div v-if="cardDisplay" class="d-flex justify-space-between">
+            <div class="col-6 pa-0">
+              <div class="ms-4">
+                <categories-filter v-model="categoryId" class="mt-4" />
+              </div>
             </div>
-            <card-carousel class="d-flex max-width-fit">
-              <v-tooltip
-                v-for="application in recentApplications"
+            <div class="col-6 pa-0">
+              <application-toolbar
+                id="appLauncherToolbar"
+                ref="appLauncherToolbar"
+                :right-text-filter="{
+                  minCharacters: 1,
+                  placeholder: $t('appCenter.appLauncher.filterPlaceholder'),
+                  tooltip: $t('appCenter.appLauncher.filterPlaceholder'),
+                  minWidth: 'min(calc(100% - 100px), 275px)',
+                }"
+                :right-select-box="{
+                  selected: filter,
+                  items: filters,
+                }"
+                class="border-box-sizing px-1 flex-grow-0"
+                hide-left
+                hide-center
+                @filter-text-input="keyword = $event"
+                @filter-select-change="filter = $event" />
+            </div>
+          </div>
+          <v-expand-transition v-else-if="hasRecentApplications">
+            <div v-show="!expanded">
+              <v-layout class="d-flex flex-column flex-wrap px-4 mt-4">
+                <div class="text-header mb-2">
+                  {{ $t('appCenter.appLauncher.recentApps') }}
+                </div>
+                <card-carousel class="d-flex max-width-fit">
+                  <v-tooltip
+                    v-for="application in recentApplications"
+                    :key="application.id"
+                    bottom>
+                    <template #activator="{on, attrs}">
+                      <div
+                        v-on="on"
+                        v-bind="attrs"
+                        class="border-color border-radius me-4">
+                        <app-center-item
+                          :application="application"
+                          :loading="appLoading === application.url"
+                          min-width="60"
+                          max-width="60"
+                          max-height="60"
+                          min-height="60"
+                          image-size="24"
+                          icon-size="24"
+                          elevate
+                          @open="$emit('open-app', application.type, application.url)" />
+                      </div>
+                    </template>
+                    <span>{{ application.title }}</span>
+                  </v-tooltip>
+                </card-carousel>
+                <div class="text-header mb-n2">
+                  {{ $t('appCenter.appLauncher.favoriteApps') }}
+                </div>
+              </v-layout>
+            </div>
+          </v-expand-transition>
+          <v-layout
+            v-if="hasApplications"
+            :class="!expanded && 'mt-4'"
+            class="d-flex flex-column favorite appsContainer px-4">
+            <component
+              :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
+              v-model="favoriteApplications"
+              class="appLauncherList d-flex flex-wrap me-n3"
+              @start="drag=true"
+              @end="drag=false">
+              <div
+                v-for="application in filteredApplications"
                 :key="application.id"
-                bottom>
-                <template #activator="{on, attrs}">
-                  <div
-                    v-on="on"
-                    v-bind="attrs"
-                    class="border-color border-radius me-4">
-                    <app-center-item
-                      :application="application"
-                      :loading="appLoading === application.url"
-                      min-width="60"
-                      max-width="60"
-                      max-height="60"
-                      min-height="60"
-                      image-size="24"
-                      icon-size="24"
-                      elevate
-                      @open="$emit('open-app', application.type, application.url)" />
-                  </div>
-                </template>
-                <span>{{ application.title }}</span>
-              </v-tooltip>
-            </card-carousel>
-            <div class="text-header mb-n2">
-              {{ $t('appCenter.appLauncher.favoriteApps') }}
-            </div>
+                :class="cardDisplay && 'mb-4' || 'mb-3'"
+                class="flex-grow-1 flex-shrink-0 col-4 pa-0">
+                <app-center-item
+                  :application="application"
+                  :loading="appLoading === application.url"
+                  :card="cardDisplay"
+                  :min-height="cardDisplay && 227 || 'auto'"
+                  :max-height="cardDisplay && 227 || 'auto'"
+                  :class="cardDisplay && 'me-4' || 'me-3'"
+                  display-name
+                  elevate
+                  @open="$emit('open-app', application.type, application.url)"
+                  @toogle-favorite="toogleFavorite(application)"
+                  @toogle-pin="tooglePin(application, $event)" />
+              </div>
+            </component>
           </v-layout>
-        </div>
-      </v-expand-transition>
-      <v-layout
-        v-if="hasApplications"
-        :class="!expanded && 'mt-4'"
-        class="d-flex flex-column favorite appsContainer px-4">
-        <component
-          :is="!$root.isMobile && !expanded && 'draggable' || 'div'"
-          v-model="favoriteApplications"
-          class="appLauncherList d-flex flex-wrap me-n3"
-          @start="drag=true"
-          @end="drag=false">
-          <div
-            v-for="application in filteredApplications"
-            :key="application.id"
-            :class="cardDisplay && 'mb-4' || 'mb-3'"
-            class="flex-grow-1 flex-shrink-0 col-4 pa-0">
-            <app-center-item
-              :application="application"
-              :loading="appLoading === application.url"
-              :card="cardDisplay"
-              :min-height="cardDisplay && 227 || 'auto'"
-              :max-height="cardDisplay && 227 || 'auto'"
-              :class="cardDisplay && 'me-4' || 'me-3'"
-              display-name
-              elevate
-              @open="$emit('open-app', application.type, application.url)"
-              @toogle-favorite="toogleFavorite(application)"
-              @toogle-pin="tooglePin(application, $event)" />
+          <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
+            <app-center-launcher-empty
+              :has-applications="hasAvailableApplications"
+              class="mt-12"
+              @expand="expandDrawer"
+              @reset="resetFilter" />
           </div>
-        </component>
-      </v-layout>
-      <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
-        <app-center-launcher-empty
-          :has-applications="hasAvailableApplications"
-          class="mt-12"
-          @expand="expandDrawer"
-          @reset="resetFilter" />
-      </div>
+        </v-card>
+      </v-card>
     </template>
     <template v-if="!expanded" #footer>
       <div class="d-flex align-center justify-end">
