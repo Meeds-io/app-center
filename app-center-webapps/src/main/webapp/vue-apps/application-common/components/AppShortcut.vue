@@ -20,44 +20,40 @@
 
 -->
 <template>
-  <div class="d-flex flex-column flex-md-row align-center">
+  <div class="d-flex align-md-center content-box-sizing">
     <v-card
-      class="d-flex align-center align-self-start mb-2 mb-md-0"
-      min-width="fit-content"
-      width="380"
-      max-width="30%"
+      :class="small && 'px-2' || 'px-5'"
+      class="fill-height grey-lighten1-background white--text py-1"
       flat>
-      <v-avatar
-        class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 me-3"
-        size="22"
-        tile>
-        <v-img
-          v-if="application.imageUrl"
-          :src="application.imageUrl"
-          max-height="20"
-          max-width="20"
-          contain />
-        <v-icon
-          v-else-if="application.icon"
-          size="20"
-          class="d-flex align-center justify-center">
-          {{ application.icon }}
-        </v-icon>
-      </v-avatar>
-      {{ application.title }}
+      {{ $t('appCenter.adminSetupForm.ctrl') }}
     </v-card>
-    <app-center-shortcut
-      v-if="application.shortcut"
-      :shortcut="application.shortcut"
-      class="align-md-center align-self-end mb-2 mb-md-0" />
+    <v-icon class="mx-2" size="24">fa-plus</v-icon>
+    <v-card
+      :class="small && 'px-2' || 'px-5'"
+      class="fill-height grey-lighten1-background white--text py-1"
+      flat>
+      {{ $t('appCenter.adminSetupForm.shift') }}
+    </v-card>
+    <v-icon class="mx-2" size="24">fa-plus</v-icon>
+    <v-card
+      :class="small && 'px-2' || 'px-5'"
+      class="fill-height grey-lighten1-background white--text py-1"
+      width="10"
+      flat>
+      {{ shortcut }}
+    </v-card>
   </div>
 </template>
 <script>
 export default {
   props: {
-    application: {
+    shortcut: {
       type: String,
       default: null,
+    },
+    small: {
+      type: Boolean,
+      default: false,
     },
   },
 };
