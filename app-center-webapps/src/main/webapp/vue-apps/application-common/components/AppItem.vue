@@ -41,7 +41,8 @@
           'flex-wrap': card,
           'flex-column': !card,
           'border-color': card,
-          'transparent': !card,
+          'transparent': !card && !hover,
+          'light-grey-background-color': !card && hover,
         }
       ]"
       class="appLauncherItemContainer fill-height d-flex align-center justify-center">
