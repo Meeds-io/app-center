@@ -1,18 +1,22 @@
 <!--
 This file is part of the Meeds project (https://meeds.io/).
-Copyright (C) 2020 Meeds Association
-contact@meeds.io
+
+Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
 version 3 of the License, or (at your option) any later version.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 Lesser General Public License for more details.
+
 You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software Foundation,
 Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 -->
 <template>
   <exo-drawer
@@ -82,6 +86,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                         <app-center-item
                           :application="application"
                           :loading="appLoading === application.url"
+                          :mobile="$root.isMobile"
                           min-width="60"
                           max-width="60"
                           max-height="60"
@@ -119,6 +124,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 <app-center-item
                   :application="application"
                   :loading="appLoading === application.url"
+                  :mobile="$root.isMobile"
                   :card="cardDisplay"
                   :min-height="cardDisplay && 227 || 'auto'"
                   :max-height="cardDisplay && 227 || 'auto'"
@@ -140,8 +146,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </div>
         </v-card>
       </v-card>
+      <app-center-launcher-mobile-drawer
+        v-if="$root.isMobile"
+        ref="mobileDrawer"
+        :applications="availableApplications"
+        @toogle-favorite="toogleFavorite"
+        @toogle-pin="tooglePin" />
     </template>
-    <template v-if="!expanded" #footer>
+    <template v-if="!expanded && hasAvailableApplications" #footer>
       <div class="d-flex align-center justify-end">
         <v-btn
           :title="$t('appCenter.userSetup.seeAll')"
@@ -400,9 +412,13 @@ export default {
       }
     },
     async expandDrawer() {
-      this.expanded = true;
-      await this.$nextTick();
-      this.$refs.drawer.toogleExpand();
+      if (this.$root.isMobile) {
+        this.$refs.mobileDrawer.open();
+      } else {
+        this.expanded = true;
+        await this.$nextTick();
+        this.$refs.drawer.toogleExpand();
+      }
     },
     open() {
       this.$refs.drawer.open();

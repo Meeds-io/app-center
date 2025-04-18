@@ -115,7 +115,7 @@
         </template>
         <span>{{ pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication') }}</span>
       </v-tooltip>
-      <v-expand-transition v-if="!$root.isMobile && (displayDescription || card)">
+      <v-expand-transition v-if="!mobile && (displayDescription || card)">
         <v-card
           v-if="hover || card"
           :class="{
@@ -138,7 +138,7 @@
           </div>
           <div class="d-flex align-center mt-auto">
             <app-center-shortcut
-              v-if="application.shortcut"
+              v-if="application.shortcut && !$root.isMobile"
               :shortcut="application.shortcut"
               class="align-md-center align-self-end mb-2 mb-md-0"
               small />
@@ -248,6 +248,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    mobile: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     hover: false,
@@ -274,7 +278,7 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.canPinApps && !this.card && (this.hover || this.pinnedApplication);
+      return !this.mobile && this.canPinApps && !this.card && (this.hover || this.pinnedApplication);
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
