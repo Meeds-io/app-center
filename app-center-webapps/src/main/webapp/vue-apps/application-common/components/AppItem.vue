@@ -89,8 +89,8 @@
           {{ application.title }}
         </span>
         <v-icon
-          v-if="!card && application.type === 'LINK' && !application.sameTab"
-          class="ms-1"
+          v-if="application.type === 'LINK' && !application.sameTab"
+          :class="card && 'ms-2' || 'ms-1'"
           size="12">
           fa-external-link-alt
         </v-icon>
