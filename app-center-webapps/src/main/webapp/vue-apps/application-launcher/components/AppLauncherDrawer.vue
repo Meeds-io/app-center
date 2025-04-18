@@ -115,7 +115,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
               :max-height="cardDisplay && 227 || 'auto'"
               :class="cardDisplay && 'me-4' || 'me-3'"
               display-name
-              display-description
+              elevate
               @open="$emit('open-app', application.type, application.url)"
               @toogle-favorite="toogleFavorite(application)"
               @toogle-pin="tooglePin(application, $event)" />
