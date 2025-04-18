@@ -274,7 +274,7 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.canPinApps && this.displayDescription && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.canPinApps && !this.card && (this.hover || this.pinnedApplication);
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
