@@ -21,7 +21,10 @@ import './initComponents.js';
 
 const appCenterApplicationsFetch = Vue.prototype.$applicationService.getApplications();
 
-export function init(parentElementId, topbarApplication) {
+export async function init(parentElementId, topbarApplication) {
+  const lang = eXo.env.portal.language || 'en';
+  const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
+  const i18n = await exoi18n.loadLanguageAsync(lang, url);
   Vue.createApp({
     data: () => ({
       topbarApplication,
@@ -74,6 +77,6 @@ export function init(parentElementId, topbarApplication) {
       </div>
     `,
     vuetify: Vue.prototype.vuetifyOptions,
-    i18n: exoi18n.i18n,
+    i18n,
   }, `#${parentElementId}`, 'Application Center Drawer');
 }
