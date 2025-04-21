@@ -20,11 +20,15 @@
 import './initComponents.js';
 
 const appId = 'userPinnedApplications';
+
 export async function init(pinnedApplicationIds) {
+  const lang = eXo.env.portal.language || 'en';
+  const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
+  const i18n = await exoi18n.loadLanguageAsync(lang, url);
   await Vue.createApp({
     template: `<app-center-pinned-applications id="${appId}"/>`,
     vuetify: Vue.prototype.vuetifyOptions,
-    i18n: exoi18n.i18n,
+    i18n,
     data: () => ({
       pinnedApplicationIds,
       quickActionExtensions: [],
