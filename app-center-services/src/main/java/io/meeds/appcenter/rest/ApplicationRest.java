@@ -205,14 +205,15 @@ public class ApplicationRest {
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
         if (!LinkProvider.isAttachmentTokenValid(token,
-                                                 "appCenter",
+                                                 "appcenter",
                                                  String.valueOf(applicationId),
                                                  "icon",
                                                  String.valueOf(lastModified.orElse(0l)))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
           throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-      } else if (!appCenterService.canAccess(application, request.getRemoteUser())
+      } else if (!appCenterService.canEdit(request.getRemoteUser())
+                 && !appCenterService.canAccess(application, request.getRemoteUser())
                  && !LinkProvider.isAttachmentTokenValid(token,
                                                          "appCenter",
                                                          String.valueOf(applicationId),
