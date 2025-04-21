@@ -44,6 +44,10 @@ import io.meeds.pwa.plugin.PwaShortcutPlugin;
 @Service
 public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
 
+  public static final String      PWA_SMALL_ICON_BASE_PATH    = "/pwa/rest/manifest/smallIcon?v="; // NOSONAR
+
+  private static final String     PWA_SHORTCUT_IMG_DIMENSIONS = "192x192";
+
   @Autowired
   private PortalContainer         container;
 
@@ -79,9 +83,18 @@ public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
   }
 
   private List<PwaShortcutIcon> getShortcutIcons(Application application) {
-    return StringUtils.isBlank(application.getImageUrl()) ? Collections.emptyList() :
-                                                          Collections.singletonList(new PwaShortcutIcon(getFullImageUrl(application),
+    return StringUtils.isBlank(application.getImageUrl()) ?
+                                                          Collections.singletonList(new PwaShortcutIcon(String.format("%s%s&sizes=%s",
+                                                                                                                      PWA_SMALL_ICON_BASE_PATH,
+                                                                                                                      application.hashCode(),
+                                                                                                                      PWA_SHORTCUT_IMG_DIMENSIONS),
+                                                                                                        PWA_SHORTCUT_IMG_DIMENSIONS,
                                                                                                         null,
+                                                                                                        null)) :
+                                                          Collections.singletonList(new PwaShortcutIcon(String.format("%s&sizes=%s",
+                                                                                                                      getFullImageUrl(application),
+                                                                                                                      PWA_SHORTCUT_IMG_DIMENSIONS),
+                                                                                                        PWA_SHORTCUT_IMG_DIMENSIONS,
                                                                                                         null,
                                                                                                         null));
   }
