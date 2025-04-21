@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -36,8 +37,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.services.resources.ResourceBundleService;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -76,6 +79,9 @@ public class AppCenterPwaShortcutPluginTest {
     when(applicationCenterService.getMandatoryAndFavoriteApplications(any(),
                                                                       eq(TEST_USER),
                                                                       eq(ResourceBundleService.DEFAULT_CROWDIN_LOCALE))).thenReturn(applicationList);
+    PortalConfig portalConfig = mock(PortalConfig.class);
+    when(portalConfig.getName()).thenReturn("meeds");
+    when(portalConfigService.getDefaultSite(TEST_USER)).thenReturn(portalConfig);
 
     List<PwaShortcut> shortcuts = pwaShortcutPlugin.getShortcuts(TEST_USER);
     assertNotNull(shortcuts);
@@ -83,7 +89,7 @@ public class AppCenterPwaShortcutPluginTest {
 
     Application application = new Application(1l,
                                               "title",
-                                              "url",
+                                              "./url",
                                               true,
                                               "helpPageURL",
                                               "description",
@@ -109,12 +115,12 @@ public class AppCenterPwaShortcutPluginTest {
     PwaShortcut pwaShortcut = shortcuts.get(0);
     assertNotNull(pwaShortcut);
     assertEquals(application.getTitle(), pwaShortcut.getName());
-    assertEquals(application.getUrl(), pwaShortcut.getUrl());
+    assertEquals("/portal/meeds/url", pwaShortcut.getUrl());
     assertEquals(application.getDescription(), pwaShortcut.getDescription());
     assertEquals(application.getTitle(), pwaShortcut.getShortName());
     assertNotNull(pwaShortcut.getIcons());
     assertEquals(1, pwaShortcut.getIcons().size());
-    assertEquals(application.getImageUrl(), pwaShortcut.getIcons().get(0).getSrc());
+    assertEquals(CommonsUtils.getCurrentDomain() + application.getImageUrl(), pwaShortcut.getIcons().get(0).getSrc());
   }
 
 }
