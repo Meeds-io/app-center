@@ -37,7 +37,6 @@
       :item-key="'id'"
       class="d-flex flex-wrap flex-grow-0 justify-start"
       v-bind="isMobile ? {} : {
-        onStart: onDragStart,
         onEnd: onDragEnd
       }">
       <my-application-item
