@@ -57,10 +57,10 @@ export default {
       this.openApplicationByShortcut(this.$root.shortcut);
     } else if (!this.$root.noAutoOpen) {
       this.$refs.appDrawer.open();
-    } else if (this.$utils.getQueryParam('appCenterDrawer')) {
-      this.openApplication('DRAWER', this.$utils.getQueryParam('appCenterDrawer'));
-    } else if (this.$utils.getQueryParam('appCenterPortlet')) {
-      this.openApplication('PORTLET', this.$utils.getQueryParam('appCenterPortlet'));
+    } else if (this.$root.autoInitDrawerId) {
+      this.openApplication('DRAWER', this.$root.autoInitDrawerId);
+    } else if (this.$root.autoInitPortletId) {
+      this.openApplication('PORTLET', this.$root.autoInitPortletId);
     }
   },
   beforeDestroy() {
