@@ -33,7 +33,7 @@
         v-on="application?.type !== 'LINK' && {
           click: () => openApplication(application),
         }"
-        :title="application?.title"
+        :title="application.shortcut ? `${application.title} (${$t('appCenter.adminSetupForm.ctrl')} + ${$t('appCenter.adminSetupForm.shift')} + ${application.shortcut})` : application.title"
         :loading="loading[application?.id]"
         icon>
         <v-icon
