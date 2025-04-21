@@ -26,7 +26,6 @@ public class ApplicationList {
   private long offset;
   private long limit;
   private long size;
-  private boolean canAddFavorite;
 
   // Fluent API style setters (return `this` for method chaining)
   public List<Application> getApplications() {
@@ -35,15 +34,6 @@ public class ApplicationList {
 
   public ApplicationList setApplications(List<Application> applications) {
     this.applications = applications;
-    return this;
-  }
-
-  public boolean isCanAddFavorite() {
-    return canAddFavorite;
-  }
-
-  public ApplicationList setCanAddFavorite(boolean canAddFavorite) {
-    this.canAddFavorite = canAddFavorite;
     return this;
   }
 

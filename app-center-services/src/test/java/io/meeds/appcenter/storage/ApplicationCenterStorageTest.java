@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -45,7 +47,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import org.exoplatform.commons.file.model.FileInfo;
+import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -54,6 +59,7 @@ import io.meeds.appcenter.dao.FavoriteApplicationDAO;
 import io.meeds.appcenter.entity.ApplicationEntity;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 
 import lombok.SneakyThrows;
@@ -113,7 +119,7 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  void testCreateApplication() {
+  void createApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.createApplication(null));
     Application application = application(null);
     Application storedApplication = applicationCenterStorage.createApplication(application);
@@ -127,7 +133,32 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testUpdateApplication() {
+  void createApplicationWithAttachment() {
+    ApplicationForm application = new ApplicationForm(application(null));
+
+    String uploadId = "uploadId";
+    application.setImageUploadId(uploadId);
+    UploadResource uploadResource = mock(UploadResource.class);
+    when(uploadService.getUploadResource(uploadId)).thenReturn(uploadResource);
+    when(uploadResource.getStoreLocation()).thenReturn(getClass().getResource("/applications.json").getFile());
+
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+    assertNotNull(storedApplication);
+    verify(fileService).writeFile(any());
+
+    long fileId = 55l;
+    when(fileService.writeFile(any())).thenAnswer(invocation -> {
+      FileItem fileItem = invocation.getArgument(0);
+      fileItem.setFileInfo(new FileInfo(fileId, null, null, null, 0l, null, null, null, false));
+      return fileItem;
+    });
+    storedApplication = applicationCenterStorage.createApplication(application);
+    assertEquals(fileId, storedApplication.getImageFileId());
+  }
+
+  @Test
+  @SneakyThrows
+  void updateApplication() {
     ApplicationEntity existingApplication = applicationEntity(ID);
     when(applicationDAO.findById(ID)).thenReturn(Optional.of(existingApplication));
 
@@ -142,7 +173,50 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testDeleteApplication() {
+  void findSystemApplicationByUrl() {
+    Application application = applicationCenterStorage.findSystemApplicationByUrl(URL);
+    assertNull(application);
+
+    ApplicationEntity existingApplication = applicationEntity(ID);
+    when(applicationDAO.findBySystemIsTrueAndUrl(URL)).thenReturn(Collections.singletonList(existingApplication));
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(existingApplication));
+
+    application = applicationCenterStorage.findSystemApplicationByUrl(URL);
+    assertNotNull(application);
+  }
+
+  @Test
+  @SneakyThrows
+  void updateApplicationWithAttachment() {
+    ApplicationEntity existingApplication = applicationEntity(ID);
+    existingApplication.setMandatory(false);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(existingApplication));
+
+    ApplicationForm application = new ApplicationForm(application(ID));
+
+    String uploadId = "uploadId";
+    application.setImageUploadId(uploadId);
+    UploadResource uploadResource = mock(UploadResource.class);
+    when(uploadService.getUploadResource(uploadId)).thenReturn(uploadResource);
+    when(uploadResource.getStoreLocation()).thenReturn(getClass().getResource("/applications.json").getFile());
+
+    long fileId = 55l;
+    when(fileService.updateFile(any())).thenAnswer(invocation -> {
+      FileItem fileItem = invocation.getArgument(0);
+      fileItem.setFileInfo(new FileInfo(fileId, null, null, null, 0l, null, null, null, false));
+      return fileItem;
+    });
+
+    applicationCenterStorage.updateApplication(application);
+    verify(fileService).deleteFile(anyLong());
+    verify(fileService).updateFile(any());
+    verify(applicationDAO).save(argThat(applicationEntity -> applicationEntity.getImageFileId() != null
+                                                             && applicationEntity.getImageFileId() == fileId));
+  }
+
+  @Test
+  @SneakyThrows
+  void deleteApplication() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.deleteApplication(0));
     assertThrows(ApplicationNotFoundException.class, () -> applicationCenterStorage.deleteApplication(5000L));
 
@@ -155,7 +229,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testGetApplication() {
+  void getApplication() {
     assertNull(applicationCenterStorage.getApplication(50000l));
 
     Application application = application(null);
@@ -174,20 +248,44 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testAddApplicationToUserFavorite() {
+  void addApplicationToUserFavorite() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.addApplicationToUserFavorite(0, TEST_USER));
     assertThrows(ApplicationNotFoundException.class,
                  () -> applicationCenterStorage.addApplicationToUserFavorite(50000, TEST_USER));
 
-    Application application = application(null);
+    Application application = application(ID);
 
     Application storedApplication = applicationCenterStorage.createApplication(application);
     applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), TEST_USER);
+
+    verify(favoriteApplicationDAO).save(argThat(fav -> fav.getFavorite() != null
+                                                       && fav.getFavorite().booleanValue()
+                                                       && fav.getUserName().equals(TEST_USER)
+                                                       && fav.getApplication().getId().equals(ID)));
   }
 
   @Test
   @SneakyThrows
-  void testUpdateApplicationFavoriteOrder() {
+  void addApplicationToUserFavoriteWhenExisting() {
+    Application application = application(ID);
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+    when(favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(ID,
+                                                                 TEST_USER)).thenReturn(new FavoriteApplicationEntity(ID,
+                                                                                                                      null,
+                                                                                                                      TEST_USER,
+                                                                                                                      5l,
+                                                                                                                      false));
+
+    applicationCenterStorage.addApplicationToUserFavorite(storedApplication.getId(), TEST_USER);
+
+    verify(favoriteApplicationDAO).save(argThat(fav -> fav.getFavorite() != null
+                                                       && fav.getFavorite().booleanValue()
+                                                       && fav.getUserName().equals(TEST_USER)));
+  }
+
+  @Test
+  @SneakyThrows
+  void updateFavoriteApplicationOrder() {
     FavoriteApplicationEntity favoriteApplicationEntity = mock(FavoriteApplicationEntity.class);
     when(favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(ID, TEST_USER)).thenReturn(favoriteApplicationEntity);
     applicationCenterStorage.updateFavoriteApplicationOrder(ID, TEST_USER, 1l);
@@ -200,7 +298,7 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testDeleteApplicationFavorite() {
+  void deleteApplicationFavorite() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.deleteApplicationFavorite(0L, TEST_USER));
     applicationCenterStorage.deleteApplicationFavorite(50000L, TEST_USER);
     Application application = application(null);
@@ -210,7 +308,7 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  void testGetApplications() {
+  void getApplications() {
     List<Application> applications = applicationCenterStorage.getApplications(null);
     assertNotNull(applications);
     assertEquals(0, applications.size());
@@ -241,14 +339,14 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  void testCountApplications() {
+  void countApplications() {
     assertEquals(0l, applicationCenterStorage.countApplications());
     when(applicationDAO.count()).thenReturn(1l);
     assertEquals(1l, applicationCenterStorage.countApplications());
   }
 
   @Test
-  void testIsFavoriteApplication() {
+  void getFavoriteAppByUserNameAndAppId() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(null, null));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(null, TEST_USER));
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.isFavoriteApplication(0L, TEST_USER));
@@ -261,7 +359,7 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  void testIsFavoriteApplicationWhenAppIsDefault() {
+  void isFavoriteApplication() {
     assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
     ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
     lenient().when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
@@ -271,7 +369,7 @@ public class ApplicationCenterStorageTest {
   }
 
   @Test
-  void testIsFavoriteApplicationWhenAppIsDefaultButNotFavorite() {
+  void isFavoriteApplicationWhenAppIsDefaultButNotFavorite() {
     assertFalse(applicationCenterStorage.isFavoriteApplication(ID, TEST_USER));
     ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
     when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
@@ -287,11 +385,20 @@ public class ApplicationCenterStorageTest {
 
   @Test
   @SneakyThrows
-  void testCountFavorites() {
+  void countFavorites() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.countFavorites(null));
     assertEquals(0, applicationCenterStorage.countFavorites(TEST_USER));
     when(favoriteApplicationDAO.countFavoritesForUser(TEST_USER)).thenReturn(1l);
     assertEquals(1, applicationCenterStorage.countFavorites(TEST_USER));
+  }
+
+  @Test
+  @SneakyThrows
+  void getSystemApplications() {
+    when(applicationDAO.getSystemApplicationIds()).thenReturn(Collections.singletonList(ID));
+    ApplicationEntity applicationEntity = mock(ApplicationEntity.class);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity));
+    assertEquals(1, applicationCenterStorage.getSystemApplications().size());
   }
 
   private ApplicationEntity applicationEntity(Long id) {
