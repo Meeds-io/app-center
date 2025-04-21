@@ -252,16 +252,20 @@ public class ApplicationCenterInjectService {
       String uploadId = UUID.randomUUID().toString();
       try {
         URL resource = configurationManager.getURL(imagePath);
-        File file = new File(resource.getFile());
-        UploadResource uploadResource = new UploadResource(uploadId,
-                                                           file.getName(),
-                                                           "image/png",
-                                                           file.getAbsolutePath(),
-                                                           0,
-                                                           0,
-                                                           UploadResource.UPLOADED_STATUS);
-        uploadService.createUploadResource(uploadResource);
-        applicationForm.setImageUploadId(uploadId);
+        if (resource == null) {
+          LOG.warn("Application Image with path {} doesn't exist", imagePath);
+        } else {
+          File file = new File(resource.getFile());
+          UploadResource uploadResource = new UploadResource(uploadId,
+                                                             file.getName(),
+                                                             "image/png",
+                                                             file.getAbsolutePath(),
+                                                             0,
+                                                             0,
+                                                             UploadResource.UPLOADED_STATUS);
+          uploadService.createUploadResource(uploadResource);
+          applicationForm.setImageUploadId(uploadId);
+        }
       } catch (Exception e) {
         LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
       }
@@ -274,7 +278,9 @@ public class ApplicationCenterInjectService {
         applicationForm.setChangedManually(false);
         applicationForm.setImageFileId(null);
         storedApplication = applicationCenterService.createApplication(applicationForm);
-        saveStoredApplicationId(pluginName, storedApplication.getId());
+        if (storedApplication != null) {
+          saveStoredApplicationId(pluginName, storedApplication.getId());
+        }
       } catch (Exception e) {
         LOG.error("Error creating application {}", applicationForm, e);
       }
