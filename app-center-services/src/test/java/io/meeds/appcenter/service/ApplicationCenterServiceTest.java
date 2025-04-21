@@ -364,31 +364,25 @@ public class ApplicationCenterServiceTest {
   @Test
   @SneakyThrows
   void getLastUpdated() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationImageLastUpdated(50000L, null));
     assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.getApplicationImageLastUpdated(50000L, TEST_USER));
+                 () -> applicationCenterService.getApplicationImageLastUpdated(50000L));
 
     Application application = application();
     when(appCenterStorage.getApplication(ID)).thenReturn(application());
-    assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.getApplicationImageLastUpdated(application.getId(), TEST_USER));
-    Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(application.getId(), ADMIN_USERNAME);
+    Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(application.getId());
     assertNotNull(lastUpdated);
   }
 
   @Test
   @SneakyThrows
   void getImageStream() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationImageLastUpdated(50000L, null));
     assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.getApplicationImageInputStream(50000L, TEST_USER));
+                 () -> applicationCenterService.getApplicationImageInputStream(50000L));
 
     Application application = application();
     when(appCenterStorage.getApplication(ID)).thenReturn(application());
     when(appCenterStorage.getApplicationImageInputStream(IMAGE_FILE_ID)).thenReturn(mock(InputStream.class));
-    assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.getApplicationImageInputStream(application.getId(), TEST_USER));
-    InputStream stream = applicationCenterService.getApplicationImageInputStream(application.getId(), ADMIN_USERNAME);
+    InputStream stream = applicationCenterService.getApplicationImageInputStream(application.getId());
     assertNotNull(stream);
   }
 

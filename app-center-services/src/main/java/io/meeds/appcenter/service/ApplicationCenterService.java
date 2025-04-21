@@ -461,23 +461,12 @@ public class ApplicationCenterService {
    * @param username login of user accessing application
    * @return timestamp in milliseconds of last modified date of illustration
    * @throws ApplicationNotFoundException if application wasn't found
-   * @throws IllegalAccessException if user doesn't have access permission to
-   *           application
    */
-  public Long getApplicationImageLastUpdated(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                                  IllegalAccessException {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
+  public Long getApplicationImageLastUpdated(long applicationId) throws ApplicationNotFoundException {
     Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    // if user is admin then no need to check for permissions
-    if (!canEdit(username) && !canAccess(application, username)) {
-      throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
-    }
-    if (application.getImageFileId() != null && application.getImageFileId() > 0) {
+    } else if (application.getImageFileId() != null && application.getImageFileId() > 0) {
       return appCenterStorage.getApplicationImageLastUpdated(application.getImageFileId());
     } else {
       return null;
@@ -492,21 +481,11 @@ public class ApplicationCenterService {
    * @param username login of user accessing application
    * @return {@link InputStream} of application illustration
    * @throws ApplicationNotFoundException if application wasn't found
-   * @throws IllegalAccessException if user doesn't have access permission to
-   *           application
    */
-  public InputStream getApplicationImageInputStream(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                                         IllegalAccessException {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
+  public InputStream getApplicationImageInputStream(long applicationId) throws ApplicationNotFoundException {
     Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    // if user is admin then no need to check for permissions
-    if (!canEdit(username) && !canAccess(application, username)) {
-      throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
     }
     if (application.getImageFileId() != null && application.getImageFileId() > 0) {
       return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());

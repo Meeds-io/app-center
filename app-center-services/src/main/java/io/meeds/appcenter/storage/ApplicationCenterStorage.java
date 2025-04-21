@@ -36,6 +36,7 @@ import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.IOUtil;
+import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
 
@@ -169,7 +170,8 @@ public class ApplicationCenterStorage {
       if (applicationEntity == null) {
         throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
       }
-      applicationFavorite = favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
+      applicationFavorite =
+                          favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
     } else if (applicationFavorite.getFavorite() == null || !applicationFavorite.getFavorite().booleanValue()) {
       applicationFavorite.setFavorite(true);
       applicationFavorite = favoriteApplicationDAO.save(applicationFavorite);
@@ -383,7 +385,13 @@ public class ApplicationCenterStorage {
     if (imageFileId == null || imageFileId.longValue() == 0) {
       return null;
     } else {
-      return String.format("/app-center/rest/applications/illustration/%s?v=%s", id, imageLastModified);
+      return String.format("/app-center/rest/applications/illustration/%s?v=%s&r=%s",
+                           id,
+                           imageLastModified,
+                           LinkProvider.generateAttachmentToken("appCenter",
+                                                                String.valueOf(id),
+                                                                "icon",
+                                                                String.valueOf(imageLastModified)));
     }
   }
 

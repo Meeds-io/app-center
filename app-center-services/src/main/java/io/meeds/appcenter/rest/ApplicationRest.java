@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
@@ -42,6 +43,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.social.core.service.LinkProvider;
+
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
@@ -59,6 +64,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("applications")
 @Tag(name = "/app-center/rest/applications", description = "Manage and access application center applications") // NOSONAR
 public class ApplicationRest {
+
+  private static final Log         LOG = ExoLogger.getLogger(ApplicationRest.class);
 
   @Autowired
   private ApplicationCenterService appCenterService;
@@ -173,7 +180,6 @@ public class ApplicationRest {
   }
 
   @GetMapping(path = "/illustration/{applicationId}")
-  @Secured("users")
   @Operation(summary = "Gets an application illustration by application id", method = "GET", description = "This can only be done by the logged in user.")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "500", description = "Internal server error"),
@@ -184,15 +190,41 @@ public class ApplicationRest {
                                                                         @Parameter(description = "Application id", required = true)
                                                                         @PathVariable("applicationId")
                                                                         long applicationId,
+                                                                        @Parameter(description = "A token that is used to authorize anonymous request")
+                                                                        @RequestParam(name = "r", required = false)
+                                                                        String token,
                                                                         @Parameter(description = "Last modified parameter", required = false)
                                                                         @RequestParam(name = "v", required = false)
                                                                         Optional<Long> lastModified) {
+    Application application = appCenterService.getApplication(applicationId);
+    if (application == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } else {
+      if (StringUtils.isBlank(request.getRemoteUser())) {
+        if (!LinkProvider.isAttachmentTokenValid(token,
+                                                 "appCenter",
+                                                 String.valueOf(applicationId),
+                                                 "icon",
+                                                 String.valueOf(lastModified.orElse(0l)))) {
+          LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
+          throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+      } else if (!appCenterService.canAccess(application, request.getRemoteUser())
+                 && !LinkProvider.isAttachmentTokenValid(token,
+                                                         "appCenter",
+                                                         String.valueOf(applicationId),
+                                                         "icon",
+                                                         String.valueOf(lastModified.orElse(0l)))) {
+
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+      }
+    }
     try {
-      InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, request.getRemoteUser());
+      InputStream stream = appCenterService.getApplicationImageInputStream(applicationId);
       if (stream == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
       }
-      Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId, request.getRemoteUser());
+      Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId);
       BodyBuilder builder = ResponseEntity.ok();
       if (lastModified.isPresent()) {
         builder.lastModified(lastUpdated)
@@ -203,8 +235,6 @@ public class ApplicationRest {
       }
       return builder.contentType(MediaType.IMAGE_PNG)
                     .body(new InputStreamResource(stream));
-    } catch (IllegalAccessException e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {
