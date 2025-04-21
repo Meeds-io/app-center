@@ -19,6 +19,7 @@
 package io.meeds.appcenter.service;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -30,19 +31,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import org.exoplatform.commons.api.settings.SettingService;
-import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
-import io.meeds.appcenter.model.GeneralSettings;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
@@ -89,9 +90,6 @@ public class ApplicationCenterService {
   private static final String      APPLICATION_NOT_FOUND_MESSAGE       = "Application with id %s doesn't exist";
 
   @Autowired
-  private SettingService           settingService;
-
-  @Autowired
   private UserACL                  userAcl;
 
   @Autowired
@@ -99,6 +97,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private TranslationService       translationService;
+
+  @Autowired
+  private FileService              fileService;
+
+  @Autowired
+  private ImageThumbnailService    imageThumbnailService;
 
   @Autowired
   private PortalContainer          portalContainer;
@@ -111,9 +115,6 @@ public class ApplicationCenterService {
   @Value("${appcenter.favorites.count:12}") // NOSONAR
   private long                     defaultMaxFavoriteApps;
 
-  @Value("${appcenter.favorites.max:-1}") // NOSONAR
-  private long                     maxFavoriteApps;
-
   /**
    * Create new Application that will be available for all users.
    *
@@ -124,7 +125,7 @@ public class ApplicationCenterService {
    *           application
    */
   public Application createApplication(Application application, String username) throws IllegalAccessException {
-    if (StringUtils.isBlank(username) || !canEdit(username)) {
+    if (!canEdit(username)) {
       throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE,
                                                      username,
                                                      application.getTitle()));
@@ -189,7 +190,7 @@ public class ApplicationCenterService {
     updateApplication(application);
   }
 
-  public void updateApplication(Application application) throws ApplicationNotFoundException {
+  public void updateApplication(Application application) {
     appCenterStorage.updateApplication(application);
   }
 
@@ -204,7 +205,7 @@ public class ApplicationCenterService {
    */
   public void deleteApplication(Long applicationId, String username) throws ApplicationNotFoundException,
                                                                      IllegalAccessException {
-    if (applicationId == null || applicationId <= 0) {
+    if (applicationId == null) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
     if (StringUtils.isBlank(username)) {
@@ -266,53 +267,12 @@ public class ApplicationCenterService {
    * @param username login of user currently deleting application
    */
   public void deleteFavoriteApplication(Long applicationId, String username) {
-    if (applicationId == null || applicationId <= 0) {
+    if (applicationId == null) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
-    }
-    if (StringUtils.isBlank(username)) {
+    } else if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
     appCenterStorage.deleteApplicationFavorite(applicationId, username);
-  }
-
-  /**
-   * Change general setting for maximum allowed favorites that a user can have
-   *
-   * @param maxFavoriteApplications max favorite applications count
-   */
-  public void setMaxFavoriteApps(long maxFavoriteApplications) {
-    if (maxFavoriteApplications >= 0) {
-      settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS, SettingValue.create(maxFavoriteApplications));
-      this.maxFavoriteApps = maxFavoriteApplications;
-    } else {
-      settingService.remove(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS);
-      this.maxFavoriteApps = -1;
-    }
-  }
-
-  /**
-   * @return the maximum favorite applications that a user can have as favorite
-   */
-  public long getMaxFavoriteApps() {
-    if (this.maxFavoriteApps < 0) {
-      SettingValue<?> maxFavoriteAppsValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, MAX_FAVORITE_APPS);
-      if (maxFavoriteAppsValue != null && maxFavoriteAppsValue.getValue() != null) {
-        this.maxFavoriteApps = Long.parseLong(maxFavoriteAppsValue.getValue().toString());
-      } else {
-        this.maxFavoriteApps = this.defaultMaxFavoriteApps;
-      }
-    }
-    return this.maxFavoriteApps;
-  }
-
-  /**
-   * @return {@link GeneralSettings} of application including default image and
-   *         maximum favorite applications count
-   */
-  public GeneralSettings getSettings() { // NOSONAR
-    GeneralSettings generalsettings = new GeneralSettings();
-    generalsettings.setMaxFavoriteApps(getMaxFavoriteApps());
-    return generalsettings;
   }
 
   /**
@@ -402,9 +362,6 @@ public class ApplicationCenterService {
     List<Application> applications = getActiveApplications(keyword, username).stream().toList();
     int totalApplication = applications.size();
     if (limit > 0) {
-      if (offset < 0) {
-        offset = 0;
-      }
       applications = applications.stream()
                                  .skip(offset)
                                  .limit(limit)
@@ -421,8 +378,6 @@ public class ApplicationCenterService {
     setApplicationLabels(applications, locale);
     setApplicationCategories(applications);
     resultApplicationsList.setApplications(applications);
-    long countFavorites = appCenterStorage.countFavorites(username);
-    resultApplicationsList.setCanAddFavorite(countFavorites < getMaxFavoriteApps());
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
     resultApplicationsList.setSize(totalApplication);
@@ -458,26 +413,14 @@ public class ApplicationCenterService {
    * if not found, the default image last modifed timestamp will be retrieved
    *
    * @param applicationId technical id of application
-   * @param username login of user accessing application
    * @return timestamp in milliseconds of last modified date of illustration
    * @throws ApplicationNotFoundException if application wasn't found
-   * @throws IllegalAccessException if user doesn't have access permission to
-   *           application
    */
-  public Long getApplicationImageLastUpdated(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                                  IllegalAccessException {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
+  public Long getApplicationImageLastUpdated(long applicationId) throws ApplicationNotFoundException {
     Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    // if user is admin then no need to check for permissions
-    if (!canEdit(username) && !canAccess(application, username)) {
-      throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
-    }
-    if (application.getImageFileId() != null && application.getImageFileId() > 0) {
+    } else if (application.getImageFileId() != null) {
       return appCenterStorage.getApplicationImageLastUpdated(application.getImageFileId());
     } else {
       return null;
@@ -489,27 +432,38 @@ public class ApplicationCenterService {
    * found, the default image {@link InputStream} will be retrieved
    *
    * @param applicationId technical id of application
-   * @param username login of user accessing application
    * @return {@link InputStream} of application illustration
    * @throws ApplicationNotFoundException if application wasn't found
-   * @throws IllegalAccessException if user doesn't have access permission to
-   *           application
    */
-  public InputStream getApplicationImageInputStream(long applicationId, String username) throws ApplicationNotFoundException,
-                                                                                         IllegalAccessException {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
+  public InputStream getApplicationImageInputStream(long applicationId) throws ApplicationNotFoundException {
+    return getApplicationImageInputStream(applicationId, null);
+  }
+
+  /**
+   * Return the {@link Application} illustration {@link InputStream}, if not
+   * found, the default image {@link InputStream} will be retrieved
+   *
+   * @param applicationId technical id of application
+   * @param dimensions Image dimensions to retrieve
+   * @return {@link InputStream} of application illustration
+   * @throws ApplicationNotFoundException if application wasn't found
+   */
+  @SneakyThrows
+  public InputStream getApplicationImageInputStream(long applicationId, String dimensions) throws ApplicationNotFoundException {
     Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
       throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    // if user is admin then no need to check for permissions
-    if (!canEdit(username) && !canAccess(application, username)) {
-      throw new IllegalAccessException(String.format(USER_NOT_ALLOWED_MESSAGE, username, application.getTitle()));
-    }
-    if (application.getImageFileId() != null && application.getImageFileId() > 0) {
-      return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+    } else if (application.getImageFileId() != null) {
+      if (StringUtils.contains(dimensions, "x")) {
+        FileItem fileItem = fileService.getFile(application.getImageFileId());
+        Integer[] dimensionParts = Arrays.stream(dimensions.split("x")).map(Integer::parseInt).toArray(Integer[]::new);
+        FileItem thumbnailFileItem = imageThumbnailService.getOrCreateThumbnail(fileItem,
+                                                                                dimensionParts[0],
+                                                                                dimensionParts[1]);
+        return appCenterStorage.getApplicationImageInputStream(thumbnailFileItem.getFileInfo().getId());
+      } else {
+        return appCenterStorage.getApplicationImageInputStream(application.getImageFileId());
+      }
     } else {
       return null;
     }
@@ -524,13 +478,11 @@ public class ApplicationCenterService {
                                                      .stream()
                                                      .filter(app -> canAccess(app, username))
                                                      .collect(Collectors.toList());
-    long countFavorites = appCenterStorage.countFavorites(username);
     int appCount = applications.size();
     ApplicationList applicationList = new ApplicationList();
     setApplicationLabels(applications, locale);
     setApplicationCategories(applications);
     return applicationList.setApplications(applications)
-                          .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
                           .setLimit(appCount)
                           .setSize(appCount)
                           .setOffset(0);
@@ -548,7 +500,7 @@ public class ApplicationCenterService {
   }
 
   public boolean canEdit(String username) {
-    return userAcl.isAdministrator(getUserIdentity(username));
+    return StringUtils.isBlank(username) || userAcl.isAdministrator(getUserIdentity(username));
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {
