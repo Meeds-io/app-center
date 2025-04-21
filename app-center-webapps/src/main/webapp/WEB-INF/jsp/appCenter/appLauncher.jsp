@@ -21,7 +21,9 @@
   }
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
-  boolean autoInit = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer") != null || PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterPortlet") != null;
+  String appCenterDrawer = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer");
+  String appCenterPortlet = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterPortlet");
+  boolean autoInit = appCenterDrawer != null || appCenterPortlet != null;
   List<String> shortcuts = ExoContainerContext.getService(ApplicationCenterService.class).getApplicationShortcuts(PortalRequestContext.getCurrentInstance().getRemoteUser());
   String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "[]" : String.format("['%s']", StringUtils.join(shortcuts, "', '"));
 
@@ -51,7 +53,7 @@
           </button>
             <script type="text/javascript">
             <% if (autoInit) { %>
-            window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>));
+            window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, autoInitDrawerId: '<%=appCenterDrawer == null ? "" : appCenterDrawer%>', autoInitPortletId: '<%=appCenterPortlet == null ? "" : appCenterPortlet%>'}, true, <%=shortcutListString%>));
             <% } else if (CollectionUtils.isNotEmpty(shortcuts)) { %>
             window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>, shortcut))));
             <% } %>
