@@ -28,7 +28,7 @@
     v-on="application?.type !== 'LINK' && {
       click: openApplication,
     }"
-    :title="application?.title"
+    :title="titleTooltip"
     :loading="loading"
     icon>
     <v-icon
@@ -95,6 +95,9 @@ export default {
     },
     appUrl() {
       return this.application?.url;
+    },
+    titleTooltip() {
+      return this.application.shortcut ? `${this.application.title} (${this.$t('appCenter.adminSetupForm.ctrl')} + ${this.$t('appCenter.adminSetupForm.shift')} + ${this.application.shortcut})` : this.application.title;
     },
   },
   methods: {

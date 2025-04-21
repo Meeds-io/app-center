@@ -45,6 +45,7 @@
           'light-grey-background-color': !card && hover,
         }
       ]"
+      :title="titleTooltip"
       class="appLauncherItemContainer fill-height d-flex align-center justify-center">
       <v-progress-linear
         v-if="loading"
@@ -78,7 +79,6 @@
       </v-avatar>
       <v-card
         v-if="displayName"
-        :title="application.title"
         :class="{
           'd-flex justify-start align-center ma-4': card,
           'mt-2 mx-2': !card,
@@ -249,6 +249,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    tooltip: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     hover: false,
@@ -282,6 +286,9 @@ export default {
     },
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
+    },
+    titleTooltip() {
+      return this.tooltip ? (this.application.shortcut ? `${this.application.title} (${this.$t('appCenter.adminSetupForm.ctrl')} + ${this.$t('appCenter.adminSetupForm.shift')} + ${this.application.shortcut})` : this.application.title) : null;
     },
   },
   methods: {
