@@ -20,6 +20,8 @@ package io.meeds.appcenter.storage;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +38,10 @@ import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.IOUtil;
+import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.web.security.codec.CodecInitializer;
 
 import io.meeds.appcenter.dao.ApplicationDAO;
 import io.meeds.appcenter.dao.FavoriteApplicationDAO;
@@ -79,6 +83,9 @@ public class ApplicationCenterStorage {
   @Autowired
   private FavoriteApplicationDAO favoriteApplicationDAO;
 
+  @Autowired(required = false)
+  private CodecInitializer       codecInitializer;
+
   public Application createApplication(Application application) {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
@@ -96,19 +103,11 @@ public class ApplicationCenterStorage {
   }
 
   @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
-  public void updateApplication(Application application) throws ApplicationNotFoundException {
-    if (application == null) {
-      throw new IllegalArgumentException("application is mandatory");
-    }
+  public void updateApplication(Application application) {
     Long applicationId = application.getId();
-    ApplicationEntity storedApplicationEntity = applicationDAO.findById(applicationId).orElse(null);
-    if (storedApplicationEntity == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-
+    ApplicationEntity storedApplicationEntity = applicationDAO.findById(applicationId).orElseThrow();
     // Avoid changing this flag by UI
     application.setSystem(storedApplicationEntity.isSystem());
-
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
     boolean imageRemoved = (application.getImageFileId() == null || application.getImageFileId() == 0)
                            && oldImageFileId != null
@@ -118,8 +117,9 @@ public class ApplicationCenterStorage {
       application.setImageFileId(null);
       // Cleanup old useless image
       fileService.deleteFile(oldImageFileId);
-    } else if (application instanceof ApplicationForm applicationForm
-               && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
+    }
+    if (application instanceof ApplicationForm applicationForm
+        && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
       Long imageFileId = saveImageFileItem(oldImageFileId, applicationForm.getImageUploadId());
       application.setImageFileId(imageFileId);
     }
@@ -169,7 +169,8 @@ public class ApplicationCenterStorage {
       if (applicationEntity == null) {
         throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
       }
-      applicationFavorite = favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
+      applicationFavorite =
+                          favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
     } else if (applicationFavorite.getFavorite() == null || !applicationFavorite.getFavorite().booleanValue()) {
       applicationFavorite.setFavorite(true);
       applicationFavorite = favoriteApplicationDAO.save(applicationFavorite);
@@ -383,7 +384,22 @@ public class ApplicationCenterStorage {
     if (imageFileId == null || imageFileId.longValue() == 0) {
       return null;
     } else {
-      return String.format("/app-center/rest/applications/illustration/%s?v=%s", id, imageLastModified);
+      return String.format("/app-center/rest/applications/illustration/%s?v=%s&r=%s",
+                           id,
+                           imageLastModified,
+                           generateToken(id, imageLastModified));
+    }
+  }
+
+  private String generateToken(Long id, long imageLastModified) {
+    if (codecInitializer == null) {
+      return StringUtils.EMPTY;
+    } else {
+      return URLEncoder.encode(LinkProvider.generateAttachmentToken("appcenter",
+                                                                    String.valueOf(id),
+                                                                    "icon",
+                                                                    String.valueOf(imageLastModified)),
+                               StandardCharsets.UTF_8);
     }
   }
 

@@ -120,7 +120,7 @@ public class AppCenterPwaShortcutPluginTest {
     assertEquals(application.getTitle(), pwaShortcut.getShortName());
     assertNotNull(pwaShortcut.getIcons());
     assertEquals(1, pwaShortcut.getIcons().size());
-    assertEquals(CommonsUtils.getCurrentDomain() + application.getImageUrl(), pwaShortcut.getIcons().get(0).getSrc());
+    assertEquals(CommonsUtils.getCurrentDomain() + application.getImageUrl() + "&sizes=192x192", pwaShortcut.getIcons().get(0).getSrc());
   }
 
 }

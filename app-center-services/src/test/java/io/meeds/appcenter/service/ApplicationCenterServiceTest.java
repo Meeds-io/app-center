@@ -47,11 +47,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
@@ -102,6 +104,12 @@ public class ApplicationCenterServiceTest {
 
   @MockBean
   private TranslationService       translationService;
+
+  @MockBean
+  private FileService              fileService;
+
+  @MockBean
+  private ImageThumbnailService    imageThumbnailService;
 
   @MockBean
   private UserACL                  userAcl;
@@ -364,31 +372,25 @@ public class ApplicationCenterServiceTest {
   @Test
   @SneakyThrows
   void getLastUpdated() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationImageLastUpdated(50000L, null));
     assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.getApplicationImageLastUpdated(50000L, TEST_USER));
+                 () -> applicationCenterService.getApplicationImageLastUpdated(50000L));
 
     Application application = application();
     when(appCenterStorage.getApplication(ID)).thenReturn(application());
-    assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.getApplicationImageLastUpdated(application.getId(), TEST_USER));
-    Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(application.getId(), ADMIN_USERNAME);
+    Long lastUpdated = applicationCenterService.getApplicationImageLastUpdated(application.getId());
     assertNotNull(lastUpdated);
   }
 
   @Test
   @SneakyThrows
   void getImageStream() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationImageLastUpdated(50000L, null));
     assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.getApplicationImageInputStream(50000L, TEST_USER));
+                 () -> applicationCenterService.getApplicationImageInputStream(50000L));
 
     Application application = application();
     when(appCenterStorage.getApplication(ID)).thenReturn(application());
     when(appCenterStorage.getApplicationImageInputStream(IMAGE_FILE_ID)).thenReturn(mock(InputStream.class));
-    assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.getApplicationImageInputStream(application.getId(), TEST_USER));
-    InputStream stream = applicationCenterService.getApplicationImageInputStream(application.getId(), ADMIN_USERNAME);
+    InputStream stream = applicationCenterService.getApplicationImageInputStream(application.getId());
     assertNotNull(stream);
   }
 
