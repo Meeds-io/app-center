@@ -137,7 +137,7 @@
         </div>
         <div class="d-flex align-center mt-auto mb-1">
           <app-center-shortcut
-            v-if="application.shortcut && !$root.isMobile"
+            v-if="application.shortcut && !$root.isMobile && hover"
             :shortcut="application.shortcut"
             class="align-md-center align-self-md-center align-self-end mb-2 mb-md-0" />
           <v-spacer />  
