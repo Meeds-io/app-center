@@ -97,7 +97,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                           @open="openApplication(application.type, application.url)" />
                       </div>
                     </template>
-                    <span>{{ application.title }}</span>
+                    <span>{{ application.shortcut ? `${application.title} (${$t('appCenter.adminSetupForm.ctrl')} + ${$t('appCenter.adminSetupForm.shift')} + ${application.shortcut})` : application.title }}</span>
                   </v-tooltip>
                 </card-carousel>
                 <div class="text-header mb-n2">
@@ -131,6 +131,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   :class="cardDisplay && 'me-4' || 'me-3'"
                   display-name
                   elevate
+                  tooltip
                   @open="openApplication(application.type, application.url)"
                   @toogle-favorite="toogleFavorite(application)"
                   @toogle-pin="tooglePin(application, $event)" />
