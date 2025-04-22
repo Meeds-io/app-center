@@ -42,8 +42,13 @@
     </v-toolbar>
     <div v-if="topbarApplications?.length" class="px-4 pb-5">
       <div class="text-header">
-        {{ $t('appCenter.userSettings.shortcuts.pinnedApps') }}
+        {{ $t('appCenter.userSettings.shortcuts.topbarApps') }}
       </div>
+      <app-center-user-settings-item
+        v-for="app in staticTopbarApplications"
+        :key="app.id"
+        :application="app"
+        class="mt-2" />
       <app-center-user-settings-item
         v-for="app in topbarApplications"
         :key="app.id"
@@ -87,7 +92,7 @@ export default {
         || [];
     },
     shortcutApplications() {
-      const apps = this.applications || [];
+      const apps = this.applications?.slice?.() || [];
       apps.forEach(app => {
         if (app.system) {
           const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
@@ -96,17 +101,32 @@ export default {
           }
         }
       });
+      apps.push({
+        title: this.$t('appCenter.system.application.search'),
+        icon: 'fa-search',
+        shortcut: 'f',
+      });
+      apps.push({
+        title: this.$t('appCenter.system.application.notifications'),
+        icon: 'fa-bell',
+        shortcut: '°',
+      });
+      apps.push({
+        title: this.$t('appCenter.system.application.appcenter'),
+        icon: 'fa-th',
+        shortcut: '>',
+      });
       apps.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
       return apps.filter(app => app.shortcut?.length);
     },
     topbarApplications() {
-      return this.shortcutApplications?.filter?.(app => this.topbarApplicationIds.includes(app.id));
+      return this.shortcutApplications?.filter?.(app => !app.id || this.topbarApplicationIds.includes(app.id));
     },
     defaultApplications() {
-      return this.shortcutApplications?.filter?.(app => app.default && !this.topbarApplicationIds.includes(app.id));
+      return this.shortcutApplications?.filter?.(app => app.id && app.default && !this.topbarApplicationIds.includes(app.id));
     },
     otherApplications() {
-      return this.shortcutApplications?.filter?.(app => !app.default && !this.topbarApplicationIds.includes(app.id));
+      return this.shortcutApplications?.filter?.(app => app.id && !app.default && !this.topbarApplicationIds.includes(app.id));
     },
   },
   created() {
