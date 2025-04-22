@@ -341,6 +341,7 @@ export default {
             this.sortApplicationsByTitle(applications);
             this.availableApplications = applications;
             this.$root.shortcuts = this.availableApplications.filter(a => a.shortcut).map(a => a.shortcut);
+            this.$root.shortcuts.push('>');
           }
         }).finally(() => this.loading = false);
     },
