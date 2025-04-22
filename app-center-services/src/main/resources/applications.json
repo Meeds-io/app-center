@@ -45,6 +45,29 @@
                     "*:/platform/externals"
                 ]
             }
+        },
+        {
+            "name": "listFavorites",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "List favorites",
+                "description": "List your favorite contents",
+                "icon": "fa-star",
+                "type": "DRAWER",
+                "url": "favorites",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "shortcut": "b",
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
         }
     ]
 }
