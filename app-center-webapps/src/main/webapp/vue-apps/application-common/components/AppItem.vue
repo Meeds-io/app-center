@@ -139,7 +139,7 @@
           <app-center-shortcut
             v-if="application.shortcut && !$root.isMobile && hover"
             :shortcut="application.shortcut"
-            class="align-md-center align-self-md-center align-self-end mb-2 mb-md-0" />
+            class="align-self-md-center align-self-end mb-2 mb-md-0" />
           <v-spacer />  
           <v-btn
             v-if="application.helpPageURL"
