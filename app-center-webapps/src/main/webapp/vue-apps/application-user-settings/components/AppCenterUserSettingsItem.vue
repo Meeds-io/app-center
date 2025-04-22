@@ -49,7 +49,7 @@
     <app-center-shortcut
       v-if="application.shortcut"
       :shortcut="application.shortcut"
-      class="align-md-center align-self-end mb-2 mb-md-0" />
+      class="align-self-md-center align-self-end mb-2 mb-md-0" />
   </div>
 </template>
 <script>
