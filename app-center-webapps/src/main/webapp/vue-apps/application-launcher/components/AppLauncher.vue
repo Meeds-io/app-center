@@ -23,7 +23,7 @@
       <v-layout class="transparent">
         <v-btn
           id="appcenterLauncherButton"
-          :title="$t('appCenter.appLauncher.topbarIcon.tooltip')"
+          :title="tooltip"
           icon
           class="text-xs-center"
           @click="$refs.appDrawer.open()">
@@ -48,14 +48,23 @@ export default {
     applications: null,
     appLoading: null,
   }),
+  computed: {
+    tooltip() {
+      return `${this.$t('appCenter.appLauncher.topbarIcon.tooltip')} ${this.$t('appCenter.appLauncher.topbarIcon.tooltip.shortcut')}`;
+    },
+  },
   created() {
-    window.addEventListener('keydown', this.openApplicationByShortcutEvent);
+    if (this.$root.shortcuts?.length) {
+      window.addEventListener('keydown', this.openApplicationByShortcutEvent);
+      this.$utils.removeShortcutsListener(this.$root.shortcuts);
+    }
+    document.addEventListener('app-center-drawer', this.openDrawer);
   },
   mounted() {
-    if (this.$root.shortcut) {
+    if (this.$root.shortcut && this.$root.shortcut !== '>') {
       this.openApplicationByShortcut(this.$root.shortcut);
-    } else if (!this.$root.noAutoOpen) {
-      this.$refs.appDrawer.open();
+    } else if (!this.$root.noAutoOpen || this.$root.shortcut === '>') {
+      this.openDrawer();
     } else if (this.$root.autoInitDrawerId) {
       this.openApplication('DRAWER', this.$root.autoInitDrawerId);
     } else if (this.$root.autoInitPortletId) {
@@ -64,8 +73,12 @@ export default {
   },
   beforeDestroy() {
     window.removeEventListener('keydown', this.openApplicationByShortcutEvent);
+    document.removeEventListener('app-center-drawer', this.openDrawer);
   },
   methods: {
+    openDrawer() {
+      this.$refs.appDrawer.open();
+    },
     openApplicationByShortcutEvent(e) {
       if (e.ctrlKey
           && e.shiftKey
@@ -73,7 +86,11 @@ export default {
           && this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
         e.stopPropagation();
         e.preventDefault();
-        window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
+        if (e.key === '>') {
+          this.openDrawer();
+        } else {
+          window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
+        }
       }
     },
     async openApplicationByShortcut(shortcut) {
