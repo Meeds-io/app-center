@@ -20,12 +20,13 @@
     bundle = ExoContainerContext.getService(ResourceBundleService.class).getResourceBundle("locale.addon.appcenter", Locale.ENGLISH);
   }
   String tooltip = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip");
+  String tooltipShortcut = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip.shortcut");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
   String appCenterDrawer = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterDrawer");
   String appCenterPortlet = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterPortlet");
   boolean autoInit = appCenterDrawer != null || appCenterPortlet != null;
   List<String> shortcuts = ExoContainerContext.getService(ApplicationCenterService.class).getApplicationShortcuts(PortalRequestContext.getCurrentInstance().getRemoteUser());
-  String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "[]" : String.format("['%s']", StringUtils.join(shortcuts, "', '"));
+  String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "['>']" : String.format("['%s','>']", StringUtils.join(shortcuts, "', '"));
 
   SettingService settingService = ExoContainerContext.getService(SettingService.class);
   SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
@@ -41,7 +42,7 @@
         <div class="layout transparent">
           <button
             type="button"
-            title="<%=tooltip%>"
+            title="<%=tooltip%> <%=tooltipShortcut%>"
             class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
             id="appcenterLauncherButton"
             onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>})">
@@ -54,7 +55,7 @@
             <script type="text/javascript">
             <% if (autoInit) { %>
             window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, autoInitDrawerId: '<%=appCenterDrawer == null ? "" : appCenterDrawer%>', autoInitPortletId: '<%=appCenterPortlet == null ? "" : appCenterPortlet%>'}, true, <%=shortcutListString%>));
-            <% } else if (CollectionUtils.isNotEmpty(shortcuts)) { %>
+            <% } else { %>
             window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>, shortcut))));
             <% } %>
             </script>
