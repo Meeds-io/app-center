@@ -17,6 +17,7 @@
                 "default": true,
                 "shortcut": "p",
                 "pwa": true,
+                "order": 20,
                 "permissions": [
                     "*:/platform/users",
                     "*:/platform/externals"
@@ -39,6 +40,7 @@
                 "mobile": true,
                 "default": true,
                 "pwa": false,
+                "order": 50,
                 "shortcut": "s",
                 "permissions": [
                     "*:/platform/users",
@@ -62,6 +64,7 @@
                 "mobile": true,
                 "default": true,
                 "pwa": false,
+                "order": 10,
                 "shortcut": "b",
                 "permissions": [
                     "*:/platform/users",
