@@ -58,12 +58,11 @@ export default {
       window.addEventListener('keydown', this.openApplicationByShortcutEvent);
       this.$utils.removeShortcutsListener(this.$root.shortcuts);
     }
-    document.addEventListener('app-center-drawer', this.openDrawer);
   },
   mounted() {
-    if (this.$root.shortcut && this.$root.shortcut !== '>') {
+    if (this.$root.shortcut && this.$root.shortcut?.toLowerCase?.() !== 'a') {
       this.openApplicationByShortcut(this.$root.shortcut);
-    } else if (!this.$root.noAutoOpen || this.$root.shortcut === '>') {
+    } else if (!this.$root.noAutoOpen || this.$root.shortcut?.toLowerCase?.() === 'a') {
       this.openDrawer();
     } else if (this.$root.autoInitDrawerId) {
       this.openApplication('DRAWER', this.$root.autoInitDrawerId);
@@ -73,7 +72,6 @@ export default {
   },
   beforeDestroy() {
     window.removeEventListener('keydown', this.openApplicationByShortcutEvent);
-    document.removeEventListener('app-center-drawer', this.openDrawer);
   },
   methods: {
     openDrawer() {
@@ -82,15 +80,16 @@ export default {
     openApplicationByShortcutEvent(e) {
       if (e.ctrlKey
           && e.shiftKey
-          && e.key
-          && this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
+          && e.key) {
+        if (e.key?.toLowerCase?.() === 'a') {
+          this.openDrawer();
+        } else if (this.$root.shortcuts?.includes?.(e.key.toLowerCase())) {
+          window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
+        } else {
+          return;
+        }
         e.stopPropagation();
         e.preventDefault();
-        if (e.key === '>') {
-          this.openDrawer();
-        } else {
-          window.setTimeout(() => this.openApplicationByShortcut(e.key), 10);
-        }
       }
     },
     async openApplicationByShortcut(shortcut) {
