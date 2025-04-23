@@ -73,6 +73,9 @@ export async function init(pinnedApplicationIds) {
               const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
               if (this.$te(`appCenter.system.application.${title}`)) {
                 app.title = this.$t(`appCenter.system.application.${title}`);
+                if (this.$te(`appCenter.system.application.${title}.description`) && !app.description?.length) {
+                  app.description = this.$t(`appCenter.system.application.${title}.description`);
+                }
               }
             }
             if (app.type === 'LINK' && app.url) {
