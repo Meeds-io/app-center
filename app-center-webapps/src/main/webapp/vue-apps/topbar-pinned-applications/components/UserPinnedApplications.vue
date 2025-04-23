@@ -67,18 +67,14 @@
 export default {
   data: () => ({
     loading: {},
-    maxTopbarApps: 10,
     openPortletDrawer: false,
   }),
   computed: {
+    pinnedApplications() {
+      return this.$root.pinnedApplications.slice(0, this.$root.limit);
+    },
     hasPinnedApps() {
       return this.pinnedApplications?.length && !this.$root.isMobile;
-    },
-    limit() {
-      return Math.max(0, this.maxTopbarApps - this.$root.topbarAppsCount);
-    },
-    pinnedApplications() {
-      return this.$root.pinnedApplications.slice(0, this.limit);
     },
   },
   methods: {
