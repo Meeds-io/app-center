@@ -251,7 +251,7 @@ export default {
       if (this.$root.isMobile) {
         return this.availablePinnedApplications;
       } else {
-        const recentAppsIndex = Math.max(0, this.maxTopbarApps - this.$root.topbarAppsCount);
+        const recentAppsIndex = Math.max(0, this.maxTopbarApps - eXo.env.portal.topbarAppsCount);
         return recentAppsIndex < this.availablePinnedApplications.length ? this.availablePinnedApplications.slice(recentAppsIndex) : [];
       }
     },
