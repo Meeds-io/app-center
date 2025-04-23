@@ -180,6 +180,7 @@ export default {
     expanded: false,
     loading: false,
     applicationsLoaded: false,
+    maxTopbarApps: 10,
     recentApplicationIds: [],
     availableApplications: [],
     favoriteApplications: [],
@@ -206,7 +207,7 @@ export default {
       if (this.isFavoriteFilter) {
         return this.favoriteApplications;
       } else if (this.isPinFilter) {
-        return this.pinnedApplications;
+        return this.availablePinnedApplications;
       } else {
         return this.availableApplications;
       }
@@ -240,16 +241,24 @@ export default {
     hasAvailableApplications() {
       return this.availableApplications?.length;
     },
-    pinnedApplications() {
+    availablePinnedApplications() {
       return this.$root.pinnedApplicationIds
         ?.map?.(id => this.availableApplications?.find?.(app => app.id === id))
         ?.filter?.(app => app)
         || [];
     },
+    pinnedApplications() {
+      if (this.$root.isMobile) {
+        return this.availablePinnedApplications;
+      } else {
+        const recentAppsIndex = Math.max(0, this.maxTopbarApps - this.$root.topbarAppsCount);
+        return recentAppsIndex < this.availablePinnedApplications.length ? this.availablePinnedApplications.slice(recentAppsIndex) : [];
+      }
+    },
     recentApplications() {
       const recentApplications = this.favoriteApplications?.filter?.(a => this.recentApplicationIds.includes(a.id) && (!this.$root.isMobile || !this.$root.pinnedApplicationIds.includes(a.id)));
       recentApplications.sort((a, b) => this.recentApplicationIds.indexOf(a.id) - this.recentApplicationIds.indexOf(b.id));
-      return (!this.$root.isMobile || !this.canPinApps) ? recentApplications : [...this.pinnedApplications, ...recentApplications].filter(app => app && app.mobile);
+      return [...this.pinnedApplications, ...recentApplications].filter(app => app && (!this.$root.isMobile || app.mobile));
     },
     hasRecentApplications() {
       return this.recentApplications?.length;
