@@ -60,6 +60,9 @@ export async function init(parentElementId, topbarApplication) {
               const title = /\s/.test(this.application.title) ? this.application.title.replace(/ /g,'.').toLowerCase() : this.application.title.toLowerCase();
               if (this.$te(`appCenter.system.application.${title}`)) {
                 this.application.title = this.$t(`appCenter.system.application.${title}`);
+                if (this.$te(`appCenter.system.application.${title}.description`) && !this.application.description?.length) {
+                  this.application.description = this.$t(`appCenter.system.application.${title}.description`);
+                }
               }
             }
           })
