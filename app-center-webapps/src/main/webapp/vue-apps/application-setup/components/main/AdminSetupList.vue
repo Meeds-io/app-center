@@ -160,6 +160,9 @@ export default {
               const appTitle = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
               if (this.$te(`appCenter.system.application.${appTitle}`)) {
                 app.displayName = this.$t(`appCenter.system.application.${appTitle}`);
+                if (this.$te(`appCenter.system.application.${appTitle}.description`) && !app.description?.length) {
+                  app.description = this.$t(`appCenter.system.application.${appTitle}.description`);
+                }
               }
             }
             if (!app.displayName) {

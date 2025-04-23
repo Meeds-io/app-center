@@ -68,7 +68,7 @@ public class ApplicationCenterInjectService {
   private static final Log                   LOG                       =
                                                  ExoLogger.getLogger(ApplicationCenterInjectService.class);
 
-  private static final String                APP_CENTER_APPS_VERSION   = "5";
+  private static final String                APP_CENTER_APPS_VERSION   = "6";
 
   private static final String                MERGE_MODE                = "merge";
 
