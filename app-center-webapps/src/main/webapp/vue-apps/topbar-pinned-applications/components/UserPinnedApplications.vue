@@ -23,7 +23,7 @@
   <v-app>
     <div v-if="hasPinnedApps" class="d-flex align-center justify-center">
       <v-btn
-        v-for="application in $root.pinnedApplications"
+        v-for="application in pinnedApplications"
         :key="application.id"
         v-bind="application?.type === 'LINK' && {
           href: application.computedUrl,
@@ -67,11 +67,18 @@
 export default {
   data: () => ({
     loading: {},
+    maxTopbarApps: 10,
     openPortletDrawer: false,
   }),
   computed: {
     hasPinnedApps() {
-      return this.$root.pinnedApplications?.length && !this.$root.isMobile;
+      return this.pinnedApplications?.length && !this.$root.isMobile;
+    },
+    limit() {
+      return Math.max(0, this.maxTopbarApps - this.$root.topbarAppsCount);
+    },
+    pinnedApplications() {
+      return this.$root.pinnedApplications.slice(0, this.limit);
     },
   },
   methods: {

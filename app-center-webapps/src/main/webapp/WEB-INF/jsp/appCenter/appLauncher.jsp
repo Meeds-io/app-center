@@ -1,3 +1,4 @@
+<%@page import="io.meeds.portal.navigation.service.NavigationConfigurationService"%>
 <%@page import="org.apache.commons.lang3.StringUtils"%>
 <%@page import="org.apache.commons.collections4.CollectionUtils"%>
 <%@page import="io.meeds.appcenter.service.ApplicationCenterService"%>
@@ -31,6 +32,9 @@
   SettingService settingService = ExoContainerContext.getService(SettingService.class);
   SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
   String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
+
+  NavigationConfigurationService navigationConfigurationService = ExoContainerContext.getService(NavigationConfigurationService.class);
+  long topbarAppsCount = navigationConfigurationService.getTopbarConfiguration(request.getRemoteUser(), request.getLocale()).getApplications().stream().filter(a -> a.isEnabled() || a.getId().contains("mandatory-")).count();
 %>
 <div class="VuetifyApp">
   <div
@@ -45,7 +49,7 @@
             title="<%=tooltip%> <%=tooltipShortcut%>"
             class="v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default"
             id="appcenterLauncherButton"
-            onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>})">
+            onclick="Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, topbarAppsCount: <%=topbarAppsCount%>})">
             <span class="v-btn__content">
               <i aria-hidden="true"
                 class="v-icon notranslate appCenterLauncherButtonIcon icon-default-color fa fa-th theme--light"
@@ -54,9 +58,9 @@
           </button>
             <script type="text/javascript">
             <% if (autoInit) { %>
-            window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, autoInitDrawerId: '<%=appCenterDrawer == null ? "" : appCenterDrawer%>', autoInitPortletId: '<%=appCenterPortlet == null ? "" : appCenterPortlet%>'}, true, <%=shortcutListString%>));
+            window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, topbarAppsCount: <%=topbarAppsCount%>, autoInitDrawerId: '<%=appCenterDrawer == null ? "" : appCenterDrawer%>', autoInitPortletId: '<%=appCenterPortlet == null ? "" : appCenterPortlet%>'}, true, <%=shortcutListString%>));
             <% } else { %>
-            window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>}, true, <%=shortcutListString%>, shortcut))));
+            window.require(['SHARED/commonVueComponents'], () => Vue.prototype.$utils.addShortcutsListener(<%=shortcutListString%>, shortcut => window.require(['SHARED/appLauncherBundle'], app => app.init({isAdmin: <%=isAdmin%>, pinnedApplicationIds: <%=pinnedApplicationIds%>, topbarAppsCount: <%=topbarAppsCount%>}, true, <%=shortcutListString%>, shortcut))));
             <% } %>
             </script>
         </div>
