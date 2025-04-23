@@ -21,7 +21,7 @@ import './initComponents.js';
 
 const appId = 'userPinnedApplications';
 
-export async function init(pinnedApplicationIds) {
+export async function init(pinnedApplicationIds, topbarAppsCount) {
   const lang = eXo.env.portal.language || 'en';
   const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
   const i18n = await exoi18n.loadLanguageAsync(lang, url);
@@ -30,6 +30,7 @@ export async function init(pinnedApplicationIds) {
     vuetify: Vue.prototype.vuetifyOptions,
     i18n,
     data: () => ({
+      topbarAppsCount,
       pinnedApplicationIds,
       quickActionExtensions: [],
       applications: null,
