@@ -30,10 +30,15 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     vuetify: Vue.prototype.vuetifyOptions,
     i18n,
     data: () => ({
+      resizeObserver: null,
+      maxTopbarApps: 10,
       topbarAppsCount,
       pinnedApplicationIds,
       quickActionExtensions: [],
       applications: null,
+      topbarParentElement: document.querySelector('#middle-topNavigation-container'),
+      topbarMaxWidth: 324,
+      topbarElementWidth: 36,
       collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
     }),
     computed: {
@@ -50,6 +55,17 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
           .map(id => this.applications?.find?.(app => app.id === id))
           .filter(app => app);
       },
+      limit() {
+        return Math.max(0, this.maxTopbarApps - this.topbarAppsCount);
+      },
+    },
+    watch: {
+      topbarAppsCount: {
+        immediate: true,
+        handler() {
+          eXo.env.portal.topbarAppsCount = this.topbarAppsCount;
+        },
+      },
     },
     created() {
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
@@ -59,12 +75,20 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       this.refreshQuickActions();
       this.init();
     },
+    mounted() {
+      this.resizeObserver = new ResizeObserver(this.updateMaxApps).observe(this.topbarParentElement);
+    },
     beforeDestroy() {
       document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
       document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
+      this.resizeObserver?.disconnect?.();
     },
     methods: {
+      updateMaxApps() {
+        const topbarAppsWidth = this.topbarParentElement.offsetWidth - this.$el.offsetWidth;
+        this.topbarAppsCount = parseInt(topbarAppsWidth / this.topbarElementWidth) + 1;
+      },
       async init() {
         if (this.pinnedApplicationIds?.length) {
           const data = await this.$applicationService.getApplications();
