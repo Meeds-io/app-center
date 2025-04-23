@@ -26,7 +26,7 @@
   String appCenterPortlet = PortalRequestContext.getCurrentInstance().getRequest().getParameter("appCenterPortlet");
   boolean autoInit = appCenterDrawer != null || appCenterPortlet != null;
   List<String> shortcuts = ExoContainerContext.getService(ApplicationCenterService.class).getApplicationShortcuts(PortalRequestContext.getCurrentInstance().getRemoteUser());
-  String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "['>']" : String.format("['%s','>']", StringUtils.join(shortcuts, "', '"));
+  String shortcutListString = CollectionUtils.isEmpty(shortcuts) ? "['a']" : String.format("['%s','a']", StringUtils.join(shortcuts, "', '"));
 
   SettingService settingService = ExoContainerContext.getService(SettingService.class);
   SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
