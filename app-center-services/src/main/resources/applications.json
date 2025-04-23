@@ -7,7 +7,6 @@
             "enabled": true,
             "application": {
                 "title": "Add a post",
-                "description": "Write a post",
                 "icon": "fa-pen-fancy",
                 "type": "DRAWER",
                 "url": "activityComposer",
@@ -31,7 +30,6 @@
             "enabled": true,
             "application": {
                 "title": "List Spaces",
-                "description": "List your spaces",
                 "icon": "fa-layer-group",
                 "type": "DRAWER",
                 "url": "spacesList",
@@ -55,7 +53,6 @@
             "enabled": true,
             "application": {
                 "title": "List favorites",
-                "description": "List your favorite contents",
                 "icon": "fa-star",
                 "type": "DRAWER",
                 "url": "favorites",
