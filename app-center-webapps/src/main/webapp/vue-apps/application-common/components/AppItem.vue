@@ -86,7 +86,7 @@
         min-height="48"
         class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1"
         flat>
-        <span :class="card && 'font-weight-bold'">
+        <span :class="card && 'text-title'">
           {{ application.title }}
         </span>
         <v-icon
