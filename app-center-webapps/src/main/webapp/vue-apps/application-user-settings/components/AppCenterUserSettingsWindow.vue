@@ -109,12 +109,12 @@ export default {
       apps.push({
         title: this.$t('appCenter.system.application.notifications'),
         icon: 'fa-bell',
-        shortcut: '°',
+        shortcut: 'r',
       });
       apps.push({
         title: this.$t('appCenter.system.application.appcenter'),
         icon: 'fa-th',
-        shortcut: '>',
+        shortcut: 'a',
       });
       apps.sort((a, b) => this.$root.collator.compare(a.title.toLowerCase(), b.title.toLowerCase()));
       return apps.filter(app => app.shortcut?.length);
