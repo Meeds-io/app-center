@@ -107,7 +107,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             </div>
           </v-expand-transition>
           <v-layout
-            v-if="hasApplications"
+            v-if="hasFilteredApplications"
             :class="!expanded && 'mt-4'"
             class="d-flex flex-column favorite appsContainer px-4">
             <component
@@ -140,7 +140,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-layout>
           <div v-else-if="!drawerLoading" class="content d-flex align-center justify-center">
             <app-center-launcher-empty
-              :has-applications="hasAvailableApplications"
+              :has-applications="hasApplications"
               class="mt-12"
               @expand="expandDrawer"
               @reset="resetFilter" />
@@ -232,6 +232,9 @@ export default {
       return this.expanded && !this.$root.isMobile;
     },
     hasApplications() {
+      return this.sortedApplicationsList?.length;
+    },
+    hasFilteredApplications() {
       return this.filteredApplications?.length;
     },
     hasAvailableApplications() {
