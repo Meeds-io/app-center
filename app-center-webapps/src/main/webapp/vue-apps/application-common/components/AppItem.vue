@@ -91,7 +91,7 @@
           <div
             :class="card && 'align-self-center' || 'align-self-start'"
             class="d-flex">
-            <span :class="card && 'text-title'" class="text-truncate-2 text-start">
+            <span :class="card && 'text-title text-start'" class="text-truncate-2">
               {{ application.title }}
             </span>
             <v-icon

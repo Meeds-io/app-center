@@ -30,7 +30,7 @@
     <template v-if="drawer" #title>
       <span class="appLauncherDrawerTitle">{{ drawerTitle }}</span>
     </template>
-    <template v-if="drawer" #content>
+    <template v-if="drawer && application" #content>
       <v-form
         ref="form"
         autocomplete="off"
@@ -377,7 +377,7 @@ export default {
           () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         shortcut: [
-          () => !this.application.shortcut?.length || this.application.shortcut.length === 1 || this.$t('appCenter.adminSetupForm.shortcutInvalidLength'),
+          () => !this.application?.shortcut?.length || this.application?.shortcut.length === 1 || this.$t('appCenter.adminSetupForm.shortcutInvalidLength'),
           v => !this.shortcutExists(v) || this.$t('appCenter.adminSetupForm.shortcutAlreadyInUse'),
         ],
       };
@@ -394,6 +394,9 @@ export default {
     },
     description() {
       return this.descriptions[eXo.env.portal.defaultLanguage];
+    },
+    type() {
+      return this.application?.type;
     },
     applicationToSave() {
       return {
@@ -412,39 +415,37 @@ export default {
         || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
         || !this.validUrl
         || !this.validHelpPageUrl
-        || !!(this.application?.shortcut?.length && this.shortcutExists(this.application.shortcut));
+        || !!(this.application?.shortcut?.length && this.shortcutExists(this.application?.shortcut));
     },
   },
   watch: {
-    'application.type': {
-      handler(newVal, oldVal) {
-        if (this.drawer && newVal && oldVal) {
-          this.application.url = null;
-        }
-      },
+    type(newVal, oldVal) {
+      if (this.drawer && newVal && oldVal && this.application) {
+        this.application.url = null;
+      }
     },
     title(newVal) {
-      if (this.drawer) {
+      if (this.drawer && this.application) {
         this.application.title = newVal;
       }
     },
     description(newVal) {
-      if (this.drawer) {
+      if (this.drawer && this.application) {
         this.application.description = newVal;
       }
     },
     hasPermissions() {
-      if (!this.hasPermissions) {
+      if (!this.hasPermissions && this.application) {
         this.application.permissions = null;
       }
     },
     hasHelpUrl() {
-      if (!this.hasHelpUrl) {
+      if (!this.hasHelpUrl && this.application) {
         this.application.helpPageURL = null;
       }
     },
     hasShortcut() {
-      if (!this.hasShortcut) {
+      if (!this.hasShortcut && this.application) {
         this.application.shortcut = null;
       }
     },
@@ -458,22 +459,30 @@ export default {
   methods: {
     async open(app) {
       this.$root.$emit('close-alert-message');
-      this.application = app && JSON.parse(JSON.stringify(app)) || {
-        icon: 'fa-dot-circle',
-        imageUrl: null,
-        url: null,
-        sameTab: true,
-        helpPageURL: null,
-        shortcut: null,
-        active: true,
-        default: false,
-        mandatory: false,
-        mobile: false,
-        system: false,
-        type: 'LINK', // LINK, DRAWER or PORTLET
-        permissions: [],
-        categoryIds: [],
-      };
+      this.application = null;
+      if (app?.id) {
+        const data = await this.$applicationService.getApplications(true);
+        this.application = data?.applications?.find?.(a => a.id === app.id);
+      }
+      if (!this.application) {
+        this.application = {
+          icon: 'fa-dot-circle',
+          imageUrl: null,
+          url: null,
+          order: 1,
+          sameTab: true,
+          helpPageURL: null,
+          shortcut: null,
+          active: true,
+          default: false,
+          mandatory: false,
+          mobile: false,
+          system: false,
+          type: 'LINK', // LINK, DRAWER or PORTLET
+          permissions: [],
+          categoryIds: [],
+        };
+      }
       this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
       this.newCategoryIds = this.oldCategoryIds.slice();
       if (app?.id) {
@@ -511,7 +520,7 @@ export default {
       this.$refs.formDrawer.close();
     },
     shortcutExists(c) {
-      return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application.id);
+      return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application?.id);
     },
     async save() {
       const isNew = !this.application.id;
