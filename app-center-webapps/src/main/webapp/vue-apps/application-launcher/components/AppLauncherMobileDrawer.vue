@@ -130,16 +130,19 @@ export default {
     appLoading: null,
   }),
   computed: {
+    mobileApplications() {
+      return this.applications?.filter?.(a => a.mobile);
+    },
     filteredApplications() {
       return this.keyword
-        && this.applications
-          .filter(c => !this.keyword
-            || c.title.toLowerCase().includes(this.keyword.trim().toLowerCase())
-            || c.description?.toLowerCase?.()?.includes?.(this.keyword.trim().toLowerCase()))
-          .filter(c => !this.categoryId
-              || c.categoryIds?.includes?.(this.categoryId)
-              || c.categoryIds?.find?.(id => this.subCategoryIds?.includes?.(id)))
-        || this.applications;
+        && this.mobileApplications
+          .filter(a => !this.keyword
+            || a.title.toLowerCase().includes(this.keyword.trim().toLowerCase())
+            || a.description?.toLowerCase?.()?.includes?.(this.keyword.trim().toLowerCase()))
+          .filter(a => !this.categoryId
+              || a.categoryIds?.includes?.(this.categoryId)
+              || a.categoryIds?.find?.(id => this.subCategoryIds?.includes?.(id)))
+        || this.mobileApplications;
     },
     hasApplications() {
       return this.filteredApplications?.length;
