@@ -38,64 +38,71 @@
       :class="[
         $attrs.class,
         {
-          'flex-wrap': card,
-          'flex-column': !card,
           'border-color': card,
           'transparent': !card && !hover,
           'light-grey-background-color': !card && hover,
         }
       ]"
       :title="titleTooltip"
-      class="appLauncherItemContainer fill-height d-flex align-center justify-center">
+      class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center">
       <v-progress-linear
         v-if="loading"
         class="position-absolute t-0 full-width z-index-two"
         indeterminate />
-      <v-avatar
-        :size="imageSize"
-        :class="card && 'ms-4'"
-        class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-1 pa-1"
-        tile>
-        <v-img
-          v-if="application.imageUrl"
-          :src="application.imageUrl"
-          :max-height="imageSize"
-          :max-width="imageSize"
-          class="appLauncherImage"
-          contain />
-        <v-icon
-          v-else-if="application.icon"
-          :size="iconSize"
-          class="appLauncherImage d-flex align-center justify-center">
-          {{ application.icon }}
-        </v-icon>
-        <v-img
-          v-else
-          :max-height="imageSize"
-          :max-width="imageSize"
-          src="/app-center/skin/images/defaultApp.png"
-          class="appLauncherImage"
-          contain />
-      </v-avatar>
-      <v-card
-        v-if="displayName"
-        :class="{
-          'd-flex justify-start align-center ma-4': card,
-          'mt-2 mx-2': !card,
-        }"
-        min-height="48"
-        class="appLauncherTitle transparent text-truncate-2 flex-grow-1 flex-shrink-1"
-        flat>
-        <span :class="card && 'text-title'">
-          {{ application.title }}
-        </span>
-        <v-icon
-          v-if="application.type === 'LINK' && !application.sameTab"
-          :class="card && 'ms-2' || 'ms-1'"
-          size="12">
-          fa-external-link-alt
-        </v-icon>
-      </v-card>
+      <div
+        :class="card && 'flex-row align-self-start' || 'flex-column align-self-center align-center'"
+        class="d-flex full-width">
+        <v-avatar
+          :size="imageSize"
+          :class="card && 'ms-4'"
+          class="d-flex align-center justify-center flex-grow-0 flex-shrink-0 my-1 pa-1"
+          tile>
+          <v-img
+            v-if="application.imageUrl"
+            :src="application.imageUrl"
+            :max-height="imageSize"
+            :max-width="imageSize"
+            class="appLauncherImage"
+            contain />
+          <v-icon
+            v-else-if="application.icon"
+            :size="iconSize"
+            class="appLauncherImage d-flex align-center justify-center">
+            {{ application.icon }}
+          </v-icon>
+          <v-img
+            v-else
+            :max-height="imageSize"
+            :max-width="imageSize"
+            src="/app-center/skin/images/defaultApp.png"
+            class="appLauncherImage"
+            contain />
+        </v-avatar>
+        <v-card
+          v-if="displayName"
+          :class="{
+            'align-center justify-start mx-4 my-auto': card,
+            'align-center justify-center mt-2 mx-2': !card,
+          }"
+          min-height="48"
+          width="100%"
+          class="appLauncherTitle transparent flex-grow-1 flex-shrink-1 d-flex"
+          flat>
+          <div
+            :class="card && 'align-self-center' || 'align-self-start'"
+            class="d-flex">
+            <span :class="card && 'text-title'" class="text-truncate-2 text-start">
+              {{ application.title }}
+            </span>
+            <v-icon
+              v-if="application.type === 'LINK' && !application.sameTab"
+              :class="card && 'ms-2' || 'ms-1'"
+              :size="card && 16 || 12">
+              fa-external-link-alt
+            </v-icon>
+          </div>
+        </v-card>
+      </div>
       <v-tooltip v-if="displayPinButton" bottom>
         <template #activator="{on, attrs}">
           <div
@@ -123,7 +130,7 @@
         }"
         :height="card ? 135 : '100%'"
         width="100%"
-        class="d-flex flex-column text-start"
+        class="d-flex flex-column text-start border-box-sizing"
         flat>
         <div v-if="!card" class="text-truncate white--text">
           {{ application.title }}
