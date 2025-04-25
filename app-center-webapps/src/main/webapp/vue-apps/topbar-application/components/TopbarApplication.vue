@@ -39,6 +39,7 @@
     </v-icon>
     <v-card
       v-else
+      class="d-flex align-center justify-center"
       color="transparent"
       height="20"
       width="20"
