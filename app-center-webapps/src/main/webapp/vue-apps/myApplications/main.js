@@ -38,10 +38,34 @@ const appId = 'myApplications';
 export function init(settings) {
   exoi18n.loadLanguageAsync(lang, url).then(i18n => {
     Vue.createApp({
-      data() {
-        return {
-          settings: settings
-        };
+      data: () => ({
+        settings,
+        noAutoOpen: true,
+        quickActionExtensions: [],
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
+      }),
+      computed: {
+        quickActions() {
+          const quickActions = {};
+          this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
+          return quickActions;
+        },
+        isMobile() {
+          return this.$vuetify.breakpoint.smAndDown;
+        }
+      },
+      created() {
+        document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        this.refreshQuickActions();
+        this.$utils.includeExtensions('QuickActionExtension');
+      },
+      beforeDestroy() {
+        document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      },
+      methods: {
+        refreshQuickActions() {
+          this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+        },
       },
       template: '<my-applications-app />',
       vuetify,
@@ -49,4 +73,3 @@ export function init(settings) {
     }, `#${appId}`, 'My Application Center');
   });
 }
-

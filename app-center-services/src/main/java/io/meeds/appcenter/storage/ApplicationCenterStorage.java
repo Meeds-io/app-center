@@ -20,28 +20,35 @@ package io.meeds.appcenter.storage;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Base64;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.commons.utils.IOUtil;
+import org.exoplatform.social.core.service.LinkProvider;
+import org.exoplatform.upload.UploadResource;
+import org.exoplatform.upload.UploadService;
+import org.exoplatform.web.security.codec.CodecInitializer;
 
 import io.meeds.appcenter.dao.ApplicationDAO;
 import io.meeds.appcenter.dao.FavoriteApplicationDAO;
 import io.meeds.appcenter.entity.ApplicationEntity;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import io.meeds.appcenter.model.Application;
-import io.meeds.appcenter.model.ApplicationImage;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 
@@ -68,18 +75,16 @@ public class ApplicationCenterStorage {
   private FileService            fileService;
 
   @Autowired
+  private UploadService          uploadService;
+
+  @Autowired
   private ApplicationDAO         applicationDAO;
 
   @Autowired
   private FavoriteApplicationDAO favoriteApplicationDAO;
 
-  public Application getApplicationByTitle(String title) {
-    if (StringUtils.isBlank(title)) {
-      throw new IllegalArgumentException("title is mandatory");
-    }
-    ApplicationEntity applicationentity = applicationDAO.getApplicationByTitle(title);
-    return toDTO(applicationentity);
-  }
+  @Autowired(required = false)
+  private CodecInitializer       codecInitializer;
 
   public Application createApplication(Application application) {
     if (application == null) {
@@ -87,69 +92,48 @@ public class ApplicationCenterStorage {
     }
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity.setId(null);
-    ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(),
-                                                               application.getImageFileBody());
-    if (applicationImage != null) {
-      applicationEntity.setImageFileId(applicationImage.getId());
+
+    if (application instanceof ApplicationForm applicationForm && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
+      Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId());
+      applicationEntity.setImageFileId(imageFileId);
     }
+
     applicationEntity = applicationDAO.save(applicationEntity);
-    return toDTO(applicationEntity);
+    return getApplication(applicationEntity.getId());
   }
 
-  public Application updateApplication(Application application) throws ApplicationNotFoundException {
-    if (application == null) {
-      throw new IllegalArgumentException("application is mandatory");
-    }
+  @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
+  public void updateApplication(Application application) {
     Long applicationId = application.getId();
-    ApplicationEntity storedApplicationEntity = applicationDAO.findById(applicationId).orElse(null);
-    if (storedApplicationEntity == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-
+    ApplicationEntity storedApplicationEntity = applicationDAO.findById(applicationId).orElseThrow();
     // Avoid changing this flag by UI
     application.setSystem(storedApplicationEntity.isSystem());
-
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
-
-    boolean imageRemoved = StringUtils.isBlank(application.getImageFileBody())
-                           && StringUtils.isBlank(application.getImageFileName())
+    boolean imageRemoved = (application.getImageFileId() == null || application.getImageFileId() == 0)
                            && oldImageFileId != null
                            && oldImageFileId > 0;
-
-    boolean newImageAttached = StringUtils.isNotBlank(application.getImageFileBody())
-                               && StringUtils.isNotBlank(application.getImageFileName());
-    // if new image make sure to update it
-    if (newImageAttached) {
-      ApplicationImage applicationImage = createAppImageFileItem(application.getImageFileName(), application.getImageFileBody());
-      if (applicationImage != null) {
-        application.setImageFileId(applicationImage.getId());
-        if (oldImageFileId != null && oldImageFileId > 0) {
-          // Cleanup old useless image
-          fileService.deleteFile(oldImageFileId);
-        }
-      }
-    } else {
-      application.setImageFileId(oldImageFileId);
-    }
-
-    // if image was unset remove it
+    application.setImageFileId(oldImageFileId);
     if (imageRemoved) {
       application.setImageFileId(null);
       // Cleanup old useless image
       fileService.deleteFile(oldImageFileId);
     }
+    if (application instanceof ApplicationForm applicationForm
+        && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
+      Long imageFileId = saveImageFileItem(oldImageFileId, applicationForm.getImageUploadId());
+      application.setImageFileId(imageFileId);
+    }
 
     // if application is mandatory make sure to remove it from users favorites
-    if (application.isMandatory()) {
+    if (application.isMandatory() && !storedApplicationEntity.isMandatory()) {
       favoriteApplicationDAO.removeAllFavoritesOfApplication(application.getId());
     }
 
     ApplicationEntity applicationEntity = toEntity(application);
-    applicationEntity = applicationDAO.save(applicationEntity);
-
-    return toDTO(applicationEntity);
+    applicationDAO.save(applicationEntity);
   }
 
+  @CacheEvict(cacheNames = "app-center.application", key = "#p0")
   public void deleteApplication(long applicationId) throws ApplicationNotFoundException {
     if (applicationId <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
@@ -161,30 +145,45 @@ public class ApplicationCenterStorage {
     applicationDAO.delete(applicationEntity);
   }
 
-  public Application getApplicationById(long applicationId) {
-    if (applicationId <= 0) {
-      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
-    }
+  @Cacheable("app-center.application")
+  public Application getApplication(long applicationId) {
     ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
     return toDTO(applicationEntity);
   }
 
-  public void addApplicationToUserFavorite(long applicationId, String username) throws ApplicationNotFoundException {
+  public Application findSystemApplicationByUrl(String url) {
+    List<ApplicationEntity> list = applicationDAO.findBySystemIsTrueAndUrl(url);
+    ApplicationEntity applicationEntity = CollectionUtils.isEmpty(list) ? null : list.get(0);
+    return applicationEntity == null ? null : getApplication(applicationEntity.getId());
+  }
+
+  public FavoriteApplicationEntity addApplicationToUserFavorite(long applicationId,
+                                                                String username) throws ApplicationNotFoundException {
     if (applicationId <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    ApplicationEntity application = applicationDAO.findById(applicationId).orElse(null);
-    if (application == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
+                                                                                                            username);
+    if (applicationFavorite == null) {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      if (applicationEntity == null) {
+        throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+      }
+      applicationFavorite =
+                          favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, true));
+    } else if (applicationFavorite.getFavorite() == null || !applicationFavorite.getFavorite().booleanValue()) {
+      applicationFavorite.setFavorite(true);
+      applicationFavorite = favoriteApplicationDAO.save(applicationFavorite);
     }
-    favoriteApplicationDAO.save(new FavoriteApplicationEntity(application, username));
+    return applicationFavorite;
   }
 
-  public void updateFavoriteApplicationOrder(long applicationId, String username, Long order) throws ApplicationNotFoundException {
+  public void updateFavoriteApplicationOrder(long applicationId,
+                                             String username,
+                                             Long order) throws ApplicationNotFoundException {
     FavoriteApplicationEntity entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
     if (entity == null) {
-      addApplicationToUserFavorite(applicationId, username);
-      entity = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username);
+      entity = addApplicationToUserFavorite(applicationId, username);
     }
     entity.setOrder(order);
     favoriteApplicationDAO.save(entity);
@@ -196,38 +195,23 @@ public class ApplicationCenterStorage {
     }
     FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
                                                                                                             username);
-    if (applicationFavorite != null) {
-      favoriteApplicationDAO.delete(applicationFavorite);
+    if (applicationFavorite == null) {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      if (applicationEntity != null) {
+        favoriteApplicationDAO.save(new FavoriteApplicationEntity(null, applicationEntity, username, 0l, false));
+      }
+    } else {
+      applicationFavorite.setFavorite(false);
+      favoriteApplicationDAO.save(applicationFavorite);
     }
-  }
-
-  public List<UserApplication> getMandatoryApplications() {
-    List<ApplicationEntity> applications = applicationDAO.getMandatoryActiveApps();
-    return applications.stream()
-                       .map(this::toUserApplicationDTO)
-                       .toList();
-  }
-
-  public List<UserApplication> getFavoriteApplicationsByUser(String username) {
-    if (StringUtils.isBlank(username)) {
-      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
-    }
-    List<FavoriteApplicationEntity> applications = favoriteApplicationDAO.getFavoriteAppsByUser(username);
-    return applications.stream()
-                       .map(this::toUserApplicationDTO)
-                       .filter(UserApplication::isActive)
-                       .toList();
   }
 
   public List<Application> getSystemApplications() {
-    List<ApplicationEntity> applications = applicationDAO.getSystemApplications();
-    List<Application> list = new ArrayList<>();
-    Application application = null;
-    for (ApplicationEntity entity : applications) {
-      application = toDTO(entity);
-      list.add(application);
-    }
-    return list;
+    return applicationDAO.getSystemApplicationIds()
+                         .stream()
+                         .map(this::getApplication)
+                         .filter(Objects::nonNull)
+                         .toList();
   }
 
   public boolean isFavoriteApplication(Long applicationId, String username) {
@@ -237,7 +221,14 @@ public class ApplicationCenterStorage {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    return favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId, username) != null;
+    FavoriteApplicationEntity applicationFavorite = favoriteApplicationDAO.getFavoriteAppByUserNameAndAppId(applicationId,
+                                                                                                            username);
+    if (applicationFavorite != null) {
+      return applicationFavorite.getFavorite().booleanValue();
+    } else {
+      ApplicationEntity applicationEntity = applicationDAO.findById(applicationId).orElse(null);
+      return applicationEntity != null && applicationEntity.isDefault();
+    }
   }
 
   public long countFavorites(String username) {
@@ -245,21 +236,6 @@ public class ApplicationCenterStorage {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
     return favoriteApplicationDAO.countFavoritesForUser(username);
-  }
-
-  public ApplicationImage saveAppImageFileItem(ApplicationImage defaultAppImage) {
-    if (defaultAppImage == null) {
-      throw new IllegalArgumentException("Application image is mandatory");
-    }
-    if (defaultAppImage.getId() == null || defaultAppImage.getId() <= 0) {
-      return createAppImageFileItem(defaultAppImage.getFileName(), defaultAppImage.getFileBody());
-    } else {
-      return updateAppImageFileItem(defaultAppImage.getId(), defaultAppImage.getFileName(), defaultAppImage.getFileBody());
-    }
-  }
-
-  public ApplicationImage createAppImageFileItem(String fileName, String fileBody) {
-    return updateAppImageFileItem(null, fileName, fileBody);
   }
 
   @SneakyThrows
@@ -280,22 +256,13 @@ public class ApplicationCenterStorage {
     return null;
   }
 
-  @SneakyThrows
-  public ApplicationImage getAppImageFile(Long fileId) {
-    FileItem fileItem = fileService.getFile(fileId);
-    if (fileItem != null) {
-      byte[] bytes = fileItem.getAsByte();
-      String fileBody = new String(Base64.getEncoder().encode(bytes), Charset.defaultCharset());
-      String fileName = fileItem.getFileInfo().getName();
-      return new ApplicationImage(fileId, fileName, fileBody);
-    }
-    return null;
-  }
-
   public List<Application> getApplications(String keyword) {
-    List<ApplicationEntity> applications = StringUtils.isBlank(keyword) ? applicationDAO.findAll() :
-                                                                        applicationDAO.getApplications(keyword);
-    return applications.stream().map(this::toDTO).toList();
+    List<Long> applicationIds = StringUtils.isBlank(keyword) ? applicationDAO.getApplicationIds() :
+                                                             applicationDAO.getApplicationIds(keyword);
+    return applicationIds.stream()
+                         .map(this::getApplication)
+                         .filter(Objects::nonNull)
+                         .toList();
   }
 
   public long countApplications() {
@@ -303,163 +270,17 @@ public class ApplicationCenterStorage {
   }
 
   public List<UserApplication> getMandatoryAndFavoriteApplications(String username, Pageable pageable) {
-    return applicationDAO.findFavoriteAndMandatoryApplications(username, pageable).map(this::toUserApplicationDTO).getContent();
-  }
-
-  private Application toDTO(ApplicationEntity applicationEntity) {
-    if (applicationEntity == null) {
-      return null;
-    }
-    String imageFileName = null;
-    long imageLastModified = DEFAULT_LAST_MODIFIED;
-    if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
-      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
-      if (fileInfo != null) {
-        imageFileName = fileInfo.getName();
-        if (fileInfo.getUpdatedDate() != null) {
-          imageLastModified = fileInfo.getUpdatedDate().getTime();
-        }
-      }
-    }
-    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    Application application = new Application(applicationEntity.getId(),
-                                              applicationEntity.getTitle(),
-                                              applicationEntity.getUrl(),
-                                              applicationEntity.getHelpPageUrl(),
-                                              applicationEntity.getImageFileId(),
-                                              imageLastModified,
-                                              null,
-                                              imageFileName,
-                                              applicationEntity.getDescription(),
-                                              applicationEntity.isSystem(),
-                                              applicationEntity.isActive(),
-                                              applicationEntity.isMandatory(),
-                                              applicationEntity.isMobile(),
-                                              applicationEntity.isChangedManually(),
-                                              permissions);
-    application.setSystem(applicationEntity.isSystem());
-    application.setHelpPageURL(applicationEntity.getHelpPageUrl());
-    application.setMobile(applicationEntity.isMobile());
-    return application;
-  }
-
-  private UserApplication toUserApplicationDTO(ApplicationEntity applicationEntity) {
-    if (applicationEntity == null) {
-      return null;
-    }
-    String imageFileName = null;
-    long imageLastModified = DEFAULT_LAST_MODIFIED;
-    if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
-      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
-      if (fileInfo != null) {
-        imageFileName = fileInfo.getName();
-        if (fileInfo.getUpdatedDate() != null) {
-          imageLastModified = fileInfo.getUpdatedDate().getTime();
-        }
-      }
-    }
-    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    UserApplication userApplication = new UserApplication(applicationEntity.getId(),
-                                                          applicationEntity.getTitle(),
-                                                          applicationEntity.getUrl(),
-                                                          applicationEntity.getHelpPageUrl(),
-                                                          applicationEntity.getImageFileId(),
-                                                          imageLastModified,
-                                                          null,
-                                                          imageFileName,
-                                                          applicationEntity.getDescription(),
-                                                          applicationEntity.isSystem(),
-                                                          applicationEntity.isActive(),
-                                                          applicationEntity.isMandatory(),
-                                                          applicationEntity.isMobile(),
-                                                          false,
-                                                          applicationEntity.isChangedManually(),
-                                                          permissions);
-    userApplication.setSystem(applicationEntity.isSystem());
-    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
-    userApplication.setMobile(applicationEntity.isMobile());
-    return userApplication;
-  }
-
-  private UserApplication toUserApplicationDTO(FavoriteApplicationEntity favoriteApplicationEntity) {
-    if (favoriteApplicationEntity == null) {
-      return null;
-    }
-    ApplicationEntity applicationEntity = favoriteApplicationEntity.getApplication();
-    String imageFileName = null;
-    long imageLastModified = DEFAULT_LAST_MODIFIED;
-    if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
-      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
-      if (fileInfo != null) {
-        imageFileName = fileInfo.getName();
-        if (fileInfo.getUpdatedDate() != null) {
-          imageLastModified = fileInfo.getUpdatedDate().getTime();
-        }
-      }
-    }
-    String[] permissions = StringUtils.split(applicationEntity.getPermissions(), ",");
-    UserApplication userApplication = new UserApplication(applicationEntity.getId(),
-                                                          applicationEntity.getTitle(),
-                                                          applicationEntity.getUrl(),
-                                                          applicationEntity.getHelpPageUrl(),
-                                                          applicationEntity.getImageFileId(),
-                                                          imageLastModified,
-                                                          null,
-                                                          imageFileName,
-                                                          applicationEntity.getDescription(),
-                                                          applicationEntity.isSystem(),
-                                                          applicationEntity.isActive(),
-                                                          applicationEntity.isMandatory(),
-                                                          applicationEntity.isMobile(),
-                                                          true,
-                                                          applicationEntity.isChangedManually(),
-                                                          permissions);
-    // set UserApplication's order
-    userApplication.setOrder(favoriteApplicationEntity.getOrder());
-    userApplication.setSystem(applicationEntity.isSystem());
-    userApplication.setHelpPageURL(applicationEntity.getHelpPageUrl());
-    userApplication.setMobile(applicationEntity.isMobile());
-    return userApplication;
-  }
-
-  private ApplicationEntity toEntity(Application application) {
-    if (application == null) {
-      return null;
-    }
-    ApplicationEntity applicationEntity = new ApplicationEntity(application.getId(),
-                                                                application.getTitle(),
-                                                                application.getUrl(),
-                                                                application.getImageFileId(),
-                                                                application.getDescription(),
-                                                                application.isActive(),
-                                                                application.isMandatory(),
-                                                                StringUtils.join(application.getPermissions(), ","),
-                                                                application.isChangedManually());
-    applicationEntity.setSystem(application.isSystem());
-    applicationEntity.setHelpPageUrl(application.getHelpPageURL());
-    applicationEntity.setMobile(application.isMobile());
-    return applicationEntity;
+    return applicationDAO.findFavoriteAndMandatoryApplications(username, pageable)
+                         .map(this::toUserApplicationDTO)
+                         .getContent();
   }
 
   @SneakyThrows
-  private ApplicationImage updateAppImageFileItem(Long fileId, String fileName, String fileBody) { // NOSONAR
-    if (StringUtils.isBlank(fileName) || StringUtils.isBlank(fileBody)) {
-      return null;
-    }
-
-    String fileContent = fileBody;
-    if (fileBody.contains("base64,")) {
-      String[] file = fileBody.split("base64,");
-      fileContent = file[1];
-    }
-
-    byte[] bytesContent = fileContent.getBytes(Charset.defaultCharset().name());
-    byte[] decodedBytes = Base64.getDecoder().decode(bytesContent);
-    if (decodedBytes != null) {
-      bytesContent = decodedBytes;
-    }
-    FileItem fileItem = new FileItem(fileId,
-                                     fileName,
+  private Long saveImageFileItem(Long imageFileId, String uploadId) {
+    UploadResource uploadResource = uploadService.getUploadResource(uploadId);
+    byte[] bytesContent = IOUtil.getFileContentAsBytes(uploadResource.getStoreLocation());
+    FileItem fileItem = new FileItem(imageFileId,
+                                     "appCenterIllustration",
                                      "image/png",
                                      NAME_SPACE,
                                      bytesContent.length,
@@ -467,13 +288,119 @@ public class ApplicationCenterStorage {
                                      null,
                                      false,
                                      new ByteArrayInputStream(bytesContent));
-    if (fileId != null && fileId > 0) {
+    if (imageFileId != null && imageFileId > 0) {
       fileItem = fileService.updateFile(fileItem);
     } else {
       fileItem = fileService.writeFile(fileItem);
     }
-    Long id = fileItem == null || fileItem.getFileInfo() == null ? null : fileItem.getFileInfo().getId();
-    return new ApplicationImage(id, fileName, fileBody);
+    return fileItem == null || fileItem.getFileInfo() == null ? null : fileItem.getFileInfo().getId();
+  }
+
+  private Application toDTO(ApplicationEntity applicationEntity) {
+    if (applicationEntity == null) {
+      return null;
+    }
+    long imageLastModified = DEFAULT_LAST_MODIFIED;
+    if (applicationEntity.getImageFileId() != null && applicationEntity.getImageFileId() > 0) {
+      FileInfo fileInfo = fileService.getFileInfo(applicationEntity.getImageFileId());
+      if (fileInfo != null && fileInfo.getUpdatedDate() != null) {
+        imageLastModified = fileInfo.getUpdatedDate().getTime();
+      }
+    }
+    return new Application(applicationEntity.getId(),
+                           applicationEntity.getTitle(),
+                           applicationEntity.getUrl(),
+                           applicationEntity.isSameTab(),
+                           applicationEntity.getHelpPageUrl(),
+                           applicationEntity.getDescription(),
+                           applicationEntity.getShortcut(),
+                           applicationEntity.getType(),
+                           applicationEntity.isActive(),
+                           applicationEntity.isMandatory(),
+                           applicationEntity.isDefault(),
+                           applicationEntity.isMobile(),
+                           applicationEntity.isSystem(),
+                           applicationEntity.isPwa(),
+                           applicationEntity.getPermissions(),
+                           null,
+                           applicationEntity.getImageFileId(),
+                           applicationEntity.getIcon(),
+                           getImageUrl(applicationEntity.getImageFileId(), applicationEntity.getId(), imageLastModified),
+                           applicationEntity.getOrder(),
+                           applicationEntity.isChangedManually());
+  }
+
+  private UserApplication toUserApplicationDTO(Long applicationId) {
+    Application application = getApplication(applicationId);
+    return application == null ? null : new UserApplication(application);
+  }
+
+  private UserApplication toUserApplicationDTO(FavoriteApplicationEntity favoriteApplicationEntity) {
+    if (favoriteApplicationEntity == null || favoriteApplicationEntity.getApplication() == null) {
+      return null;
+    } else {
+      UserApplication userApplication = toUserApplicationDTO(favoriteApplicationEntity.getApplication().getId());
+      if (userApplication == null) {
+        return null;
+      }
+      if (favoriteApplicationEntity.getOrder() != null) {
+        userApplication.setOrder(favoriteApplicationEntity.getOrder());
+      }
+      userApplication.setFavorite(favoriteApplicationEntity.getFavorite()
+          == null ? favoriteApplicationEntity.getApplication().isDefault() :
+                  favoriteApplicationEntity.getFavorite().booleanValue());
+      return userApplication;
+    }
+  }
+
+  private ApplicationEntity toEntity(Application application) {
+    if (application == null) {
+      return null;
+    } else {
+      return new ApplicationEntity(application.getId(),
+                                   application.getTitle(),
+                                   application.getDescription(),
+                                   application.getType(),
+                                   application.getUrl(),
+                                   application.isSameTab(),
+                                   application.getIcon(),
+                                   application.getHelpPageURL(),
+                                   application.getImageFileId(),
+                                   application.isActive(),
+                                   application.isDefault(),
+                                   application.isMandatory(),
+                                   application.isMobile(),
+                                   application.isSystem(),
+                                   application.isPwa(),
+                                   application.getShortcut(),
+                                   application.getPermissions(),
+                                   application.isChangedManually(),
+                                   application.getOrder(),
+                                   null);
+    }
+  }
+
+  private String getImageUrl(Long imageFileId, Long id, long imageLastModified) {
+    if (imageFileId == null || imageFileId.longValue() == 0) {
+      return null;
+    } else {
+      return String.format("/app-center/rest/applications/illustration/%s?v=%s&r=%s",
+                           id,
+                           imageLastModified,
+                           generateToken(id, imageLastModified));
+    }
+  }
+
+  private String generateToken(Long id, long imageLastModified) {
+    if (codecInitializer == null) {
+      return StringUtils.EMPTY;
+    } else {
+      return URLEncoder.encode(LinkProvider.generateAttachmentToken("appcenter",
+                                                                    String.valueOf(id),
+                                                                    "icon",
+                                                                    String.valueOf(imageLastModified)),
+                               StandardCharsets.UTF_8);
+    }
   }
 
 }

@@ -19,8 +19,23 @@
 package io.meeds.appcenter.entity;
 
 import java.util.Collection;
+import java.util.List;
 
-import jakarta.persistence.*;
+import org.exoplatform.commons.utils.StringListConverter;
+
+import io.meeds.appcenter.constant.ApplicationType;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,8 +56,20 @@ public class ApplicationEntity {
   @Column(name = "TITLE")
   private String                                title;
 
+  @Column(name = "DESCRIPTION")
+  private String                                description;
+
+  @Column(name = "APP_TYPE")
+  private ApplicationType                       type;
+
   @Column(name = "URL")
   private String                                url;
+
+  @Column(name = "SAME_TAB")
+  private boolean                               sameTab;
+
+  @Column(name = "ICON")
+  private String                                icon;
 
   @Column(name = "HELP_PAGE_URL")
   private String                                helpPageUrl;
@@ -50,11 +77,11 @@ public class ApplicationEntity {
   @Column(name = "IMAGE_FILE_ID")
   private Long                                  imageFileId;
 
-  @Column(name = "DESCRIPTION")
-  private String                                description;
-
   @Column(name = "ACTIVE")
   private boolean                               active;
+
+  @Column(name = "IS_DEFAULT")
+  private boolean                               isDefault;
 
   @Column(name = "BY_DEFAULT")
   private boolean                               isMandatory;
@@ -65,33 +92,25 @@ public class ApplicationEntity {
   @Column(name = "IS_SYSTEM")
   private boolean                               system;
 
+  @Column(name = "IS_PWA")
+  private boolean                               pwa;
+
+  @Column(name = "SHORTCUT")
+  private String                                shortcut;
+
+  @Convert(converter = StringListConverter.class)
   @Column(name = "PERMISSIONS")
-  private String                                permissions;
+  private List<String>                          permissions;
 
   @Column(name = "IS_CHANGED_MANUALLY")
   private boolean                               isChangedManually;
 
+  @Column(name = "APPLICATION_ORDER", nullable = true)
+  private Long                                  order;
+
+  @lombok.ToString.Exclude
+  @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)
   private Collection<FavoriteApplicationEntity> favorites;
-
-  public ApplicationEntity(Long id, // NOSONAR
-                           String title,
-                           String url,
-                           Long imageFileId,
-                           String description,
-                           boolean active,
-                           boolean isMandatory,
-                           String permissions,
-                           boolean isChangedManually) {
-    this.id = id;
-    this.title = title;
-    this.url = url;
-    this.imageFileId = imageFileId;
-    this.description = description;
-    this.active = active;
-    this.isMandatory = isMandatory;
-    this.permissions = permissions;
-    this.isChangedManually = isChangedManually;
-  }
 
 }

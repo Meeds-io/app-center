@@ -18,8 +18,6 @@
  */
 package io.meeds.appcenter.dao;
 
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,13 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 
 public interface FavoriteApplicationDAO extends JpaRepository<FavoriteApplicationEntity, Long> {
-
-  @Query("""
-      SELECT favoriteApp FROM FavoriteApplicationEntity favoriteApp
-      WHERE favoriteApp.userName = ?1
-      ORDER BY favoriteApp.order NULLS LAST
-      """)
-  List<FavoriteApplicationEntity> getFavoriteAppsByUser(String userName);
 
   @Query("""
       SELECT distinct(favoriteApp) FROM FavoriteApplicationEntity favoriteApp
@@ -46,6 +37,7 @@ public interface FavoriteApplicationDAO extends JpaRepository<FavoriteApplicatio
   @Query("""
       SELECT count(*) FROM FavoriteApplicationEntity favoriteApp
       WHERE favoriteApp.userName = ?1
+      AND favoriteApp.favorite = TRUE
       """)
   long countFavoritesForUser(String username);
 

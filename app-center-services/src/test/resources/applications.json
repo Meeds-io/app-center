@@ -12,7 +12,10 @@
                 "url": "./test",
                 "system": true,
                 "active": true,
-                "isMobile": true,
+                "mobile": false,
+                "default": false,
+                "shortcut": "s",
+                "pwa": false,
                 "permissions": [
                     "*:/platform/analytics",
                     "*:/platform/administrators"

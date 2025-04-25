@@ -35,12 +35,16 @@
     <rest.api.doc.version>1.0</rest.api.doc.version>
     <rest.api.doc.description>App-center addon Rest endpoints</rest.api.doc.description>
 
-    <exo.test.coverage.ratio>0.71</exo.test.coverage.ratio>
+    <exo.test.coverage.ratio>0.72</exo.test.coverage.ratio>
   </properties>
   <dependencies>
     <dependency>
       <groupId>io.meeds.social</groupId>
       <artifactId>social-component-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.meeds.pwa</groupId>
+      <artifactId>pwa-service</artifactId>
     </dependency>
 
     <dependency>

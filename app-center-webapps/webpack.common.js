@@ -24,14 +24,19 @@ module.exports = {
   // can use multiple entry
 
   entry: {
-    adminSetup: "./src/main/webapp/vue-apps/adminSetup/main.js",
-    userSetup: "./src/main/webapp/vue-apps/userSetup/main.js",
+    appCenterCommon: "./src/main/webapp/vue-apps/application-common/main.js",
+    adminSetup: "./src/main/webapp/vue-apps/application-setup/main.js",
     myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
-    appLauncher: "./src/main/webapp/vue-apps/appLauncher/main.js",
-    applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js"
+    appLauncher: "./src/main/webapp/vue-apps/application-launcher/main.js",
+    applicationSearch: "./src/main/webapp/vue-apps/application-search/main.js",
+    quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
+    appCenterTopbarExtension: "./src/main/webapp/vue-apps/topbar-extension/extensions.js",
+    appCenterTopbarApplication: "./src/main/webapp/vue-apps/topbar-application/main.js",
+    appCenterTopbarPinnedApplication: "./src/main/webapp/vue-apps/topbar-pinned-applications/main.js",
+    appCenterUserSettings: "./src/main/webapp/vue-apps/application-user-settings/main.js",
   },
   output: {
-    filename: 'javascript/vue/[name].bundle.js',
+    filename: 'js/[name].bundle.js',
     libraryTarget: 'amd'
   },
   module: {

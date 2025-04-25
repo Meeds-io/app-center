@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
-
 <template>
   <div
     v-if="!applicationsList.length && !isLoading"
@@ -32,27 +31,26 @@
   <v-layout
     v-else>
     <component
-      :is="isMobile && 'div' || 'draggable'"
+      v-on="!$root.isMobile && {
+        end: onDragEnd
+      }"
+      :is="$root.isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
-      :item-key="'id'"
-      class="d-flex flex-wrap flex-grow-0 justify-start"
-      v-bind="isMobile ? {} : {
-        onEnd: onDragEnd
-      }">
+      item-key="id"
+      class="d-flex flex-wrap flex-grow-0 justify-start">
       <my-application-item
         v-for="application in applicationsList"
         :key="application.id"
         :application="application"
-        :default-app-image="defaultAppImage"
         :width="125"
         :max-width="125"
         :min-height="125"
         :max-height="150"
-        class="d-flex ma-0 flex-grow-1" />
+        class="d-flex ma-0 flex-grow-1"
+        @open-portlet="$emit('open-portlet', $event)" />
     </component>
   </v-layout>
 </template>
-
 <script>
 export default {
   props: {
@@ -60,18 +58,9 @@ export default {
       type: Array,
       default: () => []
     },
-    defaultAppImage: {
-      type: Object,
-      default: null
-    },
     isLoading: {
       type: Boolean,
       default: false
-    }
-  },
-  computed: {
-    isMobile() {
-      return this.$vuetify.breakpoint.smAndDown;
     }
   },
   methods: {

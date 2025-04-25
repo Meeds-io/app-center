@@ -39,13 +39,6 @@
 
   <portlet-skin>
     <application-name>app-center</application-name>
-    <portlet-name>AppCenterUserSetupPortlet</portlet-name>
-    <skin-name>Enterprise</skin-name>
-    <additional-module>appCenter</additional-module>
-  </portlet-skin>
-
-  <portlet-skin>
-    <application-name>app-center</application-name>
     <portlet-name>AppCenterAppLauncherPortlet</portlet-name>
     <skin-name>Enterprise</skin-name>
     <additional-module>appCenter</additional-module>
@@ -67,28 +60,31 @@
         <module>commonVueComponents</module>
       </depends>
       <depends>
+        <module>appLauncherBundle</module>
+      </depends>
+      <depends>
         <module>adminSetupPortletBundle</module>
       </depends>
-    </module>
-  </portlet>
-
-  <portlet>
-    <name>AppCenterUserSetupPortlet</name>
-    <module>
       <depends>
-        <module>vue</module>
+        <module>applicationToolbarComponent</module>
       </depends>
       <depends>
-        <module>vuetify</module>
+        <module>attachImage</module>
       </depends>
       <depends>
-        <module>eXoVueI18n</module>
+        <module>translationField</module>
       </depends>
       <depends>
-        <module>commonVueComponents</module>
+        <module>fontIcons</module>
       </depends>
       <depends>
-        <module>userSetupPortletBundle</module>
+        <module>categoryVueComponents</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+      <depends>
+        <module>appCenterCommon</module>
       </depends>
     </module>
   </portlet>
@@ -98,7 +94,7 @@
     <module>
       <script>
         <minify>false</minify>
-        <path>/javascript/vue/myApplications.bundle.js</path>
+        <path>/js/myApplications.bundle.js</path>
       </script>
       <depends>
         <module>vue</module>
@@ -121,6 +117,71 @@
       <depends>
         <module>vueDraggable</module>
       </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>UserPinnedApplications</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/appCenterTopbarPinnedApplication.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>QuickActionExtensions</module>
+      </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
+    </module>
+  </portlet>
+
+  <portlet>
+    <name>AppCenterUserSettings</name>
+    <module>
+      <script>
+        <minify>false</minify>
+        <path>/js/appCenterUserSettings.bundle.js</path>
+      </script>
+      <depends>
+        <module>vue</module>
+      </depends>
+      <depends>
+        <module>vuetify</module>
+      </depends>
+      <depends>
+        <module>eXoVueI18n</module>
+      </depends>
+      <depends>
+        <module>commonVueComponents</module>
+      </depends>
+      <depends>
+        <module>extensionRegistry</module>
+      </depends>
+      <depends>
+        <module>appCenterCommon</module>
+      </depends>
     </module>
   </portlet>
 
@@ -128,7 +189,7 @@
     <name>adminSetupPortletBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/adminSetup.bundle.js</path>
+      <path>/js/adminSetup.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -144,32 +205,15 @@
     </depends>
     <depends>
       <module>jquery</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
     </depends>
     <depends>
       <module>suggester</module>
     </depends>
-  </module>
-
-  <module>
-    <name>userSetupPortletBundle</name>
-    <script>
-      <minify>false</minify>
-      <path>/javascript/vue/userSetup.bundle.js</path>
-    </script>
     <depends>
-      <module>vue</module>
-    </depends>
-    <depends>
-      <module>vuetify</module>
-    </depends>
-    <depends>
-      <module>eXoVueI18n</module>
-    </depends>
-    <depends>
-      <module>commonVueComponents</module>
-    </depends>
-    <depends>
-      <module>jquery</module>
+      <module>appCenterCommon</module>
     </depends>
   </module>
 
@@ -177,7 +221,7 @@
     <name>appLauncherBundle</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/appLauncher.bundle.js</path>
+      <path>/js/appLauncher.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -195,7 +239,22 @@
       <module>jquery</module>
     </depends>
     <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>vueDraggable</module>
+    </depends>
+    <depends>
+      <module>applicationToolbarComponent</module>
+    </depends>
+    <depends>
+      <module>categoryVueComponents</module>
+    </depends>
+    <depends>
+      <module>QuickActionExtensions</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
     </depends>
   </module>
 
@@ -203,7 +262,7 @@
     <name>AppCenterSearch</name>
     <script>
       <minify>false</minify>
-      <path>/javascript/vue/applicationSearch.bundle.js</path>
+      <path>/js/applicationSearch.bundle.js</path>
     </script>
     <depends>
       <module>vue</module>
@@ -218,7 +277,117 @@
       <module>commonVueComponents</module>
     </depends>
     <depends>
+      <module>appCenterCommon</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
       <module>jquery</module>
     </depends>
   </module>
+
+  <module>
+    <name>QuickActionExtensions</name>
+    <load-group>QuickActionsGrp</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/quickActionExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>AppCenterTopbarExtension</name>
+    <load-group>generalSettingsGrp</load-group>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterTopbarExtension.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>appCenterCommon</name>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterCommon.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
+  <module>
+    <name>topbarApplication</name>
+    <script>
+      <minify>false</minify>
+      <path>/js/appCenterTopbarApplication.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>QuickActionExtensions</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
+    </depends>
+  </module>
+
 </gatein-resources>

@@ -132,4 +132,61 @@
                     newDataType="VARCHAR(2000)"
                     tableName="AC_APPLICATION"/>
   </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-01">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_DEFAULT" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-02">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="ICON" type="VARCHAR(500)" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-03">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="APP_TYPE" type="TINYINT" defaultValueNumeric="0" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-04">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_PWA" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-05">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="SHORTCUT" type="VARCHAR(20)" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-06">
+    <addColumn tableName="AC_FAVORITE_APPLICATION">
+      <column name="FAVORITE" type="BOOLEAN" defaultValueBoolean="true" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-07" dbms="mysql">
+    <sql>
+      ALTER TABLE AC_APPLICATION MODIFY COLUMN TITLE varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE AC_APPLICATION MODIFY COLUMN DESCRIPTION varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    </sql>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-08">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="SAME_TAB" type="BOOLEAN" defaultValueBoolean="true" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-mip-185-09">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="APPLICATION_ORDER" type="BIGINT">
+      </column>
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>

@@ -34,9 +34,9 @@
           @open-settings="openSettingsDrawer" />
         <my-applications-list
           :applications-list="filteredApplications"
-          :default-app-image="defaultAppImage"
           :is-loading="isLoading"
-          @list-updated="handleListOrderUpdate" />
+          @list-updated="handleListOrderUpdate"
+          @open-portlet="$refs.portletInstanceDrawer.open($event)" />
       </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
@@ -44,6 +44,8 @@
       :settings="$root.settings"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated" />
+    <app-center-portlet-instance-drawer
+      ref="portletInstanceDrawer" />
   </v-app>
 </template>
 
@@ -54,13 +56,11 @@ export default {
     return {
       favoriteApplications: [],
       applicationsOrder: {},
-      defaultAppImage: null,
       isLoading: false,
       alphabeticalOrder: true,
       baseUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`,
       currentUser: eXo.env.portal.userName,
       initialized: false,
-      mobileDevices: /Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i
     };
   },
   computed: {
@@ -68,11 +68,8 @@ export default {
       return this.$root.settings?.isAdmin;
     },
     filteredApplications() {
-      return this.isMobileDevice && this.favoriteApplications.filter(application => application.mobile)
+      return this.$root.isMobile && this.favoriteApplications.filter(application => application.mobile)
                                  || this.favoriteApplications;
-    },
-    isMobileDevice() {
-      return this.mobileDevices.test(navigator.userAgent);
     },
     hasApplications() {
       return this.favoriteApplications?.length > 0;
@@ -107,12 +104,11 @@ export default {
     },
     getFavoriteApplications() {
       this.isLoading = true;
-      return this.$myApplicationsService.getFavoriteApplications(this.maxAppsToList)
+      return this.$applicationFavoriteService.getFavorites(this.maxAppsToList)
         .then((data) => {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
-            .filter(app => !!app);
-          this.defaultAppImage = data?.defaultApplicationImage;
+            .filter(app => app);
           this.sortAndStoreApplicationsOrder();
         })
         .finally(() => {
@@ -121,7 +117,9 @@ export default {
         });
     },
     mapApplication(app) {
-      if (!app) {return null;}
+      if (!app) {
+        return null;
+      }
       const computedApp = this.computeApplicationUrl(app);
       this.i18nSystemApplicationTitle(computedApp);
       return computedApp;
@@ -142,20 +140,32 @@ export default {
       }, {});
     },
     computeApplicationUrl(app) {
-      const computedUrl = app.url.replace(/^\.\//, this.baseUrl)
-        .replace('@user@', this.currentUser);
-      const target = computedUrl.startsWith('/') ? '_self' : '_blank';
-      return { ...app, computedUrl, target };
+      if (app.type === 'LINK') {
+        let computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+        computedUrl = computedUrl.replace('@user@', eXo.env.portal.userName);
+        computedUrl = this.$utils.toLinkUrl(computedUrl, {
+          urls: true,
+          email: true,
+          phone: true,
+        });
+        const target = app.sameTab ? '_self' : '_blank';
+        return {
+          ...app,
+          computedUrl,
+          target
+        };
+      } else {
+        return app;
+      }
     },
     i18nSystemApplicationTitle(app) {
       if (app.system) {
-        const appTitleKey = app.title.includes(' ')
-          ? app.title.replace(/ /g, '.').toLowerCase()
-          : app.title.toLowerCase();
-
-        const localizedTitle = this.$t(`appCenter.system.application.${appTitleKey}`);
-        if (!localizedTitle.startsWith('appCenter.system.application')) {
-          app.title = localizedTitle;
+        const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
+        if (this.$te(`appCenter.system.application.${title}`)) {
+          app.title = this.$t(`appCenter.system.application.${title}`);
+          if (this.$te(`appCenter.system.application.${title}.description`) && !app.description?.length) {
+            app.description = this.$t(`appCenter.system.application.${title}.description`);
+          }
         }
       }
     },
@@ -169,7 +179,7 @@ export default {
         }
       }
       if (newApplicationsOrders.length) {
-        await this.$myApplicationsService.updateApplicationsOrder(newApplicationsOrders);
+        await this.$applicationFavoriteService.updateFavoritesOrder(newApplicationsOrders);
         this.favoriteApplications = [...applicationList];
       }
     },
@@ -178,7 +188,7 @@ export default {
         return;
       }
       this.updateApplicationsOrder(applicationList);
-    }
+    },
   }
 };
 </script>

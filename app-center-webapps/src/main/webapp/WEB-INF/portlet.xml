@@ -35,10 +35,6 @@
       <name>preload.resource.bundles</name>
       <value>locale.addon.appcenter</value>
     </init-param>
-    <init-param>
-      <name>preload.resource.rest</name>
-      <value>/app-center/rest/settings</value>
-    </init-param>
     <supports>
       <mime-type>text/html</mime-type>
       <portlet-mode>edit</portlet-mode>
@@ -56,46 +52,11 @@
     </portlet-preferences>
   </portlet>
   <!-- ================================================================ -->
-  <!-- = App Center User Setup Portlet = -->
-  <!-- ================================================================== -->
-  <portlet>
-    <portlet-name>AppCenterUserSetupPortlet</portlet-name>
-    <display-name xml:lang="EN">App center user setup portlet</display-name>
-    <portlet-class>io.meeds.appcenter.portlet.UserSetupPortlet</portlet-class>
-    <init-param>
-      <name>prefetch.resource.bundles</name>
-      <value>locale.addon.appcenter</value>
-    </init-param>
-    <init-param>
-      <name>prefetch.resource.rest</name>
-      <value><![CDATA[/app-center/rest/settings,/app-center/rest/applications?offset=0&limit=12&keyword=,/app-center/rest/favorites]]></value>
-    </init-param>
-    <init-param>
-      <name>layout-css-class</name>
-      <value>no-layout-background-color no-layout-border-radius no-layout-border</value>
-    </init-param>
-    <supports>
-      <mime-type>text/html</mime-type>
-      <portlet-mode>edit</portlet-mode>
-    </supports>
-    <portlet-info>
-      <title>App center user setup portlet</title>
-      <keywords>App center portlets</keywords>
-    </portlet-info>
-    <portlet-preferences>
-      <preference>
-        <name>pageSize</name>
-        <value>10</value>
-        <read-only>false</read-only>
-      </preference>
-    </portlet-preferences>
-  </portlet>
-  <!-- ================================================================ -->
   <!-- = App center My Applications Portlet = -->
   <!-- ================================================================== -->
   <portlet>
     <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
-    <display-name xml:lang="EN">App center my applications portlet</display-name>
+    <display-name xml:lang="EN">My Applications</display-name>
     <portlet-class>io.meeds.appcenter.portlet.MyApplicationsPortlet</portlet-class>
     <init-param>
       <name>portlet-view-dispatched-file-path</name>
@@ -107,7 +68,7 @@
     </init-param>
     <init-param>
       <name>preload.resource.rest</name>
-      <value>/app-center/rest/settings,/app-center/rest/favorites</value>
+      <value>/app-center/rest/favorites</value>
     </init-param>
     <expiration-cache>-1</expiration-cache>
     <cache-scope>PUBLIC</cache-scope>
@@ -116,8 +77,8 @@
     </supports>
     <supported-locale>en</supported-locale>
     <portlet-info>
-      <title>App center my applications portlet</title>
-      <keywords>App center portlets</keywords>
+      <title>My Applications</title>
+      <keywords>My Applications</keywords>
     </portlet-info>
     <portlet-preferences>
     </portlet-preferences>
@@ -137,7 +98,6 @@
       <name>layout-css-class</name>
       <value>no-layout-style</value>
     </init-param>
-    <expiration-cache>-1</expiration-cache>
     <supports>
       <mime-type>text/html</mime-type>
     </supports>
@@ -147,7 +107,43 @@
       <title>App center app launcher portlet</title>
       <keywords>App center portlets</keywords>
     </portlet-info>
-    <portlet-preferences>
-    </portlet-preferences>
+  </portlet>
+  <portlet>
+    <portlet-name>UserPinnedApplications</portlet-name>
+    <display-name xml:lang="EN">User Pinned Applications</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/WEB-INF/jsp/appCenter/appPins.jsp</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.QuickActions</resource-bundle>
+    <portlet-info>
+      <title>User Pinned Applications</title>
+      <keywords>Pinned Applications</keywords>
+    </portlet-info>
+  </portlet>
+  <portlet>
+    <portlet-name>AppCenterUserSettings</portlet-name>
+    <display-name xml:lang="EN">User Pinned Applications</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/html/userShortcuts.html</value>
+    </init-param>
+    <expiration-cache>-1</expiration-cache>
+    <cache-scope>PUBLIC</cache-scope>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.portlet.QuickActions</resource-bundle>
+    <portlet-info>
+      <title>User Application Shortcuts</title>
+      <keywords>User Application Shortcuts</keywords>
+    </portlet-info>
   </portlet>
 </portlet-app>

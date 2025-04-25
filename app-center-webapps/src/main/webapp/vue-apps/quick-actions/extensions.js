@@ -1,0 +1,711 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * 
+ * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'activityComposer',
+  icon: 'fa-pen-fancy',
+  name: 'quickActions.activityComposer.name',
+  description: 'quickActions.activityComposer.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'SHARED/ActivityStream'], exoi18n => initActivityDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'spaceForm',
+  icon: 'fa-layer-group',
+  name: 'quickActions.spaceForm.name',
+  description: 'quickActions.spaceForm.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/spaceForm'], drawer => {
+      drawer.open(null, eXo.env.portal.isExternalFeatureEnabled);
+      resolve();
+    });
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editLanguage',
+  icon: 'fa-language',
+  name: 'quickActions.editLanguage.name',
+  description: 'quickActions.editLanguage.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/UserSettingLanguage'], exoi18n => initLanguageDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'mutedSpaces',
+  icon: 'fa-bell-slash',
+  name: 'quickActions.mutedSpaces.name',
+  description: 'quickActions.mutedSpaces.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/UserSettingNotifications'], exoi18n => initMutedSpacesDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editAboutMe',
+  icon: 'fa-user',
+  name: 'quickActions.editAboutMe.name',
+  description: 'quickActions.editAboutMe.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileAboutMe'], exoi18n => initAboutMeDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editContactInfo',
+  icon: 'fa-user',
+  name: 'quickActions.editContactInfo.name',
+  description: 'quickActions.editContactInfo.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileContactInformation'], exoi18n => initContactInfoDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'editWorkExperience',
+  icon: 'fa-user',
+  name: 'quickActions.editWorkExperience.name',
+  description: 'quickActions.editWorkExperience.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/ProfileWorkExperience'], exoi18n => initWorkExperienceDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'favorites',
+  icon: 'fa-star',
+  name: 'quickActions.favorites.name',
+  description: 'quickActions.favorites.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/TopBarFavorites'], exoi18n => initFavoritesDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'notifications',
+  icon: 'fa-bell',
+  name: 'quickActions.notifications.name',
+  description: 'quickActions.notifications.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'SHARED/notificationExtensions', 'PORTLET/social/TopBarNotification'], exoi18n => initNotificationsDrawer(exoi18n, resolve));
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'search',
+  icon: 'fa-search',
+  name: 'quickActions.search.name',
+  description: 'quickActions.search.description',
+  click: () => new Promise(resolve => {
+    window.require(['SHARED/eXoVueI18n', 'PORTLET/social/Search'], exoi18n => initSearchDrawer(exoi18n, resolve));
+  }),
+});
+
+async function initActivityDrawer(exoi18n, callback) {
+  const appId = 'activity-stream-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initActivityDrawerApp(appId, exoi18n, eXo.env.portal.maxFileSize);
+  }
+  document.dispatchEvent(new CustomEvent('activity-composer-drawer-open'));
+  callback();
+}
+
+async function initLanguageDrawer(exoi18n, callback) {
+  const appId = 'edit-language-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initLanguageDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-edit-language-drawer'));
+  callback();
+}
+
+async function initMutedSpacesDrawer(exoi18n, callback) {
+  const appId = 'muted-spaces-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initMutedSpacesDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-muted-spaces-drawer', {detail: callback}));
+}
+
+async function initAboutMeDrawer(exoi18n, callback) {
+  const appId = 'about-me-quick-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initAboutMeDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-about-me-drawer', {detail: callback}));
+}
+
+async function initContactInfoDrawer(exoi18n, callback) {
+  const appId = 'contact-info-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initContactInfoDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('portal', 'ImageCropper');
+    await Vue.prototype.$utils.importSkin('social', 'ProfileContactInformation');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-contact-info-drawer', {detail: callback}));
+}
+
+async function initWorkExperienceDrawer(exoi18n, callback) {
+  const appId = 'work-experience-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initWorkExperienceDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('portal', 'ImageCropper');
+    await Vue.prototype.$utils.importSkin('social', 'ProfileWorkExperience');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-work-experience-drawer', {detail: callback}));
+}
+
+async function initFavoritesDrawer(exoi18n, callback) {
+  const appId = 'favorites-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initFavoritesDrawerApp(appId, exoi18n);
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-favorites-drawer'));
+  callback();
+}
+
+async function initNotificationsDrawer(exoi18n, callback) {
+  const appId = 'notifications-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initNotificationsDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('social', 'TopBarNotification');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-notifications-drawer', {detail: callback}));
+}
+
+async function initSearchDrawer(exoi18n, callback) {
+  const appId = 'search-actions';
+  if (!document.querySelector(`#${appId}`)) {
+    const parent = document.createElement('div');
+    parent.id = appId;
+    document.querySelector('#vuetify-apps').appendChild(parent);
+    await initSearchDrawerApp(appId, exoi18n);
+    await Vue.prototype.$utils.importSkin('social', 'Search');
+  }
+  document.dispatchEvent(new CustomEvent('quick-action-search-drawer'));
+  callback();
+}
+
+async function initSearchDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const connectors = await fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/v1/social/search`, {
+    credentials: 'include',
+  }).then(resp => resp?.json?.());
+  const basePath = `${eXo.env.portal.context}/${eXo.env.portal.rest}`;
+  const urls = [`/social/i18n/locale.portlet.Portlets?lang=${lang}`];
+  if (connectors.length) {
+    connectors.forEach(connector => {
+      if (connector.i18nBundle) {
+        urls.push(`${basePath}/i18n/bundle/${connector.i18nBundle}-${lang}.json`);
+      }
+    });
+    await Promise.all(connectors.map(c => {
+      if (c?.cssModule?.includes?.('/')) {
+        return c?.cssModule?.split?.('/');
+      }
+    }).filter(c => c).map(p => Vue.prototype.$utils.importSkin(p[0], p[1])));
+  }
+  await new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <div id="${appId}">
+          <search-drawer
+            id="searchDialog"
+            ref="drawer"
+            :connectors="connectors" />
+        </div>
+      `,
+      data: () => ({
+        connectors,
+        skinUrls: [],
+      }),
+      created() {
+        document.addEventListener('quick-action-search-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-search-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.open();
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Search Quick Action')));
+}
+
+function initNotificationsDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.Portlets?lang=${lang}`,
+    `/social/i18n/locale.notification.template.Notification?lang=${lang}`,
+    `/social/i18n/locale.commons.Commons?lang=${lang}`,
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <top-bar-notification-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      data: () => ({
+        notificationExtensions: {},
+        initialized: true,
+        lastLoadedNotificationIndex: 0,
+        now: Date.now(),
+      }),
+      async created() {
+        await Vue.prototype.$utils.includeExtensions('NotificationPopoverExtension');
+        document.addEventListener('extension-WebNotification-notification-content-extension-updated', this.refreshNotificationExtensions);
+        this.refreshNotificationExtensions();
+        window.setInterval(() => this.now = Date.now(), 60000);
+        document.addEventListener('quick-action-notifications-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-notifications-drawer', this.openDrawer);
+        document.removeEventListener('extension-WebNotification-notification-content-extension-updated', this.refreshNotificationExtensions);
+      },
+      methods: {
+        openDrawer(event) {
+          this.lastLoadedNotificationIndex = 0;
+          window.require(['SHARED/notificationExtensions'], () =>
+            Promise.resolve(this.$utils.includeExtensions('NotificationExtension'))
+              .then(() => {
+                this.$refs.drawer.open();
+                const callback = event?.detail;
+                if (callback) {
+                  callback();
+                }
+              })
+          );
+        },
+        refreshNotificationExtensions() {
+          const notificationExtensions = {};
+          const extensions = extensionRegistry.loadExtensions('WebNotification', 'notification-content-extension');
+          extensions.forEach(extension => {
+            if (extension.type && !this.notificationExtensions[extension.type]) {
+              notificationExtensions[extension.type] = extension;
+            }
+          });
+          this.notificationExtensions = {
+            ...this.notificationExtensions,
+            ...notificationExtensions
+          };
+          document.dispatchEvent(new CustomEvent('notification-extensions-refresh'));
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Notifications Quick Action')));
+}
+
+function initFavoritesDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.Portlets?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <top-bar-favorites-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      created() {
+        document.addEventListener('quick-action-favorites-drawer', this.openDrawer);
+      },
+      async mounted() {
+        await Vue.prototype.$utils.includeExtensions('FavoriteDrawerExtension');
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-favorites-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.openDrawer();
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Favorites Quick Action')));
+}
+
+function initWorkExperienceDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.ProfileWorkExperience?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-work-experience-drawer
+          id="${appId}"
+          ref="drawer"
+          :experiences="experiences" />
+      `,
+      data: () => ({
+        experiences: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-work-experience-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-work-experience-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner, 'all')
+            .then(user => this.setExperiences(user && user.experiences));
+        },
+        setExperiences(experiences) {
+          experiences = experiences || [];
+          experiences.sort((a, b) => {
+            if (a?.isCurrent) {
+              return -1;
+            } else if (b?.isCurrent) {
+              return 1;
+            } else if (!a?.startDate && !b?.startDate ) {
+              return 0;
+            } else if (!a?.startDate) {
+              return 1;
+            } else if (!b?.startDate) {
+              return -1;
+            }
+            return (new Date(b.startDate)?.getTime?.() || 0) - (new Date(a.startDate)?.getTime?.() || 0);
+          });
+          this.experiences = experiences;
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Work Experience Quick Action')));
+}
+
+function initContactInfoDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.social.ProfileContactInformation?lang=${lang}`,
+    `/social/i18n/locale.portlet.social.ComplementaryFilter?lang=${lang}`,
+    `/social/i18n/locale.portlet.Portlets?lang=${lang}`
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-contact-information-drawer
+          id="${appId}"
+          ref="drawer" />
+      `,
+      data: () => ({
+        properties: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-contact-info-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-contact-info-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open(this.properties);
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner, 'settings')
+            .then(data => {
+              this.properties = data?.properties.filter(item => item.active && !(item.propertyType === 'user' && eXo.env.portal.isExternal === true)).sort((s1, s2) => ((s1.order > s2.order) ? 1 : (s1.order < s2.order) ? -1 : 0));
+            });
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Contact Information Quick Action')));
+}
+
+function initAboutMeDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.ProfileAboutMe?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <profile-about-me-drawer
+          id="${appId}"
+          ref="drawer"
+          :value="aboutMe" />
+      `,
+      data: () => ({
+        aboutMe: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-about-me-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-about-me-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            await this.refresh();
+            this.$refs.drawer.open();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return this.$userService.getUser(eXo.env.portal.profileOwner)
+            .then(user => this.aboutMe = user?.aboutMe || '');
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'About Me Quick Action')));
+}
+
+function initMutedSpacesDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.UserNotificationPortlet?lang=${lang}`,
+    `/social/i18n/locale.portlet.social.UserSettings?lang=${lang}`
+  ];
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      template: `
+        <user-setting-notification-mute-spaces-drawer
+          id="${appId}"
+          ref="drawer"
+          :settings="settings"
+          @refresh="refresh" />
+      `,
+      data: () => ({
+        settings: null,
+      }),
+      created() {
+        document.addEventListener('quick-action-muted-spaces-drawer', this.openDrawer);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-muted-spaces-drawer', this.openDrawer);
+      },
+      methods: {
+        async openDrawer(event) {
+          try {
+            this.$refs.drawer.open();
+            await this.refresh();
+          } finally {
+            const callback = event?.detail;
+            if (callback) {
+              callback();
+            }
+          }
+        },
+        refresh() {
+          return fetch(`${eXo.env.portal.context}/${eXo.env.portal.rest}/notifications/settings/${eXo.env.portal.userName}`, {
+            method: 'GET',
+            credentials: 'include',
+          })
+            .then(resp => resp && resp.ok && resp.json())
+            .then(settings => this.settings = settings);
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Muted Spaces Quick Action')));
+}
+
+function initActivityDrawerApp(appId, exoi18n, maxFileSize) {
+  const lang = eXo.env.portal.language;
+  const urls = [
+    `/social/i18n/locale.portlet.Portlets?lang=${lang}`,
+    `/social/i18n/locale.commons.Commons?lang=${lang}`,
+    `/social/i18n/locale.social.Webui?lang=${lang}`,
+  ];
+  return new Promise(resolveInit => exoi18n.loadLanguageAsync(lang, urls)
+    .then(i18n => Vue.createApp({
+      data: {
+        maxFileSize,
+        activityTypes: {},
+        activityActions: {},
+        commentActions: {},
+        extensionApp: 'activity',
+        activityTypeExtension: 'type',
+        activityActionExtension: 'action',
+        commentActionExtension: 'comment-action',
+      },
+      computed: {
+        isMobile() {
+          return this.$vuetify?.breakpoint?.mobile;
+        },
+        drawerParams() {
+          return {
+            activityTypes: this.activityTypes,
+            activityActions: this.activityActions,
+            commentTypes: this.activityTypes,
+            commentActions: this.commentActions,
+          };
+        },
+      },
+      created() {
+        this.activityTypes = extensionRegistry.loadExtensions(this.extensionApp, this.activityTypeExtension);
+        this.activityActions = extensionRegistry.loadExtensions(this.extensionApp, this.activityActionExtension);
+        this.commentActions = extensionRegistry.loadExtensions(this.extensionApp, this.commentActionExtension);
+      },
+      mounted() {
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolveInit();
+      },
+      template: `
+        <extension-registry-components
+          id="${appId}"
+          :params="drawerParams"
+          name="ActivityStream"
+          type="activity-stream-drawers"
+          parent-element="div"
+          element="div"
+          class="drawer-parent" />
+      `,
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Activity Composer Quick Action'))
+    .finally(() => Vue.prototype.$utils.includeExtensions('ActivityStreamExtension')));
+}
+
+function initLanguageDrawerApp(appId, exoi18n) {
+  const lang = eXo.env.portal.language;
+  const url = `/social/i18n/locale.portlet.social.UserSettings?lang=${lang}`;
+  return new Promise(resolve => exoi18n.loadLanguageAsync(lang, url)
+    .then(i18n => Vue.createApp({
+      template: `
+        <user-language-drawer
+          id="${appId}"
+          :value="lang"
+          :languages="supportedLanguages"
+          ref="drawer" />
+      `,
+      data: () => ({
+        lang,
+        translationConfiguration: null,
+        collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
+      }),
+      computed: {
+        isMobile() {
+          return this.$vuetify?.breakpoint?.mobile;
+        },
+        supportedLanguages() {
+          if (this.translationConfiguration?.supportedLanguages) {
+            const supportedLanguages = Object.keys(this.translationConfiguration.supportedLanguages)
+              .map(l => ({
+                value: l,
+                text: this.translationConfiguration.supportedLanguages[l],
+              }));
+            supportedLanguages.sort((a, b) => this.collator.compare(a.text.toLowerCase(), b.text.toLowerCase()));
+            return supportedLanguages;
+          } else {
+            return [];
+          }
+        },
+      },
+      created() {
+        document.addEventListener('quick-action-edit-language-drawer', this.openDrawer);
+      },
+      async mounted() {
+        this.translationConfiguration = await this.$translationService.getTranslationConfiguration();
+        document.dispatchEvent(new CustomEvent('hideTopBarLoading'));
+        resolve();
+      },
+      beforeDestroy() {
+        document.removeEventListener('quick-action-edit-language-drawer', this.openDrawer);
+      },
+      methods: {
+        openDrawer() {
+          this.$refs.drawer.open(this.supportedLanguages);
+        },
+      },
+      vuetify: Vue.prototype.vuetifyOptions,
+      i18n,
+    }, `#${appId}`, 'Edit Language Quick Action')));
+}

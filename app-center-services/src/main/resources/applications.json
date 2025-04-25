@@ -1,0 +1,73 @@
+{
+    "descriptors": [
+        {
+            "name": "addActivity",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "Add a post",
+                "icon": "fa-pen-fancy",
+                "type": "DRAWER",
+                "url": "activityComposer",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "shortcut": "p",
+                "pwa": true,
+                "order": 20,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
+        },
+        {
+            "name": "listSpaces",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "List Spaces",
+                "icon": "fa-layer-group",
+                "type": "DRAWER",
+                "url": "spacesList",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "order": 50,
+                "shortcut": "s",
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
+        },
+        {
+            "name": "listFavorites",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "List favorites",
+                "icon": "fa-star",
+                "type": "DRAWER",
+                "url": "favorites",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "order": 10,
+                "shortcut": "b",
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
+        }
+    ]
+}

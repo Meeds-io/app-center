@@ -19,18 +19,26 @@
 
 package io.meeds.appcenter.portlet;
 
-import io.meeds.social.portlet.CMSPortlet;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Enumeration;
+
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
+import javax.portlet.PortletConfig;
+import javax.portlet.PortletException;
+import javax.portlet.PortletPreferences;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
+
 import org.apache.commons.lang3.StringUtils;
+
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 
-import javax.portlet.*;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.Enumeration;
-import java.util.Random;
+import io.meeds.social.portlet.CMSPortlet;
 
 public class MyApplicationsPortlet extends CMSPortlet {
 

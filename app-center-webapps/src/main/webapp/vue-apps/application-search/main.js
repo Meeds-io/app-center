@@ -15,6 +15,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import './initComponents.js';
+import '../application-common/initComponents.js';
 
 export function formatSearchResult(result) {
   return result && result.applications;
