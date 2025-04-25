@@ -43,7 +43,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <div v-if="cardDisplay" class="d-flex justify-space-between">
             <div class="col-6 pa-0">
               <div class="ms-4">
-                <categories-filter v-model="categoryId" class="mt-4" />
+                <categories-filter
+                  v-model="categoryId"
+                  object-type="appCenter"
+                  class="mt-4" />
               </div>
             </div>
             <div class="col-6 pa-0">
