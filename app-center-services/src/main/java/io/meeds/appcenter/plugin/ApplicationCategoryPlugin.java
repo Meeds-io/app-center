@@ -18,6 +18,8 @@
  */
 package io.meeds.appcenter.plugin;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +55,11 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
   @Override
   public boolean canEdit(String applicationId, String username) {
     return getApplicationCenterService().canEdit(username);
+  }
+
+  @Override
+  public List<Long> getCategoryIds() {
+    return getApplicationCenterService().getCategoryIds();
   }
 
   private ApplicationCenterService getApplicationCenterService() {
