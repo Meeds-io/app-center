@@ -227,7 +227,17 @@ public class ApplicationCenterService {
   }
 
   public void deleteApplication(Long applicationId) throws ApplicationNotFoundException {
-    appCenterStorage.deleteApplication(applicationId);
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application != null) {
+      if (CollectionUtils.isNotEmpty(application.getCategoryIds())) {
+        application.getCategoryIds()
+                   .forEach(id -> getCategoryLinkService().unlink(id,
+                                                                  new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                                                     String.valueOf(applicationId),
+                                                                                     0l)));
+      }
+      appCenterStorage.deleteApplication(applicationId);
+    }
   }
 
   /**
@@ -471,6 +481,10 @@ public class ApplicationCenterService {
 
   public List<Application> getSystemApplications() {
     return appCenterStorage.getSystemApplications();
+  }
+
+  public List<Long> getCategoryIds() {
+    return getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE);
   }
 
   public ApplicationList getMandatoryAndFavoriteApplications(Pageable pageable, String username, Locale locale) {
