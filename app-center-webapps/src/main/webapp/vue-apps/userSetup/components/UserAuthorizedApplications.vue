@@ -220,7 +220,6 @@ export default {
       searchText: '',
       searchApp: '',
       searchDelay: 300,
-      maxFavoriteApps: '',
       authorizedApplicationsListMsg: this.$t('appCenter.userSetup.loading')
     };
   },
@@ -246,7 +245,6 @@ export default {
   created() {
     this.isMobileDevice = this.detectMobile();
     Promise.all([
-      this.getMaxFavoriteApps(),
       this.getAuthorizedApplicationsList()
     ]).finally(() => this.$root.$applicationLoaded());
   },
@@ -340,22 +338,6 @@ export default {
     },
     loadNextPage() {
       this.getAuthorizedApplicationsList();
-    },
-    getMaxFavoriteApps() {
-      return fetch('/app-center/rest/settings', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(resp => {
-          if (resp && resp.ok) {
-            return resp.json();
-          } else {
-            throw new Error('Error when getting the general applications list');
-          }
-        })
-        .then(data => {
-          this.maxFavoriteApps = data.maxFavoriteApps;
-        });
     },
     searchAuthorizedApplicationsList() {
       this.authorizedApplicationsList = [];

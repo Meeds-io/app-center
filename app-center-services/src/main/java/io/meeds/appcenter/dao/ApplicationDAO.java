@@ -82,7 +82,7 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       FROM ApplicationEntity app
       LEFT JOIN FavoriteApplicationEntity favoriteApp \
             ON app.id = favoriteApp.application.id AND favoriteApp.userName = :userName
-      WHERE app.active = TRUE AND (favoriteApp.id IS NOT NULL OR app.isMandatory = TRUE)
+      WHERE app.active = TRUE AND (app.isMandatory = TRUE OR favoriteApp.id IS NOT NULL)
       ORDER BY favoriteApp.order NULLS LAST, app.isMandatory DESC
       """)
   Page<FavoriteApplicationEntity> findFavoriteAndMandatoryApplications(@Param("userName") String userName, Pageable pageable);

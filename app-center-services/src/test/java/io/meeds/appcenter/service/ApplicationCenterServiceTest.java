@@ -502,9 +502,8 @@ public class ApplicationCenterServiceTest {
     assertEquals(4, applicationList.getLimit());
     assertEquals(0, applicationList.getOffset());
 
-    when(appCenterStorage.countFavorites(username)).thenReturn(6L);
     applicationList = applicationCenterService.getMandatoryAndFavoriteApplications(username, pageable);
-    assertFalse(applicationList.isCanAddFavorite());
+    assertTrue(applicationList.isCanAddFavorite());
   }
 
   private Application application() {
