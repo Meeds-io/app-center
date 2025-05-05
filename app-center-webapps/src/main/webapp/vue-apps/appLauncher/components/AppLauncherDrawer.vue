@@ -138,6 +138,7 @@ export default {
       draggedElementIndex: null,
       alphabeticalOrder: true,
       appCenterLink: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/appCenterUserSetup/`,
+      maxFavoriteApps: 0
     };
   },
   watch: {
@@ -219,7 +220,7 @@ export default {
       this.$refs.appLauncherDrawer.open();
     },
     getMandatoryAndFavoriteApplications() {
-      return fetch('/app-center/rest/favorites', {
+      return fetch(`/app-center/rest/favorites?size=${this.maxFavoriteApps}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -318,6 +319,7 @@ export default {
         })
         .then(data => {
           Object.assign(this.defaultAppImage, data && data.defaultApplicationImage);
+          this.maxFavoriteApps = data?.maxFavoriteApps;
         });
     },
     getAppIndex(appList, appId) {

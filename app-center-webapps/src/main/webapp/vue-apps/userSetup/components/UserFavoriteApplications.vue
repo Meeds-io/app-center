@@ -95,7 +95,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         <v-icon class="notReached">
           info
         </v-icon>
-        <span>{{ $t("appCenter.userSetup.maxFavoriteApps.not.reached", {0: $parent.$children[0].maxFavoriteApps}) }}</span>
+        <span>{{ $t("appCenter.userSetup.maxFavoriteApps.not.reached", {0: maxFavoriteApps}) }}</span>
       </div>
       <div v-else class="maxFavorite reached">
         <v-icon>
@@ -122,10 +122,12 @@ export default {
       favoriteApplicationsList: [],
       loading: true,
       canAddFavorite: false,
+      maxFavoriteApps: 0
     };
   },
-  created() {
+  async created() {
     this.isMobileDevice = this.detectMobile();
+    this.maxFavoriteApps = await this.getMaxFavoriteApps();
     this.getFavoriteApplicationsList();
   },
   methods: {
@@ -145,7 +147,7 @@ export default {
       });
     },
     getFavoriteApplicationsList() {
-      return fetch('/app-center/rest/favorites', {
+      return fetch(`/app-center/rest/favorites?size=${this.maxFavoriteApps || 0}`, {
         method: 'GET',
         credentials: 'include',
       })
@@ -233,6 +235,25 @@ export default {
     getAppIndex(appList, appId) {
       return appList.findIndex(app => app.id === appId);
     },
+    async getMaxFavoriteApps() {
+      try {
+        const response = await fetch('/app-center/rest/settings', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Error when getting the general applications list');
+        }
+
+        const data = await response.json();
+        return data.maxFavoriteApps;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
   }
 };
 </script>

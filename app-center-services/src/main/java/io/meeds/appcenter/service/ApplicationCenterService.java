@@ -591,10 +591,9 @@ public class ApplicationCenterService {
                                                      .stream()
                                                      .filter(app -> hasPermission(username, app))
                                                      .collect(Collectors.toList());
-    long countFavorites = appCenterStorage.countFavorites(username);
     int appCount = applications.size();
     return new ApplicationList().setApplications(applications)
-                                .setCanAddFavorite(countFavorites < getMaxFavoriteApps())
+                                .setCanAddFavorite(appCount < getMaxFavoriteApps())
                                 .setLimit(appCount)
                                 .setSize(appCount)
                                 .setOffset(0);
