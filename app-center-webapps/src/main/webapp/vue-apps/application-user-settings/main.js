@@ -19,11 +19,14 @@
 import './initComponents.js';
 
 const lang = eXo.env.portal.language || 'en';
-const url = `/app-center/i18n/locale.addon.appcenter?lang=${lang}`;
+const urls = [
+  `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
+  `/social/i18n/locale.portlet.ContentLink?lang=${lang}`
+];
 const appId = 'appCenterUserSettings';
 
 export function init() {
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
+  exoi18n.loadLanguageAsync(lang, urls).then(i18n => {
     const appElement = document.createElement('div');
     appElement.id = appId;
 
