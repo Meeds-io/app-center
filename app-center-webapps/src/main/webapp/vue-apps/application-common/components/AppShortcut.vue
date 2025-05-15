@@ -21,37 +21,59 @@
 -->
 <template>
   <div class="d-flex align-md-center content-box-sizing">
-    <v-card
-      height="20"
-      width="36"
-      class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
-      flat>
-      {{ $t('appCenter.adminSetupForm.ctrl') }}
-    </v-card>
-    <v-icon
-      size="12"
-      class="mx-2">
-      fa-plus
-    </v-icon>
-    <v-card
-      height="20"
-      width="36"
-      class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
-      flat>
-      {{ $t('appCenter.adminSetupForm.shift') }}
-    </v-card>
-    <v-icon
-      size="12"
-      class="mx-2">
-      fa-plus
-    </v-icon>
-    <v-card
-      height="20"
-      width="20"
-      class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
-      flat>
-      {{ shortcut }}
-    </v-card>
+    <template v-if="editor">
+      <v-card
+        height="20"
+        width="20"
+        class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
+        flat>
+        /
+      </v-card>
+      <v-icon
+        size="12"
+        class="mx-2">
+        fa-plus
+      </v-icon>
+      <v-card
+        height="20"
+        class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal px-2"
+        flat>
+        {{ shortcut }}
+      </v-card>
+    </template>
+    <template v-else>
+      <v-card
+        height="20"
+        width="36"
+        class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
+        flat>
+        {{ $t('appCenter.adminSetupForm.ctrl') }}
+      </v-card>
+      <v-icon
+        size="12"
+        class="mx-2">
+        fa-plus
+      </v-icon>
+      <v-card
+        height="20"
+        width="36"
+        class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
+        flat>
+        {{ $t('appCenter.adminSetupForm.shift') }}
+      </v-card>
+      <v-icon
+        size="12"
+        class="mx-2">
+        fa-plus
+      </v-icon>
+      <v-card
+        height="20"
+        width="20"
+        class="text-subtitle-font-size grey-lighten1-background white--text d-flex align-center justify-center line-height-normal"
+        flat>
+        {{ shortcut }}
+      </v-card>
+    </template>
   </div>
 </template>
 <script>
@@ -60,6 +82,10 @@ export default {
     shortcut: {
       type: String,
       default: null,
+    },
+    editor: {
+      type: Boolean,
+      default: false,
     },
   },
 };
