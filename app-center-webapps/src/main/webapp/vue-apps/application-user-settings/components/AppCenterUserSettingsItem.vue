@@ -49,6 +49,7 @@
     <app-center-shortcut
       v-if="application.shortcut"
       :shortcut="application.shortcut"
+      :editor="editor"
       class="align-self-md-center align-self-end mb-2 mb-md-0" />
   </div>
 </template>
@@ -58,6 +59,10 @@ export default {
     application: {
       type: String,
       default: null,
+    },
+    editor: {
+      type: Boolean,
+      default: false,
     },
   },
 };
