@@ -75,6 +75,17 @@
         :application="app"
         class="mt-2" />
     </div>
+    <div v-if="editorApplications?.length" class="px-4 pb-5">
+      <div class="text-header">
+        {{ $t('appCenter.userSettings.shortcuts.editorApps') }}
+      </div>
+      <app-center-user-settings-item
+        v-for="app in editorApplications"
+        :key="app.id"
+        :application="app"
+        class="mt-2"
+        editor />
+    </div>
   </v-card>
 </template>
 <script>
@@ -82,6 +93,8 @@ export default {
   data: () => ({
     loading: false,
     applications: null,
+    editorLinkPlugins: null,
+    editorExtensionPlugins: null,
     topbarConfiguration: null,
   }),
   computed: {
@@ -131,6 +144,18 @@ export default {
     otherApplications() {
       return this.shortcutApplications?.filter?.(app => app.id && !app.default && !this.topbarApplicationIds.includes(app.id));
     },
+    editorApplications() {
+      return [
+        ...(this.editorLinkPlugins || []),
+        ...(this.editorExtensionPlugins || []),
+      ]
+        .sort(this.editorComparator)
+        .map(l => ({
+          title: this.$t(l.titleKey),
+          icon: l.icon,
+          shortcut: l.command,
+        }));
+    },
   },
   created() {
     this.init();
@@ -139,7 +164,8 @@ export default {
     async init() {
       await Promise.all([
         this.refreshApplications(),
-        this.refreshTopbarConfiguration()
+        this.refreshTopbarConfiguration(),
+        this.refreshEditorLinkPlugins(),
       ]);
     },
     async refreshApplications() {
@@ -153,6 +179,17 @@ export default {
     async refreshTopbarConfiguration() {
       this.topbarConfiguration = await this.getTopbarConfiguration();
     },
+    refreshEditorLinkPlugins() {
+      return new Promise(resolve => {
+        window.require(['SHARED/ContentLink'], () => {
+          this.$contentLinkService.getExtensions()
+            .then(extensions => this.editorLinkPlugins = extensions)
+            .then(() => this.$utils.includeExtensions('ContentLinkExtension'))
+            .then(() => this.editorExtensionPlugins = extensionRegistry.loadExtensions('ContentLink', 'InsertContentExtension'))
+            .then(resolve);
+        });
+      });
+    },
     getTopbarConfiguration() {
       return fetch('/social/rest/navigation/settings/topbar', {
         method: 'GET',
@@ -164,6 +201,9 @@ export default {
           throw new Error('Error when retrieving Topbar configuration');
         }
       });
+    },
+    editorComparator(a, b) {
+      return this.$root.collator.compare(this.$t(a.titleKey), this.$t(b.titleKey));
     },
   }
 };
