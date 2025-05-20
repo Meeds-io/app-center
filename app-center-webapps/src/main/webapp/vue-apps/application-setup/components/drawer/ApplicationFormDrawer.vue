@@ -476,7 +476,7 @@ export default {
           active: true,
           default: false,
           mandatory: false,
-          mobile: false,
+          mobile: true,
           system: false,
           type: 'LINK', // LINK, DRAWER or PORTLET
           permissions: [],
