@@ -1,3 +1,4 @@
+<%@page import="org.apache.commons.text.StringEscapeUtils"%>
 <%@ page import="javax.portlet.PortletPreferences" %>
 <%@ page import="org.exoplatform.commons.utils.CommonsUtils" %>
 <%@ page import="org.exoplatform.portal.localization.LocaleContextInfoUtils" %>
@@ -29,7 +30,7 @@
         applicationId: '<%=applicationId%>',
         maxAppsToList: '<%=maxAppsToList%>',
         showHeader: <%=showHeader%>,
-        headerTitle: '<%=headerTitle%>' !== 'null' ? '<%=headerTitle%>' : null,
+        headerTitle: '<%=headerTitle%>' !== 'null' ? '<%=StringEscapeUtils.escapeJava(headerTitle).replace("\\\"", "\"").replace("\\\\\"", "\\\"")%>' : null,
         isAdmin: <%=isAdmin%>,
         saveSettingsUrl: '<%=saveSettingsUrl%>'
       }));
