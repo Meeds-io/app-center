@@ -47,12 +47,12 @@
           :alt="applicationTitle"
           referrerpolicy="no-referrer"
           class="mx-auto"
-          max-width="60"
-          max-height="60"
+          max-width="45"
+          max-height="45"
           contain />
         <v-icon
           v-else-if="application.icon"
-          size="60"
+          size="45"
           class="d-flex align-center justify-center">
           {{ application.icon }}
         </v-icon>
@@ -60,8 +60,8 @@
           v-else
           :alt="applicationTitle"
           src="/app-center/skin/images/defaultApp.png"
-          max-width="60"
-          max-height="60"
+          max-width="45"
+          max-height="45"
           contain
           class="mx-auto"
           referrerpolicy="no-referrer" />
