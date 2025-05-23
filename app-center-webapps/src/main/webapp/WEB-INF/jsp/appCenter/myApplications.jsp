@@ -19,9 +19,6 @@
   boolean showHeader = Boolean.parseBoolean(preferences.getValue("showHeader", "true"));
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           applicationId, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
-  if (headerTitle == null) {
-    headerTitle="null";
-  }
 %>
 <div class="VuetifyApp">
   <div data-app="true"
@@ -32,7 +29,7 @@
         applicationId: '<%=applicationId%>',
         maxAppsToList: '<%=maxAppsToList%>',
         showHeader: <%=showHeader%>,
-        headerTitle: '<%=headerTitle%>' !== 'null' ? '<%=headerTitle%>' : null,
+        headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeJava(headerTitle).replace("\\\"", "\"").replace("\\\\\"", "\\\""))%>,
         isAdmin: <%=isAdmin%>,
         saveSettingsUrl: '<%=saveSettingsUrl%>'
       }));
