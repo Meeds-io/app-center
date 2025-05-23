@@ -20,6 +20,9 @@
   boolean showHeader = Boolean.parseBoolean(preferences.getValue("showHeader", "true"));
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           applicationId, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
+  if (headerTitle == null) {
+    headerTitle="null";
+  }
 %>
 <div class="VuetifyApp">
   <div data-app="true"
