@@ -26,12 +26,18 @@ export async function init({
   isAdmin,
   pinnedApplicationIds,
   autoInitDrawerId,
-  autoInitPortletId
+  autoInitPortletId,
 }, noAutoOpen, shortcuts, shortcut) {
   if (initialized) {
     return;
   }
   initialized = true;
+  let appElement = document.querySelector(`#${appId}`);
+  const hideApp = !appElement;
+  if (!appElement) {
+    appElement = document.querySelector('#appShortcuts');
+  }
+
   const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
   const urls = [
     `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
@@ -44,6 +50,7 @@ export async function init({
       data: () => ({
         isAdmin,
         noAutoOpen,
+        hideApp,
         shortcut,
         shortcuts: shortcuts?.filter?.(c => c?.length)?.map?.(c => c.toLowerCase()) || [],
         pinnedApplicationIds,
@@ -86,7 +93,7 @@ export async function init({
       template: `<app-center-launcher id="${appId}" />`,
       vuetify: Vue.prototype.vuetifyOptions,
       i18n: i18n,
-    }, `#${appId}`, 'Application Center Drawer');
+    }, appElement, 'Application Center Drawer');
   } finally {
     Vue.prototype.$utils.includeExtensions('QuickActionExtension');
   }
