@@ -109,6 +109,28 @@
     </portlet-info>
   </portlet>
   <portlet>
+    <portlet-name>AppCenterAppShortcutsPortlet</portlet-name>
+    <display-name xml:lang="EN">App center app launcher portlet</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/WEB-INF/jsp/appCenter/appShortcuts.jsp</value>
+    </init-param>
+    <init-param>
+      <name>layout-css-class</name>
+      <value>no-layout-style</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.addon.appcenter</resource-bundle>
+    <portlet-info>
+      <title>App center app shortcuts portlet</title>
+      <keywords>App center shortcuts</keywords>
+    </portlet-info>
+  </portlet>
+  <portlet>
     <portlet-name>UserPinnedApplications</portlet-name>
     <display-name xml:lang="EN">User Pinned Applications</display-name>
     <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
