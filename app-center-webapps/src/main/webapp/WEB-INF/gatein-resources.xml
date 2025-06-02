@@ -259,35 +259,6 @@
   </module>
 
   <module>
-    <name>AppCenterSearch</name>
-    <script>
-      <minify>false</minify>
-      <path>/js/applicationSearch.bundle.js</path>
-    </script>
-    <depends>
-      <module>vue</module>
-    </depends>
-    <depends>
-      <module>vuetify</module>
-    </depends>
-    <depends>
-      <module>eXoVueI18n</module>
-    </depends>
-    <depends>
-      <module>commonVueComponents</module>
-    </depends>
-    <depends>
-      <module>appCenterCommon</module>
-    </depends>
-    <depends>
-      <module>extensionRegistry</module>
-    </depends>
-    <depends>
-      <module>jquery</module>
-    </depends>
-  </module>
-
-  <module>
     <name>QuickActionExtensions</name>
     <load-group>QuickActionsGrp</load-group>
     <script>
