@@ -103,7 +103,7 @@ export default {
       const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
       if (application?.type === 'LINK') {
         const computedUrl = application.url
-          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
           .replace('@user@', eXo.env.portal.userName);
         const url = this.$utils.toLinkUrl(computedUrl, {
           urls: true,
