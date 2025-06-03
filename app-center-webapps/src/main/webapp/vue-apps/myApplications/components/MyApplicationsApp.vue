@@ -58,7 +58,6 @@ export default {
       applicationsOrder: {},
       isLoading: false,
       alphabeticalOrder: true,
-      baseUrl: `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`,
       currentUser: eXo.env.portal.userName,
       initialized: false,
     };
@@ -141,7 +140,7 @@ export default {
     },
     computeApplicationUrl(app) {
       if (app.type === 'LINK') {
-        let computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`);
+        let computedUrl = app.url.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`);
         computedUrl = computedUrl.replace('@user@', eXo.env.portal.userName);
         computedUrl = this.$utils.toLinkUrl(computedUrl, {
           urls: true,
