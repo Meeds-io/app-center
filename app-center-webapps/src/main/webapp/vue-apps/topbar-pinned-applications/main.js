@@ -105,7 +105,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
             }
             if (app.type === 'LINK' && app.url) {
               const computedUrl = app.url
-                .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+                .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
                 .replace('@user@', eXo.env.portal.userName);
               app.computedUrl = this.$utils.toLinkUrl(computedUrl, {
                 urls: true,

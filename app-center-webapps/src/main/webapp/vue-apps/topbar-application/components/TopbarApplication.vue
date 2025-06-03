@@ -77,7 +77,7 @@ export default {
     computedUrl() {
       if (this.application?.type === 'LINK') {
         const computedUrl = this.application.url
-          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.portalName}/`)
+          .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
           .replace('@user@', eXo.env.portal.userName);
         return this.$utils.toLinkUrl(computedUrl, {
           urls: true,
