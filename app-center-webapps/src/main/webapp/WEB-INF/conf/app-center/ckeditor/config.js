@@ -1,6 +1,6 @@
-﻿const origEditorConfigFn = CKEDITOR.editorConfig;
+﻿window.origEditorConfigFn = CKEDITOR.editorConfig;
 CKEDITOR.editorConfig = function (config) {
-  origEditorConfigFn(config);
+  window.origEditorConfigFn(config);
   CKEDITOR.on('instanceReady', function(e) {
     e.editor.on('key', function(event) {
       if (event?.data?.domEvent?.$?.ctrlKey && event?.data?.domEvent?.$?.shiftKey) {
