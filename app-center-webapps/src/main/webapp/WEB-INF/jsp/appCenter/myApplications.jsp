@@ -1,3 +1,4 @@
+<%@page import="org.apache.commons.text.StringEscapeUtils"%>
 <%@ page import="javax.portlet.PortletPreferences" %>
 <%@ page import="org.exoplatform.commons.utils.CommonsUtils" %>
 <%@ page import="org.exoplatform.portal.localization.LocaleContextInfoUtils" %>
