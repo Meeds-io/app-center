@@ -125,7 +125,7 @@ export default {
       apps.push({
         title: this.$t('appCenter.system.application.notifications'),
         icon: 'fa-bell',
-        shortcut: 'r',
+        shortcut: 'e',
       });
       apps.push({
         title: this.$t('appCenter.system.application.appcenter'),
