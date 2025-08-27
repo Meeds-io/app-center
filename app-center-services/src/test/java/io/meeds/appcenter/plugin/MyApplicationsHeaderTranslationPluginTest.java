@@ -63,24 +63,24 @@ public class MyApplicationsHeaderTranslationPluginTest {
 
   @Test
   void hasEditPermission() {
-    assertFalse(translationPlugin.hasEditPermission(15l, TEST_USER));
+    assertFalse(translationPlugin.hasEditPermission("15", TEST_USER));
     when(applicationCenterService.canEdit(TEST_USER)).thenReturn(true);
-    assertTrue(translationPlugin.hasEditPermission(15l, TEST_USER));
+    assertTrue(translationPlugin.hasEditPermission("15", TEST_USER));
   }
 
   @Test
   void hasAccessPermission() {
-    assertTrue(translationPlugin.hasAccessPermission(15l, TEST_USER));
+    assertTrue(translationPlugin.hasAccessPermission("15", TEST_USER));
   }
 
   @Test
   void getAudienceId() {
-    assertEquals(0l, translationPlugin.getAudienceId(15l));
+    assertEquals(0l, translationPlugin.getAudienceId("15"));
   }
 
   @Test
   void getSpaceId() {
-    assertEquals(0l, translationPlugin.getSpaceId(15l));
+    assertEquals(0l, translationPlugin.getSpaceId("15"));
   }
 
 }

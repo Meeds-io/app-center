@@ -41,7 +41,7 @@ public class ApplicationTranslationPluginTest {
 
   private static final String          TEST_USER = "testuser";
 
-  private static final long            APP_ID    = 15l;
+  private static final String          APP_ID    = "15";
 
   @MockBean
   private TranslationService           translationService;
