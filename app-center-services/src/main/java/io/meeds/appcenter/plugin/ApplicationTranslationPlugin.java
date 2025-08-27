@@ -49,22 +49,22 @@ public class ApplicationTranslationPlugin extends TranslationPlugin {
   }
 
   @Override
-  public boolean hasAccessPermission(long applicationId, String username) {
+  public boolean hasAccessPermission(String applicationId, String username) {
     return true;
   }
 
   @Override
-  public boolean hasEditPermission(long applicationId, String username) {
+  public boolean hasEditPermission(String applicationId, String username) {
     return applicationCenterService.canEdit(username);
   }
 
   @Override
-  public long getAudienceId(long objectId) {
+  public long getAudienceId(String applicationId) {
     return 0;
   }
 
   @Override
-  public long getSpaceId(long objectId) {
+  public long getSpaceId(String applicationId) {
     return 0;
   }
 }
