@@ -19,7 +19,10 @@
 -->
 <template>
   <v-app flat>
-    <v-container v-if="!$root.hideApp" px-0 py-0>
+    <v-container
+      v-if="!$root.hideApp"
+      px-0
+      py-0>
       <v-layout class="transparent">
         <v-btn
           id="appcenterLauncherButton"
