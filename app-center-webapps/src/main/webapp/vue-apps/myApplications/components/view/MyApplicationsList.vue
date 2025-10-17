@@ -37,7 +37,7 @@
       :is="$root.isMobile && 'div' || 'draggable'"
       v-model="applicationsList"
       item-key="id"
-      class="d-flex flex-wrap flex-grow-1 justify-space-between">
+      class="d-flex flex-wrap flex-grow-1">
       <my-application-item
         v-for="application in applicationsList"
         :key="application.id"
@@ -46,7 +46,7 @@
         :max-width="114"
         :height="132"
         :max-height="132"
-        class="d-flex mt-5"
+        class="d-flex mt-5 me-1"
         @open-portlet="$emit('open-portlet', $event)" />
     </component>
   </v-layout>
