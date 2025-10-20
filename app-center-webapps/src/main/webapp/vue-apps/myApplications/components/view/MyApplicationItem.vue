@@ -36,11 +36,12 @@
       :class="{'background-grey-primary': hover}"
       :width="width"
       :max-width="maxWidth"
-      :min-height="minHeight"
+      :height="height"
       :max-height="maxHeight"
+      :elevation="hover ? 2 : 0"
       link
       flat>
-      <div class="pa-4 d-flex flex-column align-center full-width">
+      <div class="d-flex flex-column justify-center align-center full-width">
         <v-img
           v-if="application.imageUrl"
           :src="application.imageUrl"
@@ -96,7 +97,7 @@ export default {
       type: String,
       default: null
     },
-    minHeight: {
+    height: {
       type: String,
       default: null
     },
