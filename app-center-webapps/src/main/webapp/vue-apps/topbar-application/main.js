@@ -38,7 +38,7 @@ export async function init(parentElementId, topbarApplication) {
       },
       quickActions() {
         const quickActions = {};
-        this.quickActionExtensions.forEach(ext => quickActions[ext.id] = ext);
+        this.quickActionExtensions.filter(e => !e.enabled || e.enabled()).forEach(ext => quickActions[ext.id] = ext);
         return quickActions;
       },
     },
