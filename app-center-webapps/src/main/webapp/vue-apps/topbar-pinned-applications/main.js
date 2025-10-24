@@ -67,11 +67,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
         },
       },
     },
-    created() {
+    async created() {
+      await this.$utils.includeExtensions('QuickActionExtension');
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
       document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
-      this.$utils.includeExtensions('QuickActionExtension');
       this.refreshQuickActions();
       this.init();
     },
@@ -92,7 +92,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       async init() {
         if (this.pinnedApplicationIds?.length) {
           const data = await this.$applicationService.getApplications();
-          this.applications = data?.applications || [];
+          this.applications = data?.applications?.filter(app => app.type !== 'DRAWER' || !this.quickActions[app.url]?.enabled || this.quickActions[app.url].enabled()) || [];
           this.applications.forEach(app => {
             if (app.system) {
               const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();
