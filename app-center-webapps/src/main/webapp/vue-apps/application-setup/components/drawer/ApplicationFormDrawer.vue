@@ -536,7 +536,7 @@ export default {
           await this.$applicationService.updateApplication(this.application);
         }
         await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
-        await this.$translationService.saveTranslations('appCenter', app.id, 'description', this.descriptions);
+        await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', this.descriptions);
         await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
         this.$root.$emit('app-center-refresh-list');
         if (isNew) {
