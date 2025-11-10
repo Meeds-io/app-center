@@ -44,7 +44,10 @@
         }
       ]"
       :title="titleTooltip"
-      class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center">
+      class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center"
+      @keydown.enter="openApp"
+      @focus="hover = true"
+      @blur="hover = false">
       <v-progress-linear
         v-if="loading"
         class="position-absolute t-0 full-width z-index-two"
@@ -115,7 +118,8 @@
               elevation="2"
               x-small
               icon
-              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)"
+              tabindex="-1">
               <v-icon size="12">fa-thumbtack</v-icon>
             </v-btn>
           </div>
@@ -157,7 +161,8 @@
             icon
             mouseup.stop="0"
             mousedown.stop="0"
-            click.stop="0">
+            click.stop="0"
+            tabindex="-1">
             <v-icon
               :color="!card && 'white'"
               :size="card && 20 || 16">
@@ -172,7 +177,8 @@
             icon
             mouseup.stop="0"
             mousedown.stop="0"
-            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)"
+            tabindex="-1">
             <v-icon
               :class="!pinnedApplication && 'fa-rotate-45'"
               size="20">
@@ -186,7 +192,8 @@
             :aria-pressed="application.favorite ? 'true' : 'false'"
             small
             icon
-            @click.prevent.stop="$emit('toogle-favorite')">
+            @click.prevent.stop="$emit('toogle-favorite')"
+            tabindex="-1">
             <v-icon
               :color="(application.favorite || readonly) && 'yellow'"
               :size="card && 20 || 16">
