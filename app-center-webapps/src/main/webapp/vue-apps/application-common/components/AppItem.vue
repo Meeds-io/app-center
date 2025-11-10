@@ -183,6 +183,7 @@
             :disabled="application.mandatory"
             :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
             :class="card && 'ms-2'"
+            :aria-pressed="application.favorite ? 'true' : 'false'"
             small
             icon
             @click.prevent.stop="$emit('toogle-favorite')">
