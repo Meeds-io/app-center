@@ -37,7 +37,8 @@
           small
           text
           link
-          @click="openApplications('seeMore')">
+          @click="openApplications('seeMore')"
+          @focus="$emit('focus')">
           <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
