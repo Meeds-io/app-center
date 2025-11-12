@@ -157,14 +157,13 @@
           <v-spacer />  
           <v-btn
             v-if="application.helpPageURL"
-            :href="application.helpPageURL"
             :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
             :class="card && 'ms-2'"
             small
             icon
             mouseup.stop="0"
             mousedown.stop="0"
-            click.stop="0">
+            @click.stop="openHelpPageURL(application.helpPageURL)">
             <v-icon
               :color="!card && 'white'"
               :size="card && 20 || 16">
@@ -331,6 +330,9 @@ export default {
       if (!this.$el.contains(event.relatedTarget)) {
         this.hover = false;
       }
+    },
+    openHelpPageURL(helpPageURL) {
+      window.open(helpPageURL, '_blank', 'noopener');
     }
   },
 };
