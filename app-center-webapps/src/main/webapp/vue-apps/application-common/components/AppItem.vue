@@ -45,9 +45,10 @@
       ]"
       :title="titleTooltip"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center"
+      tabindex="0"
       @keydown.enter="openApp"
-      @focus="hover = true"
-      @blur="hover = false">
+      @focusin="hover = true"
+      @focusout="onFocusOut">
       <v-progress-linear
         v-if="loading"
         class="position-absolute t-0 full-width z-index-two"
@@ -118,8 +119,7 @@
               elevation="2"
               x-small
               icon
-              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)"
-              tabindex="-1">
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
               <v-icon size="12">fa-thumbtack</v-icon>
             </v-btn>
           </div>
@@ -146,10 +146,13 @@
           class="text-truncate-4">
           {{ application.description }}
         </div>
-        <div class="d-flex align-center mt-auto mb-1">
+        <div 
+          class="d-flex align-center mt-auto mb-1"          
+          role="group">
           <app-center-shortcut
             v-if="application.shortcut && !$root.isMobile && hover"
             :shortcut="application.shortcut"
+            tabindex="0"
             class="align-self-md-center align-self-end mb-2 mb-md-0" />
           <v-spacer />  
           <v-btn
@@ -161,8 +164,7 @@
             icon
             mouseup.stop="0"
             mousedown.stop="0"
-            click.stop="0"
-            tabindex="-1">
+            click.stop="0">
             <v-icon
               :color="!card && 'white'"
               :size="card && 20 || 16">
@@ -177,8 +179,7 @@
             icon
             mouseup.stop="0"
             mousedown.stop="0"
-            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)"
-            tabindex="-1">
+            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
             <v-icon
               :class="!pinnedApplication && 'fa-rotate-45'"
               size="20">
@@ -192,8 +193,7 @@
             :aria-pressed="application.favorite ? 'true' : 'false'"
             small
             icon
-            @click.prevent.stop="$emit('toogle-favorite')"
-            tabindex="-1">
+            @click.prevent.stop="$emit('toogle-favorite')">
             <v-icon
               :color="(application.favorite || readonly) && 'yellow'"
               :size="card && 20 || 16">
@@ -327,6 +327,11 @@ export default {
         window.localStorage.setItem(`meeds-app-center-recent-apps-${eXo.env.portal.userIdentityId}`, JSON.stringify(recentAppIds));
       }
     },
+    onFocusOut(event) {
+      if (!this.$el.contains(event.relatedTarget)) {
+        this.hover = false;
+      }
+    }
   },
 };
 </script>
