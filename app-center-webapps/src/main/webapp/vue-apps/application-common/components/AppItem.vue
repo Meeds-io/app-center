@@ -46,6 +46,7 @@
       :title="titleTooltip"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center"
       tabindex="0"
+      @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
       @focusin="hover = true"
       @focusout="onFocusOut">
@@ -152,7 +153,6 @@
           <app-center-shortcut
             v-if="application.shortcut && !$root.isMobile && hover"
             :shortcut="application.shortcut"
-            tabindex="0"
             class="align-self-md-center align-self-end mb-2 mb-md-0" />
           <v-spacer />  
           <v-btn
