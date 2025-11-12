@@ -26,12 +26,13 @@
         extra-class="application-body position-static border-box-sizing">
         <my-applications-toolbar
           v-if="!isLoading"
-          :hover="hover"
+          :hover="hover || focused"
           :is-admin="isAdmin"
           :show-header="showHeader"
           :header-title="headerTitle"
           :has-applications="hasApplications"
-          @open-settings="openSettingsDrawer" />
+          @open-settings="openSettingsDrawer"
+          @focus="handleFocus" />
         <my-applications-list
           :applications-list="filteredApplications"
           :is-loading="isLoading"
@@ -60,6 +61,7 @@ export default {
       alphabeticalOrder: true,
       currentUser: eXo.env.portal.userName,
       initialized: false,
+      focused: false
     };
   },
   computed: {
@@ -187,6 +189,9 @@ export default {
         return;
       }
       this.updateApplicationsOrder(applicationList);
+    },
+    handleFocus() {
+      this.focused = true;
     },
   }
 };
