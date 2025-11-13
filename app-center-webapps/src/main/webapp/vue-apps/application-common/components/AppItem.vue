@@ -43,8 +43,8 @@
           'light-grey-background-color': !card && hover,
         }
       ]"
-      :title="titleTooltip"
-      class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center"
+      :title="application.description"
+      class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
       tabindex="0"
       @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
@@ -144,61 +144,62 @@
           :class="{
             'text-font-small-size white--text': !card,
           }"
-          class="text-truncate-4">
+          class="text-truncate-3">
           {{ application.description }}
         </p>
         <div 
-          class="d-flex align-center mt-auto mb-1"          
+          class="d-flex align-center mt-auto mb-1 flex-wrap justify-space-between overflow-hidden border-box-sizing"
           role="group">
           <app-center-shortcut
             v-if="application.shortcut && !$root.isMobile && hover"
             :shortcut="application.shortcut"
-            class="align-self-md-center align-self-end mb-2 mb-md-0" />
-          <v-spacer />  
-          <v-btn
-            v-if="application.helpPageURL"
-            :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
-            :class="card && 'ms-2'"
-            small
-            icon
-            mouseup.stop="0"
-            mousedown.stop="0"
-            @click.stop="openHelpPageURL(application.helpPageURL)">
-            <v-icon
-              :color="!card && 'white'"
-              :size="card && 20 || 16">
-              fa-question-circle
-            </v-icon>
-          </v-btn>
-          <v-btn
-            v-if="card && canPinApps"
-            :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
-            class="ms-2"
-            small
-            icon
-            mouseup.stop="0"
-            mousedown.stop="0"
-            @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
-            <v-icon
-              :class="!pinnedApplication && 'fa-rotate-45'"
-              size="20">
-              fa-thumbtack
-            </v-icon>
-          </v-btn>
-          <v-btn
-            :disabled="application.mandatory"
-            :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
-            :class="card && 'ms-2'"
-            :aria-pressed="application.favorite ? 'true' : 'false'"
-            small
-            icon
-            @click.prevent.stop="$emit('toogle-favorite')">
-            <v-icon
-              :color="(application.favorite || readonly) && 'yellow'"
-              :size="card && 20 || 16">
-              {{ (application.favorite || application.mandatory || readonly) && 'fa-star' || 'far fa-star' }}
-            </v-icon>
-          </v-btn>
+            class="align-self-md-center align-self-end mb-2 mb-md-0 flex-shrink-0 overflow-hidden" />
+          <div class="d-flex align-center justify-end flex-shrink-0 flex-nowrap ms-auto">
+            <v-btn
+              v-if="application.helpPageURL"
+              :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
+              :class="card && 'ms-2'"
+              small
+              icon
+              mouseup.stop="0"
+              mousedown.stop="0"
+              @click.stop="openHelpPageURL(application.helpPageURL)">
+              <v-icon
+                :color="!card && 'white'"
+                :size="card && 20 || 16">
+                fa-question-circle
+              </v-icon>
+            </v-btn>
+            <v-btn
+              v-if="card && canPinApps"
+              :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+              class="ms-2"
+              small
+              icon
+              mouseup.stop="0"
+              mousedown.stop="0"
+              @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
+              <v-icon
+                :class="!pinnedApplication && 'fa-rotate-45'"
+                size="20">
+                fa-thumbtack
+              </v-icon>
+            </v-btn>
+            <v-btn
+              :disabled="application.mandatory"
+              :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
+              class="ms-2"
+              :aria-pressed="application.favorite ? 'true' : 'false'"
+              small
+              icon
+              @click.prevent.stop="$emit('toogle-favorite')">
+              <v-icon
+                :color="(application.favorite || readonly) && 'yellow'"
+                :size="card && 20 || 16">
+                {{ (application.favorite || application.mandatory || readonly) && 'fa-star' || 'far fa-star' }}
+              </v-icon>
+            </v-btn>
+          </div>
         </div>
       </v-card>
     </v-card>
@@ -300,9 +301,6 @@ export default {
     },
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
-    },
-    titleTooltip() {
-      return this.tooltip ? (this.application.shortcut ? `${this.application.title} (${this.$t('appCenter.adminSetupForm.ctrl')} + ${this.$t('appCenter.adminSetupForm.shift')} + ${this.application.shortcut})` : this.application.title) : null;
     },
   },
   methods: {
