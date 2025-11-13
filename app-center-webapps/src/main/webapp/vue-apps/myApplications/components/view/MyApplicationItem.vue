@@ -45,7 +45,6 @@
         <v-img
           v-if="application.imageUrl"
           :src="application.imageUrl"
-          :alt="null"
           referrerpolicy="no-referrer"
           class="mx-auto"
           max-width="45"
@@ -59,7 +58,6 @@
         </v-icon>
         <v-img
           v-else
-          :alt="null"
           src="/app-center/skin/images/defaultApp.png"
           max-width="45"
           max-height="45"
