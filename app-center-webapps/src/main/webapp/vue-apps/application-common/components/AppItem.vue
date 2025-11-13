@@ -304,9 +304,11 @@ export default {
     },
   },
   methods: {
-    openApp() {
-      this.addToRecent();
-      this.$emit('open');
+    openApp(event) {
+      if (document.activeElement === event.currentTarget) {
+        this.addToRecent();
+        this.$emit('open');
+      }
     },
     addToRecent() {
       if (this.readonly) {
