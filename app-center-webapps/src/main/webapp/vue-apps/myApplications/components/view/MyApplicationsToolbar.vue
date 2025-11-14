@@ -38,7 +38,7 @@
           text
           link
           @click="openApplications('seeMore')"
-          @focus="$emit('focus')">
+          @focusin="$emit('focus')">
           <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
@@ -56,7 +56,8 @@
               small
               link
               icon
-              @click="openApplications('seeMoreIcon')">
+              @click="openApplications('seeMoreIcon')"
+              @keydown.tab.stop="onShiftTabPress">
               <v-icon
                 :size="18"
                 class="icon-default-size">
@@ -78,6 +79,7 @@
             small
             link
             icon
+            @keydown.tab.stop="onTabPress"
             @click="$emit('open-settings')">
             <v-icon
               :size="18"
@@ -168,6 +170,16 @@ export default {
         .then(() => this.$refs.applicationsDrawer.open())
         .finally(() => this.loading = null);
     },
+    onShiftTabPress(event) {
+      if (event.shiftKey) {
+        this.$emit('blur');
+      }
+    },
+    onTabPress(event) {
+      if (event.key === 'Tab' && !event.shiftKey) {
+        this.$emit('blur');
+      }
+    }
   },
 };
 </script>
