@@ -38,7 +38,7 @@
           text
           link
           @click="openApplications('seeMore')"
-          @focus="$emit('focus')">
+          @focusin="$emit('focus')">
           <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
@@ -134,6 +134,16 @@ export default {
         })
         .finally(() => this.loading = null);
     },
+    onShiftTabPress(event) {
+      if (event.shiftKey) {
+        this.$emit('blur');
+      }
+    },
+    onTabPress(event) {
+      if (event.key === 'Tab' && !event.shiftKey) {
+        this.$emit('blur');
+      }
+    }
   },
 };
 </script>

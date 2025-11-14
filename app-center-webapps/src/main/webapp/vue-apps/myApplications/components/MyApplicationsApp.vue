@@ -32,7 +32,8 @@
           :header-title="headerTitle"
           :has-applications="hasApplications"
           @open-settings="openSettingsDrawer"
-          @focus="handleFocus" />
+          @focus="handleFocus"
+          @blur="handleBlur" />
         <my-applications-list
           :applications-list="filteredApplications"
           :is-loading="isLoading"
@@ -192,6 +193,9 @@ export default {
     },
     handleFocus() {
       this.focused = true;
+    },
+    handleBlur() {
+      this.focused = false;
     },
   }
 };
