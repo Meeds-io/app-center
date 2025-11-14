@@ -176,6 +176,7 @@
               class="ms-2"
               small
               icon
+              :aria-pressed="pinnedApplication ? 'true' : 'false'"
               mouseup.stop="0"
               mousedown.stop="0"
               @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
