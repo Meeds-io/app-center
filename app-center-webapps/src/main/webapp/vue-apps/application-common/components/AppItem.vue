@@ -43,7 +43,8 @@
           'light-grey-background-color': !card && hover,
         }
       ]"
-      :title="application.description"
+      :title="tooltip ? application.description : ''"
+      :aria-label="ariaLabel"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
       tabindex="0"
       @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
@@ -303,6 +304,24 @@ export default {
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
     },
+    ariaLabel() {
+      const shortcut = this.application.shortcut ?
+        this.$t(
+          'appCenter.appLauncher.card.shortcut',
+          [ 
+            this.$t('appCenter.adminSetupForm.ctrl'), 
+            this.$t('appCenter.adminSetupForm.shift'),
+            this.application.shortcut
+          ]) 
+        : '';
+      return this.$t(
+        'appCenter.appLauncher.card.ariaLabel',
+        [
+          this.application.title,
+          this.application.description,
+          shortcut
+        ]);
+    }
   },
   methods: {
     openApp(event) {
