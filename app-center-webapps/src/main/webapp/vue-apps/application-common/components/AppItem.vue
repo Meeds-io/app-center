@@ -39,6 +39,7 @@
         $attrs.class,
         {
           'border-color': card,
+          'border-color-black': isFocused,
           'transparent': !card && !hover,
           'light-grey-background-color': !card && hover,
         }
@@ -49,7 +50,7 @@
       tabindex="0"
       @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
-      @focusin="hover = true"
+      @focusin="onFocusIn"
       @focusout="onFocusOut">
       <v-progress-linear
         v-if="loading"
@@ -273,6 +274,7 @@ export default {
   },
   data: () => ({
     hover: false,
+    isFocused: false,
   }),
   computed: {
     computedUrl() {
@@ -349,7 +351,12 @@ export default {
     onFocusOut(event) {
       if (!this.$el.contains(event.relatedTarget)) {
         this.hover = false;
+        this.isFocused = false;
       }
+    },
+    onFocusIn() {
+      this.isFocused = true;
+      this.hover = true;
     },
     openHelpPageURL(helpPageURL) {
       window.open(helpPageURL, '_blank', 'noopener');
