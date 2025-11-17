@@ -142,13 +142,13 @@
         <div v-if="!card" class="text-truncate white--text">
           {{ application.title }}
         </div>
-        <div
+        <p
           :class="{
             'text-font-small-size white--text': !card,
           }"
           class="text-truncate-3">
           {{ application.description }}
-        </div>
+        </p>
         <div 
           class="d-flex align-center mt-auto mb-1 flex-wrap justify-space-between overflow-hidden border-box-sizing"
           role="group">
