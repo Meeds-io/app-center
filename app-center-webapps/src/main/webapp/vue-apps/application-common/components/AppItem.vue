@@ -135,13 +135,13 @@
         <div v-if="!card" class="text-truncate white--text">
           {{ application.title }}
         </div>
-        <div
+        <p
           :class="{
             'text-font-small-size white--text': !card,
           }"
           class="text-truncate-4">
           {{ application.description }}
-        </div>
+        </p>
         <div class="d-flex align-center mt-auto mb-1">
           <app-center-shortcut
             v-if="application.shortcut && !$root.isMobile && hover"
