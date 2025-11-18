@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -255,11 +257,11 @@ public class ApplicationCenterInjectService {
         if (resource == null) {
           LOG.warn("Application Image with path {} doesn't exist", imagePath);
         } else {
-          File file = new File(resource.getFile());
+          File file = createTempFile(configurationManager.getInputStream(imagePath).readAllBytes());
           UploadResource uploadResource = new UploadResource(uploadId,
                                                              file.getName(),
                                                              "image/png",
-                                                             file.getAbsolutePath(),
+                                                             file.getPath(),
                                                              0,
                                                              0,
                                                              UploadResource.UPLOADED_STATUS);
@@ -327,5 +329,16 @@ public class ApplicationCenterInjectService {
                        APP_CENTER_SYSTEM_APP_KEY,
                        SettingValue.create(APP_CENTER_APPS_VERSION));
   }
+
+  @SneakyThrows
+  private File createTempFile(byte[] data) {
+    if (data == null) {
+      throw new IllegalArgumentException("Illustration data is null");
+    }
+    File tempFile = new File(System.getProperty("java.io.tmpdir") + File.separator + "temp.png");
+    FileUtils.writeByteArrayToFile(tempFile, data);
+    return tempFile;
+  }
+
 
 }
