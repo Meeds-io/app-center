@@ -94,6 +94,17 @@ public class ApplicationCenterInjectServiceTest {
     applicationCenterInjectService.injectDefaultApplications();
     assertTrue(applicationCenterInjectService.getDefaultApplications().size() >= 1);
 
+
+    Application application0 = application();
+    application0.setTitle("");
+    ApplicationDescriptor applicationPlugin0 = new ApplicationDescriptor(null, application0);
+    applicationPlugin0.setName("testapp0");
+    applicationPlugin0.setEnabled(true);
+    applicationCenterInjectService.addApplicationPlugin(applicationPlugin0);
+    applicationCenterInjectService.injectDefaultApplications();
+    verify(applicationCenterService,
+           never()).createApplication(argThat(app -> app.getTitle().equals("")));
+
     String pluginName = "testapp";
 
     Application application = application();
