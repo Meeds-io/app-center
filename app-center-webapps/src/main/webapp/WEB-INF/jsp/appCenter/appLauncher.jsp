@@ -32,6 +32,15 @@
     data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="appLauncher">
+    <script>
+      document.addEventListener('CustomEventOpenApplicationLauncherDrawer', () => {
+        if (document.querySelector('#appCenterDrawer')) {
+          document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer'));
+        } else {
+          Vue.startApp('SHARED/appLauncherBundle', 'init', {isAdmin: this.isAdmin, pinnedApplicationIds: this.pinnedApplicationIds});
+        } 
+      });
+    </script>
     <div class="v-application--wrap">
       <div class="container px-0 py-0">
         <div class="layout transparent">

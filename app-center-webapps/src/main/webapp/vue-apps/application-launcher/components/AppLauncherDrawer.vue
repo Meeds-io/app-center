@@ -20,6 +20,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <exo-drawer
+    id="appCenterDrawer"
     ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
