@@ -57,6 +57,7 @@ export default {
     },
   },
   created() {
+    document.addEventListener('openApplicationLauncherDrawer', this.openDrawer);
     if (this.$root.shortcuts?.length) {
       window.addEventListener('keydown', this.openApplicationByShortcutEvent);
       this.$utils.removeShortcutsListener(this.$root.shortcuts);
