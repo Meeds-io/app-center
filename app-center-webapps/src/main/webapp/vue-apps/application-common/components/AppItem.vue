@@ -50,6 +50,7 @@
       tabindex="0"
       @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
+      @mousedown="onMouseDown"
       @focusin="onFocusIn"
       @focusout="onFocusOut">
       <v-progress-linear
@@ -275,6 +276,7 @@ export default {
   data: () => ({
     hover: false,
     isFocused: false,
+    ignoreNextFocus: false,
   }),
   computed: {
     computedUrl() {
@@ -327,6 +329,7 @@ export default {
   },
   methods: {
     openApp(event) {
+      this.onFocusOut(event);
       if (document.activeElement === event.currentTarget) {
         this.addToRecent();
         this.$emit('open');
@@ -355,8 +358,19 @@ export default {
       }
     },
     onFocusIn() {
-      this.isFocused = true;
+      if (this.ignoreNextFocus) {
+        this.isFocused = false;
+        this.ignoreNextFocus = false;
+      } else {
+        this.isFocused = true;
+      }
       this.hover = true;
+    },
+    onMouseDown() {
+      this.ignoreNextFocus = true;
+      setTimeout(() => {
+        this.ignoreNextFocus = false;
+      }, 100);
     },
     openHelpPageURL(helpPageURL) {
       window.open(helpPageURL, '_blank', 'noopener');
