@@ -43,75 +43,54 @@
             {{ $t('myApplications.seeMore.label') }}
           </span>
         </v-btn>
-        <v-tooltip
+        <v-btn
           v-else
-          bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs"
-              v-on="on"
-              :loading="loading === 'seeMoreIcon'"
-              color="primary"
-              class="ms-2 text-font-size"
-              small
-              link
-              icon
-              @click="openApplications('seeMoreIcon')"
-              @keydown.tab.stop="onShiftTabPress">
-              <v-icon
-                :size="18"
-                class="icon-default-size">
-                fas fa-external-link-alt
-              </v-icon>
-            </v-btn>
-          </template>
-          {{ $t('myApplications.seeMore.tooltip') }}
-        </v-tooltip>
+          :loading="loading === 'seeMoreIcon'"
+          :title="$t('myApplications.seeMore.tooltip')"
+          color="primary"
+          class="ms-2 text-font-size"
+          small
+          link
+          icon
+          @click="openApplications('seeMoreIcon')"
+          @keydown.tab.stop="onShiftTabPress">
+          <v-icon
+            :size="18"
+            class="icon-default-size">
+            fas fa-external-link-alt
+          </v-icon>
+        </v-btn>
       </template>
-      <v-tooltip
+      <v-btn
         v-if="hover && isAdmin"
-        bottom>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs"
-            v-on="on"
-            class="ms-2 text-font-size"
-            small
-            link
-            icon
-            @keydown.tab.stop="onTabPress"
-            @click="$emit('open-settings')">
-            <v-icon
-              :size="18"
-              class="icon-default-size icon-default-color">
-              fas fa-cog
-            </v-icon>
-          </v-btn>
-        </template>
-        {{ $t('myApplications.editSettings.tooltip') }}
-      </v-tooltip>
-      <v-tooltip
+        :title="$t('myApplications.editSettings.tooltip')"
+        class="ms-2 text-font-size"
+        small
+        link
+        icon
+        @keydown.tab.stop="onTabPress"
+        @click="$emit('open-settings')">
+        <v-icon
+          :size="18"
+          class="icon-default-size icon-default-color">
+          fas fa-cog
+        </v-icon>
+      </v-btn>
+      <v-btn
         v-if="!hasApplications"
-        bottom>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs"
-            v-on="on"
-            :loading="loading === 'addAppIcon'"
-            class="ms-2 text-font-size"
-            small
-            link
-            icon
-            @click="openApplications('seeMoreIcon')">
-            <v-icon
-              :size="18"
-              class="icon-default-color icon-default-size">
-              fas fa-plus
-            </v-icon>
-          </v-btn>
-        </template>
-        {{ $t('myApplications.add.application.tooltip') }}
-      </v-tooltip>
+        :title="$t('myApplications.add.application.tooltip')"
+        :loading="loading === 'addAppIcon'"
+        class="ms-2 text-font-size"
+        small
+        link
+        icon
+        @click="openApplications('seeMoreIcon')">
+        <v-icon
+          :size="18"
+          class="icon-default-color icon-default-size">
+          fas fa-plus
+        </v-icon>
+      </v-btn>
     </div>
   </div>
 </template>
