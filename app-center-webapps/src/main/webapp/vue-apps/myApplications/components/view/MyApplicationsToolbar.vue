@@ -110,9 +110,6 @@
         {{ $t('myApplications.add.application.tooltip') }}
       </v-tooltip>
     </div>
-    <my-applications-drawer
-      v-if="applicationsDrawer"
-      ref="applicationsDrawer" />
   </div>
 </template>
 <script>
@@ -151,20 +148,10 @@ export default {
   methods: {
     openApplications(app) {
       this.loading = app;
-      window.require(['SHARED/appLauncherBundle'], this.openApplicationsDrawer);
-    },
-    openApplicationsDrawer() {
-      this.applicationsDrawer = true;
       this.$nextTick()
         .then(() => {
-          const lang = eXo.env.portal.language;
-          const urls = [
-            `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
-            `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
-          ];
-          return exoi18n.loadLanguageAsync(lang, urls);
+          document.dispatchEvent(new CustomEvent('CustomEventOpenApplicationLauncherDrawer'));
         })
-        .then(() => this.$refs.applicationsDrawer.open())
         .finally(() => this.loading = null);
     },
   },
