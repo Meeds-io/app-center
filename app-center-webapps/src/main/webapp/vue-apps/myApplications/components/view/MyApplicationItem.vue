@@ -19,7 +19,7 @@
 -->
 
 <template>
-  <v-hover v-slot="{hover}">
+  <v-hover v-model="hover">
     <v-card
       v-bind="application.type === 'LINK' && {
         href: applicationUrl,
@@ -33,14 +33,26 @@
       }"
       :id="`App${application.id}`"
       :title="applicationDescription"
-      :class="{'background-grey-primary': hover}"
+      :class="[
+        $attrs.class,
+        {
+          'border-color': card,
+          'border-color-black': isFocused,
+          'transparent': !hover,
+          'light-grey-background-color': hover,
+        }
+      ]"
       :width="width"
       :max-width="maxWidth"
       :height="height"
       :max-height="maxHeight"
       :elevation="hover ? 2 : 0"
       link
-      flat>
+      flat
+      @keydown.enter="openApplication"
+      @mousedown="onMouseDown"
+      @focusin="onFocusIn"
+      @focusout="onFocusOut">
       <div class="d-flex flex-column justify-center align-center full-width">
         <v-img
           v-if="application.imageUrl"
@@ -107,6 +119,9 @@ export default {
   data: () => ({
     illustrationBaseUrl: '/app-center/rest/applications/illustration/',
     loading: false,
+    hover: false,
+    isFocused: false,
+    ignoreNextFocus: false,
   }),
   computed: {
     applicationUrl() {
@@ -123,7 +138,8 @@ export default {
     }
   },
   methods: {
-    async openApplication() {
+    async openApplication(event) {
+      this.onFocusOut(event);
       const appType = this.application.type;
       const appUrl = this.application.url;
       if (appType === 'PORTLET') {
@@ -141,6 +157,27 @@ export default {
           window.setTimeout(() => this.loading = false, 500);
         }
       }
+    },
+    onFocusOut(event) {
+      if (!this.$el.contains(event.relatedTarget)) {
+        this.hover = false;
+        this.isFocused = false;
+      }
+    },
+    onFocusIn() {
+      if (this.ignoreNextFocus) {
+        this.isFocused = false;
+        this.ignoreNextFocus = false;
+      } else {
+        this.isFocused = true;
+      }
+      this.hover = true;
+    },
+    onMouseDown() {
+      this.ignoreNextFocus = true;
+      setTimeout(() => {
+        this.ignoreNextFocus = false;
+      }, 100);
     },
   },
 };
