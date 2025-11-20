@@ -20,20 +20,23 @@
 
 <template>
   <v-app id="myApplications">
-    <v-hover v-slot="{hover}">
+    <v-hover v-model="hover">
       <widget-wrapper
+        ref="widget"
         :loading="isLoading"
-        extra-class="application-body position-static border-box-sizing">
+        :tabindex="tabindex"
+        extra-class="application-body position-static border-box-sizing"
+        @focusin="onFocusIn" 
+        @focusout="onFocusOut">
         <my-applications-toolbar
           v-if="!isLoading"
-          :hover="hover || focused"
+          ref="myApplicationsToolbar"
+          :hover="hover"
           :is-admin="isAdmin"
           :show-header="showHeader"
           :header-title="headerTitle"
           :has-applications="hasApplications"
-          @open-settings="openSettingsDrawer"
-          @focus="handleFocus"
-          @blur="handleBlur" />
+          @open-settings="openSettingsDrawer" />
         <my-applications-list
           :applications-list="filteredApplications"
           :is-loading="isLoading"
@@ -62,7 +65,8 @@ export default {
       alphabeticalOrder: true,
       currentUser: eXo.env.portal.userName,
       initialized: false,
-      focused: false
+      hover: false,
+      tabindex: '0'
     };
   },
   computed: {
@@ -191,11 +195,27 @@ export default {
       }
       this.updateApplicationsOrder(applicationList);
     },
-    handleFocus() {
-      this.focused = true;
+    onFocusIn(event) {
+      this.hover =true;
+      this.$nextTick(() => {
+        const activeElement = document.activeElement;
+        const header = this.$refs.myApplicationsToolbar?.$refs?.btnSeeMoreIcon?.$el;
+        if (header && activeElement === this.$refs.widget?.$el && event.relatedTarget) {
+          header.focus();
+        }
+        if (this.tabindex === '0') {
+          this.tabindex = '-1';
+        }
+      });
     },
-    handleBlur() {
-      this.focused = false;
+    onFocusOut(event) {
+      const root = this.$el;
+      const next = event.relatedTarget;
+      if (next && root.contains(next)) {
+        return;
+      }
+      this.tabindex = '0';
+      this.hover = false;
     },
   }
 };

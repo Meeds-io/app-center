@@ -37,14 +37,14 @@
           small
           text
           link
-          @click="openApplications('seeMore')"
-          @focusin="$emit('focus')">
+          @click="openApplications('seeMore')">
           <span class="primary--text text-none">
             {{ $t('myApplications.seeMore.label') }}
           </span>
         </v-btn>
         <v-btn
           v-else
+          ref="btnSeeMoreIcon"
           :loading="loading === 'seeMoreIcon'"
           :title="$t('myApplications.seeMore.tooltip')"
           color="primary"
@@ -52,8 +52,7 @@
           small
           link
           icon
-          @click="openApplications('seeMoreIcon')"
-          @keydown.tab.stop="onShiftTabPress">
+          @click="openApplications('seeMoreIcon')">
           <v-icon
             :size="18"
             class="icon-default-size">
@@ -135,16 +134,6 @@ export default {
           document.dispatchEvent(new CustomEvent('CustomEventOpenApplicationLauncherDrawer'));
         })
         .finally(() => this.loading = null);
-    },
-    onShiftTabPress(event) {
-      if (event.shiftKey) {
-        this.$emit('blur');
-      }
-    },
-    onTabPress(event) {
-      if (event.key === 'Tab' && !event.shiftKey) {
-        this.$emit('blur');
-      }
     }
   },
 };
