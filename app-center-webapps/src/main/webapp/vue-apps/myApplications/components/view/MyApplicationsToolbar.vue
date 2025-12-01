@@ -44,6 +44,7 @@
         </v-btn>
         <v-btn
           v-else
+          ref="btnSeeMoreIcon"
           :loading="loading === 'seeMoreIcon'"
           :title="$t('myApplications.seeMore.tooltip')"
           color="primary"
@@ -132,7 +133,7 @@ export default {
           document.dispatchEvent(new CustomEvent('CustomEventOpenApplicationLauncherDrawer'));
         })
         .finally(() => this.loading = null);
-    },
+    }
   },
 };
 </script>
