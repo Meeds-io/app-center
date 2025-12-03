@@ -496,6 +496,11 @@ export default {
           this.descriptions = this.descriptions || {};
           this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
         }
+        this.descriptions = Object.fromEntries(
+          Object.entries(this.descriptions).map(([key, value]) => [
+            key,
+            this.$utils.htmlToText(value)
+          ]));
       } else {
         this.titles = {};
         this.descriptions = {};
