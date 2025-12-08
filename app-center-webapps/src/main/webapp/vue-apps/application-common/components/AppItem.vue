@@ -44,7 +44,7 @@
           'light-grey-background-color': !card && hover,
         }
       ]"
-      :title="tooltip ? application.description : ''"
+      :title="tooltip ? applicationDescription : ''"
       :aria-label="ariaLabel"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
       tabindex="0"
@@ -103,7 +103,7 @@
               :class="card && 'align-self-center ps-1' || 'align-self-start'"
               class="d-flex">
               <span :class="card && 'text-title text-start'" class="text-truncate-2">
-                {{ application.title }}
+                {{ applicationTitle }}
               </span>
               <v-icon
                 v-if="application.type === 'LINK' && !application.sameTab"
@@ -144,14 +144,14 @@
           class="d-flex flex-column text-start border-box-sizing"
           flat>
           <div v-if="!card" class="text-truncate white--text">
-            {{ application.title }}
+            {{ applicationTitle }}
           </div>
           <p
             :class="{
               'text-font-small-size white--text': !card,
             }"
             class="text-truncate-3">
-            {{ application.description }}
+            {{ applicationDescription }}
           </p>
           <div 
             class="d-flex align-center mt-auto mb-1 flex-wrap justify-space-between overflow-hidden border-box-sizing"
@@ -325,10 +325,16 @@ export default {
       return this.$t(
         'appCenter.appLauncher.card.ariaLabel',
         [
-          this.application.title,
-          this.application.description,
+          this.applicationTitle,
+          this.applicationDescription,
           shortcut
         ]);
+    },
+    applicationTitle() {
+      return this.application?.title;
+    },
+    applicationDescription() {
+      return this.$utils.htmlToText(this.application?.description);
     }
   },
   methods: {
