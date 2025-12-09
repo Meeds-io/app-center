@@ -330,6 +330,7 @@ export default {
     hasShortcut: false,
     oldCategoryIds: [],
     newCategoryIds: [],
+    loading: false
   }),
   computed: {
     drawerTitle() {
@@ -410,7 +411,7 @@ export default {
       return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
     },
     disabled() {
-      return !this.modified
+      return this.loading || !this.modified
         || !this.title?.length
         || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
         || !this.validUrl
@@ -528,6 +529,9 @@ export default {
       return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application?.id);
     },
     async save() {
+      if (this.loading) {
+        return;
+      }
       const isNew = !this.application.id;
       this.loading = true;
       try {
