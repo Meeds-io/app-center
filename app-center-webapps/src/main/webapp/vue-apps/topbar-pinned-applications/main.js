@@ -104,14 +104,17 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
               }
             }
             if (app.type === 'LINK' && app.url) {
-              const computedUrl = app.url
+              const normalizedUrl = app.url.replace(/\\\\/g, '\\');
+              const ESC = '__BACKSLASH__';
+              const escaped = (normalizedUrl || '').replace(/\\/g, ESC);
+              const computedUrl = escaped
                 .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
                 .replace('@user@', eXo.env.portal.userName);
               app.computedUrl = this.$utils.toLinkUrl(computedUrl, {
                 urls: true,
                 email: true,
                 phone: true,
-              });
+              }).replace(new RegExp(ESC, 'g'), '\\');
             }
           });
         }
