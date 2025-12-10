@@ -285,14 +285,18 @@ export default {
   computed: {
     computedUrl() {
       if (this.application.type === 'LINK') {
-        const computedUrl = this.application.url
+        const normalizedUrl = this.application.url.replace(/\\\\/g, '\\');
+        const ESC = '__BACKSLASH__';
+        const escaped = (normalizedUrl || '').replace(/\\/g, ESC);
+        const computedUrl = escaped
           .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
           .replace('@user@', eXo.env.portal.userName);
-        return this.$utils.toLinkUrl(computedUrl, {
+        const url = this.$utils.toLinkUrl(computedUrl, {
           urls: true,
           email: true,
           phone: true,
-        });
+        }).replace(new RegExp(ESC, 'g'), '\\');
+        return url;
       } else {
         return null;
       }
