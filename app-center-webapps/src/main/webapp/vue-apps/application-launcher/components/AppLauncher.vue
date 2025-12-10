@@ -106,14 +106,17 @@ export default {
       }
       const application = this.applications.find(a => a.shortcut && a.shortcut.toLowerCase() === shortcut.toLowerCase());
       if (application?.type === 'LINK') {
-        const computedUrl = application.url
+        const normalizedUrl = application.url.replace(/\\\\/g, '\\');
+        const ESC = '__BACKSLASH__';
+        const escaped = (normalizedUrl || '').replace(/\\/g, ESC);
+        const computedUrl = escaped
           .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
           .replace('@user@', eXo.env.portal.userName);
         const url = this.$utils.toLinkUrl(computedUrl, {
           urls: true,
           email: true,
           phone: true,
-        });
+        }).replace(new RegExp(ESC, 'g'), '\\');
         if (application.sameTab) {
           if (url?.startsWith?.('/')) {
             window.location.href = `${window.location.origin}${url}`;
