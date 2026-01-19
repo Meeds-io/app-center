@@ -169,7 +169,7 @@
                 icon
                 mouseup.stop="0"
                 mousedown.stop="0"
-                @click.stop="openHelpPageURL(application.helpPageURL)">
+                @click.stop.prevent="openHelpPageURL(application.helpPageURL)">
                 <v-icon
                   :color="!card && 'white'"
                   :size="card && 20 || 16">
