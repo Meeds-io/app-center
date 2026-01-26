@@ -20,16 +20,6 @@
 <template>
   <v-hover v-model="hover">
     <v-card
-      v-bind="application.type === 'LINK' && !readonly && {
-        href: computedUrl,
-        target: target,
-        rel: 'nofollow noreferrer noopener',
-      }"
-      v-on="application.type === 'LINK' && {
-        click: addToRecent,
-      } || {
-        click: openApp,
-      }"
       :min-width="minWidth"
       :max-width="maxWidth"
       :min-height="minHeight"
@@ -52,7 +42,16 @@
       @keydown.enter="openApp"
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
-      @focusout="onFocusOut">
+      @focusout="onFocusOut"
+      @click="application.type !== 'LINK' && openApp()">
+      <a
+        v-if="application.type === 'LINK' && !readonly"
+        :href="computedUrl"
+        :target="target"
+        :aria-label="$t('appCenter.appLauncher.appLink.ariaLabel')"
+        rel="nofollow noreferrer noopener"
+        class="absolute-full-size z-index-one"
+        @click="addToRecent"></a>
       <div 
         :class="card ? 'absolute-full-size' : 'pt-1'"
         aria-hidden="true">
@@ -160,7 +159,7 @@
               v-if="application.shortcut && !$root.isMobile && hover"
               :shortcut="application.shortcut"
               class="align-self-md-center align-self-end mb-2 mb-md-0 flex-shrink-0 overflow-hidden" />
-            <div class="d-flex align-center justify-end flex-shrink-0 flex-nowrap ms-auto">
+            <div class="d-flex align-center z-index-two justify-end flex-shrink-0 flex-nowrap ms-auto">
               <v-btn
                 v-if="application.helpPageURL"
                 :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
