@@ -43,7 +43,9 @@
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
       @focusout="onFocusOut"
-      @click="application.type !== 'LINK' && openApp()">
+      v-on="application.type !== 'LINK' && {
+        click: openApp,
+      }">
       <a
         v-if="application.type === 'LINK' && !readonly"
         :href="computedUrl"
