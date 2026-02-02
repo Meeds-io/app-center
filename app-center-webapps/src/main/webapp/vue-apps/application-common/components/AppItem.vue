@@ -35,9 +35,9 @@
         }
       ]"
       :title="tooltip ? applicationDescription : ''"
-      :aria-label="ariaLabel"
+      :aria-label="!linkApplication ? ariaLabel : null"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
-      tabindex="0"
+      :tabindex="!linkApplication ? 0 : null"
       @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
       @mousedown="onMouseDown"
@@ -50,7 +50,7 @@
         v-if="application.type === 'LINK' && !readonly"
         :href="computedUrl"
         :target="target"
-        :aria-label="$t('appCenter.appLauncher.appLink.ariaLabel')"
+        :aria-label="linkApplication ? linkAriaLabel : $t('appCenter.appLauncher.appLink.ariaLabel')"
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
@@ -301,6 +301,16 @@ export default {
       } else {
         return null;
       }
+    },
+    linkApplication() {
+      return this.application?.type === 'LINK';
+    },
+    linkAriaLabel() {
+      const shortcut = this.application?.shortcut
+        ? ` & keyboard shortcut: Ctrl + Shift + ${this.application?.shortcut}`
+        : '';
+
+      return `${this.$t('appCenter.appLauncher.appLink.ariaLabel')} : ${this.applicationTitle}, ${this.applicationDescription}${shortcut}`;
     },
     target() {
       return this.application.sameTab ? '_self' : '_blank';
