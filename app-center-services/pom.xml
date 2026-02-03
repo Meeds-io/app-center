@@ -25,7 +25,7 @@
   <parent>
     <groupId>io.meeds.app-center</groupId>
     <artifactId>app-center</artifactId>
-    <version>7.0.3-exo</version>
+    <version>7.0.3-exo-patched</version>
   </parent>
   <artifactId>app-center-services</artifactId>
   <name>Add-on:: Application Center - Services</name>
