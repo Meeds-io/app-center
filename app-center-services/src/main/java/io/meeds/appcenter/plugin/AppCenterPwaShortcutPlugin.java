@@ -24,6 +24,7 @@ import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,7 @@ import io.meeds.pwa.model.PwaShortcutIcon;
 import io.meeds.pwa.plugin.PwaShortcutPlugin;
 
 @Service
+@Profile("pwa")
 public class AppCenterPwaShortcutPlugin implements PwaShortcutPlugin {
 
   public static final String      PWA_SMALL_ICON_BASE_PATH    = "/pwa/rest/manifest/smallIcon?v="; // NOSONAR

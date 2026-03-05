@@ -32,10 +32,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
@@ -49,22 +48,21 @@ import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.pwa.model.PwaShortcut;
 
-@SpringBootTest(classes = { AppCenterPwaShortcutPlugin.class })
 @ExtendWith(MockitoExtension.class)
 public class AppCenterPwaShortcutPluginTest {
 
   private static final String        TEST_USER = "testuser";
 
-  @MockBean
+  @Mock
   private PortalContainer            container;
 
-  @MockBean
+  @Mock
   private UserPortalConfigService    portalConfigService;
 
-  @MockBean
+  @Mock
   private ApplicationCenterService   applicationCenterService;
 
-  @Autowired
+  @InjectMocks
   private AppCenterPwaShortcutPlugin pwaShortcutPlugin;
 
   @BeforeEach
@@ -120,7 +118,8 @@ public class AppCenterPwaShortcutPluginTest {
     assertEquals(application.getTitle(), pwaShortcut.getShortName());
     assertNotNull(pwaShortcut.getIcons());
     assertEquals(1, pwaShortcut.getIcons().size());
-    assertEquals(CommonsUtils.getCurrentDomain() + application.getImageUrl() + "&sizes=192x192", pwaShortcut.getIcons().get(0).getSrc());
+    assertEquals(CommonsUtils.getCurrentDomain() + application.getImageUrl() + "&sizes=192x192",
+                 pwaShortcut.getIcons().get(0).getSrc());
   }
 
 }
