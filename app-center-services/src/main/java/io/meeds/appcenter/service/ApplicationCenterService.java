@@ -267,6 +267,7 @@ public class ApplicationCenterService {
                                                      application.getTitle()));
     }
     appCenterStorage.addApplicationToUserFavorite(applicationId, username);
+    reorderFavoritesForNewEntry(application.getId(), username);
   }
 
   /**
@@ -583,6 +584,18 @@ public class ApplicationCenterService {
       categoryLinkService = portalContainer.getComponentInstanceOfType(CategoryLinkService.class);
     }
     return categoryLinkService;
+  }
+
+  private void reorderFavoritesForNewEntry(Long applicationId, String username) throws ApplicationNotFoundException {
+    List<UserApplication> userApplication = appCenterStorage.getMandatoryAndFavoriteApplications(username, null)
+                                                            .stream()
+                                                            .filter(app -> app.getOrder() != null)
+                                                            .toList();
+    for (UserApplication application : userApplication) {
+      appCenterStorage.updateFavoriteApplicationOrder(application.getId(),
+                                                      username,
+                                                      application.getId().equals(applicationId) ? 0 : application.getOrder() + 1);
+    }
   }
 
 }
