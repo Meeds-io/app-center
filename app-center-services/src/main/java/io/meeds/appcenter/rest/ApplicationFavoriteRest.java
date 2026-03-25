@@ -60,7 +60,7 @@ public class ApplicationFavoriteRest {
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
   public ApplicationList getFavoriteApplicationsList(HttpServletRequest request,
                                                      @RequestParam(name = "size", required = false) Integer size,
-                                                     @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+                                                     @PageableDefault(size = 20) Pageable pageable) {
     if (size != null && size == 0) {
       pageable = Pageable.unpaged();
     }
