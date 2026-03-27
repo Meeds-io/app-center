@@ -143,7 +143,7 @@
           {{ $t('appCenter.adminSetupForm.updateTheIcon') }}
         </div>
         <app-center-image-input
-          v-model="application.imageUploadId"
+          v-model="uploadedImage"
           :application="application"
           class="mb-4"
           @icon="application.icon = $event"
@@ -330,6 +330,10 @@ export default {
     hasShortcut: false,
     oldCategoryIds: [],
     newCategoryIds: [],
+    uploadedImage: {
+      uploadId: 0,
+      mimeType: ''
+    },
     loading: false
   }),
   computed: {
@@ -420,6 +424,13 @@ export default {
     },
   },
   watch: {
+    uploadedImage: {
+      handler() {
+        this.$set(this.application, 'imageUploadId', this.uploadedImage.uploadId);
+        this.$set(this.application, 'illustrationMimeType', this.uploadedImage.mimeType);
+      },
+      deep: true,
+    },
     type(newVal, oldVal) {
       if (this.drawer && newVal && oldVal && this.application) {
         this.application.url = null;

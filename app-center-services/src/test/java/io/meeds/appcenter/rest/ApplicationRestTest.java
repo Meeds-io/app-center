@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Collections;
 
+import org.exoplatform.commons.file.services.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -94,6 +95,9 @@ public class ApplicationRestTest {
 
   @MockBean
   private ApplicationCenterService applicationCenterService;
+
+  @MockBean
+  private FileService fileService;
 
   @Autowired
   private SecurityFilterChain      filterChain;
