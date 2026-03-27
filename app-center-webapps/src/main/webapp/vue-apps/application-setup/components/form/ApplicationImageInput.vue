@@ -137,7 +137,10 @@ export default {
         return this.$uploadService.upload(file)
           .then(uploadId => {
             if (uploadId) {
-              this.$emit('input', uploadId);
+              this.$emit('input', {
+                uploadId: uploadId,
+                mimeType: file.type
+              });
               const reader = new FileReader();
               reader.onload = (e) => {
                 self.imageData = e.target.result;

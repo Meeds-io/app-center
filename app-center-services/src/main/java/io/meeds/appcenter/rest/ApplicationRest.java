@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.commons.file.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
@@ -69,6 +70,9 @@ public class ApplicationRest {
 
   @Autowired
   private ApplicationCenterService appCenterService;
+
+  @Autowired
+  private FileService fileService;
 
   @GetMapping
   @Secured("users")
@@ -224,6 +228,7 @@ public class ApplicationRest {
       }
     }
     try {
+      String mimeType = fileService.getFileInfo(application.getImageFileId()).getMimetype();
       InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, dimensions);
       if (stream == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -237,7 +242,7 @@ public class ApplicationRest {
       } else {
         builder.cacheControl(CacheControl.noStore());
       }
-      return builder.contentType(MediaType.IMAGE_PNG)
+      return builder.contentType(MediaType.valueOf(mimeType))
                     .body(new InputStreamResource(stream));
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
