@@ -94,7 +94,7 @@ public class ApplicationCenterStorage {
     applicationEntity.setId(null);
 
     if (application instanceof ApplicationForm applicationForm && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
-      Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId());
+      Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId(), applicationForm.getIllustrationMimeType());
       applicationEntity.setImageFileId(imageFileId);
     }
 
@@ -120,7 +120,7 @@ public class ApplicationCenterStorage {
     }
     if (application instanceof ApplicationForm applicationForm
         && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
-      Long imageFileId = saveImageFileItem(oldImageFileId, applicationForm.getImageUploadId());
+      Long imageFileId = saveImageFileItem(oldImageFileId, applicationForm.getImageUploadId(), applicationForm.getIllustrationMimeType());
       application.setImageFileId(imageFileId);
     }
 
@@ -276,12 +276,12 @@ public class ApplicationCenterStorage {
   }
 
   @SneakyThrows
-  private Long saveImageFileItem(Long imageFileId, String uploadId) {
+  private Long saveImageFileItem(Long imageFileId, String uploadId, String mimeType) {
     UploadResource uploadResource = uploadService.getUploadResource(uploadId);
     byte[] bytesContent = IOUtil.getFileContentAsBytes(uploadResource.getStoreLocation());
     FileItem fileItem = new FileItem(imageFileId,
                                      "appCenterIllustration",
-                                     "image/png",
+                                     mimeType,
                                      NAME_SPACE,
                                      bytesContent.length,
                                      new Date(),

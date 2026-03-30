@@ -33,6 +33,9 @@ public class ApplicationForm extends Application {
   @Exclude
   private String imageUploadId;
 
+  @Exclude
+  private String illustrationMimeType;
+
   public ApplicationForm(Application application) {
     super(application.getId(),
           application.getTitle(),
