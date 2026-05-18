@@ -43,7 +43,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -97,31 +97,31 @@ public class ApplicationCenterServiceTest {
 
   private static final Long        ID             = 2l;
 
-  @MockBean
+  @MockitoBean
   private ConfigurationManager     configurationManager;
 
-  @MockBean
+  @MockitoBean
   private SettingService           settingService;
 
-  @MockBean
+  @MockitoBean
   private TranslationService       translationService;
 
-  @MockBean
+  @MockitoBean
   private FileService              fileService;
 
-  @MockBean
+  @MockitoBean
   private ImageThumbnailService    imageThumbnailService;
 
-  @MockBean
+  @MockitoBean
   private UserACL                  userAcl;
 
-  @MockBean
+  @MockitoBean
   private ApplicationCenterStorage appCenterStorage;
 
-  @MockBean
+  @MockitoBean
   private CategoryLinkService      categoryLinkService;
 
-  @MockBean
+  @MockitoBean
   private PortalContainer          portalContainer;
 
   @Autowired
