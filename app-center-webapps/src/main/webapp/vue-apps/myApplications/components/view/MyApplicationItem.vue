@@ -19,7 +19,7 @@
 -->
 
 <template>
-  <v-hover v-model="hover">
+  <v-hover v-if="display" v-model="hover">
     <v-card
       v-bind="application.type === 'LINK' && {
         href: applicationUrl,
@@ -135,7 +135,10 @@ export default {
     },
     applicationDescription() {
       return this.application?.description;
-    }
+    },
+    display() {
+      return this.application.type !== 'DRAWER' || this.$root.quickActions[this.application.url];
+    },
   },
   methods: {
     async openApplication(event) {
