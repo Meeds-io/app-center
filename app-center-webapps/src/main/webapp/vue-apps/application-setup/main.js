@@ -53,9 +53,9 @@ export function init() {
         },
       },
       created() {
+        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
         this.refreshQuickActions();
-        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);

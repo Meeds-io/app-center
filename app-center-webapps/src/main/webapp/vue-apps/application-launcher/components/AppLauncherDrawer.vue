@@ -341,7 +341,10 @@ export default {
       this.loading = true;
       return this.getApplications(isFavoriteFilter)
         .then(data => {
-          const applications = data.applications?.filter(app => app.type !== 'DRAWER' || !this.$root.quickActions[app.url]?.enabled || this.$root.quickActions[app.url].enabled());
+          const applications = data.applications?.filter(app => app.type !== 'DRAWER'
+            || (this.$root.quickActions[app.url]
+              && (!this.$root.quickActions[app.url].enabled
+                  || this.$root.quickActions[app.url].enabled())));
           // manage system apps localized names
           applications.forEach(app => {
             if (app.system) {
