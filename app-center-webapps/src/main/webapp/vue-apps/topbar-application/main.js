@@ -29,7 +29,7 @@ export async function init(parentElementId, topbarApplication) {
     data: () => ({
       topbarApplication,
       application: null,
-      hidden: false,
+      hidden: true,
       quickActionExtensions: [],
     }),
     computed: {
@@ -44,18 +44,26 @@ export async function init(parentElementId, topbarApplication) {
     },
     created() {
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
-      this.refreshQuickActions();
       this.$utils.includeExtensions('QuickActionExtension');
-      this.init();
+      this.refreshQuickActions();
     },
     beforeDestroy() {
       document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
     },
     methods: {
+      refreshQuickActions() {
+        this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
+        if (this.hidden) {
+          this.init();
+        }
+      },
       init() {
         appCenterApplicationsFetch
           .then(data => {
-            this.application = data?.applications?.find?.(app => app.id === this.applicationId);
+            this.application = data?.applications?.find?.(app => app.id === this.applicationId
+              && this.$root.quickActions[app.url]
+              && (!this.$root.quickActions[app.url].enabled || this.$root.quickActions[app.url].enabled())
+            );
             if (this.application?.system) {
               const title = /\s/.test(this.application.title) ? this.application.title.replace(/ /g,'.').toLowerCase() : this.application.title.toLowerCase();
               if (this.$te(`appCenter.system.application.${title}`)) {
@@ -67,9 +75,6 @@ export async function init(parentElementId, topbarApplication) {
             }
           })
           .finally(() => this.hidden = !this.application?.active);
-      },
-      refreshQuickActions() {
-        this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
       },
     },
     template: `

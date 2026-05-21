@@ -38,7 +38,7 @@ export async function init({
     appElement = document.querySelector('#appShortcuts');
   }
 
-  const lang = eXo && eXo.env && eXo.env.portal && eXo.env.portal.language || 'en';
+  const lang = eXo?.env?.portal?.language || 'en';
   const urls = [
     `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
     `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`
