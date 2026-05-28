@@ -267,6 +267,7 @@ public class ApplicationCenterInjectService {
                                                              UploadResource.UPLOADED_STATUS);
           uploadService.createUploadResource(uploadResource);
           applicationForm.setImageUploadId(uploadId);
+          applicationForm.setIllustrationMimeType("image/png");
         }
       } catch (Exception e) {
         LOG.warn("Error reading image from file {}. Application will be injected without image", imagePath, e);
