@@ -61,10 +61,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     </td>
     <td class="text-center position-relative">
       <v-switch
-        v-model="active"
+        v-model="item.active"
         class="ma-0 pa-0 absolute-all-center"
         hide-details
-        @change="$emit('set-enabled', !active)" />
+        @change="$emit('set-enabled', $event)" />
     </td>
     <td class="text-center">
       <app-center-admin-menu
@@ -107,9 +107,6 @@ export default {
   computed: {
     displayName() {
       return this.item.displayName || this.item.title;
-    },
-    active() {
-      return this.item.active;
     },
   },
 };
