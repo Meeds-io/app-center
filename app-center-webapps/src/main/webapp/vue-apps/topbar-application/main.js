@@ -61,8 +61,9 @@ export async function init(parentElementId, topbarApplication) {
         appCenterApplicationsFetch
           .then(data => {
             this.application = data?.applications?.find?.(app => app.id === this.applicationId
-              && this.$root.quickActions[app.url]
-              && (!this.$root.quickActions[app.url].enabled || this.$root.quickActions[app.url].enabled())
+              && (app.type !== 'DRAWER' || (
+                this.$root.quickActions[app.url]
+                && (!this.$root.quickActions[app.url].enabled || this.$root.quickActions[app.url].enabled())))
             );
             if (this.application?.system) {
               const title = /\s/.test(this.application.title) ? this.application.title.replace(/ /g,'.').toLowerCase() : this.application.title.toLowerCase();
