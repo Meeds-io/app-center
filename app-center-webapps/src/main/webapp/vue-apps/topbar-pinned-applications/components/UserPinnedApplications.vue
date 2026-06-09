@@ -39,7 +39,7 @@
         <v-icon
           v-if="application?.icon && !application?.imageUrl"
           size="20"
-          class="d-flex align-center justify-center">
+          class="d-flex align-center justify-center icon-default-color">
           {{ application.icon }}
         </v-icon>
         <v-card
