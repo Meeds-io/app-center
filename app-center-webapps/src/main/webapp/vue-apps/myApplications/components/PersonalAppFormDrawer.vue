@@ -58,7 +58,7 @@
             dense
             class="mt-1" />
         </div>
-        <div class="d-flex align-center justify-space-between mt-2">
+        <div class="d-flex align-center justify-space-between mb-4">
           <label class="v-label text-color">
             {{ $t('appCenter.personalApp.form.sameTab.label') }}
           </label>
@@ -68,6 +68,17 @@
             class="pa-0 my-auto"
             hide-details />
         </div>
+        <div class="mb-2">
+          <label class="v-label text-color font-weight-bold">
+            {{ $t('appCenter.personalApp.form.icon.label') }}
+          </label>
+        </div>
+        <app-center-image-input
+          v-model="uploadedImage"
+          :application="iconApplication"
+          class="mb-4"
+          @icon="icon = $event"
+          @reset="resetImage" />
       </v-form>
     </template>
     <template #footer>
@@ -98,6 +109,9 @@ export default {
       sameTab: false,
       saving: false,
       editedApp: null,
+      icon: 'fa-link',
+      uploadedImage: { uploadId: 0, mimeType: '' },
+      existingImageUrl: null,
     };
   },
   computed: {
@@ -107,11 +121,17 @@ export default {
     canSave() {
       return this.title?.trim().length > 0 && this.url?.trim().length > 0;
     },
+    iconApplication() {
+      return {
+        icon: this.icon,
+        imageUrl: this.existingImageUrl,
+      };
+    },
     titleRequired() {
       return v => !!v?.trim() || this.$t('appCenter.adminSetupForm.emptyTitle');
     },
     titleMaxLength() {
-      return v => !v || v.length <= 200 || this.$t('appCenter.form.name.exceedsMaxLength', [200]);
+      return v => !v || v.length <= 200 || this.$t('appCenter.form.name.exceedsMaxLength', {0: 200});
     },
     urlRequired() {
       return v => !!v?.trim() || this.$t('appCenter.adminSetupForm.emptyUrl');
@@ -122,7 +142,10 @@ export default {
           return true;
         }
         try {
-          new URL(v);
+          const parsed = new URL(v);
+          if (!['https:', 'http:'].includes(parsed.protocol)) {
+            return this.$t('appCenter.form.url.invalidLink');
+          }
           return true;
         } catch {
           return this.$t('appCenter.form.url.invalidLink');
@@ -137,11 +160,20 @@ export default {
         this.title = app.title || '';
         this.url = app.url || '';
         this.sameTab = app.sameTab || false;
+        this.icon = app.icon || 'fa-link';
+        this.existingImageUrl = app.imageUrl || null;
+      } else {
+        this.icon = 'fa-link';
+        this.existingImageUrl = null;
       }
       this.$refs.personalAppFormDrawer.open();
     },
     close() {
       this.$refs.personalAppFormDrawer.close();
+    },
+    resetImage() {
+      this.existingImageUrl = null;
+      this.uploadedImage = { uploadId: 0, mimeType: '' };
     },
     reset() {
       this.title = '';
@@ -149,6 +181,9 @@ export default {
       this.sameTab = false;
       this.saving = false;
       this.editedApp = null;
+      this.icon = 'fa-link';
+      this.uploadedImage = { uploadId: 0, mimeType: '' };
+      this.existingImageUrl = null;
       this.$refs.form?.reset();
     },
     save() {
@@ -163,6 +198,9 @@ export default {
         sameTab: this.sameTab,
         type: 'LINK',
         active: true,
+        icon: this.icon,
+        imageUploadId: this.uploadedImage?.uploadId || null,
+        illustrationMimeType: this.uploadedImage?.mimeType || null,
       };
       const promise = this.editMode
         ? this.$applicationService.updatePersonalApp(application)
