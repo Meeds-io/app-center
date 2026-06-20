@@ -89,6 +89,20 @@
           fas fa-plus
         </v-icon>
       </v-btn>
+      <v-btn
+        v-if="hover && allowPersonalApps"
+        :title="$t('myApplications.addPersonalApp.tooltip')"
+        class="ms-2 text-font-size"
+        small
+        link
+        icon
+        @click="$emit('open-personal-app-form')">
+        <v-icon
+          :size="18"
+          class="icon-default-color icon-default-size">
+          fas fa-link
+        </v-icon>
+      </v-btn>
     </div>
   </div>
 </template>
