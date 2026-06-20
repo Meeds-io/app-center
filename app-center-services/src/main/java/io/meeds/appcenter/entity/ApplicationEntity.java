@@ -108,6 +108,12 @@ public class ApplicationEntity {
   @Column(name = "APPLICATION_ORDER", nullable = true)
   private Long                                  order;
 
+  @Column(name = "IS_PERSONAL")
+  private boolean                               personal;
+
+  @Column(name = "OWNER_USERNAME", length = 200)
+  private String                                ownerUsername;
+
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)

@@ -327,7 +327,9 @@ public class ApplicationCenterStorage {
                            applicationEntity.getIcon(),
                            getImageUrl(applicationEntity.getImageFileId(), applicationEntity.getId(), imageLastModified),
                            applicationEntity.getOrder(),
-                           applicationEntity.isChangedManually());
+                           applicationEntity.isChangedManually(),
+                           applicationEntity.isPersonal(),
+                           applicationEntity.getOwnerUsername());
   }
 
   private UserApplication toUserApplicationDTO(Long applicationId) {
@@ -376,6 +378,8 @@ public class ApplicationCenterStorage {
                                    application.getPermissions(),
                                    application.isChangedManually(),
                                    application.getOrder(),
+                                   application.isPersonal(),
+                                   application.getOwnerUsername(),
                                    null);
     }
   }

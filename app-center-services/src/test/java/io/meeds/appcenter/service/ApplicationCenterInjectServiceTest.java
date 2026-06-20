@@ -185,7 +185,9 @@ public class ApplicationCenterInjectServiceTest {
                            "icon",
                            null,
                            null,
-                           false);
+                           false,
+                           false,
+                           null);
   }
 
 }

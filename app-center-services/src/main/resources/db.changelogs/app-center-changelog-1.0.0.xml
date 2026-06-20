@@ -189,4 +189,16 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-personal-apps-1">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="IS_PERSONAL" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-personal-apps-2">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="OWNER_USERNAME" type="VARCHAR(200)" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>

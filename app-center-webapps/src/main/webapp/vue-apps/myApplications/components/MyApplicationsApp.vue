@@ -36,7 +36,9 @@
           :show-header="showHeader"
           :header-title="headerTitle"
           :has-applications="hasApplications"
-          @open-settings="openSettingsDrawer" />
+          :allow-personal-apps="allowPersonalApps"
+          @open-settings="openSettingsDrawer"
+          @open-personal-app-form="openPersonalAppForm" />
         <my-applications-list
           :applications-list="filteredApplications"
           :is-loading="isLoading"
@@ -49,6 +51,9 @@
       :settings="$root.settings"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated" />
+    <personal-app-form-drawer
+      ref="personalAppFormDrawer"
+      @saved="getFavoriteApplications" />
     <app-center-portlet-instance-drawer
       ref="portletInstanceDrawer" />
   </v-app>
@@ -66,7 +71,8 @@ export default {
       currentUser: eXo.env.portal.userName,
       initialized: false,
       hover: false,
-      tabindex: '0'
+      tabindex: '0',
+      allowPersonalApps: false,
     };
   },
   computed: {
@@ -92,9 +98,19 @@ export default {
   },
   created() {
     this.getFavoriteApplications();
+    this.loadAppCenterSettings();
     this.$root.isLoading = true;
   },
   methods: {
+    loadAppCenterSettings() {
+      this.$applicationService.getAppCenterSettings()
+        .then(settings => {
+          this.allowPersonalApps = settings?.allowUserPersonalApps || false;
+        });
+    },
+    openPersonalAppForm(app) {
+      this.$refs.personalAppFormDrawer.open(app || null);
+    },
     openSettingsDrawer() {
       this.$refs.settingsDrawer.open();
     },

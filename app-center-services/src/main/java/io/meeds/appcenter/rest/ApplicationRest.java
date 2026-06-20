@@ -49,6 +49,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.service.LinkProvider;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
@@ -176,6 +177,94 @@ public class ApplicationRest {
       appCenterService.deleteApplication(applicationId, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    } catch (ApplicationNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @GetMapping(path = "/settings")
+  @Secured("users")
+  @Operation(summary = "Retrieves app-center global settings", method = "GET")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
+  public ApplicationCenterSettings getSettings() {
+    return appCenterService.getSettings();
+  }
+
+  @PostMapping(path = "/settings")
+  @Secured("administrators")
+  @Operation(summary = "Saves app-center global settings", method = "POST")
+  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation") })
+  public void saveSettings(
+                           HttpServletRequest request,
+                           @RequestBody
+                           ApplicationCenterSettings settings) {
+    try {
+      appCenterService.setUserPersonalAppsEnabled(settings.isAllowUserPersonalApps(), request.getRemoteUser());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  @PostMapping(path = "/personal")
+  @Secured("users")
+  @Operation(summary = "Creates a personal URL application for the authenticated user", method = "POST")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation") })
+  public Application createPersonalApplication(
+                                               HttpServletRequest request,
+                                               @RequestBody
+                                               ApplicationForm application) {
+    try {
+      return appCenterService.createPersonalApplication(application, request.getRemoteUser());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @PutMapping(path = "/personal/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Updates a personal URL application owned by the authenticated user", method = "PUT")
+  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "404", description = "Not found") })
+  public void updatePersonalApplication(
+                                        HttpServletRequest request,
+                                        @PathVariable("applicationId")
+                                        Long applicationId,
+                                        @RequestBody
+                                        ApplicationForm application) {
+    application.setId(applicationId);
+    try {
+      appCenterService.updatePersonalApplication(application, request.getRemoteUser());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+    } catch (ApplicationNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @DeleteMapping(path = "/personal/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Deletes a personal URL application owned by the authenticated user", method = "DELETE")
+  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "404", description = "Not found") })
+  public void deletePersonalApplication(
+                                        HttpServletRequest request,
+                                        @PathVariable("applicationId")
+                                        Long applicationId) {
+    try {
+      appCenterService.deletePersonalApplication(applicationId, request.getRemoteUser());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {

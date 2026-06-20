@@ -26,10 +26,40 @@
         </div>
       </div>
     </div>
+    <v-divider />
+    <div class="pa-5">
+      <div class="text-header mb-4">
+        {{ $t('appCenter.adminSetupForm.generalSettings') }}
+      </div>
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <div class="v-label text-color">
+            {{ $t('appCenter.adminSetupForm.allowUserPersonalApps') }}
+          </div>
+          <div class="caption text--secondary">
+            {{ $t('appCenter.adminSetupForm.allowUserPersonalApps.description') }}
+          </div>
+        </div>
+        <v-switch
+          v-model="allowUserPersonalApps"
+          :disabled="savingSettings"
+          :loading="savingSettings"
+          color="primary"
+          class="pa-0 my-auto ms-4"
+          hide-details
+          @change="saveSettings" />
+      </div>
+    </div>
   </v-card>
 </template>
 <script>
 export default {
+  data() {
+    return {
+      allowUserPersonalApps: false,
+      savingSettings: false,
+    };
+  },
   computed: {
     favoriteApplications() {
       return this.$root.applications?.filter?.(app => app.default || app.mandatory) || [];
@@ -39,6 +69,32 @@ export default {
     },
     hasApplications() {
       return this.filteredApplications?.length;
+    },
+  },
+  created() {
+    this.$applicationService.getAppCenterSettings()
+      .then(settings => {
+        this.allowUserPersonalApps = settings?.allowUserPersonalApps || false;
+      });
+  },
+  methods: {
+    saveSettings() {
+      this.savingSettings = true;
+      this.$applicationService.saveAppCenterSettings({ allowUserPersonalApps: this.allowUserPersonalApps })
+        .then(() => {
+          this.$root.$emit('alert-message',
+            this.$t('appCenter.adminSetupForm.settings.saved.success'),
+            'success');
+        })
+        .catch(() => {
+          this.allowUserPersonalApps = !this.allowUserPersonalApps;
+          this.$root.$emit('alert-message',
+            this.$t('appCenter.adminSetupForm.settings.saved.error'),
+            'error');
+        })
+        .finally(() => {
+          this.savingSettings = false;
+        });
     },
   },
 };

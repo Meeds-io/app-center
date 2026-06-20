@@ -75,5 +75,68 @@ export function updateApplication(application) {
       if (!resp?.ok) {
         throw new Error('Error when updating application');
       }
-    });      
+    });
+}
+
+export function getAppCenterSettings() {
+  return fetch('/app-center/rest/applications/settings', {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (resp?.ok) {
+      return resp.json();
+    }
+    throw new Error('Error when getting app-center settings');
+  });
+}
+
+export function saveAppCenterSettings(settings) {
+  return fetch('/app-center/rest/applications/settings', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  }).then(resp => {
+    if (!resp?.ok) {
+      throw new Error('Error when saving app-center settings');
+    }
+  });
+}
+
+export function createPersonalApp(application) {
+  return fetch('/app-center/rest/applications/personal', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(application),
+  }).then(resp => {
+    if (resp?.ok) {
+      return resp.json();
+    }
+    throw new Error('Error when creating personal application');
+  });
+}
+
+export function updatePersonalApp(application) {
+  return fetch(`/app-center/rest/applications/personal/${application.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(application),
+  }).then(resp => {
+    if (!resp?.ok) {
+      throw new Error('Error when updating personal application');
+    }
+  });
+}
+
+export function deletePersonalApp(id) {
+  return fetch(`/app-center/rest/applications/personal/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp?.ok) {
+      throw new Error('Error when deleting personal application');
+    }
+  });
 }

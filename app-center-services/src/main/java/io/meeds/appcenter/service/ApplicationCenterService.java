@@ -31,6 +31,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.file.model.FileItem;
@@ -42,6 +44,7 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.UserApplication;
@@ -71,6 +74,8 @@ public class ApplicationCenterService {
 
   public static final String       MAX_FAVORITE_APPS                   = "maxFavoriteApps";
 
+  public static final String       ALLOW_USER_PERSONAL_APPS            = "allowUserPersonalApps";
+
   public static final String       DEFAULT_APP_IMAGE_NAME              = "defaultAppImageName";
 
   public static final String       DEFAULT_APP_IMAGE_BODY              = "defaultAppImageBody";
@@ -89,8 +94,15 @@ public class ApplicationCenterService {
 
   private static final String      APPLICATION_NOT_FOUND_MESSAGE       = "Application with id %s doesn't exist";
 
+  private static final String      PERSONAL_APPS_NOT_ENABLED_MESSAGE   = "User personal apps feature is not enabled";
+
+  private static final String      NOT_PERSONAL_APP_OWNER_MESSAGE      = "User %s is not the owner of personal application %s";
+
   @Autowired
   private UserACL                  userAcl;
+
+  @Autowired
+  private SettingService           settingService;
 
   @Autowired
   private ApplicationCenterStorage appCenterStorage;
@@ -287,6 +299,105 @@ public class ApplicationCenterService {
   }
 
   /**
+   * Returns global app-center settings.
+   */
+  public ApplicationCenterSettings getSettings() {
+    return new ApplicationCenterSettings(isUserPersonalAppsEnabled());
+  }
+
+  /**
+   * Returns whether users are allowed to create personal URL apps.
+   */
+  public boolean isUserPersonalAppsEnabled() {
+    SettingValue<?> value = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS);
+    return value != null && Boolean.parseBoolean(String.valueOf(value.getValue()));
+  }
+
+  /**
+   * Enables or disables the user personal apps feature. Admin only.
+   */
+  public void setUserPersonalAppsEnabled(boolean enabled, String username) throws IllegalAccessException {
+    if (!canEdit(username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to change app-center settings", username));
+    }
+    settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS, SettingValue.create(enabled));
+  }
+
+  /**
+   * Creates a personal URL application for the given user.
+   */
+  public Application createPersonalApplication(Application application, String username) throws IllegalAccessException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
+    }
+    application.setPersonal(true);
+    application.setOwnerUsername(username);
+    application.setActive(true);
+    application.setSystem(false);
+    application.setMandatory(false);
+    return createApplication(application);
+  }
+
+  /**
+   * Updates a personal URL application. Only the owner may update it.
+   */
+  public void updatePersonalApplication(Application application, String username) throws IllegalAccessException,
+                                                                                  ApplicationNotFoundException {
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    if (application.getId() == null) {
+      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
+    }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    Application stored = appCenterStorage.getApplication(application.getId());
+    if (stored == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, application.getId()));
+    }
+    if (!stored.isPersonal()) {
+      throw new IllegalAccessException(String.format("Application %s is not a personal app", application.getId()));
+    }
+    if (!StringUtils.equals(stored.getOwnerUsername(), username)) {
+      throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, application.getId()));
+    }
+    application.setPersonal(true);
+    application.setOwnerUsername(username);
+    application.setActive(true);
+    application.setSystem(false);
+    application.setMandatory(false);
+    updateApplication(application);
+  }
+
+  /**
+   * Deletes a personal URL application. Only the owner may delete it.
+   */
+  public void deletePersonalApplication(Long applicationId, String username) throws IllegalAccessException,
+                                                                              ApplicationNotFoundException {
+    if (applicationId == null) {
+      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
+    }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    Application stored = appCenterStorage.getApplication(applicationId);
+    if (stored == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    if (!stored.isPersonal()) {
+      throw new IllegalAccessException(String.format("Application %s is not a personal app", applicationId));
+    }
+    if (!StringUtils.equals(stored.getOwnerUsername(), username)) {
+      throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, applicationId));
+    }
+    deleteApplication(applicationId);
+  }
+
+  /**
    * Retrieves the list of applications with offset, limit and a keyword that
    * can be empty
    *
@@ -313,7 +424,10 @@ public class ApplicationCenterService {
    */
   public ApplicationList getApplications(int offset, int limit, String keyword, Locale locale) {
     ApplicationList applicationList = new ApplicationList();
-    List<Application> applications = appCenterStorage.getApplications(keyword);
+    List<Application> applications = appCenterStorage.getApplications(keyword)
+                                                     .stream()
+                                                     .filter(app -> !app.isPersonal())
+                                                     .toList();
     int totalApplictions = applications.size();
     if (limit <= 0) {
       limit = applications.size();
@@ -511,6 +625,9 @@ public class ApplicationCenterService {
   }
 
   public boolean canAccess(Application application, String username) {
+    if (application.isPersonal()) {
+      return canEdit(username) || StringUtils.equals(application.getOwnerUsername(), username);
+    }
     return canAccess(application.getPermissions(), username);
   }
 
