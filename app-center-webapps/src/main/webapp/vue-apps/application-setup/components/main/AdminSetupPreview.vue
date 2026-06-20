@@ -7,8 +7,15 @@
     <v-card class="d-flex align-center transparent pa-5" flat>
       <span class="text-title">{{ $t('appCenter.appLauncher.drawer.title') }}</span>
       <v-spacer />
-      <v-icon size="20">fa-plus</v-icon>
-      <v-icon size="20" class="ms-5">fa-times</v-icon>
+      <v-btn v-if="allowUserPersonalApps" icon small>
+        <v-icon size="20">fa-plus</v-icon>
+      </v-btn>
+      <v-btn icon small>
+        <v-icon size="20">fa-expand-alt</v-icon>
+      </v-btn>
+      <v-btn icon small>
+        <v-icon size="20">fa-times</v-icon>
+      </v-btn>
     </v-card>
     <v-divider />
     <div class="d-flex flex-wrap my-4 ms-4 me-1">
@@ -32,7 +39,7 @@
         {{ $t('appCenter.adminSetupForm.generalSettings') }}
       </div>
       <div class="d-flex align-center justify-space-between">
-        <div>
+        <div class="text-start">
           <div class="v-label text-color">
             {{ $t('appCenter.adminSetupForm.allowUserPersonalApps') }}
           </div>

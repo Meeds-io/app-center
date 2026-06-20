@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +65,8 @@ import lombok.SneakyThrows;
  */
 @Service
 public class ApplicationCenterService {
+
+  private static final Log         LOG                                 = ExoLogger.getLogger(ApplicationCenterService.class);
 
   private static final String      APPLICATION_IS_MANDATORY_MESSAGE    = "application is mandatory";
 
@@ -338,7 +342,13 @@ public class ApplicationCenterService {
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
-    return createApplication(application);
+    Application saved = createApplication(application);
+    try {
+      addFavoriteApplication(saved.getId(), username);
+    } catch (Exception e) {
+      LOG.warn("Failed to auto-add personal app {} to favorites for user {}", saved.getId(), username, e);
+    }
+    return saved;
   }
 
   /**
@@ -354,6 +364,9 @@ public class ApplicationCenterService {
     }
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
     }
     Application stored = appCenterStorage.getApplication(application.getId());
     if (stored == null) {
@@ -383,6 +396,9 @@ public class ApplicationCenterService {
     }
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
     }
     Application stored = appCenterStorage.getApplication(applicationId);
     if (stored == null) {
@@ -626,7 +642,7 @@ public class ApplicationCenterService {
 
   public boolean canAccess(Application application, String username) {
     if (application.isPersonal()) {
-      return canEdit(username) || StringUtils.equals(application.getOwnerUsername(), username);
+      return StringUtils.equals(application.getOwnerUsername(), username);
     }
     return canAccess(application.getPermissions(), username);
   }

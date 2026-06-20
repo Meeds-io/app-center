@@ -163,6 +163,15 @@
               class="align-self-md-center align-self-end mb-2 mb-md-0 flex-shrink-0 overflow-hidden" />
             <div class="d-flex align-center z-index-two justify-end flex-shrink-0 flex-nowrap ms-auto">
               <v-btn
+                v-if="application.personal"
+                :title="$t('appCenter.personalApp.delete.tooltip')"
+                class="ms-2"
+                small
+                icon
+                @click.stop.prevent="$emit('delete')">
+                <v-icon color="error" size="20">fa-trash-alt</v-icon>
+              </v-btn>
+              <v-btn
                 v-if="application.helpPageURL"
                 :title="$t('appCenter.appLauncher.accessHelpPageTooltip')"
                 :class="card && 'ms-2'"
