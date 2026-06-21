@@ -42,6 +42,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
@@ -140,6 +141,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private ImageThumbnailService    imageThumbnailService;
+
+  @Autowired(required = false)
+  private IdentityManager          identityManager;
 
   @Autowired
   private PortalContainer          portalContainer;
