@@ -18,18 +18,12 @@ import AppLauncher from './components/AppLauncher.vue';
 import AppLauncherEmpty from './components/AppLauncherEmpty.vue';
 import AppLauncherDrawer from './components/AppLauncherDrawer.vue';
 import AppLauncherMobileDrawer from './components/AppLauncherMobileDrawer.vue';
-import PersonalAppFormDrawer from '../myApplications/components/PersonalAppFormDrawer.vue';
-import ApplicationIcon from '../application-setup/components/view/ApplicationIcon.vue';
-import ApplicationImageInput from '../application-setup/components/form/ApplicationImageInput.vue';
 
 const components = {
   'app-center-launcher': AppLauncher,
   'app-center-launcher-empty': AppLauncherEmpty,
   'app-center-launcher-drawer': AppLauncherDrawer,
   'app-center-launcher-mobile-drawer': AppLauncherMobileDrawer,
-  'personal-app-form-drawer': PersonalAppFormDrawer,
-  'app-center-icon': ApplicationIcon,
-  'app-center-image-input': ApplicationImageInput,
 };
 
 for (const key in components) {
