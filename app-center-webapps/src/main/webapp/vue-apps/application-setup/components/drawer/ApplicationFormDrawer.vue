@@ -43,6 +43,7 @@
           {{ $t('appCenter.adminSetupForm.title') }}
         </v-label>
         <translation-text-field
+          v-if="!personal"
           ref="applicationName"
           id="applicationName"
           v-model="titles"
@@ -55,90 +56,135 @@
           no-expand-icon
           back-icon
           required />
-        <v-label for="applicationDescription">
-          {{ $t('appCenter.adminSetupForm.description') }}
-        </v-label>
-        <translation-text-field
-          ref="applicationDescription"
-          id="applicationDescription"
-          v-model="descriptions"
-          :rules="rules.description"
-          :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
+        <v-text-field
+          v-else
+          id="applicationName"
+          v-model="application.title"
+          :placeholder="$t('appCenter.adminSetupForm.titlePlaceholder')"
+          :rules="rules.personalTitle"
           :maxlength="maxNameLength"
-          name="applicationDescription"
-          drawer-title="appCenter.adminSetupForm.descriptionTranslation"
+          name="applicationName"
           class="width-auto flex-grow-1 mt-2 mb-4"
-          no-expand-icon
-          back-icon
+          outlined
+          dense
           required />
-        <div class="mb-2">
-          {{ $t('appCenter.adminSetupForm.application') }}
-        </div>
-        <v-radio-group
-          v-model="application.type"
-          class="mt-0 pa-0"
-          mandatory>
-          <v-radio value="LINK">
-            <template #label>
-              <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
+        <template v-if="!personal">
+          <v-label for="applicationDescription">
+            {{ $t('appCenter.adminSetupForm.description') }}
+          </v-label>
+          <translation-text-field
+            ref="applicationDescription"
+            id="applicationDescription"
+            v-model="descriptions"
+            :rules="rules.description"
+            :placeholder="$t('appCenter.adminSetupForm.descriptionPlaceHolder')"
+            :maxlength="maxNameLength"
+            name="applicationDescription"
+            drawer-title="appCenter.adminSetupForm.descriptionTranslation"
+            class="width-auto flex-grow-1 mt-2 mb-4"
+            no-expand-icon
+            back-icon
+            required />
+        </template>
+        <template v-if="!personal">
+          <div class="mb-2">
+            {{ $t('appCenter.adminSetupForm.application') }}
+          </div>
+          <v-radio-group
+            v-model="application.type"
+            class="mt-0 pa-0"
+            mandatory>
+            <v-radio value="LINK">
+              <template #label>
+                <span class="ms-1">{{ $t('appCenter.adminSetupForm.link') }}</span>
+              </template>
+            </v-radio>
+            <template v-if="application.type === 'LINK'">
+              <v-text-field
+                ref="applicationUrl"
+                id="applicationUrl"
+                v-model="application.url"
+                :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+                :rules="rules.url"
+                name="applicationUrl"
+                class="border-box-sizing width-auto pt-0"
+                type="text"
+                mandatory
+                outlined
+                dense />
+              <div class="d-flex full-width justify-space-between align-center mb-3">
+                <v-card
+                  class="text-start flex-grow-1 clickable transparent"
+                  flat
+                  @click="application.sameTab = !application.sameTab">
+                  {{ $t('appCenter.adminSetupForm.openInSameTab') }}
+                </v-card>
+                <v-switch
+                  v-model="application.sameTab"
+                  class="my-0 me-n2 pa-0"
+                  name="applicationSameTabSwitch"
+                  hide-details />
+              </div>
             </template>
-          </v-radio>
-          <template v-if="application.type === 'LINK'">
-            <v-text-field
+            <v-radio value="DRAWER">
+              <template #label>
+                <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
+              </template>
+            </v-radio>
+            <quick-action-suggester
+              v-if="application.type === 'DRAWER'"
               ref="applicationUrl"
               id="applicationUrl"
               v-model="application.url"
-              :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
-              :rules="rules.url"
               name="applicationUrl"
-              class="border-box-sizing width-auto pt-0"
-              type="text"
-              mandatory
-              outlined
-              dense />
-            <div class="d-flex full-width justify-space-between align-center mb-3">
-              <v-card
-                class="text-start flex-grow-1 clickable transparent"
-                flat
-                @click="application.sameTab = !application.sameTab">
-                {{ $t('appCenter.adminSetupForm.openInSameTab') }}
-              </v-card>
-              <v-switch
-                v-model="application.sameTab"
-                class="my-0 me-n2 pa-0"
-                name="applicationSameTabSwitch"
-                hide-details />
-            </div>
-          </template>
-          <v-radio value="DRAWER">
-            <template #label>
-              <span class="ms-1">{{ $t('appCenter.adminSetupForm.drawer') }}</span>
-            </template>
-          </v-radio>
-          <quick-action-suggester
-            v-if="application.type === 'DRAWER'"
+              class="mb-4" />
+            <v-radio value="PORTLET">
+              <template #label>
+                <span class="ms-1">{{ $t('appCenter.adminSetupForm.portlet') }}</span>
+              </template>
+            </v-radio>
+            <portlet-instance-suggester
+              v-if="application.type === 'PORTLET'"
+              ref="applicationUrl"
+              id="applicationUrl"
+              v-model="application.url"
+              name="applicationUrl"
+              class="mb-4" />
+          </v-radio-group>
+          <category-input
+            v-model="newCategoryIds"
+            label="appCenter.adminSetupForm.categories"
+            label-class="" />
+        </template>
+        <template v-else>
+          <v-label for="applicationUrl">
+            {{ $t('appCenter.personalApp.form.url.label') }}
+          </v-label>
+          <v-text-field
             ref="applicationUrl"
             id="applicationUrl"
             v-model="application.url"
+            :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+            :rules="rules.personalUrl"
             name="applicationUrl"
-            class="mb-4" />
-          <v-radio value="PORTLET">
-            <template #label>
-              <span class="ms-1">{{ $t('appCenter.adminSetupForm.portlet') }}</span>
-            </template>
-          </v-radio>
-          <portlet-instance-suggester
-            v-if="application.type === 'PORTLET'"
-            ref="applicationUrl"
-            id="applicationUrl"
-            v-model="application.url"
-            name="applicationUrl"
-            class="mb-4" />
-        </v-radio-group>
-        <category-input
-          v-model="newCategoryIds"
-          label="appCenter.adminSetupForm.categories"
-          label-class="" />
+            class="border-box-sizing width-auto pt-0 mt-2"
+            type="text"
+            outlined
+            dense />
+          <div class="d-flex full-width justify-space-between align-center mb-3">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="application.sameTab = !application.sameTab">
+              {{ $t('appCenter.adminSetupForm.openInSameTab') }}
+            </v-card>
+            <v-switch
+              v-model="application.sameTab"
+              class="my-0 me-n2 pa-0"
+              name="applicationSameTabSwitch"
+              hide-details />
+          </div>
+        </template>
         <div class="mb-2">
           {{ $t('appCenter.adminSetupForm.updateTheIcon') }}
         </div>
@@ -148,154 +194,156 @@
           class="mb-4"
           @icon="application.icon = $event"
           @reset="resetImage" />
-        <div class="text-header mb-2">
-          {{ $t('appCenter.adminSetupForm.advancedOptions') }}
-        </div>
-        <div class="mb-2">
+        <template v-if="!personal">
+          <div class="text-header mb-2">
+            {{ $t('appCenter.adminSetupForm.advancedOptions') }}
+          </div>
+          <div class="mb-2">
+            <div class="d-flex full-width align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.mandatory = !application.mandatory">
+                {{ $t('appCenter.adminSetupForm.mandatory') }}
+              </v-card>
+              <v-switch
+                v-model="application.mandatory"
+                class="ma-0 pa-0"
+                name="applicationMandatory"
+                hide-details />
+            </div>
+            <div class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.default = !application.default">
+                {{ $t('appCenter.adminSetupForm.default') }}
+              </v-card>
+              <v-switch
+                v-model="application.default"
+                class="ma-0 pa-0"
+                name="applicationDefault"
+                hide-details />
+            </div>
+            <div class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.mobile = !application.mobile">
+                {{ $t('appCenter.adminSetupForm.mobile') }}
+              </v-card>
+              <v-switch
+                v-model="application.mobile"
+                class="ma-0 pa-0"
+                name="applicationMobile"
+                hide-details />
+            </div>
+          </div>
+          <div class="d-flex full-width justify-space-between align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="hasPermissions = !hasPermissions">
+              {{ $t('appCenter.adminSetupForm.permissions') }}
+            </v-card>
+            <v-switch
+              v-model="hasPermissions"
+              class="ma-0 pa-0"
+              name="applicationPermissionsSwitch"
+              hide-details />
+          </div>
+          <app-center-permissions
+            v-if="hasPermissions"
+            v-model="application.permissions"
+            class="mb-4" />
+          <div class="d-flex full-width justify-space-between align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="hasHelpUrl = !hasHelpUrl">
+              {{ $t('appCenter.adminSetupForm.helpPage') }}
+            </v-card>
+            <v-switch
+              v-model="hasHelpUrl"
+              class="ma-0 pa-0"
+              name="applicationHelpUrlSwitch"
+              hide-details />
+          </div>
+          <v-text-field
+            v-if="hasHelpUrl"
+            ref="applicationHelpPageURL"
+            id="applicationHelpPageURL"
+            v-model="application.helpPageURL"
+            :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
+            :rules="rules.helpUrl"
+            name="applicationHelpPageURL"
+            class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+            type="text"
+            outlined
+            dense />
+          <div class="d-flex full-width justify-space-between align-center mb-2">
+            <v-card
+              class="text-start flex-grow-1 clickable transparent"
+              flat
+              @click="hasShortcut = !hasShortcut">
+              {{ $t('appCenter.adminSetupForm.shortcut') }}
+            </v-card>
+            <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+              <v-switch
+                v-model="hasShortcut"
+                :disabled="application.system"
+                class="ma-0 pa-0"
+                name="applicationShortcutSwitch"
+                hide-details />
+            </div>
+          </div>
+          <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+            <v-text-field
+              v-if="hasShortcut"
+              ref="applicationShortcut"
+              id="applicationShortcut"
+              v-model="application.shortcut"
+              :disabled="application.system"
+              :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
+              :rules="rules.shortcut"
+              name="applicationShortcut"
+              class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+              type="text"
+              maxlength="1"
+              outlined
+              dense>
+              <template #prepend-inner>
+                <div class="d-flex align-center mt-n1 ms-n1">
+                  <v-card
+                    class="fill-height grey-lighten1-background white--text px-5 py-2"
+                    flat>
+                    {{ $t('appCenter.adminSetupForm.ctrl') }}
+                  </v-card>
+                  <v-icon class="mx-2" size="24">fa-plus</v-icon>
+                  <v-card
+                    class="fill-height grey-lighten1-background white--text px-5 py-2"
+                    flat>
+                    {{ $t('appCenter.adminSetupForm.shift') }}
+                  </v-card>
+                  <v-icon class="mx-2" size="24">fa-plus</v-icon>
+                </div>
+              </template>
+            </v-text-field>
+          </div>
           <div class="d-flex full-width align-center mb-2">
             <v-card
               class="text-start flex-grow-1 clickable transparent"
               flat
               @click="application.mandatory = !application.mandatory">
-              {{ $t('appCenter.adminSetupForm.mandatory') }}
+              {{ $t('appCenter.adminSetupForm.pwa') }}
             </v-card>
             <v-switch
-              v-model="application.mandatory"
+              v-model="application.pwa"
               class="ma-0 pa-0"
-              name="applicationMandatory"
+              name="applicationPwa"
               hide-details />
           </div>
-          <div class="d-flex full-width justify-space-between align-center mb-2">
-            <v-card
-              class="text-start flex-grow-1 clickable transparent"
-              flat
-              @click="application.default = !application.default">
-              {{ $t('appCenter.adminSetupForm.default') }}
-            </v-card>
-            <v-switch
-              v-model="application.default"
-              class="ma-0 pa-0"
-              name="applicationDefault"
-              hide-details />
-          </div>
-          <div class="d-flex full-width justify-space-between align-center mb-2">
-            <v-card
-              class="text-start flex-grow-1 clickable transparent"
-              flat
-              @click="application.mobile = !application.mobile">
-              {{ $t('appCenter.adminSetupForm.mobile') }}
-            </v-card>
-            <v-switch
-              v-model="application.mobile"
-              class="ma-0 pa-0"
-              name="applicationMobile"
-              hide-details />
-          </div>
-        </div>
-        <div class="d-flex full-width justify-space-between align-center mb-2">
-          <v-card
-            class="text-start flex-grow-1 clickable transparent"
-            flat
-            @click="hasPermissions = !hasPermissions">
-            {{ $t('appCenter.adminSetupForm.permissions') }}
-          </v-card>
-          <v-switch
-            v-model="hasPermissions"
-            class="ma-0 pa-0"
-            name="applicationPermissionsSwitch"
-            hide-details />
-        </div>
-        <app-center-permissions
-          v-if="hasPermissions"
-          v-model="application.permissions"
-          class="mb-4" />
-        <div class="d-flex full-width justify-space-between align-center mb-2">
-          <v-card
-            class="text-start flex-grow-1 clickable transparent"
-            flat
-            @click="hasHelpUrl = !hasHelpUrl">
-            {{ $t('appCenter.adminSetupForm.helpPage') }}
-          </v-card>
-          <v-switch
-            v-model="hasHelpUrl"
-            class="ma-0 pa-0"
-            name="applicationHelpUrlSwitch"
-            hide-details />
-        </div>
-        <v-text-field
-          v-if="hasHelpUrl"
-          ref="applicationHelpPageURL"
-          id="applicationHelpPageURL"
-          v-model="application.helpPageURL"
-          :placeholder="$t('appCenter.adminSetupForm.helpPagePlaceholder')"
-          :rules="rules.helpUrl"
-          name="applicationHelpPageURL"
-          class="border-box-sizing width-auto pt-0 mt-2 mb-3"
-          type="text"
-          outlined
-          dense />
-        <div class="d-flex full-width justify-space-between align-center mb-2">
-          <v-card
-            class="text-start flex-grow-1 clickable transparent"
-            flat
-            @click="hasShortcut = !hasShortcut">
-            {{ $t('appCenter.adminSetupForm.shortcut') }}
-          </v-card>
-          <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
-            <v-switch
-              v-model="hasShortcut"
-              :disabled="application.system"
-              class="ma-0 pa-0"
-              name="applicationShortcutSwitch"
-              hide-details />
-          </div>
-        </div>
-        <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
-          <v-text-field
-            v-if="hasShortcut"
-            ref="applicationShortcut"
-            id="applicationShortcut"
-            v-model="application.shortcut"
-            :disabled="application.system"
-            :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
-            :rules="rules.shortcut"
-            name="applicationShortcut"
-            class="border-box-sizing width-auto pt-0 mt-2 mb-3"
-            type="text"
-            maxlength="1"
-            outlined
-            dense>
-            <template #prepend-inner>
-              <div class="d-flex align-center mt-n1 ms-n1">
-                <v-card
-                  class="fill-height grey-lighten1-background white--text px-5 py-2"
-                  flat>
-                  {{ $t('appCenter.adminSetupForm.ctrl') }}
-                </v-card>
-                <v-icon class="mx-2" size="24">fa-plus</v-icon>
-                <v-card
-                  class="fill-height grey-lighten1-background white--text px-5 py-2"
-                  flat>
-                  {{ $t('appCenter.adminSetupForm.shift') }}
-                </v-card>
-                <v-icon class="mx-2" size="24">fa-plus</v-icon>
-              </div>
-            </template>
-          </v-text-field>
-        </div>
-        <div class="d-flex full-width align-center mb-2">
-          <v-card
-            class="text-start flex-grow-1 clickable transparent"
-            flat
-            @click="application.mandatory = !application.mandatory">
-            {{ $t('appCenter.adminSetupForm.pwa') }}
-          </v-card>
-          <v-switch
-            v-model="application.pwa"
-            class="ma-0 pa-0"
-            name="applicationPwa"
-            hide-details />
-        </div>
+        </template>
       </v-form>
     </template>
     <template #footer>
@@ -317,6 +365,12 @@
 </template>
 <script>
 export default {
+  props: {
+    personal: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data: () => ({
     maxDescriptionLength: 500,
     maxNameLength: 200,
@@ -338,6 +392,11 @@ export default {
   }),
   computed: {
     drawerTitle() {
+      if (this.personal) {
+        return this.application?.id
+          ? this.$t('appCenter.personalApp.drawer.edit.title')
+          : this.$t('appCenter.personalApp.drawer.title');
+      }
       return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
     },
     validUrl() {
@@ -352,6 +411,18 @@ export default {
         this.application?.type !== 'LINK'
         && this.application?.url
       );
+    },
+    validPersonalUrl() {
+      const url = this.application?.url?.trim();
+      if (!url) {
+        return false;
+      }
+      try {
+        const parsed = new URL(url);
+        return ['https:', 'http:'].includes(parsed.protocol);
+      } catch {
+        return false;
+      }
     },
     validHelpPageUrl() {
       return !this.application?.helpPageURL
@@ -369,6 +440,12 @@ export default {
             0: this.maxNameLength,
           }),
         ],
+        personalTitle: [
+          v => !!v?.trim() || ' ',
+          v => !v || v.length <= this.maxNameLength || this.$t('appCenter.form.name.exceedsMaxLength', {
+            0: this.maxNameLength,
+          }),
+        ],
         description: [
           v => !v?.length || v.length < this.maxDescriptionLength || this.$t('appCenter.form.description.exceedsMaxLength', {
             0: this.maxDescriptionLength,
@@ -377,6 +454,10 @@ export default {
         url: [
           () => !!this.application?.url?.length || ' ',
           () => !!this.validUrl || this.$t('appCenter.form.url.invalidLink'),
+        ],
+        personalUrl: [
+          () => !!this.application?.url?.trim()?.length || ' ',
+          () => !!this.validPersonalUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         helpUrl: [
           () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
@@ -395,15 +476,18 @@ export default {
       };
     },
     title() {
-      return this.titles[eXo.env.portal.defaultLanguage];
+      return this.personal ? this.application?.title : this.titles[eXo.env.portal.defaultLanguage];
     },
     description() {
-      return this.descriptions[eXo.env.portal.defaultLanguage];
+      return this.personal ? null : this.descriptions[eXo.env.portal.defaultLanguage];
     },
     type() {
       return this.application?.type;
     },
     applicationToSave() {
+      if (this.personal) {
+        return { ...this.application };
+      }
       return {
         ...this.application,
         title: JSON.parse(JSON.stringify(this.titles)),
@@ -415,6 +499,12 @@ export default {
       return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
     },
     disabled() {
+      if (this.personal) {
+        return this.loading || !this.modified
+          || !this.application?.title?.trim()?.length
+          || !this.application?.url?.trim()?.length
+          || !this.validPersonalUrl;
+      }
       return this.loading || !this.modified
         || !this.title?.length
         || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
@@ -437,12 +527,12 @@ export default {
       }
     },
     title(newVal) {
-      if (this.drawer && this.application) {
+      if (this.drawer && this.application && !this.personal) {
         this.application.title = newVal;
       }
     },
     description(newVal) {
-      if (this.drawer && this.application) {
+      if (this.drawer && this.application && !this.personal) {
         this.application.description = newVal;
       }
     },
@@ -472,60 +562,73 @@ export default {
     async open(app) {
       this.$root.$emit('close-alert-message');
       this.application = null;
-      if (app?.id) {
-        const data = await this.$applicationService.getApplications(true);
-        this.application = data?.applications?.find?.(a => a.id === app.id);
-      }
-      if (!this.application) {
-        this.application = {
-          icon: 'fa-dot-circle',
+      if (this.personal) {
+        this.application = app?.id ? { ...app } : {
+          icon: 'fa-link',
           imageUrl: null,
           url: null,
-          order: 1,
-          sameTab: true,
-          helpPageURL: null,
-          shortcut: null,
+          sameTab: false,
           active: true,
-          default: false,
-          mandatory: false,
-          mobile: true,
-          system: false,
-          type: 'LINK', // LINK, DRAWER or PORTLET
-          permissions: [],
-          categoryIds: [],
+          type: 'LINK',
+          personal: true,
+        };
+        this.originalApplication = { ...this.application };
+      } else {
+        if (app?.id) {
+          const data = await this.$applicationService.getApplications(true);
+          this.application = data?.applications?.find?.(a => a.id === app.id);
+        }
+        if (!this.application) {
+          this.application = {
+            icon: 'fa-dot-circle',
+            imageUrl: null,
+            url: null,
+            order: 1,
+            sameTab: true,
+            helpPageURL: null,
+            shortcut: null,
+            active: true,
+            default: false,
+            mandatory: false,
+            mobile: true,
+            system: false,
+            type: 'LINK', // LINK, DRAWER or PORTLET
+            permissions: [],
+            categoryIds: [],
+          };
+        }
+        this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
+        this.newCategoryIds = this.oldCategoryIds.slice();
+        if (app?.id) {
+          this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
+          this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
+          if (!this.titles || !Object.keys(this.titles).length || !this.titles[eXo.env.portal.defaultLanguage]?.length) {
+            this.titles = this.titles || {};
+            this.titles[eXo.env.portal.defaultLanguage] = app.title || '';
+          }
+          if (!this.descriptions || !Object.keys(this.descriptions).length || !this.descriptions[eXo.env.portal.defaultLanguage]?.length) {
+            this.descriptions = this.descriptions || {};
+            this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
+          }
+          this.descriptions = Object.fromEntries(
+            Object.entries(this.descriptions).map(([key, value]) => [
+              key,
+              this.$utils.htmlToText(value)
+            ]));
+        } else {
+          this.titles = {};
+          this.descriptions = {};
+        }
+        this.hasPermissions = !!this.application?.permissions?.length;
+        this.hasHelpUrl = !!this.application?.helpPageURL?.length;
+        this.hasShortcut = this.application?.shortcut?.length;
+        this.originalApplication = {
+          ...this.application,
+          title: JSON.parse(JSON.stringify(this.titles)),
+          description: JSON.parse(JSON.stringify(this.descriptions)),
+          categoryIds: this.newCategoryIds,
         };
       }
-      this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
-      this.newCategoryIds = this.oldCategoryIds.slice();
-      if (app?.id) {
-        this.titles = await this.$translationService.getTranslations('appCenter', app.id, 'title');
-        this.descriptions = await this.$translationService.getTranslations('appCenter', app.id, 'description');
-        if (!this.titles || !Object.keys(this.titles).length || !this.titles[eXo.env.portal.defaultLanguage]?.length) {
-          this.titles = this.titles || {};
-          this.titles[eXo.env.portal.defaultLanguage] = app.title || '';
-        }
-        if (!this.descriptions || !Object.keys(this.descriptions).length || !this.descriptions[eXo.env.portal.defaultLanguage]?.length) {
-          this.descriptions = this.descriptions || {};
-          this.descriptions[eXo.env.portal.defaultLanguage] = app.description || '';
-        }
-        this.descriptions = Object.fromEntries(
-          Object.entries(this.descriptions).map(([key, value]) => [
-            key,
-            this.$utils.htmlToText(value)
-          ]));
-      } else {
-        this.titles = {};
-        this.descriptions = {};
-      }
-      this.hasPermissions = !!this.application?.permissions?.length;
-      this.hasHelpUrl = !!this.application?.helpPageURL?.length;
-      this.hasShortcut = this.application?.shortcut?.length;
-      this.originalApplication = {
-        ...this.application,
-        title: JSON.parse(JSON.stringify(this.titles)),
-        description: JSON.parse(JSON.stringify(this.descriptions)),
-        categoryIds: this.newCategoryIds,
-      };
       await this.$nextTick();
       this.$refs.formDrawer.open();
     },
@@ -546,27 +649,38 @@ export default {
       const isNew = !this.application.id;
       this.loading = true;
       try {
-        if (!this.application?.permissions?.length) {
-          this.application.permissions = null;
-        }
-        let app = this.application;
-        if (isNew) {
-          app = await this.$applicationService.createApplication(this.application);
+        if (this.personal) {
+          if (isNew) {
+            await this.$applicationService.createPersonalApp(this.application);
+          } else {
+            await this.$applicationService.updatePersonalApp(this.application);
+          }
+          this.$root.$emit('alert-message', this.$t(isNew ? 'appCenter.personalApp.save.success' : 'appCenter.personalApp.update.success'), 'success');
+          this.$emit('saved');
+          this.close();
         } else {
-          await this.$applicationService.updateApplication(this.application);
+          if (!this.application?.permissions?.length) {
+            this.application.permissions = null;
+          }
+          let app = this.application;
+          if (isNew) {
+            app = await this.$applicationService.createApplication(this.application);
+          } else {
+            await this.$applicationService.updateApplication(this.application);
+          }
+          await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
+          await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', this.descriptions);
+          await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
+          this.$root.$emit('app-center-refresh-list');
+          if (isNew) {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
+          } else {
+            this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+          }
+          this.close();
         }
-        await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
-        await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', this.descriptions);
-        await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
-        this.$root.$emit('app-center-refresh-list');
-        if (isNew) {
-          this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
-        } else {
-          this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
-        }
-        this.close();
       } catch (e) {
-        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error');
+        this.$root.$emit('alert-message', this.$t(this.personal ? 'appCenter.personalApp.save.error' : 'appCenter.adminSetupForm.errorSavingApplication'), 'error');
       } finally {
         this.loading = false;
       }

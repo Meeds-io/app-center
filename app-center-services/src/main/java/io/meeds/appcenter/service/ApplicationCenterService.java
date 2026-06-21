@@ -37,6 +37,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
@@ -119,6 +120,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private ImageThumbnailService    imageThumbnailService;
+
+  @Autowired(required = false)
+  private IdentityManager          identityManager;
 
   @Autowired
   private PortalContainer          portalContainer;
@@ -338,7 +342,7 @@ public class ApplicationCenterService {
       throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
     }
     application.setPersonal(true);
-    application.setOwnerUsername(username);
+    application.setOwnerIdentityId(getUserIdentityId(username));
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
@@ -375,11 +379,11 @@ public class ApplicationCenterService {
     if (!stored.isPersonal()) {
       throw new IllegalAccessException(String.format("Application %s is not a personal app", application.getId()));
     }
-    if (!StringUtils.equals(stored.getOwnerUsername(), username)) {
+    if (!isOwner(stored, username)) {
       throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, application.getId()));
     }
     application.setPersonal(true);
-    application.setOwnerUsername(username);
+    application.setOwnerIdentityId(stored.getOwnerIdentityId());
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
@@ -407,7 +411,7 @@ public class ApplicationCenterService {
     if (!stored.isPersonal()) {
       throw new IllegalAccessException(String.format("Application %s is not a personal app", applicationId));
     }
-    if (!StringUtils.equals(stored.getOwnerUsername(), username)) {
+    if (!isOwner(stored, username)) {
       throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, applicationId));
     }
     deleteApplication(applicationId);
@@ -642,13 +646,29 @@ public class ApplicationCenterService {
 
   public boolean canAccess(Application application, String username) {
     if (application.isPersonal()) {
-      return StringUtils.equals(application.getOwnerUsername(), username);
+      return isOwner(application, username);
     }
     return canAccess(application.getPermissions(), username);
   }
 
   public boolean canEdit(String username) {
     return StringUtils.isBlank(username) || userAcl.isAdministrator(getUserIdentity(username));
+  }
+
+  private boolean isOwner(Application application, String username) {
+    if (StringUtils.isBlank(username) || application.getOwnerIdentityId() == null) {
+      return false;
+    }
+    return application.getOwnerIdentityId().equals(getUserIdentityId(username));
+  }
+
+  private long getUserIdentityId(String username) {
+    if (StringUtils.isBlank(username) || identityManager == null) {
+      return 0L;
+    }
+    org.exoplatform.social.core.identity.model.Identity identity =
+        identityManager.getOrCreateUserIdentity(username);
+    return identity == null ? 0L : Long.parseLong(identity.getId());
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {

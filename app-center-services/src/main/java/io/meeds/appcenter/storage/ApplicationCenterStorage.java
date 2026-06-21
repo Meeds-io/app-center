@@ -329,7 +329,7 @@ public class ApplicationCenterStorage {
                            applicationEntity.getOrder(),
                            applicationEntity.isChangedManually(),
                            applicationEntity.isPersonal(),
-                           applicationEntity.getOwnerUsername());
+                           applicationEntity.getOwnerIdentityId());
   }
 
   private UserApplication toUserApplicationDTO(Long applicationId) {
@@ -379,7 +379,7 @@ public class ApplicationCenterStorage {
                                    application.isChangedManually(),
                                    application.getOrder(),
                                    application.isPersonal(),
-                                   application.getOwnerUsername(),
+                                   application.getOwnerIdentityId(),
                                    null);
     }
   }

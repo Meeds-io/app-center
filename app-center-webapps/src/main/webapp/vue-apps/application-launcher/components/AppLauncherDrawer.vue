@@ -167,8 +167,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :applications="availableApplications"
         @open="openApplication"
         @toogle-favorite="toogleFavorite" />
-      <personal-app-form-drawer
+      <app-center-form-drawer
         ref="personalAppFormDrawer"
+        personal
         @saved="init" />
     </template>
     <template v-if="!expanded && hasAvailableApplications" #footer>

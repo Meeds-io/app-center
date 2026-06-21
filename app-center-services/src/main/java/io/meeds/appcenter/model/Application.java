@@ -78,6 +78,6 @@ public class Application {
 
   private boolean         personal;
 
-  private String          ownerUsername;
+  private Long            ownerIdentityId;
 
 }

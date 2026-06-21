@@ -197,7 +197,7 @@
 
   <changeSet author="appCenter" id="1.0.0-personal-apps-2">
     <addColumn tableName="AC_APPLICATION">
-      <column name="OWNER_USERNAME" type="VARCHAR(200)" />
+      <column name="OWNER_IDENTITY_ID" type="BIGINT" />
     </addColumn>
   </changeSet>
 

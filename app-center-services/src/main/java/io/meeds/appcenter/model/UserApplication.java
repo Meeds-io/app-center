@@ -54,7 +54,7 @@ public class UserApplication extends Application {
           app.getOrder(),
           app.isChangedManually(),
           app.isPersonal(),
-          app.getOwnerUsername());
+          app.getOwnerIdentityId());
   }
 
 }
