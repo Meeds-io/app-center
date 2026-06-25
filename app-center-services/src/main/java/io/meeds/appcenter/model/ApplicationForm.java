@@ -58,8 +58,7 @@ public class ApplicationForm extends Application {
           application.getImageUrl(),
           application.getOrder(),
           application.isChangedManually(),
-          application.isPersonal(),
-          application.getOwnerIdentityId());
+          application.isPersonal());
   }
 
 }

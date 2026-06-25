@@ -53,8 +53,7 @@ public class UserApplication extends Application {
           app.getImageUrl(),
           app.getOrder(),
           app.isChangedManually(),
-          app.isPersonal(),
-          app.getOwnerIdentityId());
+          app.isPersonal());
   }
 
 }

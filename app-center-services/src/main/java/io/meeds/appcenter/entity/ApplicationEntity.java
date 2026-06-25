@@ -111,9 +111,6 @@ public class ApplicationEntity {
   @Column(name = "IS_PERSONAL")
   private boolean                               personal;
 
-  @Column(name = "OWNER_IDENTITY_ID")
-  private Long                                  ownerIdentityId;
-
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)

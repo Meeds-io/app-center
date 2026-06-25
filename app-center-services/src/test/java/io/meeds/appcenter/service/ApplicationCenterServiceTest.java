@@ -533,8 +533,7 @@ public class ApplicationCenterServiceTest {
                            null,
                            null,
                            false,
-                           false,
-                           null);
+                           false);
   }
 
 }

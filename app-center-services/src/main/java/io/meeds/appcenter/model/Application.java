@@ -78,6 +78,4 @@ public class Application {
 
   private boolean         personal;
 
-  private Long            ownerIdentityId;
-
 }

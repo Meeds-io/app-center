@@ -20,6 +20,7 @@ package io.meeds.appcenter.service;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -37,7 +38,6 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
@@ -120,9 +120,6 @@ public class ApplicationCenterService {
 
   @Autowired
   private ImageThumbnailService    imageThumbnailService;
-
-  @Autowired(required = false)
-  private IdentityManager          identityManager;
 
   @Autowired
   private PortalContainer          portalContainer;
@@ -342,7 +339,7 @@ public class ApplicationCenterService {
       throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
     }
     application.setPersonal(true);
-    application.setOwnerIdentityId(getUserIdentityId(username));
+    application.setPermissions(Collections.singletonList(username));
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
@@ -383,7 +380,7 @@ public class ApplicationCenterService {
       throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, application.getId()));
     }
     application.setPersonal(true);
-    application.setOwnerIdentityId(stored.getOwnerIdentityId());
+    application.setPermissions(stored.getPermissions());
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
@@ -656,19 +653,9 @@ public class ApplicationCenterService {
   }
 
   private boolean isOwner(Application application, String username) {
-    if (StringUtils.isBlank(username) || application.getOwnerIdentityId() == null) {
-      return false;
-    }
-    return application.getOwnerIdentityId().equals(getUserIdentityId(username));
-  }
-
-  private long getUserIdentityId(String username) {
-    if (StringUtils.isBlank(username) || identityManager == null) {
-      return 0L;
-    }
-    org.exoplatform.social.core.identity.model.Identity identity =
-        identityManager.getOrCreateUserIdentity(username);
-    return identity == null ? 0L : Long.parseLong(identity.getId());
+    return StringUtils.isNotBlank(username)
+           && application.getPermissions() != null
+           && application.getPermissions().contains(username);
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {
