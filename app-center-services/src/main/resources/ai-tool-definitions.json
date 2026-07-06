@@ -1,0 +1,215 @@
+{
+  "tools": [
+    {
+      "name": "list_my_apps",
+      "title": "List my applications",
+      "description": "List the applications the current user is authorized to use in the Application Center, optionally filtered by a keyword matching the app title or url. Each app is flagged as favorite or not, so you can tell which ones are already in the user's favorites before calling add_favorite_app or remove_favorite_app.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "description": "Optional text to filter apps on their title or url."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Zero-based index of the first app to return (default 0)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of apps to return (default 20, max 100)."
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_my_app_drawer",
+      "title": "List my launcher drawer apps",
+      "description": "List the current user's application launcher drawer: the mandatory applications plus the applications the user marked as favorites. This is what the user sees when opening the apps drawer.",
+      "input_schema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_favorite_app",
+      "title": "Add an app to my favorites",
+      "description": "Add an application to the current user's favorites, so it appears in their launcher drawer. Find the application id with list_my_apps. The user can only favorite applications they are allowed to access.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "description": "Technical id of the application to add to favorites (required). Obtain it from list_my_apps."
+          }
+        },
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "remove_favorite_app",
+      "title": "Remove an app from my favorites",
+      "description": "Remove an application from the current user's favorites. Find the application id with list_my_apps or list_my_app_drawer. Mandatory applications cannot be removed.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "description": "Technical id of the application to remove from favorites (required)."
+          }
+        },
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "reorder_favorite_apps",
+      "title": "Reorder my favorite apps",
+      "description": "Set the display order of the current user's favorite applications. Pass the favorite application ids in the desired order (the first id is shown first). Any id that is not yet a favorite is added while being ordered. Obtain the ids from list_my_app_drawer.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "The favorite application ids, in the desired display order (required, first shown first)."
+          }
+        },
+        "required": [
+          "application_ids"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "create_personal_app",
+      "title": "Create a personal app",
+      "description": "Create a personal URL application (a shortcut that opens an external link) owned by the current user, and add it to their favorites. This only works if the personal-apps feature is enabled on the instance; otherwise it fails.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Display name of the personal app (required)."
+          },
+          "url": {
+            "type": "string",
+            "description": "The external URL the app opens (required)."
+          },
+          "icon": {
+            "type": "string",
+            "description": "Optional icon (a CSS icon class name, e.g. an fa/uiIcon class) to display for the app."
+          }
+        },
+        "required": [
+          "title",
+          "url"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "update_personal_app",
+      "title": "Update a personal app",
+      "description": "Update a personal URL application owned by the current user. Only the fields you provide (title, url and/or icon) are changed; the others keep their current value. The user must own the app and the personal-apps feature must be enabled.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "description": "Technical id of the personal app to update (required)."
+          },
+          "title": {
+            "type": "string",
+            "description": "New display name (optional; leave out to keep the current title)."
+          },
+          "url": {
+            "type": "string",
+            "description": "New external URL (optional; leave out to keep the current url)."
+          },
+          "icon": {
+            "type": "string",
+            "description": "New icon CSS class (optional; leave out to keep the current icon)."
+          }
+        },
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    },
+    {
+      "name": "delete_personal_app",
+      "title": "Delete a personal app",
+      "description": "Delete a personal URL application owned by the current user. Only the owner can delete their personal app, and the personal-apps feature must be enabled.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "application_id": {
+            "type": "integer",
+            "description": "Technical id of the personal app to delete (required)."
+          }
+        },
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "require_approval": true
+    }
+  ]
+}
