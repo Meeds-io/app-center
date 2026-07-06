@@ -540,11 +540,12 @@ public class ApplicationCenterServiceTest {
   @Test
   @SneakyThrows
   void createPersonalApplication() {
+    Application emptyApp = new Application();
     assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.createPersonalApplication(new Application(), ""));
+                 () -> applicationCenterService.createPersonalApplication(emptyApp, ""));
 
     assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.createPersonalApplication(new Application(), TEST_USER));
+                 () -> applicationCenterService.createPersonalApplication(emptyApp, TEST_USER));
 
     enablePersonalApps();
     Application saved = personalApp(TEST_USER);
@@ -570,8 +571,9 @@ public class ApplicationCenterServiceTest {
   void updatePersonalApplication() {
     assertThrows(IllegalArgumentException.class,
                  () -> applicationCenterService.updatePersonalApplication(null, TEST_USER));
+    Application emptyApp = new Application();
     assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.updatePersonalApplication(new Application(), TEST_USER));
+                 () -> applicationCenterService.updatePersonalApplication(emptyApp, TEST_USER));
 
     Application input = personalApp(TEST_USER);
     assertThrows(IllegalArgumentException.class,

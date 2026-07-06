@@ -157,16 +157,16 @@
             label-class="" />
         </template>
         <template v-else>
-          <v-label for="applicationUrl">
+          <v-label for="personalApplicationUrl">
             {{ $t('appCenter.personalApp.form.url.label') }}
           </v-label>
           <v-text-field
-            ref="applicationUrl"
-            id="applicationUrl"
+            ref="personalApplicationUrl"
+            id="personalApplicationUrl"
             v-model="application.url"
             :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
             :rules="rules.personalUrl"
-            name="applicationUrl"
+            name="personalApplicationUrl"
             class="border-box-sizing width-auto pt-0 mt-2"
             type="text"
             outlined
