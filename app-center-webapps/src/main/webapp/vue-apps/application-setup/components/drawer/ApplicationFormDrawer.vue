@@ -236,27 +236,28 @@
           dense />
         <div class="d-flex full-width justify-space-between align-center mb-2">
           <v-card
+            :title="application.system && !shortcutUnlocked && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')"
             class="text-start flex-grow-1 clickable transparent"
             flat
-            @click="hasShortcut = !hasShortcut">
+            @click="unlockOrToggleShortcut">
             {{ $t('appCenter.adminSetupForm.shortcut') }}
           </v-card>
-          <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+          <div :title="application.system && !shortcutUnlocked && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
             <v-switch
               v-model="hasShortcut"
-              :disabled="application.system"
+              :disabled="application.system && !shortcutUnlocked"
               class="ma-0 pa-0"
               name="applicationShortcutSwitch"
               hide-details />
           </div>
         </div>
-        <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+        <div :title="application.system && !shortcutUnlocked && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
           <v-text-field
             v-if="hasShortcut"
             ref="applicationShortcut"
             id="applicationShortcut"
             v-model="application.shortcut"
-            :disabled="application.system"
+            :disabled="application.system && !shortcutUnlocked"
             :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
             :rules="rules.shortcut"
             name="applicationShortcut"
@@ -328,6 +329,7 @@ export default {
     hasPermissions: false,
     hasHelpUrl: false,
     hasShortcut: false,
+    shortcutUnlocked: false,
     oldCategoryIds: [],
     newCategoryIds: [],
     uploadedImage: {
@@ -520,6 +522,7 @@ export default {
       this.hasPermissions = !!this.application?.permissions?.length;
       this.hasHelpUrl = !!this.application?.helpPageURL?.length;
       this.hasShortcut = this.application?.shortcut?.length;
+      this.shortcutUnlocked = false;
       this.originalApplication = {
         ...this.application,
         title: JSON.parse(JSON.stringify(this.titles)),
@@ -538,6 +541,12 @@ export default {
     },
     shortcutExists(c) {
       return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application?.id);
+    },
+    unlockOrToggleShortcut() {
+      if (this.application.system && !this.shortcutUnlocked) {
+        this.shortcutUnlocked = true;
+      }
+      this.hasShortcut = !this.hasShortcut;
     },
     async save() {
       if (this.loading) {
