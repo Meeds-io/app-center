@@ -58,6 +58,7 @@ import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
+import io.meeds.social.util.JsonUtils;
 
 import lombok.SneakyThrows;
 
@@ -79,6 +80,19 @@ public class ApplicationCenterService {
 
   public static final String       MAX_FAVORITE_APPS                   = "maxFavoriteApps";
 
+  /**
+   * SettingService key under which the whole app-center configuration is stored,
+   * serialized as a single JSON blob (see {@link ApplicationCenterSettings}).
+   * Storing all settings under one key lets new settings be added as POJO fields
+   * without introducing a new setting key nor an upgrade plugin.
+   */
+  public static final String       APP_CENTER_SETTINGS_KEY             = "appCenterSettings";
+
+  /**
+   * Legacy SettingService key that used to hold the "users can add personal URL
+   * apps" toggle as a standalone boolean. Kept only to migrate any pre-existing
+   * value into the JSON blob; no longer written to.
+   */
   public static final String       ALLOW_USER_PERSONAL_APPS            = "allowUserPersonalApps";
 
   public static final String       DEFAULT_APP_IMAGE_NAME              = "defaultAppImageName";
@@ -304,28 +318,120 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Returns global app-center settings.
+   * Returns the global app-center settings, deserialized from the single JSON
+   * blob stored in {@link SettingService}. When no blob is stored yet, sane
+   * defaults are returned (see {@link #getStoredSettings()}).
+   *
+   * @return the current {@link ApplicationCenterSettings}, never {@code null}
    */
   public ApplicationCenterSettings getSettings() {
-    return new ApplicationCenterSettings(isUserPersonalAppsEnabled());
+    return getStoredSettings();
+  }
+
+  /**
+   * Persists the whole app-center settings blob. The incoming settings are
+   * merged onto the currently stored ones (so a partial update never drops
+   * fields it didn't set) then serialized back as a single JSON blob. Admin
+   * only.
+   *
+   * @param settings the settings to persist, must not be {@code null}
+   * @param username the user performing the operation
+   * @throws IllegalAccessException if the user is not allowed to change
+   *           app-center settings
+   */
+  public void saveSettings(ApplicationCenterSettings settings, String username) throws IllegalAccessException {
+    if (settings == null) {
+      throw new IllegalArgumentException("settings is mandatory");
+    }
+    if (!canEdit(username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to change app-center settings", username));
+    }
+    ApplicationCenterSettings merged = getStoredSettings();
+    merged.setAllowUserPersonalApps(settings.isAllowUserPersonalApps());
+    saveStoredSettings(merged);
   }
 
   /**
    * Returns whether users are allowed to create personal URL apps.
+   *
+   * @return {@code true} if the personal URL apps feature is enabled
    */
   public boolean isUserPersonalAppsEnabled() {
-    SettingValue<?> value = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS);
-    return value != null && Boolean.parseBoolean(String.valueOf(value.getValue()));
+    return getStoredSettings().isAllowUserPersonalApps();
   }
 
   /**
-   * Enables or disables the user personal apps feature. Admin only.
+   * Enables or disables the user personal apps feature. Admin only. The value is
+   * merged into the settings JSON blob (see {@link #saveSettings}).
+   *
+   * @param enabled whether the personal apps feature should be enabled
+   * @param username the user performing the operation
+   * @throws IllegalAccessException if the user is not allowed to change
+   *           app-center settings
    */
   public void setUserPersonalAppsEnabled(boolean enabled, String username) throws IllegalAccessException {
     if (!canEdit(username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to change app-center settings", username));
     }
-    settingService.set(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS, SettingValue.create(enabled));
+    ApplicationCenterSettings settings = getStoredSettings();
+    settings.setAllowUserPersonalApps(enabled);
+    saveStoredSettings(settings);
+  }
+
+  /**
+   * Reads and deserializes the app-center settings JSON blob. Falls back to the
+   * legacy standalone {@link #ALLOW_USER_PERSONAL_APPS} boolean setting (to
+   * migrate any value stored before the JSON-blob format), and ultimately to a
+   * default {@link ApplicationCenterSettings} instance when nothing is stored or
+   * the blob can't be parsed.
+   *
+   * @return the stored {@link ApplicationCenterSettings}, never {@code null}
+   */
+  private ApplicationCenterSettings getStoredSettings() {
+    SettingValue<?> value = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, APP_CENTER_SETTINGS_KEY);
+    if (value != null && value.getValue() != null) {
+      String json = String.valueOf(value.getValue());
+      if (StringUtils.isNotBlank(json)) {
+        try {
+          ApplicationCenterSettings settings = JsonUtils.fromJsonString(json, ApplicationCenterSettings.class);
+          if (settings != null) {
+            return settings;
+          }
+        } catch (Exception e) {
+          LOG.warn("Unable to parse app-center settings JSON blob, falling back to defaults", e);
+        }
+      }
+    }
+    return migrateLegacySettings();
+  }
+
+  /**
+   * Serializes the given settings to JSON and stores them under the single
+   * {@link #APP_CENTER_SETTINGS_KEY} setting.
+   *
+   * @param settings the settings to serialize and store
+   */
+  private void saveStoredSettings(ApplicationCenterSettings settings) {
+    settingService.set(APP_CENTER_CONTEXT,
+                       APP_CENTER_SCOPE,
+                       APP_CENTER_SETTINGS_KEY,
+                       SettingValue.create(JsonUtils.toJsonString(settings)));
+  }
+
+  /**
+   * Builds an {@link ApplicationCenterSettings} from the legacy standalone
+   * setting(s) that predate the JSON-blob format. When no legacy value exists,
+   * default settings are returned.
+   *
+   * @return the migrated {@link ApplicationCenterSettings}, never {@code null}
+   */
+  private ApplicationCenterSettings migrateLegacySettings() {
+    ApplicationCenterSettings settings = new ApplicationCenterSettings();
+    SettingValue<?> legacyValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS);
+    if (legacyValue != null && legacyValue.getValue() != null) {
+      settings.setAllowUserPersonalApps(Boolean.parseBoolean(String.valueOf(legacyValue.getValue())));
+    }
+    return settings;
   }
 
   /**

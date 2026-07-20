@@ -202,7 +202,7 @@ public class ApplicationRest {
                            @RequestBody
                            ApplicationCenterSettings settings) {
     try {
-      appCenterService.setUserPersonalAppsEnabled(settings.isAllowUserPersonalApps(), request.getRemoteUser());
+      appCenterService.saveSettings(settings, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }

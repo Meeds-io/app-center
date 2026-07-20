@@ -43,6 +43,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,7 @@ import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.UserApplication;
@@ -535,6 +537,38 @@ public class ApplicationCenterServiceTest {
 
     applicationCenterService.setUserPersonalAppsEnabled(true, ADMIN_USERNAME);
     verify(settingService).set(any(), any(), any(), any());
+  }
+
+  @Test
+  @SneakyThrows
+  void settingsStoredAsSingleJsonBlob() {
+    // Read: the whole settings object is deserialized from the single JSON blob
+    doReturn(SettingValue.create("{\"allowUserPersonalApps\":true}")).when(settingService)
+                                                                     .get(any(),
+                                                                          any(),
+                                                                          eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));
+    assertTrue(applicationCenterService.getSettings().isAllowUserPersonalApps());
+    assertTrue(applicationCenterService.isUserPersonalAppsEnabled());
+
+    // Write: the whole object is serialized back under the single blob key
+    ArgumentCaptor<SettingValue<?>> captor = ArgumentCaptor.forClass(SettingValue.class);
+    applicationCenterService.saveSettings(new ApplicationCenterSettings(false), ADMIN_USERNAME);
+    verify(settingService).set(eq(ApplicationCenterService.APP_CENTER_CONTEXT),
+                               eq(ApplicationCenterService.APP_CENTER_SCOPE),
+                               eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY),
+                               captor.capture());
+    String storedJson = String.valueOf(captor.getValue().getValue());
+    assertTrue(storedJson.contains("allowUserPersonalApps"));
+  }
+
+  @Test
+  @SneakyThrows
+  void migratesLegacyStandaloneSetting() {
+    // No JSON blob yet, but a legacy standalone boolean setting exists
+    doReturn(SettingValue.create(true)).when(settingService)
+                                       .get(any(), any(), eq(ApplicationCenterService.ALLOW_USER_PERSONAL_APPS));
+    assertTrue(applicationCenterService.getSettings().isAllowUserPersonalApps());
+    assertTrue(applicationCenterService.isUserPersonalAppsEnabled());
   }
 
   @Test

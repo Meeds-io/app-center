@@ -22,11 +22,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Holds the global app-center configuration. This POJO is serialized as a single
+ * JSON blob and persisted under one SettingService key
+ * ({@code ApplicationCenterService.APP_CENTER_SETTINGS_KEY}), so new settings can
+ * be added here as plain fields without introducing a new setting key nor a data
+ * upgrade plugin. It doubles as the REST DTO exposed by the settings endpoints.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationCenterSettings {
 
+  /** Whether end users are allowed to add their own personal URL applications. */
   private boolean allowUserPersonalApps;
 
 }
