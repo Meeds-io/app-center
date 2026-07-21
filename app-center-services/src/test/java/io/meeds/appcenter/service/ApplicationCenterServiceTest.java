@@ -563,16 +563,6 @@ public class ApplicationCenterServiceTest {
 
   @Test
   @SneakyThrows
-  void migratesLegacyStandaloneSetting() {
-    // No JSON blob yet, but a legacy standalone boolean setting exists
-    doReturn(SettingValue.create(true)).when(settingService)
-                                       .get(any(), any(), eq(ApplicationCenterService.ALLOW_USER_PERSONAL_APPS));
-    assertTrue(applicationCenterService.getSettings().isAllowUserPersonalApps());
-    assertTrue(applicationCenterService.isUserPersonalAppsEnabled());
-  }
-
-  @Test
-  @SneakyThrows
   void createPersonalApplication() {
     Application emptyApp = new Application();
     assertThrows(IllegalArgumentException.class,
@@ -664,8 +654,8 @@ public class ApplicationCenterServiceTest {
   }
 
   private void enablePersonalApps() {
-    SettingValue<?> value = SettingValue.create(true);
-    doReturn(value).when(settingService).get(any(), any(), eq(ApplicationCenterService.ALLOW_USER_PERSONAL_APPS));
+    SettingValue<?> value = SettingValue.create("{\"allowUserPersonalApps\":true}");
+    doReturn(value).when(settingService).get(any(), any(), eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));
   }
 
   private Application personalApp(String owner) {

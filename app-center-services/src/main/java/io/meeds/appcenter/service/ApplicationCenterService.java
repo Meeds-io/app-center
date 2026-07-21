@@ -88,13 +88,6 @@ public class ApplicationCenterService {
    */
   public static final String       APP_CENTER_SETTINGS_KEY             = "appCenterSettings";
 
-  /**
-   * Legacy SettingService key that used to hold the "users can add personal URL
-   * apps" toggle as a standalone boolean. Kept only to migrate any pre-existing
-   * value into the JSON blob; no longer written to.
-   */
-  public static final String       ALLOW_USER_PERSONAL_APPS            = "allowUserPersonalApps";
-
   public static final String       DEFAULT_APP_IMAGE_NAME              = "defaultAppImageName";
 
   public static final String       DEFAULT_APP_IMAGE_BODY              = "defaultAppImageBody";
@@ -379,9 +372,7 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Reads and deserializes the app-center settings JSON blob. Falls back to the
-   * legacy standalone {@link #ALLOW_USER_PERSONAL_APPS} boolean setting (to
-   * migrate any value stored before the JSON-blob format), and ultimately to a
+   * Reads and deserializes the app-center settings JSON blob, falling back to a
    * default {@link ApplicationCenterSettings} instance when nothing is stored or
    * the blob can't be parsed.
    *
@@ -402,7 +393,7 @@ public class ApplicationCenterService {
         }
       }
     }
-    return migrateLegacySettings();
+    return new ApplicationCenterSettings();
   }
 
   /**
@@ -416,22 +407,6 @@ public class ApplicationCenterService {
                        APP_CENTER_SCOPE,
                        APP_CENTER_SETTINGS_KEY,
                        SettingValue.create(JsonUtils.toJsonString(settings)));
-  }
-
-  /**
-   * Builds an {@link ApplicationCenterSettings} from the legacy standalone
-   * setting(s) that predate the JSON-blob format. When no legacy value exists,
-   * default settings are returned.
-   *
-   * @return the migrated {@link ApplicationCenterSettings}, never {@code null}
-   */
-  private ApplicationCenterSettings migrateLegacySettings() {
-    ApplicationCenterSettings settings = new ApplicationCenterSettings();
-    SettingValue<?> legacyValue = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, ALLOW_USER_PERSONAL_APPS);
-    if (legacyValue != null && legacyValue.getValue() != null) {
-      settings.setAllowUserPersonalApps(Boolean.parseBoolean(String.valueOf(legacyValue.getValue())));
-    }
-    return settings;
   }
 
   /**
