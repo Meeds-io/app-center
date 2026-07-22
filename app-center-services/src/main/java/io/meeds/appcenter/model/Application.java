@@ -76,4 +76,6 @@ public class Application {
 
   private boolean         isChangedManually;
 
+  private boolean         personal;
+
 }

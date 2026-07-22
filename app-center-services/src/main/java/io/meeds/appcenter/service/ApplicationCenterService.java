@@ -20,17 +20,22 @@ package io.meeds.appcenter.service;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.file.model.FileItem;
@@ -42,6 +47,7 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.UserApplication;
@@ -52,6 +58,7 @@ import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
+import io.meeds.social.util.JsonUtils;
 
 import lombok.SneakyThrows;
 
@@ -60,6 +67,8 @@ import lombok.SneakyThrows;
  */
 @Service
 public class ApplicationCenterService {
+
+  private static final Log         LOG                                 = ExoLogger.getLogger(ApplicationCenterService.class);
 
   private static final String      APPLICATION_IS_MANDATORY_MESSAGE    = "application is mandatory";
 
@@ -70,6 +79,14 @@ public class ApplicationCenterService {
   public static final String       DEFAULT_USERS_PERMISSION            = "*:" + DEFAULT_USERS_GROUP;
 
   public static final String       MAX_FAVORITE_APPS                   = "maxFavoriteApps";
+
+  /**
+   * SettingService key under which the whole app-center configuration is stored,
+   * serialized as a single JSON blob (see {@link ApplicationCenterSettings}).
+   * Storing all settings under one key lets new settings be added as POJO fields
+   * without introducing a new setting key nor an upgrade plugin.
+   */
+  public static final String       APP_CENTER_SETTINGS_KEY             = "appCenterSettings";
 
   public static final String       DEFAULT_APP_IMAGE_NAME              = "defaultAppImageName";
 
@@ -89,8 +106,15 @@ public class ApplicationCenterService {
 
   private static final String      APPLICATION_NOT_FOUND_MESSAGE       = "Application with id %s doesn't exist";
 
+  private static final String      PERSONAL_APPS_NOT_ENABLED_MESSAGE   = "User personal apps feature is not enabled";
+
+  private static final String      NOT_PERSONAL_APP_OWNER_MESSAGE      = "User %s is not the owner of personal application %s";
+
   @Autowired
   private UserACL                  userAcl;
+
+  @Autowired
+  private SettingService           settingService;
 
   @Autowired
   private ApplicationCenterStorage appCenterStorage;
@@ -287,6 +311,191 @@ public class ApplicationCenterService {
   }
 
   /**
+   * Returns the global app-center settings, deserialized from the single JSON
+   * blob stored in {@link SettingService}. When no blob is stored yet, sane
+   * defaults are returned (see {@link #getStoredSettings()}).
+   *
+   * @return the current {@link ApplicationCenterSettings}, never {@code null}
+   */
+  public ApplicationCenterSettings getSettings() {
+    return getStoredSettings();
+  }
+
+  /**
+   * Persists the whole app-center settings blob. The incoming settings are
+   * merged onto the currently stored ones (so a partial update never drops
+   * fields it didn't set) then serialized back as a single JSON blob. Admin
+   * only.
+   *
+   * @param settings the settings to persist, must not be {@code null}
+   * @param username the user performing the operation
+   * @throws IllegalAccessException if the user is not allowed to change
+   *           app-center settings
+   */
+  public void saveSettings(ApplicationCenterSettings settings, String username) throws IllegalAccessException {
+    if (settings == null) {
+      throw new IllegalArgumentException("settings is mandatory");
+    }
+    if (!canEdit(username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to change app-center settings", username));
+    }
+    ApplicationCenterSettings merged = getStoredSettings();
+    merged.setAllowUserPersonalApps(settings.isAllowUserPersonalApps());
+    saveStoredSettings(merged);
+  }
+
+  /**
+   * Returns whether users are allowed to create personal URL apps.
+   *
+   * @return {@code true} if the personal URL apps feature is enabled
+   */
+  public boolean isUserPersonalAppsEnabled() {
+    return getStoredSettings().isAllowUserPersonalApps();
+  }
+
+  /**
+   * Enables or disables the user personal apps feature. Admin only. The value is
+   * merged into the settings JSON blob (see {@link #saveSettings}).
+   *
+   * @param enabled whether the personal apps feature should be enabled
+   * @param username the user performing the operation
+   * @throws IllegalAccessException if the user is not allowed to change
+   *           app-center settings
+   */
+  public void setUserPersonalAppsEnabled(boolean enabled, String username) throws IllegalAccessException {
+    if (!canEdit(username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to change app-center settings", username));
+    }
+    ApplicationCenterSettings settings = getStoredSettings();
+    settings.setAllowUserPersonalApps(enabled);
+    saveStoredSettings(settings);
+  }
+
+  /**
+   * Reads and deserializes the app-center settings JSON blob, falling back to a
+   * default {@link ApplicationCenterSettings} instance when nothing is stored or
+   * the blob can't be parsed.
+   *
+   * @return the stored {@link ApplicationCenterSettings}, never {@code null}
+   */
+  private ApplicationCenterSettings getStoredSettings() {
+    SettingValue<?> value = settingService.get(APP_CENTER_CONTEXT, APP_CENTER_SCOPE, APP_CENTER_SETTINGS_KEY);
+    if (value != null && value.getValue() != null) {
+      String json = String.valueOf(value.getValue());
+      if (StringUtils.isNotBlank(json)) {
+        try {
+          ApplicationCenterSettings settings = JsonUtils.fromJsonString(json, ApplicationCenterSettings.class);
+          if (settings != null) {
+            return settings;
+          }
+        } catch (Exception e) {
+          LOG.warn("Unable to parse app-center settings JSON blob, falling back to defaults", e);
+        }
+      }
+    }
+    return new ApplicationCenterSettings();
+  }
+
+  /**
+   * Serializes the given settings to JSON and stores them under the single
+   * {@link #APP_CENTER_SETTINGS_KEY} setting.
+   *
+   * @param settings the settings to serialize and store
+   */
+  private void saveStoredSettings(ApplicationCenterSettings settings) {
+    settingService.set(APP_CENTER_CONTEXT,
+                       APP_CENTER_SCOPE,
+                       APP_CENTER_SETTINGS_KEY,
+                       SettingValue.create(JsonUtils.toJsonString(settings)));
+  }
+
+  /**
+   * Creates a personal URL application for the given user.
+   */
+  public Application createPersonalApplication(Application application, String username) throws IllegalAccessException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
+    }
+    application.setPersonal(true);
+    application.setPermissions(Collections.singletonList(username));
+    application.setActive(true);
+    application.setSystem(false);
+    application.setMandatory(false);
+    Application saved = createApplication(application);
+    try {
+      addFavoriteApplication(saved.getId(), username);
+    } catch (Exception e) {
+      LOG.warn("Failed to auto-add personal app {} to favorites for user {}", saved.getId(), username, e);
+    }
+    return saved;
+  }
+
+  /**
+   * Updates a personal URL application. Only the owner may update it.
+   */
+  public void updatePersonalApplication(Application application, String username) throws IllegalAccessException,
+                                                                                  ApplicationNotFoundException {
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    if (application.getId() == null) {
+      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
+    }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
+    }
+    Application stored = appCenterStorage.getApplication(application.getId());
+    if (stored == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, application.getId()));
+    }
+    if (!stored.isPersonal()) {
+      throw new IllegalAccessException(String.format("Application %s is not a personal app", application.getId()));
+    }
+    if (!isOwner(stored, username)) {
+      throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, application.getId()));
+    }
+    application.setPersonal(true);
+    application.setPermissions(stored.getPermissions());
+    application.setActive(true);
+    application.setSystem(false);
+    application.setMandatory(false);
+    updateApplication(application);
+  }
+
+  /**
+   * Deletes a personal URL application. Only the owner may delete it.
+   */
+  public void deletePersonalApplication(Long applicationId, String username) throws IllegalAccessException,
+                                                                              ApplicationNotFoundException {
+    if (applicationId == null) {
+      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
+    }
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (!isUserPersonalAppsEnabled()) {
+      throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
+    }
+    Application stored = appCenterStorage.getApplication(applicationId);
+    if (stored == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    if (!stored.isPersonal()) {
+      throw new IllegalAccessException(String.format("Application %s is not a personal app", applicationId));
+    }
+    if (!isOwner(stored, username)) {
+      throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, applicationId));
+    }
+    deleteApplication(applicationId);
+  }
+
+  /**
    * Retrieves the list of applications with offset, limit and a keyword that
    * can be empty
    *
@@ -313,7 +522,10 @@ public class ApplicationCenterService {
    */
   public ApplicationList getApplications(int offset, int limit, String keyword, Locale locale) {
     ApplicationList applicationList = new ApplicationList();
-    List<Application> applications = appCenterStorage.getApplications(keyword);
+    List<Application> applications = appCenterStorage.getApplications(keyword)
+                                                     .stream()
+                                                     .filter(app -> !app.isPersonal())
+                                                     .toList();
     int totalApplictions = applications.size();
     if (limit <= 0) {
       limit = applications.size();
@@ -511,11 +723,20 @@ public class ApplicationCenterService {
   }
 
   public boolean canAccess(Application application, String username) {
+    if (application.isPersonal()) {
+      return isOwner(application, username);
+    }
     return canAccess(application.getPermissions(), username);
   }
 
   public boolean canEdit(String username) {
     return StringUtils.isBlank(username) || userAcl.isAdministrator(getUserIdentity(username));
+  }
+
+  private boolean isOwner(Application application, String username) {
+    return StringUtils.isNotBlank(username)
+           && application.getPermissions() != null
+           && application.getPermissions().contains(username);
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {
