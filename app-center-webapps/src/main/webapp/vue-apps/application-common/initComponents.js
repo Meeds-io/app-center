@@ -17,11 +17,17 @@
 import AppPortletInstanceDrawer from './components/AppPortletInstanceDrawer.vue';
 import AppItem from './components/AppItem.vue';
 import AppShortcut from './components/AppShortcut.vue';
+import ApplicationFormDrawer from '../application-setup/components/drawer/ApplicationFormDrawer.vue';
+import ApplicationIcon from '../application-setup/components/view/ApplicationIcon.vue';
+import ApplicationImageInput from '../application-setup/components/form/ApplicationImageInput.vue';
 
 const components = {
   'app-center-item': AppItem,
   'app-center-shortcut': AppShortcut,
   'app-center-portlet-instance-drawer': AppPortletInstanceDrawer,
+  'app-center-form-drawer': ApplicationFormDrawer,
+  'app-center-icon': ApplicationIcon,
+  'app-center-image-input': ApplicationImageInput,
 };
 
 for (const key in components) {

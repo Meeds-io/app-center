@@ -20,10 +20,14 @@ package io.meeds.appcenter.service;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,6 +43,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +53,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
@@ -58,6 +64,7 @@ import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.UserApplication;
@@ -507,6 +514,158 @@ public class ApplicationCenterServiceTest {
     assertEquals(0, applicationList.getOffset());
   }
 
+  // --- Personal URL apps ---------------------------------------------------
+
+  @Test
+  @SneakyThrows
+  void isUserPersonalAppsEnabledAndSettings() {
+    assertFalse(applicationCenterService.isUserPersonalAppsEnabled());
+    assertNotNull(applicationCenterService.getSettings());
+    assertFalse(applicationCenterService.getSettings().isAllowUserPersonalApps());
+
+    enablePersonalApps();
+    assertTrue(applicationCenterService.isUserPersonalAppsEnabled());
+    assertTrue(applicationCenterService.getSettings().isAllowUserPersonalApps());
+  }
+
+  @Test
+  @SneakyThrows
+  void setUserPersonalAppsEnabled() {
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.setUserPersonalAppsEnabled(true, TEST_USER));
+    verify(settingService, never()).set(any(), any(), any(), any());
+
+    applicationCenterService.setUserPersonalAppsEnabled(true, ADMIN_USERNAME);
+    verify(settingService).set(any(), any(), any(), any());
+  }
+
+  @Test
+  @SneakyThrows
+  void settingsStoredAsSingleJsonBlob() {
+    // Read: the whole settings object is deserialized from the single JSON blob
+    doReturn(SettingValue.create("{\"allowUserPersonalApps\":true}")).when(settingService)
+                                                                     .get(any(),
+                                                                          any(),
+                                                                          eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));
+    assertTrue(applicationCenterService.getSettings().isAllowUserPersonalApps());
+    assertTrue(applicationCenterService.isUserPersonalAppsEnabled());
+
+    // Write: the whole object is serialized back under the single blob key
+    ArgumentCaptor<SettingValue<?>> captor = ArgumentCaptor.forClass(SettingValue.class);
+    applicationCenterService.saveSettings(new ApplicationCenterSettings(false), ADMIN_USERNAME);
+    verify(settingService).set(eq(ApplicationCenterService.APP_CENTER_CONTEXT),
+                               eq(ApplicationCenterService.APP_CENTER_SCOPE),
+                               eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY),
+                               captor.capture());
+    String storedJson = String.valueOf(captor.getValue().getValue());
+    assertTrue(storedJson.contains("allowUserPersonalApps"));
+  }
+
+  @Test
+  @SneakyThrows
+  void createPersonalApplication() {
+    Application emptyApp = new Application();
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.createPersonalApplication(emptyApp, ""));
+
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.createPersonalApplication(emptyApp, TEST_USER));
+
+    enablePersonalApps();
+    Application saved = personalApp(TEST_USER);
+    when(appCenterStorage.createApplication(any(Application.class))).thenReturn(saved);
+    when(appCenterStorage.getApplication(ID)).thenReturn(saved);
+    when(appCenterStorage.getMandatoryAndFavoriteApplications(TEST_USER, null)).thenReturn(Collections.emptyList());
+
+    Application input = new Application();
+    input.setTitle(TITLE);
+    input.setUrl(URL);
+    Application result = applicationCenterService.createPersonalApplication(input, TEST_USER);
+
+    assertNotNull(result);
+    assertTrue(input.isPersonal());
+    assertTrue(input.isActive());
+    assertEquals(Collections.singletonList(TEST_USER), input.getPermissions());
+    verify(appCenterStorage).createApplication(input);
+    verify(appCenterStorage).addApplicationToUserFavorite(ID, TEST_USER);
+  }
+
+  @Test
+  @SneakyThrows
+  void updatePersonalApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updatePersonalApplication(null, TEST_USER));
+    Application emptyApp = new Application();
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updatePersonalApplication(emptyApp, TEST_USER));
+
+    Application input = personalApp(TEST_USER);
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updatePersonalApplication(input, ""));
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updatePersonalApplication(input, TEST_USER));
+
+    enablePersonalApps();
+    assertThrows(ApplicationNotFoundException.class,
+                 () -> applicationCenterService.updatePersonalApplication(input, TEST_USER));
+
+    Application nonPersonal = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(nonPersonal);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updatePersonalApplication(input, TEST_USER));
+
+    Application owned = personalApp(TEST_USER);
+    when(appCenterStorage.getApplication(ID)).thenReturn(owned);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updatePersonalApplication(input, "someoneElse"));
+
+    applicationCenterService.updatePersonalApplication(input, TEST_USER);
+    verify(appCenterStorage).updateApplication(input);
+    assertTrue(input.isPersonal());
+    assertTrue(input.isActive());
+  }
+
+  @Test
+  @SneakyThrows
+  void deletePersonalApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.deletePersonalApplication(null, TEST_USER));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.deletePersonalApplication(ID, ""));
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.deletePersonalApplication(ID, TEST_USER));
+
+    enablePersonalApps();
+    assertThrows(ApplicationNotFoundException.class,
+                 () -> applicationCenterService.deletePersonalApplication(ID, TEST_USER));
+
+    Application nonPersonal = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(nonPersonal);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.deletePersonalApplication(ID, TEST_USER));
+
+    Application owned = personalApp(TEST_USER);
+    when(appCenterStorage.getApplication(ID)).thenReturn(owned);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.deletePersonalApplication(ID, "someoneElse"));
+
+    applicationCenterService.deletePersonalApplication(ID, TEST_USER);
+    verify(appCenterStorage).deleteApplication(ID);
+  }
+
+  private void enablePersonalApps() {
+    SettingValue<?> value = SettingValue.create("{\"allowUserPersonalApps\":true}");
+    doReturn(value).when(settingService).get(any(), any(), eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));
+  }
+
+  private Application personalApp(String owner) {
+    Application app = application();
+    app.setPersonal(true);
+    app.setMandatory(false);
+    app.setPermissions(Collections.singletonList(owner));
+    return app;
+  }
+
   private Application application() {
     return application(ID);
   }
@@ -532,6 +691,7 @@ public class ApplicationCenterServiceTest {
                            "icon",
                            null,
                            null,
+                           false,
                            false);
   }
 

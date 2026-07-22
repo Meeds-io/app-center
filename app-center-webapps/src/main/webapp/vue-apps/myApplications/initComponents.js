@@ -30,7 +30,7 @@ const components = {
   'my-applications-list': MyApplicationsList,
   'my-applications-toolbar': MyApplicationsToolbar,
   'my-application-item': MyApplicationItem,
-  'my-applications-settings-drawer': MyApplicationsSettingsDrawer
+  'my-applications-settings-drawer': MyApplicationsSettingsDrawer,
 };
 
 for (const key in components) {
