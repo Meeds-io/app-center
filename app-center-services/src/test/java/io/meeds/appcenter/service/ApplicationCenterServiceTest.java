@@ -585,6 +585,8 @@ public class ApplicationCenterServiceTest {
     assertNotNull(result);
     assertTrue(input.isPersonal());
     assertTrue(input.isActive());
+    // a personal app is always available on mobile, whatever the client sent
+    assertTrue(input.isMobile());
     assertEquals(Collections.singletonList(TEST_USER), input.getPermissions());
     verify(appCenterStorage).createApplication(input);
     verify(appCenterStorage).addApplicationToUserFavorite(ID, TEST_USER);
@@ -619,10 +621,14 @@ public class ApplicationCenterServiceTest {
     assertThrows(IllegalAccessException.class,
                  () -> applicationCenterService.updatePersonalApplication(input, "someoneElse"));
 
+    input.setMobile(false);
     applicationCenterService.updatePersonalApplication(input, TEST_USER);
     verify(appCenterStorage).updateApplication(input);
     assertTrue(input.isPersonal());
     assertTrue(input.isActive());
+    // an app stored before personal apps were made available on mobile is fixed
+    // by its first update
+    assertTrue(input.isMobile());
   }
 
   @Test
@@ -666,6 +672,25 @@ public class ApplicationCenterServiceTest {
     assertEquals("http://intranet/tools", applicationCenterService.normalizePersonalUrl("http://intranet/tools"));
     assertEquals("/portal/dw", applicationCenterService.normalizePersonalUrl("/portal/dw"));
     assertEquals("./dw", applicationCenterService.normalizePersonalUrl("./dw"));
+  }
+
+  @Test
+  void normalizePersonalUrlRejectsSchemeRelativeLinks() {
+    // a browser resolves all of these to https://evil.com, they are not portal
+    // relative links whatever their leading slash suggests
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("//evil.com"));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("/\\evil.com"));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("/\t/evil.com"));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("/\n/evil.com"));
+  }
+
+  @Test
+  void normalizePersonalUrlRejectsSchemesHiddenByControlChars() {
+    // browsers strip the tab and execute java<TAB>script: as javascript:
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.normalizePersonalUrl("java\tscript:alert(1)"));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.normalizePersonalUrl("java\nscript:alert(1)"));
   }
 
   @Test
