@@ -347,7 +347,16 @@
       </v-form>
     </template>
     <template #footer>
-      <div class="d-flex">
+      <div class="d-flex align-center">
+        <v-btn
+          v-if="editingPersonalApp"
+          :disabled="loading"
+          class="btn applicationsActionBtn"
+          color="error"
+          outlined
+          @click="$refs.deleteConfirmDialog.open()">
+          {{ $t('appCenter.adminSetupForm.modal.delete') }}
+        </v-btn>
         <v-btn
           class="btn ms-auto applicationsActionBtn"
           @click="close">
@@ -357,8 +366,16 @@
           :disabled="disabled"
           class="btn btn-primary ms-6 applicationsActionBtn"
           @click="save">
-          {{ $t('appCenter.adminSetupForm.save') }}
+          {{ submitLabel }}
         </v-btn>
+        <confirm-dialog
+          v-if="editingPersonalApp"
+          ref="deleteConfirmDialog"
+          :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
+          :message="$t('appCenter.adminSetupForm.modal.confirmDelete')"
+          :ok-label="$t('appCenter.adminSetupForm.modal.delete')"
+          :cancel-label="$t('appCenter.adminSetupForm.cancel')"
+          @ok="deletePersonalApp" />
       </div>
     </template>
   </exo-drawer>
@@ -398,6 +415,14 @@ export default {
           : this.$t('appCenter.personalApp.drawer.title');
       }
       return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
+    },
+    editingPersonalApp() {
+      return this.personal && !!this.application?.id;
+    },
+    submitLabel() {
+      return this.editingPersonalApp
+        ? this.$t('appCenter.personalApp.form.apply')
+        : this.$t('appCenter.adminSetupForm.save');
     },
     validUrl() {
       return (
@@ -655,9 +680,9 @@ export default {
           } else {
             await this.$applicationService.updatePersonalApp(this.application);
           }
+          this.close();
           this.$root.$emit('alert-message', this.$t(isNew ? 'appCenter.personalApp.save.success' : 'appCenter.personalApp.update.success'), 'success');
           this.$emit('saved');
-          this.close();
         } else {
           if (!this.application?.permissions?.length) {
             this.application.permissions = null;
@@ -680,7 +705,30 @@ export default {
           this.close();
         }
       } catch (e) {
-        this.$root.$emit('alert-message', this.$t(this.personal ? 'appCenter.personalApp.save.error' : 'appCenter.adminSetupForm.errorSavingApplication'), 'error');
+        // the drawer stays open so that the user doesn't lose what was entered
+        this.$root.$emit('alert-message', this.$t(this.saveErrorMessageKey(isNew)), 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+    saveErrorMessageKey(isNew) {
+      if (!this.personal) {
+        return 'appCenter.adminSetupForm.errorSavingApplication';
+      }
+      return isNew ? 'appCenter.personalApp.save.error' : 'appCenter.personalApp.update.error';
+    },
+    async deletePersonalApp() {
+      if (this.loading) {
+        return;
+      }
+      this.loading = true;
+      try {
+        await this.$applicationService.deletePersonalApp(this.application.id);
+        this.close();
+        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.success'), 'success');
+        this.$emit('deleted');
+      } catch (e) {
+        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.error'), 'error');
       } finally {
         this.loading = false;
       }
