@@ -34,8 +34,8 @@ export function computeApplicationUrl(application) {
     return null;
   }
   const escaped = application.url
-    .replace(/\\\\/g, '\\')
-    .replace(/\\/g, ESC);
+    .replaceAll('\\\\', '\\')
+    .replaceAll('\\', ESC);
   const expanded = escaped
     .replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`)
     .replace('@user@', eXo.env.portal.userName);
@@ -47,7 +47,7 @@ export function computeApplicationUrl(application) {
     email: true,
     phone: true,
   }) || sanitize(expanded);
-  return url.replace(new RegExp(ESC, 'g'), '\\');
+  return url.replaceAll(ESC, '\\');
 }
 
 /**
