@@ -148,7 +148,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   @open="openApplication(application.type, application.url)"
                   @toogle-favorite="toogleFavorite(application)"
                   @toogle-pin="tooglePin(application, $event)"
-                  @delete="deletePersonalApp(application)" />
+                  @edit="editPersonalApp(application)" />
               </div>
             </component>
           </v-layout>
@@ -170,7 +170,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <app-center-form-drawer
         ref="personalAppFormDrawer"
         personal
-        @saved="init" />
+        @saved="init"
+        @deleted="init" />
     </template>
     <template v-if="!expanded && hasAvailableApplications" #footer>
       <div class="d-flex align-center justify-end">
@@ -484,17 +485,8 @@ export default {
     openPersonalAppForm() {
       this.$refs.personalAppFormDrawer.open(null);
     },
-    async deletePersonalApp(application) {
-      this.loading = true;
-      try {
-        await this.$applicationService.deletePersonalApp(application.id);
-        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.success'), 'success');
-        await this.init();
-      } catch {
-        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.error'), 'error');
-      } finally {
-        this.loading = false;
-      }
+    editPersonalApp(application) {
+      this.$refs.personalAppFormDrawer.open(application);
     },
     async retrieveSubCategoryIds() {
       if (!this.categoryId) {
