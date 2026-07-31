@@ -22,7 +22,6 @@ import AppLauncherMobileDrawer from './components/AppLauncherMobileDrawer.vue';
 const components = {
   'app-center-launcher': AppLauncher,
   'app-center-launcher-empty': AppLauncherEmpty,
-
   'app-center-launcher-drawer': AppLauncherDrawer,
   'app-center-launcher-mobile-drawer': AppLauncherMobileDrawer,
 };

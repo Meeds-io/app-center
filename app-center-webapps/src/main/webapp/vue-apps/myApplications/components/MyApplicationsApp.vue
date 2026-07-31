@@ -66,7 +66,7 @@ export default {
       currentUser: eXo.env.portal.userName,
       initialized: false,
       hover: false,
-      tabindex: '0'
+      tabindex: '0',
     };
   },
   computed: {

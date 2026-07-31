@@ -114,7 +114,7 @@ export default {
     showHeader: {
       type: Boolean,
       default: true
-    }
+    },
   },
   data: () => ({
     loading: false,

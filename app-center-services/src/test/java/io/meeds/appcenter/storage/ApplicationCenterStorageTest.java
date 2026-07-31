@@ -421,6 +421,7 @@ public class ApplicationCenterStorageTest {
                                  Collections.singletonList(PERMISSIONS_2),
                                  false,
                                  null,
+                                 false,
                                  null);
   }
 
@@ -445,6 +446,7 @@ public class ApplicationCenterStorageTest {
                            "icon",
                            null,
                            null,
+                           false,
                            false);
   }
 

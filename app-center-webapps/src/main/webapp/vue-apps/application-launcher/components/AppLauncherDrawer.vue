@@ -31,6 +31,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <template #title>
       {{ applicationsLoaded && $t("appCenter.appLauncher.drawer.title") || '' }}
     </template>
+    <template v-if="allowPersonalApps" #titleIcons>
+      <v-btn
+        :title="$t('appCenter.personalApp.drawer.add.tooltip')"
+        icon
+        @click.stop="openPersonalAppForm">
+        <v-icon size="20">fa-plus</v-icon>
+      </v-btn>
+    </template>
     <template v-if="drawer" #content>
       <v-card
         :class="cardDisplay && 'pa-4'"
@@ -125,7 +133,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 v-for="application in filteredApplications"
                 :key="application.id"
                 :class="cardDisplay && 'mb-4' || 'mb-3'"
-                class="flex-grow-1 flex-shrink-0 col-4 pa-0">
+                class="flex-grow-1 flex-shrink-0 col-4 pa-0 position-relative">
                 <app-center-item
                   :application="application"
                   :loading="appLoading === application.url"
@@ -139,7 +147,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   tooltip
                   @open="openApplication(application.type, application.url)"
                   @toogle-favorite="toogleFavorite(application)"
-                  @toogle-pin="tooglePin(application, $event)" />
+                  @toogle-pin="tooglePin(application, $event)"
+                  @delete="deletePersonalApp(application)" />
               </div>
             </component>
           </v-layout>
@@ -158,6 +167,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :applications="availableApplications"
         @open="openApplication"
         @toogle-favorite="toogleFavorite" />
+      <app-center-form-drawer
+        ref="personalAppFormDrawer"
+        personal
+        @saved="init" />
     </template>
     <template v-if="!expanded && hasAvailableApplications" #footer>
       <div class="d-flex align-center justify-end">
@@ -185,6 +198,7 @@ export default {
     expanded: false,
     loading: false,
     applicationsLoaded: false,
+    allowPersonalApps: false,
     maxTopbarApps: 10,
     recentApplicationIds: [],
     availableApplications: [],
@@ -208,11 +222,16 @@ export default {
     isPinFilter() {
       return !this.expanded || this.filter === 'PINNED';
     },
+    isPersonalFilter() {
+      return this.expanded && this.filter === 'PERSONAL';
+    },
     applications() {
       if (this.isFavoriteFilter) {
         return this.favoriteApplications;
       } else if (this.isPinFilter) {
         return this.availablePinnedApplications;
+      } else if (this.isPersonalFilter) {
+        return this.availableApplications.filter(app => app.personal);
       } else {
         return this.availableApplications;
       }
@@ -269,22 +288,26 @@ export default {
       return this.recentApplications?.length;
     },
     filters() {
-      return this.canPinApps && [{
-        text: this.$t('appCenter.appLauncher.filter.all'),
-        value: 'ALL',
-      },{
-        text: this.$t('appCenter.appLauncher.filter.favorites'),
-        value: 'FAVORITES',
-      },{
-        text: this.$t('appCenter.appLauncher.filter.pinned'),
-        value: 'PINNED',
-      }] || [{
+      const list = [{
         text: this.$t('appCenter.appLauncher.filter.all'),
         value: 'ALL',
       },{
         text: this.$t('appCenter.appLauncher.filter.favorites'),
         value: 'FAVORITES',
       }];
+      if (this.canPinApps) {
+        list.push({
+          text: this.$t('appCenter.appLauncher.filter.pinned'),
+          value: 'PINNED',
+        });
+      }
+      if (this.allowPersonalApps) {
+        list.push({
+          text: this.$t('appCenter.appLauncher.filter.personal'),
+          value: 'PERSONAL',
+        });
+      }
+      return list;
     },
   },
   watch: {
@@ -325,7 +348,14 @@ export default {
     async init() {
       this.applicationsLoaded = false;
       try {
-        await this.refresh();
+        await Promise.all([
+          this.refresh(),
+          this.$applicationService.getAppCenterSettings().then(s => {
+            this.allowPersonalApps = s?.allowUserPersonalApps || false;
+          }),
+        ]);
+      } catch (e) {
+        console.error('App launcher init failed', e); // eslint-disable-line no-console
       } finally {
         this.applicationsLoaded = true;
         this.$root.$applicationLoaded();
@@ -450,6 +480,21 @@ export default {
     },
     openApplication(appType, appUrl) {
       this.$emit('open-app', appType, appUrl);
+    },
+    openPersonalAppForm() {
+      this.$refs.personalAppFormDrawer.open(null);
+    },
+    async deletePersonalApp(application) {
+      this.loading = true;
+      try {
+        await this.$applicationService.deletePersonalApp(application.id);
+        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.success'), 'success');
+        await this.init();
+      } catch {
+        this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.error'), 'error');
+      } finally {
+        this.loading = false;
+      }
     },
     async retrieveSubCategoryIds() {
       if (!this.categoryId) {
