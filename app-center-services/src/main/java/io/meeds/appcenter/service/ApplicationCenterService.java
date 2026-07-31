@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -116,6 +117,8 @@ public class ApplicationCenterService {
   private static final String      INVALID_PERSONAL_URL_MESSAGE        = "url %s is not a valid http(s) link";
 
   private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
+
+  private static final Pattern     CONTROL_CHARS_PATTERN               = Pattern.compile("[\\t\\n\\r]");
 
   @Autowired
   private UserACL                  userAcl;
@@ -432,6 +435,10 @@ public class ApplicationCenterService {
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
+    // a personal app is a shortcut the user created for themselves, it has to be
+    // usable wherever they are: the personal form has no mobile switch on
+    // purpose, so the flag is forced here instead of being left to the client
+    application.setMobile(true);
     Application saved = createApplication(application);
     try {
       addFavoriteApplication(saved.getId(), username);
@@ -474,6 +481,7 @@ public class ApplicationCenterService {
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
+    application.setMobile(true);
     updateApplication(application);
   }
 
@@ -483,7 +491,11 @@ public class ApplicationCenterService {
    * it is omitted the host must be qualified, so that a plain word is rejected
    * instead of silently becoming a link to a non existing host. Only http and
    * https are accepted, which rules out "javascript:" links. Portal relative
-   * links ("/portal/dw", "./dw") are kept as is.
+   * links ("/portal/dw", "./dw") are kept as is, but scheme relative ones
+   * ("//host", which a browser resolves to an external origin) are rejected.
+   * This method is the security boundary: the mirror written in
+   * ApplicationUrlService.js only exists to give an immediate feedback in the
+   * form, and both must be updated together.
    *
    * @param url the URL as entered by the user
    * @return the normalized URL, either an absolute http(s) link or a portal
@@ -492,11 +504,17 @@ public class ApplicationCenterService {
    *           link
    */
   protected String normalizePersonalUrl(String url) {
-    String trimmed = StringUtils.trim(url);
+    // browsers drop tabs and line breaks before parsing an URL, so they must not
+    // be able to hide either a scheme ("java<TAB>script:") or a scheme relative
+    // prefix ("/<TAB>/host")
+    String trimmed = StringUtils.trim(RegExUtils.removeAll(url, CONTROL_CHARS_PATTERN));
     if (StringUtils.isBlank(trimmed)) {
       throw new IllegalArgumentException("url is mandatory");
     }
     if (StringUtils.startsWith(trimmed, "/") || StringUtils.startsWith(trimmed, "./")) {
+      if (StringUtils.startsWithAny(trimmed, "//", "/\\")) {
+        throw new IllegalArgumentException(String.format(INVALID_PERSONAL_URL_MESSAGE, url));
+      }
       return trimmed;
     }
     boolean schemeOmitted = !SCHEME_PATTERN.matcher(trimmed).find();
