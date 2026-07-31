@@ -36,7 +36,7 @@
         autocomplete="off"
         class="pa-4"
         @submit.prevent.stop="0">
-        <div class="text-header mb-4">
+        <div v-if="!personal" class="text-header mb-4">
           {{ $t('appCenter.adminSetupForm.display') }}
         </div>
         <v-label for="applicationName">
@@ -64,7 +64,7 @@
           :rules="rules.personalTitle"
           :maxlength="maxNameLength"
           name="applicationName"
-          class="width-auto flex-grow-1 mt-2 mb-4"
+          class="width-auto flex-grow-1 mt-2 pt-0 mb-4"
           outlined
           dense
           required />
@@ -351,11 +351,12 @@
         <v-btn
           v-if="editingPersonalApp"
           :disabled="loading"
-          class="btn applicationsActionBtn"
           color="error"
           outlined
+          elevation="0"
+          class="ignore-vuetify-classes"
           @click="$refs.deleteConfirmDialog.open()">
-          {{ $t('appCenter.adminSetupForm.modal.delete') }}
+          <span class="text-none">{{ $t('appCenter.adminSetupForm.modal.delete') }}</span>
         </v-btn>
         <v-btn
           class="btn ms-auto applicationsActionBtn"
@@ -371,8 +372,8 @@
         <confirm-dialog
           v-if="editingPersonalApp"
           ref="deleteConfirmDialog"
-          :title="$t('appCenter.adminSetupForm.modal.DeleteApp')"
-          :message="$t('appCenter.adminSetupForm.modal.confirmDelete')"
+          :title="$t('appCenter.personalApp.delete.confirm.title')"
+          :message="$t('appCenter.personalApp.delete.confirm.message')"
           :ok-label="$t('appCenter.adminSetupForm.modal.delete')"
           :cancel-label="$t('appCenter.adminSetupForm.cancel')"
           @ok="deletePersonalApp" />
