@@ -653,6 +653,31 @@ public class ApplicationCenterServiceTest {
     verify(appCenterStorage).deleteApplication(ID);
   }
 
+  @Test
+  void normalizePersonalUrlAddsMissingScheme() {
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("meeds.io"));
+    assertEquals("https://www.meeds.io/apps?id=1", applicationCenterService.normalizePersonalUrl(" www.meeds.io/apps?id=1 "));
+  }
+
+  @Test
+  void normalizePersonalUrlKeepsExplicitLinks() {
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("https://meeds.io"));
+    // an explicit scheme is trusted, so an intranet host without a dot is allowed
+    assertEquals("http://intranet/tools", applicationCenterService.normalizePersonalUrl("http://intranet/tools"));
+    assertEquals("/portal/dw", applicationCenterService.normalizePersonalUrl("/portal/dw"));
+    assertEquals("./dw", applicationCenterService.normalizePersonalUrl("./dw"));
+  }
+
+  @Test
+  void normalizePersonalUrlRejectsNonLinks() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl(null));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("  "));
+    // without a scheme, a bare word is not a host
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("toto"));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("javascript:alert(1)"));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.normalizePersonalUrl("ftp://meeds.io"));
+  }
+
   private void enablePersonalApps() {
     SettingValue<?> value = SettingValue.create("{\"allowUserPersonalApps\":true}");
     doReturn(value).when(settingService).get(any(), any(), eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));

@@ -19,10 +19,13 @@
 package io.meeds.appcenter.service;
 
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -109,6 +112,10 @@ public class ApplicationCenterService {
   private static final String      PERSONAL_APPS_NOT_ENABLED_MESSAGE   = "User personal apps feature is not enabled";
 
   private static final String      NOT_PERSONAL_APP_OWNER_MESSAGE      = "User %s is not the owner of personal application %s";
+
+  private static final String      INVALID_PERSONAL_URL_MESSAGE        = "url %s is not a valid http(s) link";
+
+  private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
   @Autowired
   private UserACL                  userAcl;
@@ -419,6 +426,7 @@ public class ApplicationCenterService {
     if (!isUserPersonalAppsEnabled()) {
       throw new IllegalAccessException(PERSONAL_APPS_NOT_ENABLED_MESSAGE);
     }
+    application.setUrl(normalizePersonalUrl(application.getUrl()));
     application.setPersonal(true);
     application.setPermissions(Collections.singletonList(username));
     application.setActive(true);
@@ -460,12 +468,51 @@ public class ApplicationCenterService {
     if (!isOwner(stored, username)) {
       throw new IllegalAccessException(String.format(NOT_PERSONAL_APP_OWNER_MESSAGE, username, application.getId()));
     }
+    application.setUrl(normalizePersonalUrl(application.getUrl()));
     application.setPersonal(true);
     application.setPermissions(stored.getPermissions());
     application.setActive(true);
     application.setSystem(false);
     application.setMandatory(false);
     updateApplication(application);
+  }
+
+  /**
+   * Normalizes an URL entered by an end user for a personal application. The
+   * scheme is optional, so that "meeds.io" is stored as "https://meeds.io"; when
+   * it is omitted the host must be qualified, so that a plain word is rejected
+   * instead of silently becoming a link to a non existing host. Only http and
+   * https are accepted, which rules out "javascript:" links. Portal relative
+   * links ("/portal/dw", "./dw") are kept as is.
+   *
+   * @param url the URL as entered by the user
+   * @return the normalized URL, either an absolute http(s) link or a portal
+   *         relative one
+   * @throws IllegalArgumentException if the URL is blank or isn't an http(s)
+   *           link
+   */
+  protected String normalizePersonalUrl(String url) {
+    String trimmed = StringUtils.trim(url);
+    if (StringUtils.isBlank(trimmed)) {
+      throw new IllegalArgumentException("url is mandatory");
+    }
+    if (StringUtils.startsWith(trimmed, "/") || StringUtils.startsWith(trimmed, "./")) {
+      return trimmed;
+    }
+    boolean schemeOmitted = !SCHEME_PATTERN.matcher(trimmed).find();
+    String withScheme = schemeOmitted ? "https://" + trimmed : trimmed;
+    URI uri;
+    try {
+      uri = new URI(withScheme);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(String.format(INVALID_PERSONAL_URL_MESSAGE, url), e);
+    }
+    if (!StringUtils.equalsAnyIgnoreCase(uri.getScheme(), "http", "https")
+        || StringUtils.isBlank(uri.getHost())
+        || (schemeOmitted && !StringUtils.contains(uri.getHost(), '.'))) {
+      throw new IllegalArgumentException(String.format(INVALID_PERSONAL_URL_MESSAGE, url));
+    }
+    return withScheme;
   }
 
   /**
