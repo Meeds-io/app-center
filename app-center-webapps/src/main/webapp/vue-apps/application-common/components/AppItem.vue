@@ -164,12 +164,16 @@
             <div class="d-flex align-center z-index-two justify-end flex-shrink-0 flex-nowrap ms-auto">
               <v-btn
                 v-if="application.personal"
-                :title="$t('appCenter.personalApp.delete.tooltip')"
+                :title="$t('appCenter.personalApp.edit.tooltip')"
                 class="ms-2"
                 small
                 icon
-                @click.stop.prevent="$emit('delete')">
-                <v-icon color="error" size="20">fa-trash-alt</v-icon>
+                @click.stop.prevent="$emit('edit')">
+                <v-icon
+                  :color="!card && 'white'"
+                  size="20">
+                  fa-edit
+                </v-icon>
               </v-btn>
               <v-btn
                 v-if="application.helpPageURL"
