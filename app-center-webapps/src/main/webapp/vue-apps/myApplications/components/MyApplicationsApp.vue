@@ -147,21 +147,10 @@ export default {
     },
     computeApplicationUrl(app) {
       if (app.type === 'LINK') {
-        const normalizedUrl = app.url.replace(/\\\\/g, '\\');
-        const ESC = '__BACKSLASH__';
-        const escaped = (normalizedUrl || '').replace(/\\/g, ESC);
-        let computedUrl = escaped.replace(/^\.\//, `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName}/`);
-        computedUrl = computedUrl.replace('@user@', eXo.env.portal.userName);
-        computedUrl = this.$utils.toLinkUrl(computedUrl, {
-          urls: true,
-          email: true,
-          phone: true,
-        }).replace(new RegExp(ESC, 'g'), '\\');
-        const target = app.sameTab ? '_self' : '_blank';
         return {
           ...app,
-          computedUrl,
-          target
+          computedUrl: this.$applicationUrlService.computeApplicationUrl(app),
+          target: app.sameTab ? '_self' : '_blank',
         };
       } else {
         return app;
