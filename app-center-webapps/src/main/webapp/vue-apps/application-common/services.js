@@ -21,6 +21,7 @@
 import * as applicationService from './js/ApplicationService.js';
 import * as applicationFavoriteService from './js/ApplicationFavoriteService.js';
 import * as applicationPinService from './js/ApplicationPinService.js';
+import * as applicationUrlService from './js/ApplicationUrlService.js';
 
 if (!Vue.prototype.$applicationService) {
   window.Object.defineProperty(Vue.prototype, '$applicationService', {
@@ -37,5 +38,11 @@ if (!Vue.prototype.$applicationFavoriteService) {
 if (!Vue.prototype.$applicationPinService) {
   window.Object.defineProperty(Vue.prototype, '$applicationPinService', {
     value: applicationPinService,
+  });
+}
+
+if (!Vue.prototype.$applicationUrlService) {
+  window.Object.defineProperty(Vue.prototype, '$applicationUrlService', {
+    value: applicationUrlService,
   });
 }
