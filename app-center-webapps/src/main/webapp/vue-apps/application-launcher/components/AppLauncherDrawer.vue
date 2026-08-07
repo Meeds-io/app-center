@@ -166,7 +166,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         ref="mobileDrawer"
         :applications="availableApplications"
         @open="openApplication"
-        @toogle-favorite="toogleFavorite" />
+        @toogle-favorite="toogleFavorite"
+        @edit="editPersonalApp" />
       <app-center-form-drawer
         ref="personalAppFormDrawer"
         personal
