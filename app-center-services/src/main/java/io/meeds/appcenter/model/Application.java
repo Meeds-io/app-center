@@ -78,4 +78,10 @@ public class Application {
 
   private boolean         personal;
 
+  /**
+   * Identifier of the badge plugin bound to this application. Null when the
+   * binding is derived from the url, or when the application carries no badge.
+   */
+  private String          badgeName;
+
 }

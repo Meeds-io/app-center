@@ -111,6 +111,14 @@ public class ApplicationEntity {
   @Column(name = "IS_PERSONAL")
   private boolean                               personal;
 
+  /**
+   * Identifier of the {@code ApplicationBadgePlugin} contributing this
+   * application's badge. Left null for a Drawer or Portlet entry whose plugin
+   * declares the matching url, since the binding then resolves on its own.
+   */
+  @Column(name = "BADGE_NAME")
+  private String                                badgeName;
+
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)
