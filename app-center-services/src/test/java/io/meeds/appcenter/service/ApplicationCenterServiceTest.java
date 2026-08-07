@@ -105,6 +105,9 @@ public class ApplicationCenterServiceTest {
   private static final Long        ID             = 2l;
 
   @MockBean
+  private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @MockBean
   private ConfigurationManager     configurationManager;
 
   @MockBean
@@ -692,7 +695,8 @@ public class ApplicationCenterServiceTest {
                            null,
                            null,
                            false,
-                           false);
+                           false,
+                           null);
   }
 
 }
