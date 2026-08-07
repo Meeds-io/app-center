@@ -53,7 +53,8 @@ public class UserApplication extends Application {
           app.getImageUrl(),
           app.getOrder(),
           app.isChangedManually(),
-          app.isPersonal());
+          app.isPersonal(),
+          app.getBadgeName());
   }
 
 }

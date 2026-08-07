@@ -54,7 +54,12 @@
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
-      <div 
+      <app-center-badge
+        :badge-name="application.badgeName"
+        :top-spacing="badgeTopSpacing"
+        :x-spacing="badgeXSpacing"
+        :class="card ? 'ms-auto' : ''" />
+      <div
         :class="card ? 'absolute-full-size' : 'pt-1'"
         aria-hidden="true">
         <v-progress-linear
@@ -118,8 +123,8 @@
         <v-tooltip v-if="displayPinButton" bottom>
           <template #activator="{on, attrs}">
             <div
-              :class="$vuetify.rtl && 'l-0' || 'r-0'"
-              class="position-absolute z-index-two t-0 mt-1 me-5">
+              :class="$vuetify.rtl && 'r-0' || 'l-0'"
+              class="position-absolute z-index-two t-0 mt-2 ms-7">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
@@ -299,6 +304,20 @@ export default {
   computed: {
     computedUrl() {
       return this.$applicationUrlService.computeApplicationUrl(this.application);
+    },
+    badgeTopSpacing() {
+      if (this.card) {
+        return '-94px';
+      } else {
+        return this.displayName ? '10px' : '-8px';
+      }
+    },
+    badgeXSpacing() {
+      if (this.card) {
+        return '-40px';
+      } else {
+        return this.displayName ? '12px' : '9px';
+      }
     },
     linkApplication() {
       return this.application?.type === 'LINK';

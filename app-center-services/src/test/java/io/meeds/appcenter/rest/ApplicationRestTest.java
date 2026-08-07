@@ -201,7 +201,8 @@ public class ApplicationRestTest {
                            null,
                            null,
                            false,
-                           false);
+                           false,
+                           null);
   }
 
   @SneakyThrows
