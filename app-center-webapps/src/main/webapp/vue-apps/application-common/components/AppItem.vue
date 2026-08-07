@@ -54,7 +54,8 @@
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
-      <div 
+      <app-center-badge :badge-name="application.badgeName" absolute />
+      <div
         :class="card ? 'absolute-full-size' : 'pt-1'"
         aria-hidden="true">
         <v-progress-linear

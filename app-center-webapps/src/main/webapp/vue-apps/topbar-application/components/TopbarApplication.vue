@@ -52,6 +52,7 @@
         width="auto"
         alt="">
     </v-card>
+    <app-center-badge :badge-name="application?.badgeName" absolute />
     <app-center-portlet-instance-drawer
       v-if="portletDrawer"
       ref="portletInstanceDrawer" />

@@ -36,6 +36,7 @@
         :title="application.shortcut ? `${application.title} (${$t('appCenter.adminSetupForm.ctrl')} + ${$t('appCenter.adminSetupForm.shift')} + ${application.shortcut})` : application.title"
         :loading="loading[application?.id]"
         icon>
+        <app-center-badge :badge-name="application?.badgeName" absolute />
         <v-icon
           v-if="application?.icon && !application?.imageUrl"
           size="20"

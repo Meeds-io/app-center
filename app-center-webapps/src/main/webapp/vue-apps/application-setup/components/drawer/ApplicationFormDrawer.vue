@@ -151,6 +151,47 @@
               name="applicationUrl"
               class="mb-4" />
           </v-radio-group>
+          <!--
+            Badge binding, driven by the application type: a Drawer or Portlet
+            entry whose provider declares its url resolves on its own and is
+            only displayed read-only; a Link has to be bound by hand; an
+            internal entry no provider matches shows nothing at all, since a
+            disabled empty field would read as broken.
+          -->
+          <template v-if="displayBadgeField">
+            <div class="mb-2">
+              {{ $t('appCenter.adminSetupForm.badge.label') }}
+            </div>
+            <v-chip
+              v-if="resolvedBadgeProvider"
+              class="mb-3"
+              outlined>
+              {{ $t('appCenter.adminSetupForm.badge.providedBy', [resolvedBadgeProvider]) }}
+            </v-chip>
+            <v-autocomplete
+              v-else
+              v-model="application.badgeName"
+              :items="badgeProviders"
+              :placeholder="$t('appCenter.adminSetupForm.badge.placeholder')"
+              class="border-box-sizing width-auto pt-0 mb-3"
+              name="applicationBadgeName"
+              clearable
+              outlined
+              dense />
+            <div class="d-flex full-width justify-space-between align-center mb-3">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="badgeDisplayed = !badgeDisplayed">
+                {{ $t('appCenter.adminSetupForm.badge.display') }}
+              </v-card>
+              <v-switch
+                v-model="badgeDisplayed"
+                class="my-0 me-n2 pa-0"
+                name="applicationBadgeSwitch"
+                hide-details />
+            </div>
+          </template>
           <category-input
             v-model="newCategoryIds"
             label="appCenter.adminSetupForm.categories"
@@ -406,6 +447,8 @@ export default {
       uploadId: 0,
       mimeType: ''
     },
+    badgeProviderList: [],
+    badgeDisplayed: true,
     loading: false
   }),
   computed: {
@@ -510,6 +553,26 @@ export default {
     type() {
       return this.application?.type;
     },
+    badgeProviders() {
+      return this.badgeProviderList.map(provider => provider.name);
+    },
+    // Provider auto-resolved from the url for an internal application
+    resolvedBadgeProvider() {
+      const url = this.application?.url;
+      if (this.personal || this.type === 'LINK' || !url) {
+        return null;
+      }
+      const declaredUrl = this.type === 'DRAWER' ? 'drawerName' : 'portletName';
+      return this.badgeProviderList.find(provider => provider[declaredUrl] === url)?.name || null;
+    },
+    // Hidden entirely for an internal application no provider matches: an
+    // empty disabled field reads as broken.
+    displayBadgeField() {
+      if (this.personal || !this.badgeProviderList.length) {
+        return false;
+      }
+      return this.type === 'LINK' || !!this.resolvedBadgeProvider;
+    },
     applicationToSave() {
       if (this.personal) {
         return { ...this.application };
@@ -550,6 +613,10 @@ export default {
     type(newVal, oldVal) {
       if (this.drawer && newVal && oldVal && this.application) {
         this.application.url = null;
+        // The binding follows the url: leaving it behind would keep a stale
+        // provider bound after switching Portlet -> Link
+        this.application.badgeName = null;
+        this.badgeDisplayed = true;
       }
     },
     title(newVal) {
@@ -577,9 +644,26 @@ export default {
         this.application.shortcut = null;
       }
     },
+    badgeDisplayed() {
+      if (!this.application) {
+        return;
+      }
+      if (this.badgeDisplayed) {
+        // Back to the resolved binding, or to nothing for a Link
+        this.application.badgeName = this.resolvedBadgeProvider || null;
+      } else {
+        // A reserved marker, distinct from a blank value which would simply
+        // let the url binding resolve again
+        this.application.badgeName = 'none';
+      }
+    },
   },
   created() {
     this.$root.$on('app-center-drawer-open', this.open);
+    if (!this.personal) {
+      this.$applicationBadgeService.getBadgeProviders()
+        .then(providers => this.badgeProviderList = providers || []);
+    }
   },
   beforeDestroy() {
     this.$root.$off('app-center-drawer-open', this.open);

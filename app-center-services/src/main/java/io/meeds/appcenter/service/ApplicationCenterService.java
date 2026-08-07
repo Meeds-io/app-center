@@ -120,6 +120,9 @@ public class ApplicationCenterService {
   private ApplicationCenterStorage appCenterStorage;
 
   @Autowired
+  private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @Autowired
   private TranslationService       translationService;
 
   @Autowired
@@ -533,6 +536,7 @@ public class ApplicationCenterService {
     applications = applications.stream().skip(offset).limit(limit).toList();
     setApplicationLabels(applications, locale);
     setApplicationCategories(applications);
+    setApplicationBadges(applications);
     applicationList.setApplications(applications);
     applicationList.setSize(totalApplictions);
     applicationList.setOffset(offset);
@@ -600,6 +604,7 @@ public class ApplicationCenterService {
                                .toList();
     setApplicationLabels(applications, locale);
     setApplicationCategories(applications);
+    setApplicationBadges(applications);
     resultApplicationsList.setApplications(applications);
     resultApplicationsList.setOffset(offset);
     resultApplicationsList.setLimit(limit);
@@ -709,6 +714,7 @@ public class ApplicationCenterService {
     ApplicationList applicationList = new ApplicationList();
     setApplicationLabels(applications, locale);
     setApplicationCategories(applications);
+    setApplicationBadges(applications);
     return applicationList.setApplications(applications)
                           .setLimit(appCount)
                           .setSize(appCount)
@@ -774,6 +780,16 @@ public class ApplicationCenterService {
 
   private void setApplicationCategories(List<Application> applications) {
     applications.forEach(this::setApplicationCategories);
+  }
+
+  /**
+   * Replaces the stored badge name by the resolved one, so that a Drawer or
+   * Portlet entry whose provider declares its url exposes its badge without any
+   * value ever being persisted. Applied on the copies returned to the caller,
+   * never on the cached entities.
+   */
+  private void setApplicationBadges(List<Application> applications) {
+    applications.forEach(application -> application.setBadgeName(badgePluginRegistry.resolveBadgeName(application)));
   }
 
   private void setApplicationCategories(Application application) {
