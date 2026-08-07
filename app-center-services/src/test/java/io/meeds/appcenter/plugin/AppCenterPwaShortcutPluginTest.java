@@ -106,7 +106,8 @@ public class AppCenterPwaShortcutPluginTest {
                                               "imageUrl",
                                               null,
                                               false,
-                                              false);
+                                              false,
+                                              null);
     applicationList.setApplications(Collections.singletonList(application));
     shortcuts = pwaShortcutPlugin.getShortcuts(TEST_USER);
     assertNotNull(shortcuts);

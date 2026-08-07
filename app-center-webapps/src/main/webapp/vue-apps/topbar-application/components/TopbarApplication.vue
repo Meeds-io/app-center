@@ -31,10 +31,14 @@
     :title="titleTooltip"
     :loading="loading"
     icon>
+    <app-center-badge
+      :badge-name="application.badgeName"
+      top-spacing="-20px"
+      x-spacing="9px" />
     <v-icon
       v-if="application?.icon && !application?.imageUrl"
       size="20"
-      class="d-flex align-center justify-center">
+      class="d-flex align-center justify-center line-height-normal">
       {{ application.icon }}
     </v-icon>
     <v-card

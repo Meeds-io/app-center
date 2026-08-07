@@ -151,6 +151,21 @@ public class ApplicationCenterStorage {
     return toDTO(applicationEntity);
   }
 
+  /**
+   * Retrieves the applications a badge is bound to, either explicitly through
+   * their stored badge name, or implicitly through a url the plugin declares.
+   *
+   * @param  badgeName the badge identifier
+   * @param  urls      the drawer and/or portlet names declared by the plugin,
+   *                     possibly empty
+   * @return           the bound applications, never null
+   */
+  public List<Application> getApplicationsByBadge(String badgeName, List<String> urls) {
+    List<Long> applicationIds = CollectionUtils.isEmpty(urls) ? applicationDAO.getApplicationIdsByBadgeName(badgeName)
+                                                              : applicationDAO.getApplicationIdsByBadge(badgeName, urls);
+    return applicationIds.stream().map(this::getApplication).filter(Objects::nonNull).toList();
+  }
+
   public Application findSystemApplicationByUrl(String url) {
     List<ApplicationEntity> list = applicationDAO.findBySystemIsTrueAndUrl(url);
     ApplicationEntity applicationEntity = CollectionUtils.isEmpty(list) ? null : list.get(0);
@@ -328,7 +343,8 @@ public class ApplicationCenterStorage {
                            getImageUrl(applicationEntity.getImageFileId(), applicationEntity.getId(), imageLastModified),
                            applicationEntity.getOrder(),
                            applicationEntity.isChangedManually(),
-                           applicationEntity.isPersonal());
+                           applicationEntity.isPersonal(),
+                           applicationEntity.getBadgeName());
   }
 
   private UserApplication toUserApplicationDTO(Long applicationId) {
@@ -378,6 +394,7 @@ public class ApplicationCenterStorage {
                                    application.isChangedManually(),
                                    application.getOrder(),
                                    application.isPersonal(),
+                                   application.getBadgeName(),
                                    null);
     }
   }

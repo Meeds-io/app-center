@@ -64,6 +64,29 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       """)
   List<Long> getSystemApplicationIds();
 
+  /**
+   * Reverse lookup of the applications a badge is bound to. An explicit
+   * {@code badgeName} always wins; otherwise a Drawer or Portlet entry binds
+   * implicitly when its url matches one the plugin declares.
+   *
+   * @param  badgeName the badge identifier
+   * @param  urls      the drawer and/or portlet names declared by the plugin,
+   *                     never empty
+   * @return           the matching application ids
+   */
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.badgeName = :badgeName
+      OR (app.badgeName IS NULL AND app.url IN (:urls))
+      """)
+  List<Long> getApplicationIdsByBadge(@Param("badgeName") String badgeName, @Param("urls") List<String> urls);
+
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.badgeName = :badgeName
+      """)
+  List<Long> getApplicationIdsByBadgeName(@Param("badgeName") String badgeName);
+
   @Query("""
       SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order, favoriteApp.favorite)
       FROM ApplicationEntity app
