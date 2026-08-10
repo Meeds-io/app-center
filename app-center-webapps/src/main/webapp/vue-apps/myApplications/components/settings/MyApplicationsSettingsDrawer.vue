@@ -25,8 +25,8 @@
     :right="!$vuetify.rtl"
     @closed="reset">
     <template #title>
-      <div class="text-truncate text-header-title font-weight-bold text-color">
-        {{ $t('myApplications.edit.settings.title') }}
+      <div class="text-title font-weight-bold text-color">
+        <span class="text-truncate">{{ $t('myApplications.edit.settings.title') }}</span>
       </div>
     </template>
     <template #content>
