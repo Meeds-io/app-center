@@ -29,6 +29,8 @@ export const BADGE_UPDATED_EVENT = 'appcenter.badge.updated';
  */
 export const badges = Vue.observable({});
 
+export const badgeListeners = Vue.observable({});
+
 /**
  * Requests in flight, keyed by badge name. Four components mounting at the same
  * time must produce one HTTP call, not four: the server-side cache absorbs the
@@ -48,6 +50,14 @@ export function init() {
   // Compensates for the sources that cannot push: coming back from a
   // third-party app refreshes what is displayed, with no server-side polling
   document.addEventListener('visibilitychange', refreshOnVisible);
+}
+
+export function addBadgeListener(badgeName, listener) {
+  if (!badgeListeners[badgeName]) {
+    badgeListeners[badgeName] = [listener];
+  } else {
+    badgeListeners[badgeName].push(listener);
+  }
 }
 
 export function getBadge(badgeName) {
@@ -75,6 +85,14 @@ export function loadBadge(badgeName) {
     .then(resp => (resp?.ok ? resp.text() : null))
     .then(value => {
       const count = value === null ? 0 : (Number(value) || 0);
+      if (count !== badges[badgeName] && badgeListeners[badgeName]?.length) {
+        try {
+          badgeListeners[badgeName].forEach(l => l(count));
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('Error triggering badge `', badgeName,'` update listeners: ', badgeListeners[badgeName], e);
+        }
+      }
       Vue.set(badges, badgeName, count);
       return count;
     })

@@ -54,7 +54,10 @@
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
-      <app-center-badge :badge-name="application.badgeName" absolute />
+      <app-center-badge
+        :badge-name="application.badgeName"
+        :top-spacing="displayName ? '10px' : '-8px'"
+        :x-spacing="displayName ? '12px' : '9px'" />
       <div
         :class="card ? 'absolute-full-size' : 'pt-1'"
         aria-hidden="true">
@@ -119,8 +122,8 @@
         <v-tooltip v-if="displayPinButton" bottom>
           <template #activator="{on, attrs}">
             <div
-              :class="$vuetify.rtl && 'l-0' || 'r-0'"
-              class="position-absolute z-index-two t-0 mt-1 me-5">
+              :class="$vuetify.rtl && 'r-0' || 'l-0'"
+              class="position-absolute z-index-two t-0 mt-2 ms-7">
               <v-btn
                 v-bind="attrs"
                 v-on="on"

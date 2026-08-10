@@ -21,7 +21,7 @@
 -->
 <template>
   <!-- No badge at all when the application carries none, or when nothing is unread -->
-  <div v-if="display" :class="positionClass">
+  <div v-if="display" class="position-relative z-index-two">
     <!-- An addon may replace the default rendering for its own application -->
     <extension-registry-components
       v-if="hasExtension"
@@ -29,46 +29,56 @@
       name="AppCenterAppBadge"
       type="badge"
       strict-type />
-    <v-chip
+    <v-badge
       v-else
       :aria-label="ariaLabel"
-      color="error-color-background"
-      min-width="22"
-      height="22"
-      dark>
-      {{ displayedCount }}
-    </v-chip>
+      :content="displayedCount"
+      :style="heightStyle"
+      class="badge-display position-absolute"
+      color="var(--allPagesBadgePrimaryColor, #d32a2a)"
+      overlap
+      dense
+      flat />
   </div>
 </template>
 <script>
 export default {
   props: {
-    // Badge identifier resolved server side; null when the app carries none
     badgeName: {
       type: String,
       default: null,
     },
-    // Overlays the badge on the top-end corner of the tile it decorates
-    absolute: {
-      type: Boolean,
-      default: false,
+    size: {
+      type: Number,
+      default: () => 20,
+    },
+    topSpacing: {
+      type: String,
+      default: () => '-19px',
+    },
+    xSpacing: {
+      type: String,
+      default: () => '-3px',
     },
   },
   data: () => ({
     hasExtension: false,
+    count: 0,
   }),
   computed: {
-    count() {
-      return this.$applicationBadgeService.badges[this.badgeName] || 0;
+    heightStyle() {
+      return {
+        '--badge-x-spacing': this.xSpacing,
+        '--badge-top-spacing': this.topSpacing,
+        '--badge-min-width': `${this.size}px`,
+        '--badge-height': `${this.size}px`,
+      };
     },
     display() {
       return !!this.badgeName && this.count > 0;
     },
     displayedCount() {
       return this.count > 99 ? '99+' : this.count;
-    },
-    positionClass() {
-      return this.absolute ? 'position-absolute t-0 z-index-two mt-1 ms-1' : 'd-flex align-center';
     },
     // The count must reach assistive technologies, never colour alone
     ariaLabel() {
@@ -81,14 +91,20 @@ export default {
       };
     },
   },
-  created() {
+  async created() {
     if (!this.badgeName) {
       return;
     }
     this.hasExtension = !!extensionRegistry.loadComponents('AppCenterAppBadge')
       ?.filter(component => component.componentName === 'badge')?.length;
+    this.$applicationBadgeService.addBadgeListener(this.badgeName, this.updateBadge);
     this.$applicationBadgeService.init();
-    this.$applicationBadgeService.loadBadge(this.badgeName);
+    this.count = await this.$applicationBadgeService.loadBadge(this.badgeName);
+  },
+  methods: {
+    updateBadge(count) {
+      this.count = count;
+    },
   },
 };
 </script>

@@ -18,6 +18,14 @@
  */
 package io.meeds.appcenter.plugin;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
+
+import io.meeds.appcenter.constant.ApplicationType;
+
 /**
  * Contributes an unread/pending counter — a "badge" — for one Application
  * Center catalog entry. An addon implements this to make its own count appear
@@ -82,21 +90,58 @@ public interface ApplicationBadgePlugin {
   }
 
   /**
-   * @return the {@code url} of the catalog entry of type {@code DRAWER} this
+   * A badge may legitimately belong to several catalog entries — an application
+   * and its timeline or dashboard variant report the same counter — so several
+   * urls may be declared.
+   *
+   * @return the {@code url} of every catalog entry of type {@code DRAWER} this
    *         badge belongs to, so that the binding resolves with no
-   *         administrator action, or {@code null}
+   *         administrator action, empty when none
    */
-  default String getDrawerName() {
-    return null;
+  default List<String> getDrawerNames() {
+    return Collections.emptyList();
   }
 
   /**
-   * @return the {@code url} of the catalog entry of type {@code PORTLET} this
-   *         badge belongs to, so that the binding resolves with no
-   *         administrator action, or {@code null}
+   * The portlets whose catalog entries carry this badge, preferably as
+   * {@code applicationName/portletName} content ids — unambiguous when two
+   * addons ship a portlet of the same name. A bare {@code portlet-name} is also
+   * accepted.
+   * <p>
+   * Note this is <strong>not</strong> what a {@code PORTLET} entry stores: it
+   * stores the portlet <em>instance</em> id chosen in the administration
+   * suggester, and instance ids are generated per deployment so a plugin cannot
+   * know them. App Center maps one to the other.
+   *
+   * @return every portlet this badge belongs to, empty when none
+   * @see    #getDrawerNames()
    */
-  default String getPortletName() {
-    return null;
+  default List<String> getPortletNames() {
+    return Collections.emptyList();
+  }
+
+  /**
+   * @param  type the catalog entry type to resolve against
+   * @return      the urls this badge binds to for that type, never null
+   */
+  default List<String> getDeclaredUrls(ApplicationType type) {
+    if (type == ApplicationType.DRAWER) {
+      return getDrawerNames() == null ? Collections.emptyList() : getDrawerNames();
+    } else if (type == ApplicationType.PORTLET) {
+      return getPortletNames() == null ? Collections.emptyList() : getPortletNames();
+    }
+    return Collections.emptyList();
+  }
+
+  /**
+   * @return every url this badge binds to, whatever the entry type, never null
+   */
+  default List<String> getDeclaredUrls() {
+    return Stream.concat(getDeclaredUrls(ApplicationType.DRAWER).stream(),
+                         getDeclaredUrls(ApplicationType.PORTLET).stream())
+                 .filter(StringUtils::isNotBlank)
+                 .distinct()
+                 .toList();
   }
 
 }

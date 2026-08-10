@@ -151,13 +151,6 @@
               name="applicationUrl"
               class="mb-4" />
           </v-radio-group>
-          <!--
-            Badge binding, driven by the application type: a Drawer or Portlet
-            entry whose provider declares its url resolves on its own and is
-            only displayed read-only; a Link has to be bound by hand; an
-            internal entry no provider matches shows nothing at all, since a
-            disabled empty field would read as broken.
-          -->
           <template v-if="displayBadgeField">
             <div class="mb-2">
               {{ $t('appCenter.adminSetupForm.badge.label') }}
@@ -166,7 +159,7 @@
               v-if="resolvedBadgeProvider"
               class="mb-3"
               outlined>
-              {{ $t('appCenter.adminSetupForm.badge.providedBy', [resolvedBadgeProvider]) }}
+              {{ resolvedBadgeProviderLabel }}
             </v-chip>
             <v-autocomplete
               v-else
@@ -554,16 +547,40 @@ export default {
       return this.application?.type;
     },
     badgeProviders() {
-      return this.badgeProviderList.map(provider => provider.name);
+      return this.badgeProviderList.map(provider => ({
+        text: provider.name,
+        value: this.$te(`appCenter.adminSetupForm.badge.${provider.name}`) ? this.$t(`appCenter.adminSetupForm.badge.${provider.name}`) : provider.name,
+      }));
     },
-    // Provider auto-resolved from the url for an internal application
-    resolvedBadgeProvider() {
-      const url = this.application?.url;
-      if (this.personal || this.type === 'LINK' || !url) {
+    selectedPortletInstance() {
+      if (this.type === 'PORTLET' && this.application?.url && this.$root.portletInstances?.length) {
+        return this.$root.portletInstances.find(p => `${p.id}` === `${this.application?.url}`);
+      } else {
         return null;
       }
-      const declaredUrl = this.type === 'DRAWER' ? 'drawerName' : 'portletName';
-      return this.badgeProviderList.find(provider => provider[declaredUrl] === url)?.name || null;
+    },
+    selectedPortletContentId() {
+      return this.selectedPortletInstance?.contentId;
+    },
+    resolvedBadgeProvider() {
+      let url = this.application?.url;
+      if (this.personal || (this.type !== 'DRAWER' && this.type !== 'PORTLET')) {
+        return null;
+      } else if (this.type === 'PORTLET') {
+        url = this.selectedPortletContentId;
+      }
+      if (!url) {
+        return null;
+      }
+      const propName = this.type === 'DRAWER' ? 'drawerNames' : 'portletNames';
+      return this.badgeProviderList.find(provider => provider[propName]?.includes(url))?.name || null;
+    },
+    resolvedBadgeProviderLabel() {
+      if (this.resolvedBadgeProvider) {
+        return this.$te(`appCenter.adminSetupForm.badge.${this.resolvedBadgeProvider}`) ? this.$t(`appCenter.adminSetupForm.badge.${this.resolvedBadgeProvider}`) : this.resolvedBadgeProvider;
+      } else {
+        return null;
+      }
     },
     // Hidden entirely for an internal application no provider matches: an
     // empty disabled field reads as broken.

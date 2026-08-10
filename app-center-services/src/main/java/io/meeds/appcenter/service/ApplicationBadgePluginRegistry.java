@@ -22,11 +22,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -34,14 +34,16 @@ import org.exoplatform.services.log.Log;
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
+import io.meeds.appcenter.storage.ApplicationBadgePortletStorage;
 
 /**
- * Holds the {@link ApplicationBadgePlugin} contributed by every addon. Beans
- * are collected from the shared Spring context at startup — the preferred
- * plugin-injection mechanism — while {@link #addPlugin(ApplicationBadgePlugin)}
- * stays available for addons still wired through Kernel XML.
+ * Holds the {@link ApplicationBadgePlugin} contributed by every addon, and
+ * resolves which badge a catalog entry displays.
+ * <p>
+ * Each plugin registers itself from its own module's {@code @PostConstruct}, so
+ * registration does not depend on the order in which the WARs boot.
  */
-@Component
+@Service
 public class ApplicationBadgePluginRegistry {
 
   private static final Log                          LOG       = ExoLogger.getLogger(ApplicationBadgePluginRegistry.class);
@@ -54,30 +56,27 @@ public class ApplicationBadgePluginRegistry {
   public static final String                        BADGE_DISABLED = "none";
 
   @Autowired
-  private ApplicationContext                        applicationContext;
+  private ApplicationBadgePortletStorage            badgePortletStorage;
 
   private final Map<String, ApplicationBadgePlugin> plugins   = new ConcurrentHashMap<>();
 
-  private volatile boolean                          collected = false;
-
   /**
-   * Beans are collected on first use rather than in {@code @PostConstruct},
-   * because a contributing addon's WAR boots <em>after</em> App Center — it
-   * depends on it — so an eager scan would silently miss every plugin. The
-   * first badge read happens when a user opens a page, long after every context
-   * is up.
+   * Resolves the urls a badge is bound to, in the form actually stored on the
+   * applications: a {@code PORTLET} entry stores a portlet instance id, so the
+   * declared portlet names have to be translated back to those ids.
+   *
+   * @param  plugin the badge plugin
+   * @return        the stored urls this badge binds to, never null
    */
-  private void collectPluginBeans() {
-    if (collected) {
-      return;
+  public List<String> getBoundUrls(ApplicationBadgePlugin plugin) {
+    if (plugin == null) {
+      return List.of();
     }
-    synchronized (this) {
-      if (collected) {
-        return;
-      }
-      applicationContext.getBeansOfType(ApplicationBadgePlugin.class).values().forEach(this::addPlugin);
-      collected = true;
-    }
+    return Stream.concat(plugin.getDeclaredUrls(ApplicationType.DRAWER).stream(),
+                         badgePortletStorage.getPortletInstanceUrls(plugin.getDeclaredUrls(ApplicationType.PORTLET)).stream())
+                 .filter(StringUtils::isNotBlank)
+                 .distinct()
+                 .toList();
   }
 
   /**
@@ -102,7 +101,6 @@ public class ApplicationBadgePluginRegistry {
     if (StringUtils.isBlank(badgeName)) {
       return null;
     }
-    collectPluginBeans();
     return plugins.get(badgeName);
   }
 
@@ -110,7 +108,6 @@ public class ApplicationBadgePluginRegistry {
    * @return every registered plugin
    */
   public Collection<ApplicationBadgePlugin> getPlugins() {
-    collectPluginBeans();
     return plugins.values();
   }
 
@@ -119,7 +116,6 @@ public class ApplicationBadgePluginRegistry {
    *         suggester
    */
   public List<String> getPluginNames() {
-    collectPluginBeans();
     return plugins.keySet().stream().sorted().toList();
   }
 
@@ -149,12 +145,26 @@ public class ApplicationBadgePluginRegistry {
     if (StringUtils.isBlank(url) || type == null || type == ApplicationType.LINK) {
       return null;
     }
-    collectPluginBeans();
+    if (type == ApplicationType.DRAWER) {
+      // A DRAWER entry stores the drawer name directly
+      return plugins.values()
+                    .stream()
+                    .filter(plugin -> plugin.getDeclaredUrls(type).contains(url))
+                    .map(ApplicationBadgePlugin::getName)
+                    .findFirst()
+                    .orElse(null);
+    }
+    // A PORTLET entry stores a portlet instance id, so it has to be mapped to
+    // that instance's content id before matching what a plugin declares
+    String contentId = badgePortletStorage.getPortletContentId(url);
+    if (StringUtils.isBlank(contentId)) {
+      return null;
+    }
     return plugins.values()
                   .stream()
-                  .filter(plugin -> StringUtils.equals(url,
-                                                       type == ApplicationType.DRAWER ? plugin.getDrawerName() :
-                                                                                      plugin.getPortletName()))
+                  .filter(plugin -> plugin.getDeclaredUrls(type)
+                                          .stream()
+                                          .anyMatch(declared -> ApplicationBadgePortletStorage.matches(declared, contentId)))
                   .map(ApplicationBadgePlugin::getName)
                   .findFirst()
                   .orElse(null);

@@ -18,7 +18,6 @@
  */
 package io.meeds.appcenter.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -148,8 +147,8 @@ public class ApplicationBadgeService {
     return pluginRegistry.getPlugins()
                          .stream()
                          .map(plugin -> new ApplicationBadgeProvider(plugin.getName(),
-                                                                     plugin.getDrawerName(),
-                                                                     plugin.getPortletName()))
+                                                                     plugin.getDeclaredUrls(ApplicationType.DRAWER),
+                                                                     plugin.getDeclaredUrls(ApplicationType.PORTLET)))
                          .sorted((first, second) -> StringUtils.compare(first.name(), second.name()))
                          .toList();
   }
@@ -160,20 +159,9 @@ public class ApplicationBadgeService {
    * read any other application's counter.
    */
   private boolean canAccessBadge(ApplicationBadgePlugin plugin, String username) {
-    List<Application> applications = appCenterStorage.getApplicationsByBadge(plugin.getName(), getDeclaredUrls(plugin));
+    List<Application> applications = appCenterStorage.getApplicationsByBadge(plugin.getName(), pluginRegistry.getBoundUrls(plugin));
     return CollectionUtils.isNotEmpty(applications)
            && applications.stream().anyMatch(application -> appCenterService.canAccess(application, username));
-  }
-
-  private List<String> getDeclaredUrls(ApplicationBadgePlugin plugin) {
-    List<String> urls = new ArrayList<>();
-    if (StringUtils.isNotBlank(plugin.getDrawerName())) {
-      urls.add(plugin.getDrawerName());
-    }
-    if (StringUtils.isNotBlank(plugin.getPortletName())) {
-      urls.add(plugin.getPortletName());
-    }
-    return urls;
   }
 
 }

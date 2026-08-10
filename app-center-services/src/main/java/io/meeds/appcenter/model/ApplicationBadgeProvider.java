@@ -18,14 +18,19 @@
  */
 package io.meeds.appcenter.model;
 
+import java.util.List;
+
 /**
  * A badge provider as the administration form sees it. The declared urls are
  * what lets the form resolve the binding on its own for a Drawer or Portlet
- * entry, instead of asking an administrator to pick one.
+ * entry, instead of asking an administrator to pick one. Several urls may be
+ * declared per type, since one badge can belong to several catalog entries.
  *
- * @param name        the badge identifier
- * @param drawerName  the Drawer entry url this provider binds to, or null
- * @param portletName the Portlet entry url this provider binds to, or null
+ * @param name         the badge identifier
+ * @param drawerNames  the Drawer entry urls this provider binds to, possibly
+ *                       empty
+ * @param portletNames the Portlet entry urls this provider binds to, possibly
+ *                       empty
  */
-public record ApplicationBadgeProvider(String name, String drawerName, String portletName) {
+public record ApplicationBadgeProvider(String name, List<String> drawerNames, List<String> portletNames) {
 }

@@ -41,7 +41,7 @@ import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.services.listener.ListenerService;
@@ -56,7 +56,7 @@ import lombok.SneakyThrows;
 
 @SpringBootTest(classes = { ApplicationBadgeService.class })
 @ExtendWith(MockitoExtension.class)
-public class ApplicationBadgeServiceTest {
+class ApplicationBadgeServiceTest {
 
   private static final String            BADGE_NAME  = "emailUnread";
 
@@ -64,19 +64,19 @@ public class ApplicationBadgeServiceTest {
 
   private static final String            USERNAME    = "testuser";
 
-  @MockBean
+  @MockitoBean
   private ApplicationBadgePluginRegistry pluginRegistry;
 
-  @MockBean
+  @MockitoBean
   private ApplicationBadgeStorage        badgeStorage;
 
-  @MockBean
+  @MockitoBean
   private ApplicationCenterStorage       appCenterStorage;
 
-  @MockBean
+  @MockitoBean
   private ApplicationCenterService       appCenterService;
 
-  @MockBean
+  @MockitoBean
   private ListenerService                listenerService;
 
   @Autowired
