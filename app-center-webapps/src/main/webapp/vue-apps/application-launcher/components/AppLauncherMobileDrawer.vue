@@ -100,7 +100,8 @@
                 card
                 elevate
                 @open="$emit('open', application.type, application.url)"
-                @toogle-favorite="$emit('toogle-favorite', application)" />
+                @toogle-favorite="$emit('toogle-favorite', application)"
+                @edit="$emit('edit', application)" />
             </div>
           </div>
         </v-layout>
