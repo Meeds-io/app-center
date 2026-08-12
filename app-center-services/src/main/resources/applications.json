@@ -68,6 +68,50 @@
                     "*:/platform/externals"
                 ]
             }
+        },
+        {
+            "name": "search",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "Search",
+                "icon": "fa-search",
+                "type": "DRAWER",
+                "url": "search",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "order": 5,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
+        },
+        {
+            "name": "notificationCenter",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "Notifications",
+                "icon": "fa-bell",
+                "type": "DRAWER",
+                "url": "notifications",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": true,
+                "pwa": false,
+                "order": 5,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ]
+            }
         }
     ]
 }
