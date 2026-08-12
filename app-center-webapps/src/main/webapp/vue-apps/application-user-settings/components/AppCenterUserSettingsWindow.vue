@@ -169,7 +169,7 @@ export default {
       ]);
     },
     async refreshApplications() {
-      const data = await this.$applicationService.getApplications(false);
+      const data = await this.$applicationService.getApplications(false, true);
       if (data?.applications) {
         this.applications = data?.applications || [];
       } else {
