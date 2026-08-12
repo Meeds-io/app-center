@@ -37,6 +37,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       quickActionExtensions: [],
       applications: null,
       topbarParentElement: document.querySelector('#middle-topNavigation-container'),
+      // Snapshot of the applications the administrator displays in the topbar.
+      // The JSP-registered entries are complete before any Vue app mounts;
+      // admin-placed App Center items register asynchronously and announce
+      // themselves through the event listened to below.
+      topbarDisplayedApps: [...(eXo.env.portal.topbarDisplayedApps || [])],
       topbarMaxWidth: 324,
       topbarElementWidth: 36,
       collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
@@ -53,7 +58,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       pinnedApplications() {
         return this.pinnedApplicationIds
           .map(id => this.applications?.find?.(app => app.id === id))
-          .filter(app => app);
+          .filter(app => app)
+          // A pin made before the administrator listed the same application in
+          // the topbar is only filtered from display, never deleted: if the
+          // administrator removes the topbar item, the pin reappears by itself
+          .filter(app => !this.topbarDisplayedApps.includes(app.url));
       },
       limit() {
         return Math.max(0, this.maxTopbarApps - this.topbarAppsCount);
@@ -69,6 +78,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     async created() {
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.addEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
       document.addEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
@@ -86,6 +96,9 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       this.resizeObserver?.disconnect?.();
     },
     methods: {
+      refreshTopbarDisplayedApps() {
+        this.topbarDisplayedApps = [...(eXo.env.portal.topbarDisplayedApps || [])];
+      },
       updateMaxApps() {
         const topbarAppsWidth = this.topbarParentElement.offsetWidth - this.$el.offsetWidth;
         this.topbarAppsCount = parseInt(topbarAppsWidth / this.topbarElementWidth) + 1;

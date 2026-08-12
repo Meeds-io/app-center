@@ -38,7 +38,7 @@
       :aria-label="!linkApplication ? ariaLabel : null"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
       :tabindex="!linkApplication ? 0 : null"
-      @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
+      @keydown.space.stop="!pinnedInTopbarByAdmin && $emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
@@ -120,14 +120,19 @@
             </div>
           </v-card>
         </div>
-        <v-tooltip v-if="displayPinButton" bottom>
+        <v-tooltip
+          v-if="displayPinButton"
+          :disabled="pinnedInTopbarByAdmin"
+          bottom>
           <template #activator="{on, attrs}">
             <div
               :class="$vuetify.rtl && 'r-0' || 'l-0'"
+              :title="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : ''"
               class="position-absolute z-index-two t-0 mt-2 ms-7">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
+                :disabled="pinnedInTopbarByAdmin"
                 class="white"
                 elevation="2"
                 x-small
@@ -197,7 +202,10 @@
               </v-btn>
               <v-btn
                 v-if="card && canPinApps"
-                :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+                :title="pinnedInTopbarByAdmin && $t('appCenter.appLauncher.pinDisabledByAdmin')
+                  || pinnedApplication && $t('appCenter.appLauncher.unpinApplication')
+                  || $t('appCenter.appLauncher.pinApplication')"
+                :disabled="pinnedInTopbarByAdmin"
                 class="ms-2"
                 small
                 icon
@@ -351,10 +359,18 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.canPinApps && this.displayName && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.canPinApps && this.displayName && !this.card && (this.hover || (this.pinnedApplication && !this.pinnedInTopbarByAdmin));
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
+    },
+    // An application the administrator already lists in the topbar must not be
+    // pinnable, or the same icon would appear twice. Each topbar portlet
+    // registers the App Center url it displays into this shared page-level
+    // list when it mounts — so an item the administrator disabled, or one not
+    // rendered on this device, keeps its pin available.
+    pinnedInTopbarByAdmin() {
+      return !!eXo.env.portal.topbarDisplayedApps?.includes?.(this.application?.url);
     },
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
