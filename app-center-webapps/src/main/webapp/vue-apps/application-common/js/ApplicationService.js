@@ -17,19 +17,24 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+let applications = null;
 
-export function getApplications(includeDisabled) {
-  return fetch(includeDisabled ? '/app-center/rest/applications/all' : '/app-center/rest/applications', {
-    method: 'GET',
-    credentials: 'include',
-  })
-    .then(resp => {
-      if (resp?.ok) {
-        return resp.json();
-      } else {
-        throw new Error('Error when getting applications');
-      }
-    });
+export function getApplications(includeDisabled, useCache) {
+  if (!useCache || !applications) {
+    applications = fetch(includeDisabled ? '/app-center/rest/applications/all' : '/app-center/rest/applications', {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then(resp => {
+        if (resp?.ok) {
+          return resp.json();
+        } else {
+          throw new Error('Error when getting applications');
+        }
+      })
+      .then(apps => applications = apps);
+  }
+  return Promise.resolve(applications);
 }
 
 export function deleteApplication(id) {
