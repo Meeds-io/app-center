@@ -772,14 +772,15 @@ export default {
       try {
         if (this.personal) {
           this.application.url = this.normalizedPersonalUrl;
+          let app;
           if (isNew) {
-            await this.$applicationService.createPersonalApp(this.application);
+            app = await this.$applicationService.createPersonalApp(this.application);
           } else {
-            await this.$applicationService.updatePersonalApp(this.application);
+            app = await this.$applicationService.updatePersonalApp(this.application);
           }
           this.close();
           this.$root.$emit('alert-message', this.$t(isNew ? 'appCenter.personalApp.save.success' : 'appCenter.personalApp.update.success'), 'success');
-          this.$emit('saved');
+          this.$emit('saved', app, isNew);
         } else {
           if (!this.application?.permissions?.length) {
             this.application.permissions = null;
@@ -823,7 +824,7 @@ export default {
         await this.$applicationService.deletePersonalApp(this.application.id);
         this.close();
         this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.success'), 'success');
-        this.$emit('deleted');
+        this.$emit('deleted', this.application);
       } catch (e) {
         this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.error'), 'error');
       } finally {
