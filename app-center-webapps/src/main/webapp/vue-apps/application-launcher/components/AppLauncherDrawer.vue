@@ -171,8 +171,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <app-center-form-drawer
         ref="personalAppFormDrawer"
         personal
-        @saved="init"
-        @deleted="init" />
+        @saved="handleAppSaved"
+        @deleted="handleAppDeleted" />
     </template>
     <template v-if="!expanded && hasAvailableApplications" #footer>
       <div class="d-flex align-center justify-end">
@@ -371,7 +371,7 @@ export default {
     },
     retrieveApplications(isFavoriteFilter) {
       this.loading = true;
-      return this.getApplications(isFavoriteFilter)
+      return this.getApplications(isFavoriteFilter, true)
         .then(data => {
           const applications = data.applications?.filter(app => app.type !== 'DRAWER'
             || (this.$root.quickActions[app.url]
@@ -485,6 +485,14 @@ export default {
     },
     openPersonalAppForm() {
       this.$refs.personalAppFormDrawer.open(null);
+    },
+    async handleAppSaved() {
+      await this.refresh();
+      document.dispatchEvent(new CustomEvent('app-center-application-pin-refresh'));
+    },
+    async handleAppDeleted() {
+      await this.refresh();
+      document.dispatchEvent(new CustomEvent('app-center-application-pin-refresh'));
     },
     editPersonalApp(application) {
       this.$refs.personalAppFormDrawer.open(application);

@@ -19,7 +19,7 @@
  */
 import './initComponents.js';
 
-const appCenterApplicationsFetch = Vue.prototype.$applicationService.getApplications();
+const appCenterApplicationsFetch = Vue.prototype.$applicationService.getApplications(false, true);
 
 export async function init(parentElementId, topbarApplication) {
   const lang = eXo.env.portal.language || 'en';

@@ -69,6 +69,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     async created() {
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.addEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       await this.$utils.includeExtensions('QuickActionExtension');
@@ -79,6 +80,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     beforeDestroy() {
       document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.removeEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       this.resizeObserver?.disconnect?.();
@@ -90,7 +92,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       },
       async init() {
         if (this.pinnedApplicationIds?.length) {
-          const data = await this.$applicationService.getApplications();
+          const data = await this.$applicationService.getApplications(false, true);
           this.applications = data.applications?.filter(app => app.type !== 'DRAWER'
             || (this.$root.quickActions[app.url]
               && (!this.$root.quickActions[app.url].enabled
