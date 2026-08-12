@@ -72,6 +72,7 @@ export async function init({
       },
       created() {
         document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.addEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
         document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
         document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
         this.refreshQuickActions();
@@ -79,6 +80,7 @@ export async function init({
       },
       beforeDestroy() {
         document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+        document.removeEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
         document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
         document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       },
