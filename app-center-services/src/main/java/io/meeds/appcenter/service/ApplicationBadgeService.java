@@ -66,6 +66,9 @@ public class ApplicationBadgeService {
   private ApplicationBadgeStorage              badgeStorage;
 
   @Autowired
+  private ApplicationBadgeCounter              badgeCounter;
+
+  @Autowired
   private ApplicationCenterStorage             appCenterStorage;
 
   @Autowired
@@ -99,8 +102,10 @@ public class ApplicationBadgeService {
       return 0L;
     }
     // A self-cached plugin owns its own caching and single-flight, so it is
-    // called directly instead of through the App Center badge cache
-    return plugin.isSelfCached() ? plugin.countBadge(username) : badgeStorage.getBadge(badgeName, username);
+    // called directly instead of through the App Center badge cache. Its cold
+    // cache is then unmediated, which is why the counter's time budget and
+    // breaker apply here too
+    return plugin.isSelfCached() ? badgeCounter.count(plugin, username) : badgeStorage.getBadge(badgeName, username);
   }
 
   /**

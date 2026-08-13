@@ -286,6 +286,18 @@ public class ApplicationCenterServiceTest {
 
   @Test
   @SneakyThrows
+  void getApplicationsKeepsTheStoredBadgeBindingForTheAdministrationForm() {
+    Application application = application();
+    application.setBadgeName("none");
+    when(appCenterStorage.getApplications(KEYWORD)).thenReturn(Collections.singletonList(application));
+    when(badgePluginRegistry.resolveBadgeName(application)).thenReturn(null);
+
+    Application returned = applicationCenterService.getApplications(0, 1, KEYWORD).getApplications().get(0);
+    assertNull(returned.getBadgeName());
+  }
+
+  @Test
+  @SneakyThrows
   void getPaginatedApplicationsList() {
     Application application1 = application(11L);
     Application application2 = application(12L);
