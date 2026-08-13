@@ -71,6 +71,9 @@ class ApplicationBadgeServiceTest {
   private ApplicationBadgeStorage        badgeStorage;
 
   @MockitoBean
+  private ApplicationBadgeCounter        badgeCounter;
+
+  @MockitoBean
   private ApplicationCenterStorage       appCenterStorage;
 
   @MockitoBean
@@ -137,10 +140,13 @@ class ApplicationBadgeServiceTest {
     grantAccess();
     when(plugin.isEnabled(USERNAME)).thenReturn(true);
     when(plugin.isSelfCached()).thenReturn(true);
-    when(plugin.countBadge(USERNAME)).thenReturn(7L);
+    // Still counted under the time budget: a self-cached plugin's cold cache is
+    // the one read App Center does not otherwise mediate
+    when(badgeCounter.count(plugin, USERNAME)).thenReturn(7L);
 
     assertEquals(7L, badgeService.getBadge(BADGE_NAME, USERNAME));
     verify(badgeStorage, never()).getBadge(anyString(), anyString());
+    verify(plugin, never()).countBadge(anyString());
   }
 
   @Test
