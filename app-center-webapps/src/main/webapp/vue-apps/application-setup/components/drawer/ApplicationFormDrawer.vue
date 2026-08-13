@@ -445,7 +445,9 @@ export default {
       mimeType: ''
     },
     badgeProviderList: [],
-    badgeDisplayed: true,
+    // Null until the administrator touches the switch, so that the displayed
+    // state follows what is stored; true/false once they decided.
+    badgeDisabledByAdmin: null,
     loading: false
   }),
   computed: {
@@ -585,19 +587,66 @@ export default {
       }
       return this.type === 'LINK' || !!this.resolvedBadgeProvider;
     },
+    // The payload carries the binding as *resolved*, which reports "turned off"
+    // and "not bound" identically. A provider the url matches while the payload
+    // carries no badge can only mean the stored value is the reserved 'none',
+    // since that is the one value resolution refuses. A Link resolves to itself,
+    // so it has no such distinction to recover — and needs none, having nothing
+    // to re-resolve.
+    badgeDisplayed: {
+      get() {
+        if (this.badgeDisabledByAdmin !== null) {
+          return !this.badgeDisabledByAdmin;
+        }
+        return !(this.resolvedBadgeProvider && !this.application?.badgeName);
+      },
+      set(value) {
+        this.badgeDisabledByAdmin = !value;
+      },
+    },
+    // What actually gets stored, as opposed to what the form displays: the
+    // resolved provider is never written back, so an automatic binding keeps
+    // following its plugin instead of being frozen on the first edit.
+    badgeNameToSave() {
+      if (!this.displayBadgeField) {
+        return this.application?.badgeName || null;
+      } else if (!this.badgeDisplayed) {
+        // A reserved marker, distinct from a blank value which would simply let
+        // the url binding resolve again
+        return 'none';
+      }
+      return this.resolvedBadgeProvider ? null : (this.application?.badgeName || null);
+    },
+    // The same computation applied to the loaded application, so that comparing
+    // the two compares stored values. Comparing the resolved name against what
+    // would be stored would report every internal application as modified as
+    // soon as its drawer opens.
+    originalBadgeNameToSave() {
+      if (!this.displayBadgeField) {
+        return this.originalApplication?.badgeName || null;
+      } else if (this.resolvedBadgeProvider) {
+        return this.originalApplication?.badgeName ? null : 'none';
+      }
+      return this.originalApplication?.badgeName || null;
+    },
     applicationToSave() {
       if (this.personal) {
         return { ...this.application };
       }
       return {
         ...this.application,
+        badgeName: this.badgeNameToSave,
         title: JSON.parse(JSON.stringify(this.titles)),
         description: JSON.parse(JSON.stringify(this.descriptions)),
         categoryIds: this.newCategoryIds,
       };
     },
     modified() {
-      return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
+      // The badge is compared apart: both sides hold a resolved name, which is
+      // not what either would store
+      return this.badgeNameToSave !== this.originalBadgeNameToSave
+        || JSON.stringify({ ...this.applicationToSave, badgeName: null })
+          !== JSON.stringify({ ...this.originalApplication, badgeName: null });
     },
     disabled() {
       if (this.personal) {
@@ -627,7 +676,7 @@ export default {
         // The binding follows the url: leaving it behind would keep a stale
         // provider bound after switching Portlet -> Link
         this.application.badgeName = null;
-        this.badgeDisplayed = true;
+        this.badgeDisabledByAdmin = null;
       }
     },
     title(newVal) {
@@ -653,19 +702,6 @@ export default {
     hasShortcut() {
       if (!this.hasShortcut && this.application) {
         this.application.shortcut = null;
-      }
-    },
-    badgeDisplayed() {
-      if (!this.application) {
-        return;
-      }
-      if (this.badgeDisplayed) {
-        // Back to the resolved binding, or to nothing for a Link
-        this.application.badgeName = this.resolvedBadgeProvider || null;
-      } else {
-        // A reserved marker, distinct from a blank value which would simply
-        // let the url binding resolve again
-        this.application.badgeName = 'none';
       }
     },
   },
@@ -698,6 +734,10 @@ export default {
         if (app?.id) {
           const data = await this.$applicationService.getApplications(true);
           this.application = data?.applications?.find?.(a => a.id === app.id);
+          if (this.application) {
+            // Clone to a different object
+            this.application = {...this.application};
+          }
         }
         if (!this.application) {
           this.application = {
@@ -743,6 +783,10 @@ export default {
         this.hasPermissions = !!this.application?.permissions?.length;
         this.hasHelpUrl = !!this.application?.helpPageURL?.length;
         this.hasShortcut = this.application?.shortcut?.length;
+        // Cleared on every open: the drawer is a single instance, so a
+        // previously edited application would otherwise carry its switch over.
+        // Null means "follow what is stored", which badgeDisplayed infers.
+        this.badgeDisabledByAdmin = null;
         this.originalApplication = {
           ...this.application,
           title: JSON.parse(JSON.stringify(this.titles)),

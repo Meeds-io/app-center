@@ -24,6 +24,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
+import io.meeds.appcenter.service.ApplicationBadgeCounter;
 import io.meeds.appcenter.service.ApplicationBadgePluginRegistry;
 
 /**
@@ -48,6 +49,9 @@ public class ApplicationBadgeStorage {
   @Autowired
   private ApplicationBadgePluginRegistry pluginRegistry;
 
+  @Autowired
+  private ApplicationBadgeCounter        badgeCounter;
+
   /**
    * Returns the cached count for a badge, computing it through the contributing
    * plugin on a miss.
@@ -60,7 +64,10 @@ public class ApplicationBadgeStorage {
   @Cacheable(cacheNames = CACHE_NAME, key = "#p0 + ':' + #p1", sync = true)
   public long getBadge(String badgeName, String username) {
     ApplicationBadgePlugin plugin = pluginRegistry.getPlugin(badgeName);
-    return plugin == null ? 0L : plugin.countBadge(username);
+    // Counting under a time budget matters especially here: with sync = true a
+    // plugin that hangs inside the loader would hold the single-flight lock and
+    // block every concurrent reader of that badge, not just its own
+    return plugin == null ? 0L : badgeCounter.count(plugin, username);
   }
 
   /**
