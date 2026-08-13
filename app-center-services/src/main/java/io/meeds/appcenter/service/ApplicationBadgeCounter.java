@@ -21,9 +21,10 @@ package io.meeds.appcenter.service;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -173,11 +174,21 @@ public class ApplicationBadgeCounter {
 
   private synchronized ExecutorService getExecutorService() {
     if (executorService == null) {
-      executorService = Executors.newFixedThreadPool(threads, runnable -> {
-        Thread thread = new Thread(runnable, "app-center-badge-counter");
-        thread.setDaemon(true);
-        return thread;
-      });
+      // A SynchronousQueue hands each task straight to a thread or rejects it.
+      // A queueing pool would never reject, and a source that hangs ignores
+      // interruption — so its threads would pile up, every later count would
+      // queue behind them and time out, and one sick plugin would take every
+      // other badge down with it. Rejection is what keeps the isolation real.
+      executorService = new ThreadPoolExecutor(0,
+                                               threads,
+                                               60L,
+                                               TimeUnit.SECONDS,
+                                               new SynchronousQueue<>(),
+                                               runnable -> {
+                                                 Thread thread = new Thread(runnable, "app-center-badge-counter");
+                                                 thread.setDaemon(true);
+                                                 return thread;
+                                               });
     }
     return executorService;
   }
@@ -201,7 +212,10 @@ public class ApplicationBadgeCounter {
       if (System.currentTimeMillis() < until) {
         return true;
       }
-      // Let one call through to probe whether the source recovered
+      // The open period elapsed: let calls through again to find out whether
+      // the source recovered. Every caller arriving at that moment probes, not
+      // just one — bounded by the pool, and a failing probe costs one timeout
+      // before the breaker's threshold closes it again.
       openedUntil.compareAndSet(until, 0);
       return false;
     }

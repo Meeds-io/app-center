@@ -63,9 +63,14 @@ export default {
   },
   data: () => ({
     hasExtension: false,
-    count: 0,
   }),
   computed: {
+    // Read straight from the shared observable rather than mirrored into local
+    // state: the store already updates every mounted badge at once, and there
+    // is no per-mount listener to register — nor to forget to remove
+    count() {
+      return this.$applicationBadgeService.getBadge(this.badgeName);
+    },
     heightStyle() {
       return {
         '--badge-x-spacing': this.xSpacing,
@@ -94,20 +99,26 @@ export default {
       };
     },
   },
-  async created() {
+  created() {
     if (!this.badgeName) {
       return;
     }
-    this.hasExtension = !!extensionRegistry.loadComponents('AppCenterAppBadge')
-      ?.filter(component => component.componentName === 'badge'
-                            && component.componentOptions?.badgeName === this.badgeName)?.length;
-    this.$applicationBadgeService.addBadgeListener(this.badgeName, this.updateBadge);
+    this.refreshExtension();
+    // An addon may register its rendering after this component mounted — the
+    // override point would otherwise only ever be honoured for extensions
+    // registered before the first badge appeared
+    document.addEventListener('extension-AppCenterAppBadge-updated', this.refreshExtension);
     this.$applicationBadgeService.init();
-    this.count = await this.$applicationBadgeService.loadBadge(this.badgeName);
+    this.$applicationBadgeService.loadBadge(this.badgeName);
+  },
+  beforeDestroy() {
+    document.removeEventListener('extension-AppCenterAppBadge-updated', this.refreshExtension);
   },
   methods: {
-    updateBadge(count) {
-      this.count = count;
+    refreshExtension() {
+      this.hasExtension = !!extensionRegistry.loadComponents('AppCenterAppBadge')
+        ?.filter(component => component.componentName === 'badge'
+                              && component.componentOptions?.badgeName === this.badgeName)?.length;
     },
   },
 };

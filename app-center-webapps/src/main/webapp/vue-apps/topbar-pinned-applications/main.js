@@ -90,6 +90,7 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     beforeDestroy() {
       document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.removeEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
       document.removeEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
@@ -109,7 +110,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
           this.applications = data.applications?.filter(app => app.type !== 'DRAWER'
             || (this.$root.quickActions[app.url]
               && (!this.$root.quickActions[app.url].enabled
-                  || this.$root.quickActions[app.url].enabled())));
+                  || this.$root.quickActions[app.url].enabled())))
+          // Copied before being localized: the list is served from a shared
+          // cache, so localizing in place would change what every other portlet
+          // reading it displays, depending on which one rendered first
+            ?.map(app => ({...app}));
           this.applications.forEach(app => {
             if (app.system) {
               const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();

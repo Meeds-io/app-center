@@ -25,6 +25,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <name>Change PortalContainer Definitions</name>
       <set-method>registerChangePlugin</set-method>
       <type>org.exoplatform.container.definition.PortalContainerDefinitionChangePlugin</type>
+      <!-- Before the addons contributing a badge plugin (agenda 150, email 500,
+           matrix 700) and after layout (15), whose portlet instance service is
+           autowired to resolve a PORTLET application's binding. -->
       <priority>21</priority>
       <init-params>
         <value-param>

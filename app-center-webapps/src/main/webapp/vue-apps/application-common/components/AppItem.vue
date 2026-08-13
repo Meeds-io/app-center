@@ -200,16 +200,24 @@
                   fa-question-circle
                 </v-icon>
               </v-btn>
-              <v-btn
+              <!-- The title sits on the wrapper, not on the button: Vuetify gives a
+                   disabled v-btn pointer-events:none, so a title carried by the
+                   button itself can never be shown — which is precisely when the
+                   explanation is needed. Same shape as the hover control above. -->
+              <span
                 v-if="card && canPinApps"
-                :title="pinnedInTopbarByAdmin && $t('appCenter.appLauncher.pinDisabledByAdmin')
-                  || pinnedApplication && $t('appCenter.appLauncher.unpinApplication')
-                  || $t('appCenter.appLauncher.pinApplication')"
+                :title="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : ''"
+                class="d-inline-flex">
+              <v-btn
+                :title="pinnedInTopbarByAdmin ? ''
+                  : (pinnedApplication ? $t('appCenter.appLauncher.unpinApplication')
+                    : $t('appCenter.appLauncher.pinApplication'))"
                 :disabled="pinnedInTopbarByAdmin"
                 class="ms-2"
                 small
                 icon
                 :aria-pressed="pinnedApplication ? 'true' : 'false'"
+                :aria-label="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : null"
                 mouseup.stop="0"
                 mousedown.stop="0"
                 @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
@@ -219,6 +227,7 @@
                   fa-thumbtack
                 </v-icon>
               </v-btn>
+              </span>
               <v-btn
                 :disabled="application.mandatory"
                 :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
@@ -308,7 +317,18 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
+    // Snapshot of the page-level registry. It is a plain array on eXo.env, so
+    // reading it directly from a computed would never re-evaluate: the topbar
+    // application registers its url asynchronously, after this item may already
+    // have rendered with its pin enabled.
+    topbarDisplayedApps: eXo.env.portal.topbarDisplayedApps?.slice?.() || [],
   }),
+  created() {
+    document.addEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+  },
+  beforeDestroy() {
+    document.removeEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+  },
   computed: {
     computedUrl() {
       return this.$applicationUrlService.computeApplicationUrl(this.application);
@@ -355,7 +375,7 @@ export default {
     // list when it mounts — so an item the administrator disabled, or one not
     // rendered on this device, keeps its pin available.
     pinnedInTopbarByAdmin() {
-      return !!eXo.env.portal.topbarDisplayedApps?.includes?.(this.application?.url);
+      return !!this.topbarDisplayedApps?.includes?.(this.application?.url);
     },
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
@@ -386,6 +406,9 @@ export default {
     }
   },
   methods: {
+    refreshTopbarDisplayedApps() {
+      this.topbarDisplayedApps = eXo.env.portal.topbarDisplayedApps?.slice?.() || [];
+    },
     openApp(event) {
       this.onFocusOut(event);
       if (document.activeElement === event.currentTarget) {
