@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -85,6 +86,15 @@ public class ApplicationCenterStorage {
 
   @Autowired(required = false)
   private CodecInitializer       codecInitializer;
+
+  /**
+   * Self reference, so that a lookup derived from a {@code @Cacheable} method
+   * of this same bean goes through the Spring proxy. Calling it on {@code this}
+   * bypasses the caching aspect entirely: correct results, silently no cache.
+   */
+  @Autowired
+  @Lazy
+  private ApplicationCenterStorage self;
 
   public Application createApplication(Application application) {
     if (application == null) {
@@ -163,7 +173,12 @@ public class ApplicationCenterStorage {
   public List<Application> getApplicationsByBadge(String badgeName, List<String> urls) {
     List<Long> applicationIds = CollectionUtils.isEmpty(urls) ? applicationDAO.getApplicationIdsByBadgeName(badgeName)
                                                               : applicationDAO.getApplicationIdsByBadge(badgeName, urls);
-    return applicationIds.stream().map(this::getApplication).filter(Objects::nonNull).toList();
+    // Through the proxy, otherwise the @Cacheable on getApplication never runs:
+    // this is the badge ACL check, on the read path of a badge that every user
+    // hits on every page, and it would cost a findById plus a file lookup per
+    // bound application every time. Callers here only read the applications,
+    // never mutate them, so serving the cached instances is safe.
+    return applicationIds.stream().map(self::getApplication).filter(Objects::nonNull).toList();
   }
 
   public Application findSystemApplicationByUrl(String url) {

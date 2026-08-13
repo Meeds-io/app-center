@@ -24,12 +24,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.ws.frameworks.cometd.ContinuationService;
 
 import io.meeds.appcenter.model.BadgeWebSocketMessage;
 import io.meeds.social.util.JsonUtils;
 
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Notifies a browser that one of its badges changed.
@@ -41,8 +42,9 @@ import lombok.extern.slf4j.Slf4j;
  * authenticated REST endpoint, where the ACL is applied again.
  */
 @Service
-@Slf4j
 public class ApplicationBadgeWebSocketService {
+
+  private static final Log LOG = ExoLogger.getLogger(ApplicationBadgeWebSocketService.class);
 
   public static final String  COMETD_CHANNEL = "/eXo/Application/AppCenter/Badge";
 
@@ -69,13 +71,12 @@ public class ApplicationBadgeWebSocketService {
       String wsMessage = JsonUtils.toJsonString(new BadgeWebSocketMessage(eventName, Map.of(BADGE_NAME_KEY, badgeName)));
       continuationService.sendMessage(username, COMETD_CHANNEL, wsMessage);
     } catch (Exception e) {
-      if (log.isDebugEnabled()) {
-        log.debug("Could not notify user {} that badge {} changed; it will refresh on next read", username, badgeName, e);
-      } else {
-        log.warn("Could not notify user {} that badge {} changed; it will refresh on next read. (Enable debug level for full stack trace)",
-                 username,
-                 badgeName);
-      }
+      // Debug, not warn: a transport that is not up yet is an expected state,
+      // not an incident. Seti only exists once its servlet started, and badge
+      // events fire during another addon's boot-time synchronisation. The value
+      // was already evicted and the TTL is the backstop, so the frame is best
+      // effort by design and must never surface on the operation that caused it.
+      LOG.debug("Could not notify user {} that badge {} changed; it will refresh on next read", username, badgeName, e);
     }
   }
 

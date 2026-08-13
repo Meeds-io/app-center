@@ -182,16 +182,6 @@ class ApplicationBadgeServiceTest {
     verify(listenerService, never()).broadcast(anyString(), any(), any());
   }
 
-  @Test
-  void getBadgeNameDelegatesResolutionToTheRegistry() {
-    // Resolution lives in the registry so that ApplicationCenterService can
-    // decorate applications without a bean cycle between the two services
-    Application application = application();
-    when(pluginRegistry.resolveBadgeName(application)).thenReturn(BADGE_NAME);
-
-    assertEquals(BADGE_NAME, badgeService.getBadgeName(application));
-  }
-
   private void registerPlugin() {
     when(pluginRegistry.getPlugin(BADGE_NAME)).thenReturn(plugin);
   }

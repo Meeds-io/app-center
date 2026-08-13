@@ -400,8 +400,11 @@ export default {
           }
         }).finally(() => this.loading = false);
     },
-    getApplications(favorites) {
-      return favorites ? this.$applicationFavoriteService.getFavorites() : this.$applicationService.getApplications(false);
+    getApplications(favorites, useCache) {
+      if (favorites) {
+        return this.$applicationFavoriteService.getFavorites();
+      }
+      return this.$applicationService.getApplications(false, useCache);
     },
     updateApplicationsOrder() {
       const applicationsOrder = this.favoriteApplications.map((app, index) => ({

@@ -133,6 +133,39 @@ class ApplicationBadgeCounterTest {
   }
 
   @Test
+  @SneakyThrows
+  void aHungPluginDoesNotStarveTheOtherBadges() {
+    ReflectionTestUtils.setField(counter, "timeoutMillis", 200L);
+    CountDownLatch release = new CountDownLatch(1);
+    ApplicationBadgePlugin hung = mock(ApplicationBadgePlugin.class);
+    lenient().when(hung.getName()).thenReturn("hungBadge");
+    when(hung.countBadge(USERNAME)).thenAnswer(invocation -> {
+      // Keeps its thread and ignores interruption, exactly as a plugin blocked
+      // on a socket read does — which is why cancelling on timeout is only best
+      // effort and the queue must not absorb the backlog
+      boolean released = false;
+      while (!released) {
+        try {
+          released = release.await(50, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) { // NOSONAR - deliberately ignored
+          released = false;
+        }
+      }
+      return 1L;
+    });
+    when(plugin.countBadge(USERNAME)).thenReturn(9L);
+
+    long hungCount = counter.count(hung, USERNAME);
+
+    // A healthy plugin must still be served, not queue behind the hung one
+    long healthyCount = counter.count(plugin, USERNAME);
+    release.countDown();
+
+    assertEquals(0L, hungCount);
+    assertEquals(9L, healthyCount);
+  }
+
+  @Test
   void breakerClosesAgainAfterASuccess() {
     when(plugin.countBadge(USERNAME)).thenThrow(new IllegalStateException("source unavailable"))
                                       .thenReturn(4L)
