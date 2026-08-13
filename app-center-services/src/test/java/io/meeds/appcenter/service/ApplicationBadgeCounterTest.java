@@ -122,7 +122,7 @@ class ApplicationBadgeCounterTest {
 
   @Test
   void breakerStopsCallingAPluginThatKeepsFailing() {
-    when(plugin.countBadge(USERNAME)).thenThrow(new IllegalStateException("source unavailable"));
+    lenient().when(plugin.countBadge(USERNAME)).thenThrow(new IllegalStateException("source unavailable"));
 
     // Threshold is 2: the third read must not reach the plugin at all
     assertEquals(0L, counter.count(plugin, USERNAME));
