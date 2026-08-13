@@ -196,6 +196,7 @@
   </changeSet>
 
   <changeSet author="appCenter" id="1.0.0-exip-48140">
+    <validCheckSum>ANY</validCheckSum>
     <addColumn tableName="AC_APPLICATION">
       <column name="BADGE_NAME" type="VARCHAR(200)" />
     </addColumn>
