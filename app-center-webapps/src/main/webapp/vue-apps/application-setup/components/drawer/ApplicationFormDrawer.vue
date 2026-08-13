@@ -164,7 +164,7 @@
             ref="personalApplicationUrl"
             id="personalApplicationUrl"
             v-model="application.url"
-            :placeholder="$t('appCenter.adminSetupForm.urlPlaceholder')"
+            :placeholder="$t('appCenter.personalApp.form.url.placeholder')"
             :rules="rules.personalUrl"
             name="personalApplicationUrl"
             class="border-box-sizing width-auto pt-0 mt-2"
@@ -438,17 +438,8 @@ export default {
         && this.application?.url
       );
     },
-    validPersonalUrl() {
-      const url = this.application?.url?.trim();
-      if (!url) {
-        return false;
-      }
-      try {
-        const parsed = new URL(url);
-        return ['https:', 'http:'].includes(parsed.protocol);
-      } catch {
-        return false;
-      }
+    normalizedPersonalUrl() {
+      return this.$applicationUrlService.normalizePersonalUrl(this.application?.url);
     },
     validHelpPageUrl() {
       return !this.application?.helpPageURL
@@ -483,7 +474,7 @@ export default {
         ],
         personalUrl: [
           () => !!this.application?.url?.trim()?.length || ' ',
-          () => !!this.validPersonalUrl || this.$t('appCenter.form.url.invalidLink'),
+          () => !!this.normalizedPersonalUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         helpUrl: [
           () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
@@ -528,8 +519,7 @@ export default {
       if (this.personal) {
         return this.loading || !this.modified
           || !this.application?.title?.trim()?.length
-          || !this.application?.url?.trim()?.length
-          || !this.validPersonalUrl;
+          || !this.normalizedPersonalUrl;
       }
       return this.loading || !this.modified
         || !this.title?.length
@@ -676,6 +666,7 @@ export default {
       this.loading = true;
       try {
         if (this.personal) {
+          this.application.url = this.normalizedPersonalUrl;
           if (isNew) {
             await this.$applicationService.createPersonalApp(this.application);
           } else {
