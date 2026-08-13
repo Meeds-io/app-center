@@ -22,6 +22,18 @@
 // a cache slot
 const applicationsCache = {};
 
+/**
+ * Drops the cached lists, so the next read reflects a catalog change. Called by
+ * every mutation below: the refresh events the portlets already listen to would
+ * otherwise make them re-read the pre-mutation promise and show nothing new
+ * until a full page reload.
+ *
+ * @returns {void}
+ */
+export function clearApplicationsCache() {
+  Object.keys(applicationsCache).forEach(key => delete applicationsCache[key]);
+}
+
 export function getApplications(includeDisabled, useCache) {
   if (!useCache) {
     return fetchApplications(includeDisabled);
@@ -62,6 +74,7 @@ export function deleteApplication(id) {
       if (!resp?.ok) {
         throw new Error('Error when deleting application by id');
       }
+      clearApplicationsCache();
     });
 }
 
@@ -76,11 +89,12 @@ export function createApplication(application) {
   })
     .then(resp => {
       if (resp?.ok) {
+        clearApplicationsCache();
         return resp.json();
       } else {
         throw new Error('Error when creating application');
       }
-    });      
+    });
 }
 
 export function updateApplication(application) {
@@ -96,6 +110,7 @@ export function updateApplication(application) {
       if (!resp?.ok) {
         throw new Error('Error when updating application');
       }
+      clearApplicationsCache();
     });
 }
 
@@ -132,6 +147,7 @@ export function createPersonalApp(application) {
     body: JSON.stringify(application),
   }).then(resp => {
     if (resp?.ok) {
+      clearApplicationsCache();
       return resp.json();
     }
     throw new Error('Error when creating personal application');
@@ -148,6 +164,7 @@ export function updatePersonalApp(application) {
     if (!resp?.ok) {
       throw new Error('Error when updating personal application');
     }
+    clearApplicationsCache();
   });
 }
 
@@ -159,5 +176,6 @@ export function deletePersonalApp(id) {
     if (!resp?.ok) {
       throw new Error('Error when deleting personal application');
     }
+    clearApplicationsCache();
   });
 }

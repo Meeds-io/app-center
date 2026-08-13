@@ -131,19 +131,6 @@ public class ApplicationBadgeService {
   }
 
   /**
-   * Resolves which badge an application displays: an explicitly bound name
-   * wins, otherwise a Drawer or Portlet entry matches the url declared by a
-   * plugin.
-   *
-   * @param  application the catalog entry
-   * @return             the badge identifier, or null when the application
-   *                       carries none
-   */
-  public String getBadgeName(Application application) {
-    return pluginRegistry.resolveBadgeName(application);
-  }
-
-  /**
    * @return every registered badge provider with the urls it declares, so that
    *         the administration form can resolve an internal application's
    *         binding without asking anyone

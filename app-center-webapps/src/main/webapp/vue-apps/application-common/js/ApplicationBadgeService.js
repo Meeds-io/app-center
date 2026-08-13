@@ -29,8 +29,6 @@ export const BADGE_UPDATED_EVENT = 'appcenter.badge.updated';
  */
 export const badges = Vue.observable({});
 
-export const badgeListeners = Vue.observable({});
-
 /**
  * Requests in flight, keyed by badge name. Four components mounting at the same
  * time must produce one HTTP call, not four: the server-side cache absorbs the
@@ -52,14 +50,6 @@ export function init() {
   document.addEventListener('visibilitychange', refreshOnVisible);
 }
 
-export function addBadgeListener(badgeName, listener) {
-  if (!badgeListeners[badgeName]) {
-    badgeListeners[badgeName] = [listener];
-  } else {
-    badgeListeners[badgeName].push(listener);
-  }
-}
-
 export function getBadge(badgeName) {
   return badges[badgeName] || 0;
 }
@@ -78,6 +68,12 @@ export function loadBadge(badgeName) {
   if (inFlight[badgeName]) {
     return inFlight[badgeName];
   }
+  if (!Object.prototype.hasOwnProperty.call(badges, badgeName)) {
+    // Declared before the fetch so that a component reading it registers a
+    // reactive dependency straight away: a key added later would not notify one
+    // that read it while it was still missing
+    Vue.set(badges, badgeName, 0);
+  }
   inFlight[badgeName] = fetch(`/app-center/rest/badges/${encodeURIComponent(badgeName)}`, {
     method: 'GET',
     credentials: 'include',
@@ -85,14 +81,8 @@ export function loadBadge(badgeName) {
     .then(resp => (resp?.ok ? resp.text() : null))
     .then(value => {
       const count = value === null ? 0 : (Number(value) || 0);
-      if (count !== badges[badgeName] && badgeListeners[badgeName]?.length) {
-        try {
-          badgeListeners[badgeName].forEach(l => l(count));
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('Error triggering badge `', badgeName,'` update listeners: ', badgeListeners[badgeName], e);
-        }
-      }
+      // Every mounted component reads this one observable, so there is nothing
+      // to notify: no listener list to grow on each mount, and none to leak
       Vue.set(badges, badgeName, count);
       return count;
     })

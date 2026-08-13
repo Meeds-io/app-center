@@ -197,7 +197,7 @@
 
   <changeSet author="appCenter" id="1.0.0-exip-48140">
     <addColumn tableName="AC_APPLICATION">
-      <column name="BADGE_NAME" type="NVARCHAR(200)" />
+      <column name="BADGE_NAME" type="VARCHAR(200)" />
     </addColumn>
   </changeSet>
 
