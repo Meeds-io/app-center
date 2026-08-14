@@ -28,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Collections;
 
-import org.exoplatform.commons.file.services.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,11 +36,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -53,6 +52,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import org.exoplatform.commons.file.services.FileService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.model.Application;
@@ -93,10 +94,10 @@ public class ApplicationRestTest {
     OBJECT_MAPPER.registerModule(new JavaTimeModule());
   }
 
-  @MockBean
+  @MockitoBean
   private ApplicationCenterService applicationCenterService;
 
-  @MockBean
+  @MockitoBean
   private FileService fileService;
 
   @Autowired
@@ -201,7 +202,8 @@ public class ApplicationRestTest {
                            null,
                            null,
                            false,
-                           false);
+                           false,
+                           null);
   }
 
   @SneakyThrows

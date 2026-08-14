@@ -19,7 +19,7 @@
  */
 import './initComponents.js';
 
-const appCenterApplicationsFetch = Vue.prototype.$applicationService.getApplications();
+const appCenterApplicationsFetch = Vue.prototype.$applicationService.getApplications(false, true);
 
 export async function init(parentElementId, topbarApplication) {
   const lang = eXo.env.portal.language || 'en';
@@ -65,6 +65,11 @@ export async function init(parentElementId, topbarApplication) {
                 this.$root.quickActions[app.url]
                 && (!this.$root.quickActions[app.url].enabled || this.$root.quickActions[app.url].enabled())))
             );
+            // Copied before being localized, for the same reason as the pinned
+            // applications list: the payload comes from a shared cache
+            if (this.application) {
+              this.application = {...this.application};
+            }
             if (this.application?.system) {
               const title = /\s/.test(this.application.title) ? this.application.title.replace(/ /g,'.').toLowerCase() : this.application.title.toLowerCase();
               if (this.$te(`appCenter.system.application.${title}`)) {

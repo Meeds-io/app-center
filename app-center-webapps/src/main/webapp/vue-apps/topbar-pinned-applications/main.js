@@ -37,6 +37,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       quickActionExtensions: [],
       applications: null,
       topbarParentElement: document.querySelector('#middle-topNavigation-container'),
+      // Snapshot of the applications the administrator displays in the topbar.
+      // The JSP-registered entries are complete before any Vue app mounts;
+      // admin-placed App Center items register asynchronously and announce
+      // themselves through the event listened to below.
+      topbarDisplayedApps: [...(eXo.env.portal.topbarDisplayedApps || [])],
       topbarMaxWidth: 324,
       topbarElementWidth: 36,
       collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
@@ -53,7 +58,11 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
       pinnedApplications() {
         return this.pinnedApplicationIds
           .map(id => this.applications?.find?.(app => app.id === id))
-          .filter(app => app);
+          .filter(app => app)
+          // A pin made before the administrator listed the same application in
+          // the topbar is only filtered from display, never deleted: if the
+          // administrator removes the topbar item, the pin reappears by itself
+          .filter(app => !this.topbarDisplayedApps.includes(app.url));
       },
       limit() {
         return Math.max(0, this.maxTopbarApps - this.topbarAppsCount);
@@ -69,6 +78,8 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     async created() {
       document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.addEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+      document.addEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.addEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       await this.$utils.includeExtensions('QuickActionExtension');
@@ -79,22 +90,31 @@ export async function init(pinnedApplicationIds, topbarAppsCount) {
     },
     beforeDestroy() {
       document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      document.removeEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+      document.removeEventListener('app-center-application-pin-refresh', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-unpinned', this.refreshPinnedApplications);
       document.removeEventListener('app-center-application-pinned', this.refreshPinnedApplications);
       this.resizeObserver?.disconnect?.();
     },
     methods: {
+      refreshTopbarDisplayedApps() {
+        this.topbarDisplayedApps = [...(eXo.env.portal.topbarDisplayedApps || [])];
+      },
       updateMaxApps() {
         const topbarAppsWidth = this.topbarParentElement.offsetWidth - this.$el.offsetWidth;
         this.topbarAppsCount = parseInt(topbarAppsWidth / this.topbarElementWidth) + 1;
       },
       async init() {
         if (this.pinnedApplicationIds?.length) {
-          const data = await this.$applicationService.getApplications();
+          const data = await this.$applicationService.getApplications(false, true);
           this.applications = data.applications?.filter(app => app.type !== 'DRAWER'
             || (this.$root.quickActions[app.url]
               && (!this.$root.quickActions[app.url].enabled
-                  || this.$root.quickActions[app.url].enabled())));
+                  || this.$root.quickActions[app.url].enabled())))
+          // Copied before being localized: the list is served from a shared
+          // cache, so localizing in place would change what every other portlet
+          // reading it displays, depending on which one rendered first
+            ?.map(app => ({...app}));
           this.applications.forEach(app => {
             if (app.system) {
               const title = /\s/.test(app.title) ? app.title.replace(/ /g,'.').toLowerCase() : app.title.toLowerCase();

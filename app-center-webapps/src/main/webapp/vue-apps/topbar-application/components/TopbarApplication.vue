@@ -31,10 +31,14 @@
     :title="titleTooltip"
     :loading="loading"
     icon>
+    <app-center-badge
+      :badge-name="application.badgeName"
+      top-spacing="-20px"
+      x-spacing="9px" />
     <v-icon
       v-if="application?.icon && !application?.imageUrl"
       size="20"
-      class="d-flex align-center justify-center">
+      class="d-flex align-center justify-center line-height-normal">
       {{ application.icon }}
     </v-icon>
     <v-card
@@ -73,6 +77,17 @@ export default {
     loading: false,
     portletDrawer: false,
   }),
+  watch: {
+    application: {
+      immediate: true,
+      handler() {
+        this.registerAsTopbarDisplayed();
+      },
+    },
+    hidden() {
+      this.registerAsTopbarDisplayed();
+    },
+  },
   computed: {
     computedUrl() {
       return this.$applicationUrlService.computeApplicationUrl(this.application);
@@ -91,6 +106,32 @@ export default {
     },
   },
   methods: {
+    registerAsTopbarDisplayed() {
+      if (!this.application?.url) {
+        return;
+      }
+      // Announces that this application is displayed in the topbar by the
+      // administrator, so the Application Center disables pinning it: pinned,
+      // the same icon would appear twice
+      const topbarDisplayedApps = eXo.env.portal.topbarDisplayedApps = eXo.env.portal.topbarDisplayedApps || [];
+      const registeredIndex = topbarDisplayedApps.indexOf(this.application.url);
+      // The registry must reflect what is actually displayed, so becoming hidden
+      // has to withdraw the registration and give the user their pin back
+      if (this.hidden) {
+        if (registeredIndex < 0) {
+          return;
+        }
+        topbarDisplayedApps.splice(registeredIndex, 1);
+      } else if (registeredIndex < 0) {
+        topbarDisplayedApps.push(this.application.url);
+      } else {
+        return;
+      }
+      // Unlike the JSP registrations, this one runs after Vue apps mounted —
+      // the application resolves asynchronously from the catalog — so late
+      // readers holding a snapshot are told to refresh it
+      document.dispatchEvent(new CustomEvent('topbar-displayed-apps-updated'));
+    },
     async openApplication() {
       if (this.appType === 'PORTLET') {
         this.loading = true;

@@ -105,6 +105,9 @@ public class ApplicationCenterServiceTest {
   private static final Long        ID             = 2l;
 
   @MockBean
+  private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @MockBean
   private ConfigurationManager     configurationManager;
 
   @MockBean
@@ -279,6 +282,18 @@ public class ApplicationCenterServiceTest {
     assertEquals(1, applicationsList.getSize());
     assertEquals(0, applicationsList.getOffset());
     assertEquals(2, applicationsList.getLimit());
+  }
+
+  @Test
+  @SneakyThrows
+  void getApplicationsKeepsTheStoredBadgeBindingForTheAdministrationForm() {
+    Application application = application();
+    application.setBadgeName("none");
+    when(appCenterStorage.getApplications(KEYWORD)).thenReturn(Collections.singletonList(application));
+    when(badgePluginRegistry.resolveBadgeName(application)).thenReturn(null);
+
+    Application returned = applicationCenterService.getApplications(0, 1, KEYWORD).getApplications().get(0);
+    assertNull(returned.getBadgeName());
   }
 
   @Test
@@ -742,7 +757,8 @@ public class ApplicationCenterServiceTest {
                            null,
                            null,
                            false,
-                           false);
+                           false,
+                           null);
   }
 
 }

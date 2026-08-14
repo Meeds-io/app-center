@@ -151,6 +151,44 @@
               name="applicationUrl"
               class="mb-4" />
           </v-radio-group>
+          <template v-if="displayBadgeField">
+            <div class="mb-2">
+              {{ $t('appCenter.adminSetupForm.badge.label') }}
+            </div>
+            <v-chip
+              v-if="resolvedBadgeProvider"
+              class="mb-3"
+              outlined>
+              {{ resolvedBadgeProviderLabel }}
+            </v-chip>
+            <v-autocomplete
+              v-else
+              v-model="application.badgeName"
+              :items="badgeProviders"
+              :placeholder="$t('appCenter.adminSetupForm.badge.placeholder')"
+              class="border-box-sizing width-auto pt-0 mb-3"
+              name="applicationBadgeName"
+              item-value="value"
+              item-text="text"
+              deletable-chips
+              outlined
+              attach
+              chips
+              dense />
+            <div class="d-flex full-width justify-space-between align-center mb-3">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="badgeDisplayed = !badgeDisplayed">
+                {{ $t('appCenter.adminSetupForm.badge.display') }}
+              </v-card>
+              <v-switch
+                v-model="badgeDisplayed"
+                class="my-0 me-n2 pa-0"
+                name="applicationBadgeSwitch"
+                hide-details />
+            </div>
+          </template>
           <category-input
             v-model="newCategoryIds"
             label="appCenter.adminSetupForm.categories"
@@ -406,6 +444,10 @@ export default {
       uploadId: 0,
       mimeType: ''
     },
+    badgeProviderList: [],
+    // Null until the administrator touches the switch, so that the displayed
+    // state follows what is stored; true/false once they decided.
+    badgeDisabledByAdmin: null,
     loading: false
   }),
   computed: {
@@ -501,19 +543,110 @@ export default {
     type() {
       return this.application?.type;
     },
+    badgeProviders() {
+      return this.badgeProviderList.map(provider => ({
+        value: provider.name,
+        text: this.$te(`appCenter.adminSetupForm.badge.${provider.name}`) ? this.$t(`appCenter.adminSetupForm.badge.${provider.name}`) : provider.name,
+      }));
+    },
+    selectedPortletInstance() {
+      if (this.type === 'PORTLET' && this.application?.url && this.$root.portletInstances?.length) {
+        return this.$root.portletInstances.find(p => `${p.id}` === `${this.application?.url}`);
+      } else {
+        return null;
+      }
+    },
+    selectedPortletContentId() {
+      return this.selectedPortletInstance?.contentId;
+    },
+    resolvedBadgeProvider() {
+      let url = this.application?.url;
+      if (this.personal || (this.type !== 'DRAWER' && this.type !== 'PORTLET')) {
+        return null;
+      } else if (this.type === 'PORTLET') {
+        url = this.selectedPortletContentId;
+      }
+      if (!url) {
+        return null;
+      }
+      const propName = this.type === 'DRAWER' ? 'drawerNames' : 'portletNames';
+      return this.badgeProviderList.find(provider => provider[propName]?.includes(url))?.name || null;
+    },
+    resolvedBadgeProviderLabel() {
+      if (this.resolvedBadgeProvider) {
+        return this.$te(`appCenter.adminSetupForm.badge.${this.resolvedBadgeProvider}`) ? this.$t(`appCenter.adminSetupForm.badge.${this.resolvedBadgeProvider}`) : this.resolvedBadgeProvider;
+      } else {
+        return null;
+      }
+    },
+    // Hidden entirely for an internal application no provider matches: an
+    // empty disabled field reads as broken.
+    displayBadgeField() {
+      if (this.personal || !this.badgeProviderList.length) {
+        return false;
+      }
+      return this.type === 'LINK' || !!this.resolvedBadgeProvider;
+    },
+    // The payload carries the binding as *resolved*, which reports "turned off"
+    // and "not bound" identically. A provider the url matches while the payload
+    // carries no badge can only mean the stored value is the reserved 'none',
+    // since that is the one value resolution refuses. A Link resolves to itself,
+    // so it has no such distinction to recover — and needs none, having nothing
+    // to re-resolve.
+    badgeDisplayed: {
+      get() {
+        if (this.badgeDisabledByAdmin !== null) {
+          return !this.badgeDisabledByAdmin;
+        }
+        return !(this.resolvedBadgeProvider && !this.application?.badgeName);
+      },
+      set(value) {
+        this.badgeDisabledByAdmin = !value;
+      },
+    },
+    // What actually gets stored, as opposed to what the form displays: the
+    // resolved provider is never written back, so an automatic binding keeps
+    // following its plugin instead of being frozen on the first edit.
+    badgeNameToSave() {
+      if (!this.displayBadgeField) {
+        return this.application?.badgeName || null;
+      } else if (!this.badgeDisplayed) {
+        // A reserved marker, distinct from a blank value which would simply let
+        // the url binding resolve again
+        return 'none';
+      }
+      return this.resolvedBadgeProvider ? null : (this.application?.badgeName || null);
+    },
+    // The same computation applied to the loaded application, so that comparing
+    // the two compares stored values. Comparing the resolved name against what
+    // would be stored would report every internal application as modified as
+    // soon as its drawer opens.
+    originalBadgeNameToSave() {
+      if (!this.displayBadgeField) {
+        return this.originalApplication?.badgeName || null;
+      } else if (this.resolvedBadgeProvider) {
+        return this.originalApplication?.badgeName ? null : 'none';
+      }
+      return this.originalApplication?.badgeName || null;
+    },
     applicationToSave() {
       if (this.personal) {
         return { ...this.application };
       }
       return {
         ...this.application,
+        badgeName: this.badgeNameToSave,
         title: JSON.parse(JSON.stringify(this.titles)),
         description: JSON.parse(JSON.stringify(this.descriptions)),
         categoryIds: this.newCategoryIds,
       };
     },
     modified() {
-      return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
+      // The badge is compared apart: both sides hold a resolved name, which is
+      // not what either would store
+      return this.badgeNameToSave !== this.originalBadgeNameToSave
+        || JSON.stringify({ ...this.applicationToSave, badgeName: null })
+          !== JSON.stringify({ ...this.originalApplication, badgeName: null });
     },
     disabled() {
       if (this.personal) {
@@ -540,6 +673,10 @@ export default {
     type(newVal, oldVal) {
       if (this.drawer && newVal && oldVal && this.application) {
         this.application.url = null;
+        // The binding follows the url: leaving it behind would keep a stale
+        // provider bound after switching Portlet -> Link
+        this.application.badgeName = null;
+        this.badgeDisabledByAdmin = null;
       }
     },
     title(newVal) {
@@ -570,6 +707,10 @@ export default {
   },
   created() {
     this.$root.$on('app-center-drawer-open', this.open);
+    if (!this.personal) {
+      this.$applicationBadgeService.getBadgeProviders()
+        .then(providers => this.badgeProviderList = providers || []);
+    }
   },
   beforeDestroy() {
     this.$root.$off('app-center-drawer-open', this.open);
@@ -593,6 +734,10 @@ export default {
         if (app?.id) {
           const data = await this.$applicationService.getApplications(true);
           this.application = data?.applications?.find?.(a => a.id === app.id);
+          if (this.application) {
+            // Clone to a different object
+            this.application = {...this.application};
+          }
         }
         if (!this.application) {
           this.application = {
@@ -638,6 +783,10 @@ export default {
         this.hasPermissions = !!this.application?.permissions?.length;
         this.hasHelpUrl = !!this.application?.helpPageURL?.length;
         this.hasShortcut = this.application?.shortcut?.length;
+        // Cleared on every open: the drawer is a single instance, so a
+        // previously edited application would otherwise carry its switch over.
+        // Null means "follow what is stored", which badgeDisplayed infers.
+        this.badgeDisabledByAdmin = null;
         this.originalApplication = {
           ...this.application,
           title: JSON.parse(JSON.stringify(this.titles)),
@@ -667,14 +816,15 @@ export default {
       try {
         if (this.personal) {
           this.application.url = this.normalizedPersonalUrl;
+          let app;
           if (isNew) {
-            await this.$applicationService.createPersonalApp(this.application);
+            app = await this.$applicationService.createPersonalApp(this.application);
           } else {
-            await this.$applicationService.updatePersonalApp(this.application);
+            app = await this.$applicationService.updatePersonalApp(this.application);
           }
           this.close();
           this.$root.$emit('alert-message', this.$t(isNew ? 'appCenter.personalApp.save.success' : 'appCenter.personalApp.update.success'), 'success');
-          this.$emit('saved');
+          this.$emit('saved', app, isNew);
         } else {
           if (!this.application?.permissions?.length) {
             this.application.permissions = null;
@@ -718,7 +868,7 @@ export default {
         await this.$applicationService.deletePersonalApp(this.application.id);
         this.close();
         this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.success'), 'success');
-        this.$emit('deleted');
+        this.$emit('deleted', this.application);
       } catch (e) {
         this.$root.$emit('alert-message', this.$t('appCenter.personalApp.delete.error'), 'error');
       } finally {

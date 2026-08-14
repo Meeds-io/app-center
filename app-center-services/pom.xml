@@ -52,6 +52,12 @@
       <artifactId>mcp-server-tools</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- Resolves a PORTLET application's stored portlet instance id to its portlet name -->
+    <dependency>
+      <groupId>io.meeds.layout</groupId>
+      <artifactId>layout-service</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>

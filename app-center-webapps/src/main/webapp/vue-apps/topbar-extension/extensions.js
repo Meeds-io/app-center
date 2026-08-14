@@ -43,7 +43,7 @@ let cachedApplications;
 
 async function getApplications() {
   if (!cachedApplications) {
-    const data = await Vue.prototype.$applicationService.getApplications();
+    const data = await Vue.prototype.$applicationService.getApplications(false, true);
     cachedApplications = data?.applications || [];
   }
   return cachedApplications;

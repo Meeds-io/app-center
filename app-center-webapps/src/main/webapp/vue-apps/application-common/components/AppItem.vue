@@ -38,7 +38,7 @@
       :aria-label="!linkApplication ? ariaLabel : null"
       class="appLauncherItemContainer fill-height d-flex flex-column align-center justify-center position-relative overflow-hidden border-box-sizing"
       :tabindex="!linkApplication ? 0 : null"
-      @keydown.space.stop="$emit('toogle-pin', !pinnedApplication)"
+      @keydown.space.stop="!pinnedInTopbarByAdmin && $emit('toogle-pin', !pinnedApplication)"
       @keydown.enter="openApp"
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
@@ -54,7 +54,12 @@
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
-      <div 
+      <app-center-badge
+        :badge-name="application.badgeName"
+        :top-spacing="badgeTopSpacing"
+        :x-spacing="badgeXSpacing"
+        :class="card ? 'ms-auto' : ''" />
+      <div
         :class="card ? 'absolute-full-size' : 'pt-1'"
         aria-hidden="true">
         <v-progress-linear
@@ -115,14 +120,19 @@
             </div>
           </v-card>
         </div>
-        <v-tooltip v-if="displayPinButton" bottom>
+        <v-tooltip
+          v-if="displayPinButton"
+          :disabled="pinnedInTopbarByAdmin"
+          bottom>
           <template #activator="{on, attrs}">
             <div
-              :class="$vuetify.rtl && 'l-0' || 'r-0'"
-              class="position-absolute z-index-two t-0 mt-1 me-5">
+              :class="$vuetify.rtl && 'r-0' || 'l-0'"
+              :title="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : ''"
+              class="position-absolute z-index-two t-0 mt-2 ms-7">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
+                :disabled="pinnedInTopbarByAdmin"
                 class="white"
                 elevation="2"
                 x-small
@@ -190,13 +200,24 @@
                   fa-question-circle
                 </v-icon>
               </v-btn>
-              <v-btn
+              <!-- The title sits on the wrapper, not on the button: Vuetify gives a
+                   disabled v-btn pointer-events:none, so a title carried by the
+                   button itself can never be shown — which is precisely when the
+                   explanation is needed. Same shape as the hover control above. -->
+              <span
                 v-if="card && canPinApps"
-                :title="pinnedApplication && $t('appCenter.appLauncher.unpinApplication') || $t('appCenter.appLauncher.pinApplication')"
+                :title="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : ''"
+                class="d-inline-flex">
+              <v-btn
+                :title="pinnedInTopbarByAdmin ? ''
+                  : (pinnedApplication ? $t('appCenter.appLauncher.unpinApplication')
+                    : $t('appCenter.appLauncher.pinApplication'))"
+                :disabled="pinnedInTopbarByAdmin"
                 class="ms-2"
                 small
                 icon
                 :aria-pressed="pinnedApplication ? 'true' : 'false'"
+                :aria-label="pinnedInTopbarByAdmin ? $t('appCenter.appLauncher.pinDisabledByAdmin') : null"
                 mouseup.stop="0"
                 mousedown.stop="0"
                 @click.stop.prevent="$emit('toogle-pin', !pinnedApplication)">
@@ -206,6 +227,7 @@
                   fa-thumbtack
                 </v-icon>
               </v-btn>
+              </span>
               <v-btn
                 :disabled="application.mandatory"
                 :title="application.favorite ? $t('appCenter.appLauncher.removeFavoriteTooltip') : $t('appCenter.appLauncher.addFavoriteTooltip')"
@@ -295,10 +317,35 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
+    // Snapshot of the page-level registry. It is a plain array on eXo.env, so
+    // reading it directly from a computed would never re-evaluate: the topbar
+    // application registers its url asynchronously, after this item may already
+    // have rendered with its pin enabled.
+    topbarDisplayedApps: eXo.env.portal.topbarDisplayedApps?.slice?.() || [],
   }),
+  created() {
+    document.addEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+  },
+  beforeDestroy() {
+    document.removeEventListener('topbar-displayed-apps-updated', this.refreshTopbarDisplayedApps);
+  },
   computed: {
     computedUrl() {
       return this.$applicationUrlService.computeApplicationUrl(this.application);
+    },
+    badgeTopSpacing() {
+      if (this.card) {
+        return '-94px';
+      } else {
+        return this.displayName ? '10px' : '-8px';
+      }
+    },
+    badgeXSpacing() {
+      if (this.card) {
+        return '-40px';
+      } else {
+        return this.displayName ? '12px' : '9px';
+      }
     },
     linkApplication() {
       return this.application?.type === 'LINK';
@@ -317,10 +364,18 @@ export default {
       return this.hover && this.elevate ? 2 : 0;
     },
     displayPinButton() {
-      return !this.$root.isMobile && this.canPinApps && this.displayName && !this.card && (this.hover || this.pinnedApplication);
+      return !this.$root.isMobile && this.canPinApps && this.displayName && !this.card && (this.hover || (this.pinnedApplication && !this.pinnedInTopbarByAdmin));
     },
     pinnedApplication() {
       return !!this.$root.pinnedApplicationIds?.find?.(id => id === this.application?.id);
+    },
+    // An application the administrator already lists in the topbar must not be
+    // pinnable, or the same icon would appear twice. Each topbar portlet
+    // registers the App Center url it displays into this shared page-level
+    // list when it mounts — so an item the administrator disabled, or one not
+    // rendered on this device, keeps its pin available.
+    pinnedInTopbarByAdmin() {
+      return !!this.topbarDisplayedApps?.includes?.(this.application?.url);
     },
     canPinApps() {
       return this.$root.canPinApps && !this.$root.isMobile;
@@ -351,6 +406,9 @@ export default {
     }
   },
   methods: {
+    refreshTopbarDisplayedApps() {
+      this.topbarDisplayedApps = eXo.env.portal.topbarDisplayedApps?.slice?.() || [];
+    },
     openApp(event) {
       this.onFocusOut(event);
       if (document.activeElement === event.currentTarget) {

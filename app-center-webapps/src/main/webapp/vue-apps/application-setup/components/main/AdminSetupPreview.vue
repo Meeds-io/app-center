@@ -7,7 +7,10 @@
     <v-card class="d-flex align-center transparent pa-5" flat>
       <span class="text-title">{{ $t('appCenter.appLauncher.drawer.title') }}</span>
       <v-spacer />
-      <v-btn v-if="allowUserPersonalApps" icon small>
+      <v-btn
+        v-if="allowUserPersonalApps"
+        icon
+        small>
         <v-icon size="20">fa-plus</v-icon>
       </v-btn>
       <v-btn icon small>

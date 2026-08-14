@@ -54,6 +54,11 @@
       @focusin="onFocusIn"
       @focusout="onFocusOut">
       <div class="d-flex flex-column justify-center align-center full-width">
+        <app-center-badge
+          :badge-name="application.badgeName"
+          top-spacing="-5px"
+          x-spacing="12px"
+          class="mx-auto" />
         <v-img
           v-if="application.imageUrl"
           :src="application.imageUrl"
