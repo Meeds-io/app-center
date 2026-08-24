@@ -24,22 +24,26 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.portal.config.model.PortalConfig;
+import org.exoplatform.portal.localization.LocaleContextInfoUtils;
 import org.exoplatform.services.resources.ResourceBundleService;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -65,9 +69,22 @@ public class AppCenterPwaShortcutPluginTest {
   @InjectMocks
   private AppCenterPwaShortcutPlugin pwaShortcutPlugin;
 
+  private MockedStatic<LocaleContextInfoUtils> localeContextInfoUtils;
+
   @BeforeEach
   public void setup() {
     lenient().when(container.getComponentInstanceOfType(ApplicationCenterService.class)).thenReturn(applicationCenterService);
+    // Avoid triggering a real RootContainer bootstrap via
+    // ExoContainerContext.getCurrentContainer() when the plugin resolves the
+    // user locale, which is what caused the build to hang intermittently.
+    localeContextInfoUtils = mockStatic(LocaleContextInfoUtils.class);
+    localeContextInfoUtils.when(() -> LocaleContextInfoUtils.getUserLocale(TEST_USER))
+                          .thenReturn(ResourceBundleService.DEFAULT_CROWDIN_LOCALE);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    localeContextInfoUtils.close();
   }
 
   @Test
