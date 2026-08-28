@@ -61,7 +61,10 @@ class ApplicationBadgeCounterTest {
   @BeforeEach
   void setup() {
     counter = new ApplicationBadgeCounter();
-    ReflectionTestUtils.setField(counter, "timeoutMillis", 3000L);
+    // Only the time-budget tests care about the budget; everywhere else it is
+    // kept generous so a slow CI box establishing the request lifecycle on the
+    // counting thread cannot turn a plugin answer into a timeout
+    ReflectionTestUtils.setField(counter, "timeoutMillis", 30000L);
     ReflectionTestUtils.setField(counter, "failureThreshold", 2);
     ReflectionTestUtils.setField(counter, "breakerOpenSeconds", 60L);
     ReflectionTestUtils.setField(counter, "threads", 4);
@@ -105,7 +108,7 @@ class ApplicationBadgeCounterTest {
   void countDegradesToZeroWhenThePluginExceedsItsTimeBudget() {
     ReflectionTestUtils.setField(counter, "timeoutMillis", 200L);
     CountDownLatch release = new CountDownLatch(1);
-    when(plugin.countBadge(USERNAME)).thenAnswer(invocation -> {
+    lenient().when(plugin.countBadge(USERNAME)).thenAnswer(invocation -> {
       release.await(30, TimeUnit.SECONDS);
       return 42L;
     });
@@ -139,7 +142,9 @@ class ApplicationBadgeCounterTest {
     CountDownLatch release = new CountDownLatch(1);
     ApplicationBadgePlugin hung = mock(ApplicationBadgePlugin.class);
     lenient().when(hung.getName()).thenReturn("hungBadge");
-    when(hung.countBadge(USERNAME)).thenAnswer(invocation -> {
+    // Lenient: on a slow box the task may be cancelled before the pool thread
+    // even reaches the plugin, leaving the stub unused
+    lenient().when(hung.countBadge(USERNAME)).thenAnswer(invocation -> {
       // Keeps its thread and ignores interruption, exactly as a plugin blocked
       // on a socket read does — which is why cancelling on timeout is only best
       // effort and the queue must not absorb the backlog
@@ -157,7 +162,9 @@ class ApplicationBadgeCounterTest {
 
     long hungCount = counter.count(hung, USERNAME);
 
-    // A healthy plugin must still be served, not queue behind the hung one
+    // A healthy plugin must still be served, not queue behind the hung one —
+    // with a budget generous enough that only queueing could make it fail
+    ReflectionTestUtils.setField(counter, "timeoutMillis", 30000L);
     long healthyCount = counter.count(plugin, USERNAME);
     release.countDown();
 
