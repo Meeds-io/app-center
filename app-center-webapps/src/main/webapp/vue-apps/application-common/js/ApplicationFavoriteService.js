@@ -18,6 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { clearApplicationsCache } from './ApplicationService';
+
 export function getFavorites(size) {
   return fetch(`/app-center/rest/favorites?size=${size || 0}`, {
     method: 'GET',
@@ -41,6 +43,7 @@ export function deleteFavorite(id) {
       if (!resp?.ok) {
         throw new Error('Error when deleting favorite application by id');
       }
+      clearApplicationsCache();
     });
 }
 
@@ -53,7 +56,8 @@ export function addFavorite(id) {
       if (!resp?.ok) {
         throw new Error('Error when marking application as favorite');
       }
-    });      
+      clearApplicationsCache();
+    });
 }
 
 export function updateFavoritesOrder(applicationsOrder) {
@@ -69,5 +73,6 @@ export function updateFavoritesOrder(applicationsOrder) {
       if (!resp?.ok) {
         throw new Error('Error when updating favorite applications order');
       }
+      clearApplicationsCache();
     });
 }
