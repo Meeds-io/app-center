@@ -23,7 +23,7 @@
     <div
       v-if="showHeader"
       class="text-header align-start">
-      {{ headerLabel }}
+      <span class="text-truncate">{{ headerLabel }}</span>
     </div>
     <div v-else class="flex-grow-1"></div>
     <div
