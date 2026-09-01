@@ -236,27 +236,30 @@
           dense />
         <div class="d-flex full-width justify-space-between align-center mb-2">
           <v-card
+            :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')"
             class="text-start flex-grow-1 clickable transparent"
             flat
-            @click="hasShortcut = !hasShortcut">
+            v-on="shortcutEditable && {
+              click: () => hasShortcut = !hasShortcut
+            }">
             {{ $t('appCenter.adminSetupForm.shortcut') }}
           </v-card>
-          <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+          <div :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
             <v-switch
               v-model="hasShortcut"
-              :disabled="application.system"
+              :disabled="!shortcutEditable"
               class="ma-0 pa-0"
               name="applicationShortcutSwitch"
               hide-details />
           </div>
         </div>
-        <div :title="application.system && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
+        <div :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
           <v-text-field
             v-if="hasShortcut"
             ref="applicationShortcut"
             id="applicationShortcut"
             v-model="application.shortcut"
-            :disabled="application.system"
+            :disabled="!shortcutEditable"
             :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
             :rules="rules.shortcut"
             name="applicationShortcut"
@@ -414,12 +417,20 @@ export default {
     modified() {
       return JSON.stringify(this.applicationToSave) !== JSON.stringify(this.originalApplication);
     },
+    shortcutEditable() {
+      // the shortcut of a default product application is defined by the product
+      // itself, so the whole option stays read only for a system application
+      return !this.application?.system;
+    },
     disabled() {
       return this.loading || !this.modified
         || !this.title?.length
         || !!(this.description?.length && this.description?.length > this.maxDescriptionLength)
         || !this.validUrl
         || !this.validHelpPageUrl
+        // an emptied shortcut field is an unfinished edit, not a change: the
+        // shortcut is removed by switching the option off, not by clearing it
+        || (this.hasShortcut && !this.application?.shortcut?.length)
         || !!(this.application?.shortcut?.length && this.shortcutExists(this.application?.shortcut));
     },
   },
@@ -457,7 +468,7 @@ export default {
       }
     },
     hasShortcut() {
-      if (!this.hasShortcut && this.application) {
+      if (!this.hasShortcut && this.application && this.shortcutEditable) {
         this.application.shortcut = null;
       }
     },
