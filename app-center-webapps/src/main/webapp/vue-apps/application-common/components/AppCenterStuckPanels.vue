@@ -32,6 +32,7 @@ export default {
   data: () => ({
     leftPortletApp: null,
     rightPortletApp: null,
+    triggeredDrawerApps: {},
   }),
   computed: {
     stuckAllowed() {
@@ -47,10 +48,15 @@ export default {
   },
   created() {
     document.addEventListener('app-placement-changed', this.refresh);
+    document.addEventListener('extension-QuickAction-Extension-updated', this.refresh);
+    document.addEventListener('extension-QuickAction-PortletExtension-updated', this.refresh);
+    this.$utils.includeExtensions('QuickActionExtension');
     this.refresh();
   },
   beforeDestroy() {
     document.removeEventListener('app-placement-changed', this.refresh);
+    document.removeEventListener('extension-QuickAction-Extension-updated', this.refresh);
+    document.removeEventListener('extension-QuickAction-PortletExtension-updated', this.refresh);
   },
   methods: {
     refresh() {
@@ -64,11 +70,13 @@ export default {
           }
           this.openStuckApplication(placements.left, 'left');
           this.openStuckApplication(placements.right, 'right');
-        });
+        })
+        .catch(() => null);
     },
     openStuckApplication(applicationId, side) {
       if (!applicationId) {
         this[`${side}PortletApp`] = null;
+        this.$set(this.triggeredDrawerApps, side, null);
         return;
       }
       this.$appPlacementService.findApplicationById(applicationId)
@@ -76,10 +84,21 @@ export default {
           if (!application) {
             return null;
           } else if (application.type === 'DRAWER') {
+            if (this.triggeredDrawerApps[side] === application.id
+                || document.querySelector(`.stuck-app-container [data-stuck-app="${window.CSS.escape(application.url)}"]`)) {
+              return null;
+            }
             const quickAction = extensionRegistry.loadExtensions('QuickAction', 'Extension')
               .find(extension => extension.id === application.url);
-            return quickAction?.click?.();
+            if (quickAction?.click) {
+              this.$set(this.triggeredDrawerApps, side, application.id);
+              return quickAction.click();
+            }
+            return null;
           } else if (application.type === 'PORTLET') {
+            if (this[`${side}PortletApp`]?.id === application.id) {
+              return null;
+            }
             this[`${side}PortletApp`] = application;
             return this.$nextTick().then(() => this.$refs[`${side}PortletPanel`]?.open?.(application.url));
           }

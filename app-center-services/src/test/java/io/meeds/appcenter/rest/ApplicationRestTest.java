@@ -18,6 +18,8 @@
  */
 package io.meeds.appcenter.rest;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -56,8 +58,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.exoplatform.commons.file.services.FileService;
 
 import io.meeds.appcenter.constant.ApplicationType;
+import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationPlacements;
+import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.spring.web.security.PortalAuthenticationManager;
 import io.meeds.spring.web.security.WebSecurityConfiguration;
@@ -75,6 +80,8 @@ public class ApplicationRestTest {
   private static final String APPLICATIONS_PATH     = "/applications";    // NOSONAR
 
   private static final String ALL_APPLICATIONS_PATH = "/applications/all";// NOSONAR
+
+  private static final String PLACEMENTS_PATH       = "/applications/placements";// NOSONAR
 
   private static final String SIMPLE_USER           = "simple";
 
@@ -162,6 +169,68 @@ public class ApplicationRestTest {
   void deleteApplication() throws Exception {
     ResultActions response = mockMvc.perform(delete(APPLICATIONS_PATH + "/1").with(testAdminUser()));
     response.andExpect(status().isOk());
+  }
+
+  @Test
+  void getApplicationPlacementsAnonymously() throws Exception {
+    ResultActions response = mockMvc.perform(get(PLACEMENTS_PATH));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getApplicationPlacements() throws Exception {
+    when(applicationCenterService.getApplicationPlacements(SIMPLE_USER, "dw")).thenReturn(new ApplicationPlacements(true,
+                                                                                                                    true,
+                                                                                                                    1L,
+                                                                                                                    null));
+    ResultActions response = mockMvc.perform(get(PLACEMENTS_PATH + "?siteName=dw").with(testSimpleUser()));
+    response.andExpect(status().isOk());
+  }
+
+  @Test
+  void stickApplication() throws Exception {
+    ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
+    response.andExpect(status().isOk());
+    verify(applicationCenterService).stickApplication(1L, PlacementSide.LEFT, SIMPLE_USER);
+  }
+
+  @Test
+  void stickApplicationWithInvalidSide() throws Exception {
+    ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/top?applicationId=1").with(testSimpleUser()));
+    response.andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void stickApplicationNotFound() throws Exception {
+    doThrow(new ApplicationNotFoundException("not found")).when(applicationCenterService)
+                                                          .stickApplication(1L, PlacementSide.LEFT, SIMPLE_USER);
+    ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
+    response.andExpect(status().isNotFound());
+  }
+
+  @Test
+  void stickApplicationNotAuthorized() throws Exception {
+    doThrow(new IllegalAccessException("not allowed")).when(applicationCenterService)
+                                                      .stickApplication(1L, PlacementSide.LEFT, SIMPLE_USER);
+    ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
+    response.andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void stickApplicationNotAllowed() throws Exception {
+    doThrow(new IllegalArgumentException("appCenter.placement.stickNotAllowed")).when(applicationCenterService)
+                                                                                .stickApplication(1L,
+                                                                                                  PlacementSide.LEFT,
+                                                                                                  SIMPLE_USER);
+    ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
+    response.andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void unstickApplication() throws Exception {
+    ResultActions response = mockMvc.perform(delete(PLACEMENTS_PATH + "/right").with(testSimpleUser()));
+    response.andExpect(status().isOk());
+    verify(applicationCenterService).unstickApplication(PlacementSide.RIGHT, SIMPLE_USER);
   }
 
   private RequestPostProcessor testAdminUser() {

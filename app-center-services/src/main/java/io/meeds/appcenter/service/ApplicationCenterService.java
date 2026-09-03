@@ -533,6 +533,10 @@ public class ApplicationCenterService {
                                      placementStorage.getPlacedApplicationId(username, PlacementSide.RIGHT));
   }
 
+  public boolean isPlacementEnabled() {
+    return placementEnabled;
+  }
+
   public boolean isPlacementEligibleSite(String siteName) {
     return StringUtils.isNotBlank(siteName)
            && (StringUtils.equals(siteName, userPortalConfigService.getMetaPortal())
@@ -563,6 +567,11 @@ public class ApplicationCenterService {
     }
     if (!application.isAllowStick()) {
       throw new IllegalArgumentException(STICK_NOT_ALLOWED_MESSAGE);
+    }
+    PlacementSide otherSide = side == PlacementSide.LEFT ? PlacementSide.RIGHT : PlacementSide.LEFT;
+    Long otherSideApplicationId = placementStorage.getPlacedApplicationId(username, otherSide);
+    if (otherSideApplicationId != null && otherSideApplicationId.longValue() == applicationId) {
+      placementStorage.removePlacedApplicationId(username, otherSide);
     }
     placementStorage.setPlacedApplicationId(username, side, applicationId);
   }
