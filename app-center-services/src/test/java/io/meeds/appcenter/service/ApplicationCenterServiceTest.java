@@ -51,6 +51,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
@@ -63,14 +64,17 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.constant.ApplicationType;
+import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
+import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -129,6 +133,9 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ApplicationCenterStorage       appCenterStorage;
+
+  @MockitoBean
+  private ApplicationPlacementStorage    placementStorage;
 
   @MockitoBean
   private CategoryLinkService            categoryLinkService;
@@ -655,6 +662,61 @@ public class ApplicationCenterServiceTest {
     assertTrue(input.isMobile());
     assertFalse(input.isAllowStick());
     assertFalse(input.isAllowDetach());
+  }
+
+  @Test
+  @SneakyThrows
+  void getApplicationPlacements() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationPlacements(""));
+
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(null);
+    ApplicationPlacements placements = applicationCenterService.getApplicationPlacements(TEST_USER);
+    assertNotNull(placements);
+    assertTrue(placements.isEnabled());
+    assertEquals(ID, placements.getLeft());
+    assertNull(placements.getRight());
+  }
+
+  @Test
+  @SneakyThrows
+  void stickApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, ""));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, null, TEST_USER));
+
+    ReflectionTestUtils.setField(applicationCenterService, "placementEnabled", false);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+    ReflectionTestUtils.setField(applicationCenterService, "placementEnabled", true);
+
+    assertThrows(ApplicationNotFoundException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    Application application = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setAllowStick(true);
+    applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER);
+    verify(placementStorage).setPlacedApplicationId(TEST_USER, PlacementSide.LEFT, ID);
+  }
+
+  @Test
+  void unstickApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.unstickApplication(PlacementSide.LEFT, ""));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.unstickApplication(null, TEST_USER));
+
+    applicationCenterService.unstickApplication(PlacementSide.RIGHT, TEST_USER);
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.RIGHT);
   }
 
   @Test

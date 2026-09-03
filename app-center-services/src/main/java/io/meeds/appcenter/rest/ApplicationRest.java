@@ -48,10 +48,12 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.service.LinkProvider;
 
+import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
 
@@ -205,6 +207,65 @@ public class ApplicationRest {
       appCenterService.saveSettings(settings, request.getRemoteUser());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  @GetMapping(path = "placements")
+  @Secured("users")
+  @Operation(summary = "Retrieves the applications stuck to each layout side by the authenticated user", method = "GET")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
+  public ApplicationPlacements getApplicationPlacements(HttpServletRequest request) {
+    return appCenterService.getApplicationPlacements(request.getRemoteUser());
+  }
+
+  @PutMapping(path = "placements/{side}")
+  @Secured("users")
+  @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")
+  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+    @ApiResponse(responseCode = "404", description = "Not found") })
+  public void stickApplication(
+                               HttpServletRequest request,
+                               @Parameter(description = "Layout side to stick the application to: left or right", required = true)
+                               @PathVariable("side")
+                               String side,
+                               @Parameter(description = "Application technical id to stick", required = true)
+                               @RequestParam("applicationId")
+                               Long applicationId) {
+    try {
+      appCenterService.stickApplication(applicationId, placementSide(side), request.getRemoteUser());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+    } catch (ApplicationNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @DeleteMapping(path = "placements/{side}")
+  @Secured("users")
+  @Operation(summary = "Removes the application stuck to the given layout side for the authenticated user", method = "DELETE")
+  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Bad Request") })
+  public void unstickApplication(
+                                 HttpServletRequest request,
+                                 @Parameter(description = "Layout side to free: left or right", required = true)
+                                 @PathVariable("side")
+                                 String side) {
+    try {
+      appCenterService.unstickApplication(placementSide(side), request.getRemoteUser());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  private PlacementSide placementSide(String side) {
+    try {
+      return PlacementSide.valueOf(StringUtils.upperCase(side));
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "appCenter.placement.invalidSide");
     }
   }
 
