@@ -64,12 +64,15 @@ class ChangelogTest {
 
       insertApplication(connection, 1, "Drawer app", "notifications", 1);
       insertApplication(connection, 2, "Portlet app", "35", 2);
+      insertApplication(connection, 3, "Unwired drawer app", "spacesList", 1);
 
       liquibase.update((String) null);
       assertEquals(Boolean.TRUE, placementFlag(connection, 1, "ALLOW_STICK"));
       assertEquals(Boolean.TRUE, placementFlag(connection, 1, "ALLOW_DETACH"));
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_STICK"));
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_DETACH"));
+      assertEquals(Boolean.FALSE, placementFlag(connection, 3, "ALLOW_STICK"));
+      assertEquals(Boolean.FALSE, placementFlag(connection, 3, "ALLOW_DETACH"));
     }
   }
 

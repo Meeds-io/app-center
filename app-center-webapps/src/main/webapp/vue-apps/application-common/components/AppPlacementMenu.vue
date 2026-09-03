@@ -28,11 +28,14 @@
       <v-list-item v-if="canDetach" @click="openInNewTab">
         <v-list-item-title>{{ $t('appCenter.placement.openInNewTab') }}</v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="canStick" @click="stickTo('right')">
+      <v-list-item v-if="canStick && stuckSide !== 'right'" @click="stickTo('right')">
         <v-list-item-title>{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="canStick" @click="stickTo('left')">
+      <v-list-item v-if="canStick && stuckSide !== 'left'" @click="stickTo('left')">
         <v-list-item-title>{{ $t('appCenter.placement.stickLeft') }}</v-list-item-title>
+      </v-list-item>
+      <v-list-item v-if="stuckSide" @click="unstick">
+        <v-list-item-title>{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
       </v-list-item>
     </v-list>
   </v-menu>
@@ -58,17 +61,34 @@ export default {
     canStick() {
       return this.placements?.enabled && this.placements?.siteEligible && this.application?.allowStick || false;
     },
+    stuckSide() {
+      if (!this.placements?.enabled || !this.application) {
+        return null;
+      } else if (`${this.placements.left}` === `${this.application.id}`) {
+        return 'left';
+      } else if (`${this.placements.right}` === `${this.application.id}`) {
+        return 'right';
+      }
+      return null;
+    },
     hasActions() {
-      return this.canDetach || this.canStick;
+      return this.canDetach || this.canStick || !!this.stuckSide;
     },
   },
   created() {
-    if (this.$appPlacementService) {
-      this.$appPlacementService.getPlacements(true)
-        .then(placements => this.placements = placements);
-    }
+    document.addEventListener('app-placement-changed', this.refreshPlacements);
+    this.refreshPlacements();
+  },
+  beforeDestroy() {
+    document.removeEventListener('app-placement-changed', this.refreshPlacements);
   },
   methods: {
+    refreshPlacements() {
+      if (this.$appPlacementService) {
+        this.$appPlacementService.getPlacements(true)
+          .then(placements => this.placements = placements);
+      }
+    },
     open(event) {
       if (!this.hasActions) {
         return;
@@ -83,7 +103,18 @@ export default {
       this.$appPlacementService.openDetached(this.application);
     },
     stickTo(side) {
-      this.$appPlacementService.stickApplication(this.application.id, side);
+      this.$appPlacementService.stickApplication(this.application.id, side)
+        .catch(this.dispatchPlacementError);
+    },
+    unstick() {
+      this.$appPlacementService.unstickApplication(this.stuckSide)
+        .catch(this.dispatchPlacementError);
+    },
+    dispatchPlacementError() {
+      document.dispatchEvent(new CustomEvent('alert-message', {detail: {
+        alertType: 'error',
+        alertMessage: this.$t('appCenter.placement.actionError'),
+      }}));
     },
   },
 };

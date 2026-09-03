@@ -12,6 +12,7 @@
 <%@page import="org.exoplatform.commons.api.settings.SettingValue"%>
 <%@page import="org.exoplatform.commons.api.settings.data.Scope"%>
 <%@page import="org.exoplatform.commons.api.settings.data.Context"%>
+<%@page import="io.meeds.appcenter.storage.ApplicationPlacementStorage"%>
 <%
   ResourceBundle bundle;
   try {
@@ -27,9 +28,14 @@
   SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
   String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
 
-  Scope placementScope = Scope.APPLICATION.id("AppCenterPlacement");
-  boolean hasStuckApplication = settingService.get(Context.USER.id(request.getRemoteUser()), placementScope, "stuck.left") != null
-      || settingService.get(Context.USER.id(request.getRemoteUser()), placementScope, "stuck.right") != null;
+  ApplicationCenterService appCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+  boolean hasStuckApplication = appCenterService != null && appCenterService.isPlacementEnabled()
+      && (settingService.get(Context.USER.id(request.getRemoteUser()),
+                             ApplicationPlacementStorage.PLACEMENT_SCOPE,
+                             ApplicationPlacementStorage.LEFT_PLACEMENT_KEY) != null
+          || settingService.get(Context.USER.id(request.getRemoteUser()),
+                                ApplicationPlacementStorage.PLACEMENT_SCOPE,
+                                ApplicationPlacementStorage.RIGHT_PLACEMENT_KEY) != null);
 %>
 <div class="VuetifyApp">
   <div

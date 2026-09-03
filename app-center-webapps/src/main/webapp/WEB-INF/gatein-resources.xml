@@ -241,6 +241,12 @@
     <depends>
       <module>appCenterCommon</module>
     </depends>
+    <depends>
+      <module>QuickActionExtensions</module>
+    </depends>
+    <depends>
+      <module>LayoutQuickActionExtensions</module>
+    </depends>
   </module>
 
   <module>

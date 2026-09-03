@@ -45,9 +45,7 @@
                 "permissions": [
                     "*:/platform/users",
                     "*:/platform/externals"
-                ],
-                "allowStick": true,
-                "allowDetach": true
+                ]
             }
         },
         {
