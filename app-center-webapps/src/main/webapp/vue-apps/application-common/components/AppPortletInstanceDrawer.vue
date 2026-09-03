@@ -23,6 +23,7 @@
     v-model="drawer"
     :right="!$vuetify.rtl"
     :loading="loading"
+    :placement-app="placementApplication"
     allow-expand
     @closed="$emit('closed')">
     <template #title>
@@ -42,6 +43,7 @@ export default {
     loading: false,
     applicationTitle: null,
     portletInstanceQuickAction: null,
+    placementApplication: null,
   }),
   created() {
     document.addEventListener('extension-QuickAction-PortletExtension-updated', this.refreshQuickActions);
@@ -55,6 +57,7 @@ export default {
     async open(portletInstanceId) {
       this.drawer = false;
       this.applicationTitle = null;
+      this.placementApplication = await this.$appPlacementService.findApplicationByPortletInstance(portletInstanceId);
       await this.$nextTick();
       this.drawer = true;
       this.loading = true;
