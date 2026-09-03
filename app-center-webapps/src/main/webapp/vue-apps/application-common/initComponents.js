@@ -16,6 +16,7 @@
  */
 import AppPortletInstanceDrawer from './components/AppPortletInstanceDrawer.vue';
 import AppCenterStuckPanels from './components/AppCenterStuckPanels.vue';
+import AppPlacementMenu from './components/AppPlacementMenu.vue';
 import AppBadge from './components/AppBadge.vue';
 import AppItem from './components/AppItem.vue';
 import AppShortcut from './components/AppShortcut.vue';
@@ -29,6 +30,7 @@ const components = {
   'app-center-shortcut': AppShortcut,
   'app-center-portlet-instance-drawer': AppPortletInstanceDrawer,
   'app-center-stuck-panels': AppCenterStuckPanels,
+  'app-center-placement-menu': AppPlacementMenu,
   'app-center-form-drawer': ApplicationFormDrawer,
   'app-center-icon': ApplicationIcon,
   'app-center-image-input': ApplicationImageInput,
