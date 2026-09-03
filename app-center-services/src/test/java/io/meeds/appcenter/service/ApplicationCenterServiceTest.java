@@ -59,6 +59,7 @@ import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
@@ -75,6 +76,7 @@ import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -136,6 +138,12 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ApplicationPlacementStorage    placementStorage;
+
+  @MockitoBean
+  private NavigationConfigurationService navigationConfigurationService;
+
+  @MockitoBean
+  private UserPortalConfigService        userPortalConfigService;
 
   @MockitoBean
   private CategoryLinkService            categoryLinkService;
@@ -667,15 +675,27 @@ public class ApplicationCenterServiceTest {
   @Test
   @SneakyThrows
   void getApplicationPlacements() {
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationPlacements(""));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationPlacements("", "dw"));
 
     when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
     when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(null);
-    ApplicationPlacements placements = applicationCenterService.getApplicationPlacements(TEST_USER);
+    when(userPortalConfigService.getMetaPortal()).thenReturn("dw");
+    ApplicationPlacements placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
     assertNotNull(placements);
     assertTrue(placements.isEnabled());
+    assertTrue(placements.isSiteEligible());
     assertEquals(ID, placements.getLeft());
     assertNull(placements.getRight());
+
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "administration");
+    assertFalse(placements.isSiteEligible());
+
+    when(navigationConfigurationService.isMetaSiteNavigation("intranet")).thenReturn(true);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "intranet");
+    assertTrue(placements.isSiteEligible());
+
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, null);
+    assertFalse(placements.isSiteEligible());
   }
 
   @Test
