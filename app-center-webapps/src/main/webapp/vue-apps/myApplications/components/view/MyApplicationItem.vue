@@ -32,6 +32,7 @@
         click: () => openApplication(application.type, application.url),
       }"
       :id="`App${application.id}`"
+      @contextmenu="$refs.placementMenu?.open?.($event)"
       :title="applicationDescription"
       :class="[
         $attrs.class,
@@ -53,6 +54,9 @@
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
       @focusout="onFocusOut">
+      <app-center-placement-menu
+        ref="placementMenu"
+        :application="application" />
       <div class="d-flex flex-column justify-center align-center full-width">
         <app-center-badge
           :badge-name="application.badgeName"
