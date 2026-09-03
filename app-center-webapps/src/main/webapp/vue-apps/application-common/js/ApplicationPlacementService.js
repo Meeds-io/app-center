@@ -52,6 +52,9 @@ export function stickApplication(applicationId, side) {
         throw new Error('Error when sticking application');
       }
       placementsPromise = null;
+      if (window.require) {
+        window.require(['SHARED/appStuckPanelsBundle'], app => app.init());
+      }
       document.dispatchEvent(new CustomEvent('app-placement-changed'));
     });
 }
