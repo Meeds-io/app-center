@@ -33,6 +33,7 @@
           <values-param>
             <name>classpath.resources</name>
             <value>locale.addon.appcenter</value>
+            <value>locale.navigation.portal.global</value>
           </values-param>
           <values-param>
             <name>portal.resource.names</name>
