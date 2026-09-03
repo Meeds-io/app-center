@@ -15,6 +15,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import AppPortletInstanceDrawer from './components/AppPortletInstanceDrawer.vue';
+import AppCenterStuckPanels from './components/AppCenterStuckPanels.vue';
 import AppBadge from './components/AppBadge.vue';
 import AppItem from './components/AppItem.vue';
 import AppShortcut from './components/AppShortcut.vue';
@@ -27,6 +28,7 @@ const components = {
   'app-center-badge': AppBadge,
   'app-center-shortcut': AppShortcut,
   'app-center-portlet-instance-drawer': AppPortletInstanceDrawer,
+  'app-center-stuck-panels': AppCenterStuckPanels,
   'app-center-form-drawer': ApplicationFormDrawer,
   'app-center-icon': ApplicationIcon,
   'app-center-image-input': ApplicationImageInput,
