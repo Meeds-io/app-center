@@ -85,6 +85,32 @@ export function findApplicationById(applicationId) {
   return findApplication(application => `${application.id}` === `${applicationId}`);
 }
 
+export function findStuckApplication(appType, appUrl) {
+  return getPlacements(true).then(placements => {
+    if (!placements?.enabled || (!placements.left && !placements.right)) {
+      return null;
+    }
+    return findApplication(application => application.type === appType
+      && `${application.url}` === `${appUrl}`
+      && (`${application.id}` === `${placements.left}` || `${application.id}` === `${placements.right}`));
+  });
+}
+
+export function alertWhenStuck(appType, appUrl, message) {
+  return findStuckApplication(appType, appUrl)
+    .catch(() => null)
+    .then(stuckApplication => {
+      if (stuckApplication) {
+        document.dispatchEvent(new CustomEvent('alert-message', {detail: {
+          alertType: 'info',
+          alertMessage: message,
+        }}));
+        return true;
+      }
+      return false;
+    });
+}
+
 export function getDetachUrl(application) {
   return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName || eXo.env.portal.portalName}/app-viewer?applicationId=${application.id}`;
 }
