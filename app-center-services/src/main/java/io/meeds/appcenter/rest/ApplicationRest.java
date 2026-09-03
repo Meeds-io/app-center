@@ -225,7 +225,7 @@ public class ApplicationRest {
   @PutMapping(path = "placements/{side}")
   @Secured("users")
   @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")
-  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "Bad Request"),
     @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
     @ApiResponse(responseCode = "404", description = "Not found") })
@@ -251,7 +251,7 @@ public class ApplicationRest {
   @DeleteMapping(path = "placements/{side}")
   @Secured("users")
   @Operation(summary = "Removes the application stuck to the given layout side for the authenticated user", method = "DELETE")
-  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "Bad Request") })
   public void unstickApplication(
                                  HttpServletRequest request,

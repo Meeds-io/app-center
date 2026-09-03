@@ -57,7 +57,8 @@ export default {
     async open(portletInstanceId) {
       this.drawer = false;
       this.applicationTitle = null;
-      this.placementApplication = await this.$appPlacementService.findApplicationByPortletInstance(portletInstanceId);
+      this.placementApplication = await this.$appPlacementService.findApplicationByPortletInstance(portletInstanceId)
+        .catch(() => null);
       await this.$nextTick();
       this.drawer = true;
       this.loading = true;

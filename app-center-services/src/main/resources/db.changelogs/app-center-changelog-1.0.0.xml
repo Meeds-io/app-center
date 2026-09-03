@@ -213,13 +213,13 @@
     <update tableName="AC_APPLICATION">
       <column name="ALLOW_STICK" valueBoolean="true" />
       <column name="ALLOW_DETACH" valueBoolean="true" />
-      <where>APP_TYPE = 1</where>
+      <where>APP_TYPE = 1 AND URL IN ('activityComposer', 'notifications', 'search', 'favorites')</where>
     </update>
     <rollback>
       <update tableName="AC_APPLICATION">
         <column name="ALLOW_STICK" valueBoolean="false" />
         <column name="ALLOW_DETACH" valueBoolean="false" />
-        <where>APP_TYPE = 1</where>
+        <where>APP_TYPE = 1 AND URL IN ('activityComposer', 'notifications', 'search', 'favorites')</where>
       </update>
     </rollback>
   </changeSet>

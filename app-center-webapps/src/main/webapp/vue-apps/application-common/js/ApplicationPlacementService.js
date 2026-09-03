@@ -87,7 +87,10 @@ export function findApplicationById(applicationId) {
 
 export function findStuckApplication(appType, appUrl) {
   return getPlacements(true).then(placements => {
-    if (!placements?.enabled || (!placements.left && !placements.right)) {
+    if (!placements?.enabled
+        || !placements?.siteEligible
+        || window.innerWidth < 1264
+        || (!placements.left && !placements.right)) {
       return null;
     }
     return findApplication(application => application.type === appType

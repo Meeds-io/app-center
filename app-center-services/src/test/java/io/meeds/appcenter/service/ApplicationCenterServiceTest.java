@@ -724,8 +724,10 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
 
     application.setAllowStick(true);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(ID);
     applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER);
     verify(placementStorage).setPlacedApplicationId(TEST_USER, PlacementSide.LEFT, ID);
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.RIGHT);
   }
 
   @Test
