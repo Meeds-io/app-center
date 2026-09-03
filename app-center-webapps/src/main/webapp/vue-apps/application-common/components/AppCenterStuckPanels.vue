@@ -33,6 +33,18 @@ export default {
     leftPortletApp: null,
     rightPortletApp: null,
   }),
+  computed: {
+    stuckAllowed() {
+      return (this.$vuetify?.breakpoint?.width || 0) >= (this.$vuetify?.breakpoint?.thresholds?.lg || 1264);
+    },
+  },
+  watch: {
+    stuckAllowed() {
+      if (this.stuckAllowed) {
+        this.refresh();
+      }
+    },
+  },
   created() {
     document.addEventListener('app-placement-changed', this.refresh);
     this.refresh();
@@ -42,7 +54,7 @@ export default {
   },
   methods: {
     refresh() {
-      if (this.$vuetify?.breakpoint?.smAndDown) {
+      if (!this.stuckAllowed) {
         return;
       }
       this.$appPlacementService.getPlacements(true)
