@@ -176,4 +176,26 @@
       <keywords>User Application Shortcuts</keywords>
     </portlet-info>
   </portlet>
+  <portlet>
+    <portlet-name>AppCenterStandaloneViewer</portlet-name>
+    <display-name xml:lang="EN">App center standalone application viewer</display-name>
+    <portlet-class>org.exoplatform.commons.api.portlet.GenericDispatchedViewPortlet</portlet-class>
+    <init-param>
+      <name>portlet-view-dispatched-file-path</name>
+      <value>/WEB-INF/jsp/appCenter/appStandaloneViewer.jsp</value>
+    </init-param>
+    <init-param>
+      <name>layout-css-class</name>
+      <value>no-layout-style</value>
+    </init-param>
+    <supports>
+      <mime-type>text/html</mime-type>
+    </supports>
+    <supported-locale>en</supported-locale>
+    <resource-bundle>locale.addon.appcenter</resource-bundle>
+    <portlet-info>
+      <title>App center standalone application viewer</title>
+      <keywords>App center portlets</keywords>
+    </portlet-info>
+  </portlet>
 </portlet-app>
