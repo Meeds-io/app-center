@@ -90,7 +90,7 @@ export function getDetachUrl(application) {
 }
 
 export function openDetached(application) {
-  window.open(getDetachUrl(application), '_blank');
+  window.open(getDetachUrl(application), `ac-app-${application.id}`);
 }
 
 function findApplication(predicate) {
