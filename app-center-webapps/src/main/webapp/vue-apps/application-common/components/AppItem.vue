@@ -43,6 +43,7 @@
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
       @focusout="onFocusOut"
+      @contextmenu="$refs.placementMenu?.open?.($event)"
       v-on="application.type !== 'LINK' && {
         click: openApp,
       }">
@@ -54,6 +55,9 @@
         rel="nofollow noreferrer noopener"
         class="absolute-full-size z-index-one"
         @click="addToRecent"></a>
+      <app-center-placement-menu
+        ref="placementMenu"
+        :application="application" />
       <app-center-badge
         :badge-name="application.badgeName"
         :top-spacing="badgeTopSpacing"
