@@ -46,6 +46,7 @@ import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
@@ -62,6 +63,7 @@ import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
@@ -142,6 +144,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private ApplicationPlacementStorage placementStorage;
+
+  @Autowired
+  private NavigationConfigurationService navigationConfigurationService;
+
+  @Autowired
+  private UserPortalConfigService  userPortalConfigService;
 
   @Autowired
   private ApplicationBadgePluginRegistry badgePluginRegistry;
@@ -511,15 +519,24 @@ public class ApplicationCenterService {
 
   /**
    * Retrieves the applications the given user stuck to each side of the
-   * layout, along with whether the placement feature is enabled at all.
+   * layout, along with whether the placement feature is enabled at all and
+   * whether the given site is allowed to display stuck panels: only the meta
+   * site and the sites listed in its sidebar configuration are, by design.
    */
-  public ApplicationPlacements getApplicationPlacements(String username) {
+  public ApplicationPlacements getApplicationPlacements(String username, String siteName) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
     return new ApplicationPlacements(placementEnabled,
+                                     placementEnabled && isPlacementEligibleSite(siteName),
                                      placementStorage.getPlacedApplicationId(username, PlacementSide.LEFT),
                                      placementStorage.getPlacedApplicationId(username, PlacementSide.RIGHT));
+  }
+
+  public boolean isPlacementEligibleSite(String siteName) {
+    return StringUtils.isNotBlank(siteName)
+           && (StringUtils.equals(siteName, userPortalConfigService.getMetaPortal())
+               || navigationConfigurationService.isMetaSiteNavigation(siteName));
   }
 
   /**

@@ -23,7 +23,7 @@ let placementsPromise = null;
 
 export function getPlacements(useCache) {
   if (!useCache || !placementsPromise) {
-    placementsPromise = fetch('/app-center/rest/applications/placements', {
+    placementsPromise = fetch(`/app-center/rest/applications/placements?siteName=${eXo.env.portal.portalName || ''}`, {
       method: 'GET',
       credentials: 'include',
     })
