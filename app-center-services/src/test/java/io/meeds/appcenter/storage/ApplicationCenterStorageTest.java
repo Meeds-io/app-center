@@ -423,6 +423,8 @@ public class ApplicationCenterStorageTest {
                                  null,
                                  false,
                                  null,
+                                 false,
+                                 false,
                                  null);
   }
 
@@ -449,7 +451,9 @@ public class ApplicationCenterStorageTest {
                            null,
                            false,
                            false,
-                           null);
+                           null,
+                           false,
+                           false);
   }
 
 }

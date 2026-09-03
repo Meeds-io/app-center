@@ -442,6 +442,8 @@ public class ApplicationCenterService {
     // usable wherever they are: the personal form has no mobile switch on
     // purpose, so the flag is forced here instead of being left to the client
     application.setMobile(true);
+    application.setAllowStick(false);
+    application.setAllowDetach(false);
     Application saved = createApplication(application);
     try {
       addFavoriteApplication(saved.getId(), username);
@@ -485,6 +487,8 @@ public class ApplicationCenterService {
     application.setSystem(false);
     application.setMandatory(false);
     application.setMobile(true);
+    application.setAllowStick(false);
+    application.setAllowDetach(false);
     updateApplication(application);
   }
 
