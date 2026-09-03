@@ -26,12 +26,21 @@
   SettingService settingService = ExoContainerContext.getService(SettingService.class);
   SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
   String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
+
+  Scope placementScope = Scope.APPLICATION.id("AppCenterPlacement");
+  boolean hasStuckApplication = settingService.get(Context.USER.id(request.getRemoteUser()), placementScope, "stuck.left") != null
+      || settingService.get(Context.USER.id(request.getRemoteUser()), placementScope, "stuck.right") != null;
 %>
 <div class="VuetifyApp">
   <div
     data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="appLauncher">
+    <% if (hasStuckApplication) { %>
+    <script>
+      window.require(['SHARED/appStuckPanelsBundle'], app => app.init());
+    </script>
+    <% } %>
     <script>
       document.addEventListener('CustomEventOpenApplicationLauncherDrawer', () => {
         if (document.querySelector('#appCenterDrawer')) {
