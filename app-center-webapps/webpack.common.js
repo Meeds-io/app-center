@@ -28,6 +28,7 @@ module.exports = {
     adminSetup: "./src/main/webapp/vue-apps/application-setup/main.js",
     myApplications: "./src/main/webapp/vue-apps/myApplications/main.js",
     appLauncher: "./src/main/webapp/vue-apps/application-launcher/main.js",
+    appStuckPanels: "./src/main/webapp/vue-apps/application-stuck-panels/main.js",
     quickActionExtensions: "./src/main/webapp/vue-apps/quick-actions/extensions.js",
     appCenterTopbarExtension: "./src/main/webapp/vue-apps/topbar-extension/extensions.js",
     appCenterTopbarApplication: "./src/main/webapp/vue-apps/topbar-application/main.js",
