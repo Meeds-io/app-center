@@ -359,7 +359,9 @@ public class ApplicationCenterStorage {
                            applicationEntity.getOrder(),
                            applicationEntity.isChangedManually(),
                            applicationEntity.isPersonal(),
-                           applicationEntity.getBadgeName());
+                           applicationEntity.getBadgeName(),
+                           applicationEntity.isAllowStick(),
+                           applicationEntity.isAllowDetach());
   }
 
   private UserApplication toUserApplicationDTO(Long applicationId) {
@@ -410,6 +412,8 @@ public class ApplicationCenterStorage {
                                    application.getOrder(),
                                    application.isPersonal(),
                                    application.getBadgeName(),
+                                   application.isAllowStick(),
+                                   application.isAllowDetach(),
                                    null);
     }
   }

@@ -597,6 +597,8 @@ public class ApplicationCenterServiceTest {
     Application input = new Application();
     input.setTitle(TITLE);
     input.setUrl(URL);
+    input.setAllowStick(true);
+    input.setAllowDetach(true);
     Application result = applicationCenterService.createPersonalApplication(input, TEST_USER);
 
     assertNotNull(result);
@@ -604,6 +606,9 @@ public class ApplicationCenterServiceTest {
     assertTrue(input.isActive());
     // a personal app is always available on mobile, whatever the client sent
     assertTrue(input.isMobile());
+    // a personal app is a plain link, it can never be stuck nor detached
+    assertFalse(input.isAllowStick());
+    assertFalse(input.isAllowDetach());
     assertEquals(Collections.singletonList(TEST_USER), input.getPermissions());
     verify(appCenterStorage).createApplication(input);
     verify(appCenterStorage).addApplicationToUserFavorite(ID, TEST_USER);
@@ -639,6 +644,8 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.updatePersonalApplication(input, "someoneElse"));
 
     input.setMobile(false);
+    input.setAllowStick(true);
+    input.setAllowDetach(true);
     applicationCenterService.updatePersonalApplication(input, TEST_USER);
     verify(appCenterStorage).updateApplication(input);
     assertTrue(input.isPersonal());
@@ -646,6 +653,8 @@ public class ApplicationCenterServiceTest {
     // an app stored before personal apps were made available on mobile is fixed
     // by its first update
     assertTrue(input.isMobile());
+    assertFalse(input.isAllowStick());
+    assertFalse(input.isAllowDetach());
   }
 
   @Test
@@ -761,7 +770,9 @@ public class ApplicationCenterServiceTest {
                            null,
                            false,
                            false,
-                           null);
+                           null,
+                           false,
+                           false);
   }
 
 }

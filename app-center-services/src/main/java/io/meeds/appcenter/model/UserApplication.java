@@ -54,7 +54,9 @@ public class UserApplication extends Application {
           app.getOrder(),
           app.isChangedManually(),
           app.isPersonal(),
-          app.getBadgeName());
+          app.getBadgeName(),
+          app.isAllowStick(),
+          app.isAllowDetach());
   }
 
 }
