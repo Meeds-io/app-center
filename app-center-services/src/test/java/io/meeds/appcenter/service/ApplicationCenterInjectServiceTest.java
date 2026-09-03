@@ -187,7 +187,9 @@ public class ApplicationCenterInjectServiceTest {
                            null,
                            false,
                            false,
-                           null);
+                           null,
+                           false,
+                           false);
   }
 
 }

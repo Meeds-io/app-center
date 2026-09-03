@@ -202,4 +202,26 @@
     </addColumn>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-exip-51636-01">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="ALLOW_STICK" type="BOOLEAN" defaultValueBoolean="false" />
+      <column name="ALLOW_DETACH" type="BOOLEAN" defaultValueBoolean="false" />
+    </addColumn>
+  </changeSet>
+
+  <changeSet author="appCenter" id="1.0.0-exip-51636-02">
+    <update tableName="AC_APPLICATION">
+      <column name="ALLOW_STICK" valueBoolean="true" />
+      <column name="ALLOW_DETACH" valueBoolean="true" />
+      <where>APP_TYPE = 1</where>
+    </update>
+    <rollback>
+      <update tableName="AC_APPLICATION">
+        <column name="ALLOW_STICK" valueBoolean="false" />
+        <column name="ALLOW_DETACH" valueBoolean="false" />
+        <where>APP_TYPE = 1</where>
+      </update>
+    </rollback>
+  </changeSet>
+
 </databaseChangeLog>

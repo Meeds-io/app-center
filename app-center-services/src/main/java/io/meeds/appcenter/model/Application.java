@@ -84,4 +84,8 @@ public class Application {
    */
   private String          badgeName;
 
+  private boolean         allowStick;
+
+  private boolean         allowDetach;
+
 }

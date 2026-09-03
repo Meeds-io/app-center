@@ -116,6 +116,12 @@ public class ApplicationEntity {
   @Column(name = "BADGE_NAME")
   private String                                badgeName;
 
+  @Column(name = "ALLOW_STICK")
+  private boolean                               allowStick;
+
+  @Column(name = "ALLOW_DETACH")
+  private boolean                               allowDetach;
+
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)

@@ -59,7 +59,9 @@ public class ApplicationForm extends Application {
           application.getOrder(),
           application.isChangedManually(),
           application.isPersonal(),
-          application.getBadgeName());
+          application.getBadgeName(),
+          application.isAllowStick(),
+          application.isAllowDetach());
   }
 
 }

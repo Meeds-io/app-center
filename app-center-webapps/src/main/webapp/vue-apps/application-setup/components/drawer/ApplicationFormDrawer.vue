@@ -384,6 +384,34 @@
               name="applicationPwa"
               hide-details />
           </div>
+          <template v-if="displayPlacementFields">
+            <div class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.allowStick = !application.allowStick">
+                {{ $t('appCenter.adminSetupForm.allowStick') }}
+              </v-card>
+              <v-switch
+                v-model="application.allowStick"
+                class="ma-0 pa-0"
+                name="applicationAllowStick"
+                hide-details />
+            </div>
+            <div class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="application.allowDetach = !application.allowDetach">
+                {{ $t('appCenter.adminSetupForm.allowDetach') }}
+              </v-card>
+              <v-switch
+                v-model="application.allowDetach"
+                class="ma-0 pa-0"
+                name="applicationAllowDetach"
+                hide-details />
+            </div>
+          </template>
         </template>
       </v-form>
     </template>
@@ -590,6 +618,9 @@ export default {
       }
       return this.type === 'LINK' || !!this.resolvedBadgeProvider;
     },
+    displayPlacementFields() {
+      return !this.personal && (this.type === 'DRAWER' || this.type === 'PORTLET');
+    },
     // The payload carries the binding as *resolved*, which reports "turned off"
     // and "not bound" identically. A provider the url matches while the payload
     // carries no badge can only mean the stored value is the reserved 'none',
@@ -688,6 +719,8 @@ export default {
         // provider bound after switching Portlet -> Link
         this.application.badgeName = null;
         this.badgeDisabledByAdmin = null;
+        this.application.allowStick = newVal === 'DRAWER';
+        this.application.allowDetach = newVal === 'DRAWER';
       }
     },
     title(newVal) {
@@ -767,6 +800,8 @@ export default {
             type: 'LINK', // LINK, DRAWER or PORTLET
             permissions: [],
             categoryIds: [],
+            allowStick: false,
+            allowDetach: false,
           };
         }
         this.oldCategoryIds = app?.categoryIds?.slice?.() || [];
