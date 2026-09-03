@@ -214,8 +214,12 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Retrieves the applications stuck to each layout side by the authenticated user", method = "GET")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
-  public ApplicationPlacements getApplicationPlacements(HttpServletRequest request) {
-    return appCenterService.getApplicationPlacements(request.getRemoteUser());
+  public ApplicationPlacements getApplicationPlacements(
+                                                        HttpServletRequest request,
+                                                        @Parameter(description = "Current site name, used to compute whether stuck panels may display on it")
+                                                        @RequestParam(name = "siteName", required = false)
+                                                        String siteName) {
+    return appCenterService.getApplicationPlacements(request.getRemoteUser(), siteName);
   }
 
   @PutMapping(path = "placements/{side}")

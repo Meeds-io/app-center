@@ -47,7 +47,7 @@ export default {
       }
       this.$appPlacementService.getPlacements(true)
         .then(placements => {
-          if (!placements?.enabled) {
+          if (!placements?.enabled || !placements?.siteEligible) {
             return;
           }
           this.openStuckApplication(placements.left, 'left');

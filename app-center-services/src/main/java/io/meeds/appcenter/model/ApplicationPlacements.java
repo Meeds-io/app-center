@@ -29,6 +29,8 @@ public class ApplicationPlacements {
 
   private boolean enabled;
 
+  private boolean siteEligible;
+
   private Long    left;
 
   private Long    right;
