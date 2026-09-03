@@ -50,15 +50,18 @@ import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
+import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
+import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
@@ -116,6 +119,14 @@ public class ApplicationCenterService {
 
   private static final String      INVALID_PERSONAL_URL_MESSAGE        = "url %s is not a valid http(s) link";
 
+  private static final String      PLACEMENT_NOT_ENABLED_MESSAGE       = "Application placement feature is not enabled";
+
+  private static final String      SIDE_IS_MANDATORY_MESSAGE           = "side is mandatory";
+
+  private static final String      STICK_NOT_ALLOWED_MESSAGE           = "appCenter.placement.stickNotAllowed";
+
+  private static final String      USER_CANNOT_ACCESS_APP_MESSAGE      = "User %s is not allowed to access application %s";
+
   private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
   private static final Pattern     CONTROL_CHARS_PATTERN               = Pattern.compile("[\\t\\n\\r]");
@@ -128,6 +139,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private ApplicationCenterStorage appCenterStorage;
+
+  @Autowired
+  private ApplicationPlacementStorage placementStorage;
 
   @Autowired
   private ApplicationBadgePluginRegistry badgePluginRegistry;
@@ -151,6 +165,9 @@ public class ApplicationCenterService {
 
   @Value("${appcenter.favorites.count:12}") // NOSONAR
   private long                     defaultMaxFavoriteApps;
+
+  @Value("${appcenter.placement.enabled:true}") // NOSONAR
+  private boolean                  placementEnabled;
 
   /**
    * Create new Application that will be available for all users.
@@ -490,6 +507,61 @@ public class ApplicationCenterService {
     application.setAllowStick(false);
     application.setAllowDetach(false);
     updateApplication(application);
+  }
+
+  /**
+   * Retrieves the applications the given user stuck to each side of the
+   * layout, along with whether the placement feature is enabled at all.
+   */
+  public ApplicationPlacements getApplicationPlacements(String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    return new ApplicationPlacements(placementEnabled,
+                                     placementStorage.getPlacedApplicationId(username, PlacementSide.LEFT),
+                                     placementStorage.getPlacedApplicationId(username, PlacementSide.RIGHT));
+  }
+
+  /**
+   * Sticks an application to one side of the layout for the given user,
+   * replacing the application previously stuck to that side if any.
+   */
+  public void stickApplication(long applicationId, PlacementSide side, String username) throws IllegalAccessException,
+                                                                                        ApplicationNotFoundException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (side == null) {
+      throw new IllegalArgumentException(SIDE_IS_MANDATORY_MESSAGE);
+    }
+    if (!placementEnabled) {
+      throw new IllegalAccessException(PLACEMENT_NOT_ENABLED_MESSAGE);
+    }
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    if (!canAccess(application, username)) {
+      throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
+    }
+    if (!application.isAllowStick()) {
+      throw new IllegalArgumentException(STICK_NOT_ALLOWED_MESSAGE);
+    }
+    placementStorage.setPlacedApplicationId(username, side, applicationId);
+  }
+
+  /**
+   * Removes the application stuck to the given side for the given user. A side
+   * already empty is left as is, so the operation stays idempotent.
+   */
+  public void unstickApplication(PlacementSide side, String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (side == null) {
+      throw new IllegalArgumentException(SIDE_IS_MANDATORY_MESSAGE);
+    }
+    placementStorage.removePlacedApplicationId(username, side);
   }
 
   /**
