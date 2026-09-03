@@ -218,6 +218,32 @@
   </module>
 
   <module>
+    <name>appStuckPanelsBundle</name>
+    <script>
+      <minify>false</minify>
+      <path>/js/appStuckPanels.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>commonVueComponents</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+    <depends>
+      <module>appCenterCommon</module>
+    </depends>
+  </module>
+
+  <module>
     <name>appLauncherBundle</name>
     <script>
       <minify>false</minify>
