@@ -133,6 +133,10 @@ export default {
       document.dispatchEvent(new CustomEvent('topbar-displayed-apps-updated'));
     },
     async openApplication() {
+      if (this.appType !== 'LINK'
+          && await this.$appPlacementService.alertWhenStuck(this.appType, this.appUrl, this.$t('appCenter.placement.alreadyStuck'))) {
+        return;
+      }
       if (this.appType === 'PORTLET') {
         this.loading = true;
         try {
