@@ -35,7 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.container.configuration.ConfigurationManager;
@@ -71,16 +71,16 @@ public class ApplicationCenterInjectServiceTest {
 
   private static final Long              ID                     = 2l;
 
-  @MockBean
+  @MockitoBean
   private ConfigurationManager           configurationManager;
 
-  @MockBean
+  @MockitoBean
   private SettingService                 settingService;
 
-  @MockBean
+  @MockitoBean
   private ApplicationCenterService       applicationCenterService;
 
-  @MockBean
+  @MockitoBean
   private UploadService                  uploadService;
 
   @Autowired

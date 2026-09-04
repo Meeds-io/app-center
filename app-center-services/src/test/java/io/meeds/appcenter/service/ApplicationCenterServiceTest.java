@@ -48,7 +48,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -80,62 +80,64 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
-  private static final String      SHORTCUT       = "G";
+  private static final String            WEBSITE_URL    = "https://meeds.io";
 
-  private static final String      KEYWORD        = "keyword";
+  private static final String            SHORTCUT       = "G";
 
-  private static final String      ADMIN_USERNAME = "admin";
+  private static final String            KEYWORD        = "keyword";
 
-  private static final long        IMAGE_FILE_ID  = 5l;
+  private static final String            ADMIN_USERNAME = "admin";
 
-  private static final String      HELP_PAGE_URL  = "./helpPageUrl";
+  private static final long              IMAGE_FILE_ID  = 5l;
 
-  private static final String      URL            = "./url";
+  private static final String            HELP_PAGE_URL  = "./helpPageUrl";
 
-  private static final String      PERMISSIONS_2  = "/permissions2";
+  private static final String            URL            = "./url";
 
-  private static final String      PERMISSIONS_1  = "/permissions1";
+  private static final String            PERMISSIONS_2  = "/permissions2";
 
-  private static final String      DESCRIPTION    = "description";
+  private static final String            PERMISSIONS_1  = "/permissions1";
 
-  private static final String      TITLE          = "title";
+  private static final String            DESCRIPTION    = "description";
 
-  private static final String      TEST_USER      = "testuser";
+  private static final String            TITLE          = "title";
 
-  private static final Long        ID             = 2l;
+  private static final String            TEST_USER      = "testuser";
 
-  @MockBean
+  private static final Long              ID             = 2l;
+
+  @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
 
-  @MockBean
-  private ConfigurationManager     configurationManager;
+  @MockitoBean
+  private ConfigurationManager           configurationManager;
 
-  @MockBean
-  private SettingService           settingService;
+  @MockitoBean
+  private SettingService                 settingService;
 
-  @MockBean
-  private TranslationService       translationService;
+  @MockitoBean
+  private TranslationService             translationService;
 
-  @MockBean
-  private FileService              fileService;
+  @MockitoBean
+  private FileService                    fileService;
 
-  @MockBean
-  private ImageThumbnailService    imageThumbnailService;
+  @MockitoBean
+  private ImageThumbnailService          imageThumbnailService;
 
-  @MockBean
-  private UserACL                  userAcl;
+  @MockitoBean
+  private UserACL                        userAcl;
 
-  @MockBean
-  private ApplicationCenterStorage appCenterStorage;
+  @MockitoBean
+  private ApplicationCenterStorage       appCenterStorage;
 
-  @MockBean
-  private CategoryLinkService      categoryLinkService;
+  @MockitoBean
+  private CategoryLinkService            categoryLinkService;
 
-  @MockBean
-  private PortalContainer          portalContainer;
+  @MockitoBean
+  private PortalContainer                portalContainer;
 
   @Autowired
-  private ApplicationCenterService applicationCenterService;
+  private ApplicationCenterService       applicationCenterService;
 
   @BeforeEach
   @SneakyThrows
@@ -676,14 +678,15 @@ public class ApplicationCenterServiceTest {
 
   @Test
   void normalizePersonalUrlAddsMissingScheme() {
-    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("meeds.io"));
+    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl("meeds.io"));
     assertEquals("https://www.meeds.io/apps?id=1", applicationCenterService.normalizePersonalUrl(" www.meeds.io/apps?id=1 "));
   }
 
   @Test
   void normalizePersonalUrlKeepsExplicitLinks() {
-    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("https://meeds.io"));
-    // an explicit scheme is trusted, so an intranet host without a dot is allowed
+    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl(WEBSITE_URL));
+    // an explicit scheme is trusted, so an intranet host without a dot is
+    // allowed
     assertEquals("http://intranet/tools", applicationCenterService.normalizePersonalUrl("http://intranet/tools"));
     assertEquals("/portal/dw", applicationCenterService.normalizePersonalUrl("/portal/dw"));
     assertEquals("./dw", applicationCenterService.normalizePersonalUrl("./dw"));
