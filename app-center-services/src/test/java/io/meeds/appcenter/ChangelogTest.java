@@ -71,8 +71,8 @@ class ChangelogTest {
       assertEquals(Boolean.TRUE, placementFlag(connection, 1, "ALLOW_DETACH"));
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_STICK"));
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_DETACH"));
-      assertEquals(Boolean.FALSE, placementFlag(connection, 3, "ALLOW_STICK"));
-      assertEquals(Boolean.FALSE, placementFlag(connection, 3, "ALLOW_DETACH"));
+      assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_STICK"));
+      assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_DETACH"));
     }
   }
 
