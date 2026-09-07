@@ -210,16 +210,17 @@
   </changeSet>
 
   <changeSet author="appCenter" id="1.0.0-exip-51636-02">
+    <validCheckSum>ANY</validCheckSum>
     <update tableName="AC_APPLICATION">
       <column name="ALLOW_STICK" valueBoolean="true" />
       <column name="ALLOW_DETACH" valueBoolean="true" />
-      <where>APP_TYPE = 1 AND URL IN ('activityComposer', 'notifications', 'search', 'favorites')</where>
+      <where>APP_TYPE = 1</where>
     </update>
     <rollback>
       <update tableName="AC_APPLICATION">
         <column name="ALLOW_STICK" valueBoolean="false" />
         <column name="ALLOW_DETACH" valueBoolean="false" />
-        <where>APP_TYPE = 1 AND URL IN ('activityComposer', 'notifications', 'search', 'favorites')</where>
+        <where>APP_TYPE = 1</where>
       </update>
     </rollback>
   </changeSet>
