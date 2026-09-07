@@ -40,6 +40,7 @@ export default {
   },
   created() {
     document.addEventListener('app-placement-changed', this.refresh);
+    document.addEventListener('page-layout-rendered', this.refresh);
     document.addEventListener('extension-QuickAction-Extension-updated', this.refresh);
     document.addEventListener('extension-QuickAction-PortletExtension-updated', this.refresh);
     this.$utils.includeExtensions('QuickActionExtension');
@@ -47,6 +48,7 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('app-placement-changed', this.refresh);
+    document.removeEventListener('page-layout-rendered', this.refresh);
     document.removeEventListener('extension-QuickAction-Extension-updated', this.refresh);
     document.removeEventListener('extension-QuickAction-PortletExtension-updated', this.refresh);
   },
