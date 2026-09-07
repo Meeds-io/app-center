@@ -19,3 +19,4 @@
  */
 import './initComponents.js';
 import './services.js';
+import './js/placementProviderExtension.js';
