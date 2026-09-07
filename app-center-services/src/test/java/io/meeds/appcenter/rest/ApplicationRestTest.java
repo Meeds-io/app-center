@@ -180,8 +180,7 @@ public class ApplicationRestTest {
   @Test
   void getApplicationPlacements() throws Exception {
     when(applicationCenterService.getApplicationPlacements(SIMPLE_USER, "dw")).thenReturn(new ApplicationPlacements(true,
-                                                                                                                    true,
-                                                                                                                    1L,
+                                                                                                                    application(),
                                                                                                                     null));
     ResultActions response = mockMvc.perform(get(PLACEMENTS_PATH + "?siteName=dw").with(testSimpleUser()));
     response.andExpect(status().isOk());
