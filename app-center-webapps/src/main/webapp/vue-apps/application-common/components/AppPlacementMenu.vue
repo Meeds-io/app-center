@@ -56,17 +56,17 @@ export default {
   }),
   computed: {
     canDetach() {
-      return this.placements?.enabled && this.application?.allowDetach || false;
+      return this.application?.allowDetach || false;
     },
     canStick() {
-      return this.placements?.enabled && this.placements?.siteEligible && this.application?.allowStick || false;
+      return this.placements?.siteEligible && this.application?.allowStick || false;
     },
     stuckSide() {
-      if (!this.placements?.enabled || !this.application) {
+      if (!this.application) {
         return null;
-      } else if (`${this.placements.left}` === `${this.application.id}`) {
+      } else if (`${this.placements?.left?.id}` === `${this.application.id}`) {
         return 'left';
-      } else if (`${this.placements.right}` === `${this.application.id}`) {
+      } else if (`${this.placements?.right?.id}` === `${this.application.id}`) {
         return 'right';
       }
       return null;
@@ -84,10 +84,7 @@ export default {
   },
   methods: {
     refreshPlacements() {
-      if (this.$appPlacementService) {
-        this.$appPlacementService.getPlacements(true)
-          .then(placements => this.placements = placements);
-      }
+      this.placements = this.$appPlacementService?.getPlacements?.() || null;
     },
     open(event) {
       if (!this.hasActions) {
@@ -100,7 +97,7 @@ export default {
       this.menu = true;
     },
     openInNewTab() {
-      this.$appPlacementService.openDetached(this.application);
+      this.$appPlacementService.openDetached(this.application.id);
     },
     stickTo(side) {
       this.$appPlacementService.stickApplication(this.application.id, side)

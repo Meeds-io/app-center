@@ -19,27 +19,27 @@
  */
 import * as applicationService from './ApplicationService.js';
 
-let placementsPromise = null;
+export function getPlacements() {
+  return window.eXo?.env?.portal?.appPlacements || null;
+}
 
-export function getPlacements(useCache) {
-  if (!useCache || !placementsPromise) {
-    placementsPromise = fetch(`/app-center/rest/applications/placements?siteName=${eXo.env.portal.portalName || ''}`, {
-      method: 'GET',
-      credentials: 'include',
+export function refreshPlacements() {
+  return fetch(`/app-center/rest/applications/placements?siteName=${eXo.env.portal.portalName || ''}`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (resp?.ok) {
+        return resp.json();
+      } else {
+        throw new Error('Error when getting application placements');
+      }
     })
-      .then(resp => {
-        if (resp?.ok) {
-          return resp.json();
-        } else {
-          throw new Error('Error when getting application placements');
-        }
-      })
-      .catch(error => {
-        placementsPromise = null;
-        throw error;
-      });
-  }
-  return placementsPromise;
+    .then(placements => {
+      eXo.env.portal.appPlacements = placements;
+      document.dispatchEvent(new CustomEvent('app-placement-changed'));
+      return placements;
+    });
 }
 
 export function stickApplication(applicationId, side) {
@@ -51,11 +51,10 @@ export function stickApplication(applicationId, side) {
       if (!resp?.ok) {
         throw new Error('Error when sticking application');
       }
-      placementsPromise = null;
       if (window.require) {
         window.require(['SHARED/appStuckPanelsBundle'], app => app.init());
       }
-      document.dispatchEvent(new CustomEvent('app-placement-changed'));
+      return refreshPlacements();
     });
 }
 
@@ -68,9 +67,17 @@ export function unstickApplication(side) {
       if (!resp?.ok) {
         throw new Error('Error when unsticking application');
       }
-      placementsPromise = null;
-      document.dispatchEvent(new CustomEvent('app-placement-changed'));
+      return refreshPlacements();
     });
+}
+
+export function getEligibility(appName) {
+  return findApplicationByDrawer(appName)
+    .then(application => application && {
+      applicationId: application.id,
+      allowStick: application.allowStick,
+      allowDetach: application.allowDetach,
+    } || null);
 }
 
 export function findApplicationByDrawer(drawerName) {
@@ -81,45 +88,35 @@ export function findApplicationByPortletInstance(portletInstanceId) {
   return findApplication(application => application.type === 'PORTLET' && `${application.url}` === `${portletInstanceId}`);
 }
 
-export function findApplicationById(applicationId) {
-  return findApplication(application => `${application.id}` === `${applicationId}`);
-}
-
 export function findStuckApplication(appType, appUrl) {
-  return getPlacements(true).then(placements => {
-    if (!placements?.enabled
-        || !placements?.siteEligible
-        || window.innerWidth < 1264
-        || (!placements.left && !placements.right)) {
-      return null;
-    }
-    return findApplication(application => application.type === appType
-      && `${application.url}` === `${appUrl}`
-      && (`${application.id}` === `${placements.left}` || `${application.id}` === `${placements.right}`));
-  });
+  const placements = getPlacements();
+  if (!placements?.siteEligible || window.innerWidth < 1264) {
+    return null;
+  }
+  return [placements.left, placements.right]
+    .find(application => application
+      && application.type === appType
+      && `${application.url}` === `${appUrl}`) || null;
 }
 
 export function alertWhenStuck(appType, appUrl, message) {
-  return findStuckApplication(appType, appUrl)
-    .catch(() => null)
-    .then(stuckApplication => {
-      if (stuckApplication) {
-        document.dispatchEvent(new CustomEvent('alert-message', {detail: {
-          alertType: 'info',
-          alertMessage: message,
-        }}));
-        return true;
-      }
-      return false;
-    });
+  const stuckApplication = findStuckApplication(appType, appUrl);
+  if (stuckApplication) {
+    document.dispatchEvent(new CustomEvent('alert-message', {detail: {
+      alertType: 'info',
+      alertMessage: message,
+    }}));
+    return true;
+  }
+  return false;
 }
 
-export function getDetachUrl(application) {
-  return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName || eXo.env.portal.portalName}/app-viewer?applicationId=${application.id}`;
+export function getDetachUrl(applicationId) {
+  return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName || eXo.env.portal.portalName}/app-viewer?applicationId=${applicationId}`;
 }
 
-export function openDetached(application) {
-  window.open(getDetachUrl(application), `ac-app-${application.id}`);
+export function openDetached(applicationId) {
+  window.open(getDetachUrl(applicationId), `ac-app-${applicationId}`);
 }
 
 function findApplication(predicate) {

@@ -12,7 +12,6 @@
 <%@page import="org.exoplatform.commons.api.settings.SettingValue"%>
 <%@page import="org.exoplatform.commons.api.settings.data.Scope"%>
 <%@page import="org.exoplatform.commons.api.settings.data.Context"%>
-<%@page import="io.meeds.appcenter.storage.ApplicationPlacementStorage"%>
 <%
   ResourceBundle bundle;
   try {
@@ -29,19 +28,28 @@
   String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
 
   ApplicationCenterService appCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
-  boolean hasStuckApplication = appCenterService != null && appCenterService.isPlacementEnabled()
-      && (settingService.get(Context.USER.id(request.getRemoteUser()),
-                             ApplicationPlacementStorage.PLACEMENT_SCOPE,
-                             ApplicationPlacementStorage.LEFT_PLACEMENT_KEY) != null
-          || settingService.get(Context.USER.id(request.getRemoteUser()),
-                                ApplicationPlacementStorage.PLACEMENT_SCOPE,
-                                ApplicationPlacementStorage.RIGHT_PLACEMENT_KEY) != null);
+  String appPlacementsJson = "null";
+  boolean hasStuckApplication = false;
+  if (appCenterService != null && StringUtils.isNotBlank(request.getRemoteUser())) {
+    try {
+      io.meeds.appcenter.model.ApplicationPlacements placements =
+          appCenterService.getApplicationPlacements(request.getRemoteUser(),
+                                                    PortalRequestContext.getCurrentInstance().getPortalOwner());
+      hasStuckApplication = placements.getLeft() != null || placements.getRight() != null;
+      appPlacementsJson = io.meeds.social.util.JsonUtils.toJsonString(placements).replace("</", "<\\/");
+    } catch (Exception e) {
+      // the topbar must render whatever happens to the placement resolution
+    }
+  }
 %>
 <div class="VuetifyApp">
   <div
     data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="appLauncher">
+    <script>
+      eXo.env.portal.appPlacements = <%=appPlacementsJson%>;
+    </script>
     <% if (hasStuckApplication) { %>
     <script>
       window.require(['SHARED/appStuckPanelsBundle'], app => app.init());

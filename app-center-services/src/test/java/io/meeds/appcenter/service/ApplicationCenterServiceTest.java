@@ -51,7 +51,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
@@ -86,73 +85,71 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
-  private static final String            WEBSITE_URL    = "https://meeds.io";
+  private static final String      SHORTCUT       = "G";
 
-  private static final String            SHORTCUT       = "G";
+  private static final String      KEYWORD        = "keyword";
 
-  private static final String            KEYWORD        = "keyword";
+  private static final String      ADMIN_USERNAME = "admin";
 
-  private static final String            ADMIN_USERNAME = "admin";
+  private static final long        IMAGE_FILE_ID  = 5l;
 
-  private static final long              IMAGE_FILE_ID  = 5l;
+  private static final String      HELP_PAGE_URL  = "./helpPageUrl";
 
-  private static final String            HELP_PAGE_URL  = "./helpPageUrl";
+  private static final String      URL            = "./url";
 
-  private static final String            URL            = "./url";
+  private static final String      PERMISSIONS_2  = "/permissions2";
 
-  private static final String            PERMISSIONS_2  = "/permissions2";
+  private static final String      PERMISSIONS_1  = "/permissions1";
 
-  private static final String            PERMISSIONS_1  = "/permissions1";
+  private static final String      DESCRIPTION    = "description";
 
-  private static final String            DESCRIPTION    = "description";
+  private static final String      TITLE          = "title";
 
-  private static final String            TITLE          = "title";
+  private static final String      TEST_USER      = "testuser";
 
-  private static final String            TEST_USER      = "testuser";
-
-  private static final Long              ID             = 2l;
+  private static final Long        ID             = 2l;
 
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
 
   @MockitoBean
-  private ConfigurationManager           configurationManager;
+  private ConfigurationManager     configurationManager;
 
   @MockitoBean
-  private SettingService                 settingService;
+  private SettingService           settingService;
 
   @MockitoBean
-  private TranslationService             translationService;
+  private TranslationService       translationService;
 
   @MockitoBean
-  private FileService                    fileService;
+  private FileService              fileService;
 
   @MockitoBean
-  private ImageThumbnailService          imageThumbnailService;
+  private ImageThumbnailService    imageThumbnailService;
 
   @MockitoBean
-  private UserACL                        userAcl;
+  private UserACL                  userAcl;
 
   @MockitoBean
-  private ApplicationCenterStorage       appCenterStorage;
+  private ApplicationCenterStorage appCenterStorage;
 
   @MockitoBean
-  private ApplicationPlacementStorage    placementStorage;
+  private ApplicationPlacementStorage placementStorage;
 
   @MockitoBean
   private NavigationConfigurationService navigationConfigurationService;
 
   @MockitoBean
-  private UserPortalConfigService        userPortalConfigService;
+  private UserPortalConfigService  userPortalConfigService;
 
   @MockitoBean
-  private CategoryLinkService            categoryLinkService;
+  private CategoryLinkService      categoryLinkService;
 
   @MockitoBean
-  private PortalContainer                portalContainer;
+  private PortalContainer          portalContainer;
 
   @Autowired
-  private ApplicationCenterService       applicationCenterService;
+  private ApplicationCenterService applicationCenterService;
 
   @BeforeEach
   @SneakyThrows
@@ -677,16 +674,32 @@ public class ApplicationCenterServiceTest {
   void getApplicationPlacements() {
     assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationPlacements("", "dw"));
 
-    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
-    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(null);
     when(userPortalConfigService.getMetaPortal()).thenReturn("dw");
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(null);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(null);
     ApplicationPlacements placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
     assertNotNull(placements);
-    assertTrue(placements.isEnabled());
     assertTrue(placements.isSiteEligible());
-    assertEquals(ID, placements.getLeft());
+    assertNull(placements.getLeft());
     assertNull(placements.getRight());
 
+    Application application = application();
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application.setAllowStick(true);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
+    assertEquals(application, placements.getLeft());
+    assertNull(placements.getRight());
+
+    // the placement no longer qualifies once the admin turns the capability
+    // off: the read drops it and clears the stored setting
+    application.setAllowStick(false);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
+    assertNull(placements.getLeft());
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.LEFT);
+
+    application.setAllowStick(true);
     placements = applicationCenterService.getApplicationPlacements(TEST_USER, "administration");
     assertFalse(placements.isSiteEligible());
 
@@ -705,11 +718,6 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, ""));
     assertThrows(IllegalArgumentException.class,
                  () -> applicationCenterService.stickApplication(ID, null, TEST_USER));
-
-    ReflectionTestUtils.setField(applicationCenterService, "placementEnabled", false);
-    assertThrows(IllegalAccessException.class,
-                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
-    ReflectionTestUtils.setField(applicationCenterService, "placementEnabled", true);
 
     assertThrows(ApplicationNotFoundException.class,
                  () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
@@ -771,15 +779,14 @@ public class ApplicationCenterServiceTest {
 
   @Test
   void normalizePersonalUrlAddsMissingScheme() {
-    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl("meeds.io"));
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("meeds.io"));
     assertEquals("https://www.meeds.io/apps?id=1", applicationCenterService.normalizePersonalUrl(" www.meeds.io/apps?id=1 "));
   }
 
   @Test
   void normalizePersonalUrlKeepsExplicitLinks() {
-    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl(WEBSITE_URL));
-    // an explicit scheme is trusted, so an intranet host without a dot is
-    // allowed
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("https://meeds.io"));
+    // an explicit scheme is trusted, so an intranet host without a dot is allowed
     assertEquals("http://intranet/tools", applicationCenterService.normalizePersonalUrl("http://intranet/tools"));
     assertEquals("/portal/dw", applicationCenterService.normalizePersonalUrl("/portal/dw"));
     assertEquals("./dw", applicationCenterService.normalizePersonalUrl("./dw"));
