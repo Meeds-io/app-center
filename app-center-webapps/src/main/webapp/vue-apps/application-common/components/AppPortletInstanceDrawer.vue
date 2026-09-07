@@ -18,7 +18,7 @@
   Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <exo-drawer
+  <pinneable-drawer
     ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
@@ -34,7 +34,7 @@
         <div id="appLauncherPortletViewer"></div>
       </div>
     </template>
-  </exo-drawer>
+  </pinneable-drawer>
 </template>
 <script>
 export default {

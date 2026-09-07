@@ -18,21 +18,13 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 <template>
-  <div>
-    <app-center-portlet-instance-drawer
-      v-if="leftPortletApp"
-      ref="leftPortletPanel" />
-    <app-center-portlet-instance-drawer
-      v-if="rightPortletApp"
-      ref="rightPortletPanel" />
-  </div>
+  <div></div>
 </template>
 <script>
 export default {
   data: () => ({
-    leftPortletApp: null,
-    rightPortletApp: null,
     triggeredDrawerApps: {},
+    renderedPortletApps: {},
   }),
   computed: {
     stuckAllowed() {
@@ -63,47 +55,51 @@ export default {
       if (!this.stuckAllowed) {
         return;
       }
-      this.$appPlacementService.getPlacements(true)
-        .then(placements => {
-          if (!placements?.enabled || !placements?.siteEligible) {
-            return;
-          }
-          this.openStuckApplication(placements.left, 'left');
-          this.openStuckApplication(placements.right, 'right');
-        })
-        .catch(() => null);
-    },
-    openStuckApplication(applicationId, side) {
-      if (!applicationId) {
-        this[`${side}PortletApp`] = null;
-        this.$set(this.triggeredDrawerApps, side, null);
+      const placements = this.$appPlacementService.getPlacements();
+      if (!placements?.siteEligible) {
         return;
       }
-      this.$appPlacementService.findApplicationById(applicationId)
-        .then(application => {
-          if (!application) {
-            return null;
-          } else if (application.type === 'DRAWER') {
-            if (this.triggeredDrawerApps[side] === application.id
-                || document.querySelector(`.stuck-app-container [data-stuck-app="${window.CSS.escape(application.url)}"]`)) {
-              return null;
-            }
-            const quickAction = extensionRegistry.loadExtensions('QuickAction', 'Extension')
-              .find(extension => extension.id === application.url);
-            if (quickAction?.click) {
-              this.$set(this.triggeredDrawerApps, side, application.id);
-              return quickAction.click();
-            }
-            return null;
-          } else if (application.type === 'PORTLET') {
-            if (this[`${side}PortletApp`]?.id === application.id) {
-              return null;
-            }
-            this[`${side}PortletApp`] = application;
-            return this.$nextTick().then(() => this.$refs[`${side}PortletPanel`]?.open?.(application.url));
-          }
-          return null;
-        });
+      this.openStuckApplication(placements.left, 'left');
+      this.openStuckApplication(placements.right, 'right');
+    },
+    openStuckApplication(application, side) {
+      const anchor = document.querySelector(`#pageBody${side === 'left' && 'Left' || 'Right'}Panel`);
+      if (!application) {
+        this.$set(this.triggeredDrawerApps, side, null);
+        this.cleanRenderedPortlet(side, anchor);
+        return;
+      }
+      if (application.type === 'DRAWER') {
+        if (this.triggeredDrawerApps[side] === application.id
+            || document.querySelector(`.stuck-app-panel [data-stuck-app="${window.CSS.escape(application.url)}"]`)) {
+          return;
+        }
+        const quickAction = extensionRegistry.loadExtensions('QuickAction', 'Extension')
+          .find(extension => extension.id === application.url);
+        if (quickAction?.click) {
+          this.$set(this.triggeredDrawerApps, side, application.id);
+          quickAction.click();
+        }
+      } else if (application.type === 'PORTLET' && anchor) {
+        if (this.renderedPortletApps[side] === application.id) {
+          return;
+        }
+        const portletQuickAction = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension')?.[0];
+        if (portletQuickAction?.render) {
+          this.$set(this.renderedPortletApps, side, application.id);
+          anchor.classList.add('stuck-app-panel');
+          anchor.style.width = '420px';
+          portletQuickAction.render(application.url, `#pageBody${side === 'left' && 'Left' || 'Right'}Panel`);
+        }
+      }
+    },
+    cleanRenderedPortlet(side, anchor) {
+      if (this.renderedPortletApps[side] && anchor) {
+        anchor.replaceChildren();
+        anchor.classList.remove('stuck-app-panel');
+        anchor.style.removeProperty('width');
+        this.$set(this.renderedPortletApps, side, null);
+      }
     },
   },
 };
