@@ -121,8 +121,6 @@ public class ApplicationCenterService {
 
   private static final String      INVALID_PERSONAL_URL_MESSAGE        = "url %s is not a valid http(s) link";
 
-  private static final String      PLACEMENT_NOT_ENABLED_MESSAGE       = "Application placement feature is not enabled";
-
   private static final String      SIDE_IS_MANDATORY_MESSAGE           = "side is mandatory";
 
   private static final String      STICK_NOT_ALLOWED_MESSAGE           = "appCenter.placement.stickNotAllowed";
@@ -173,9 +171,6 @@ public class ApplicationCenterService {
 
   @Value("${appcenter.favorites.count:12}") // NOSONAR
   private long                     defaultMaxFavoriteApps;
-
-  @Value("${appcenter.placement.enabled:true}") // NOSONAR
-  private boolean                  placementEnabled;
 
   /**
    * Create new Application that will be available for all users.
@@ -519,22 +514,41 @@ public class ApplicationCenterService {
 
   /**
    * Retrieves the applications the given user stuck to each side of the
-   * layout, along with whether the placement feature is enabled at all and
-   * whether the given site is allowed to display stuck panels: only the meta
-   * site and the sites listed in its sidebar configuration are, by design.
+   * layout, resolved and re-validated at read time, along with whether the
+   * given site is allowed to display stuck panels: only the meta site and the
+   * sites listed in its sidebar configuration are, by design.
    */
   public ApplicationPlacements getApplicationPlacements(String username, String siteName) {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    return new ApplicationPlacements(placementEnabled,
-                                     placementEnabled && isPlacementEligibleSite(siteName),
-                                     placementStorage.getPlacedApplicationId(username, PlacementSide.LEFT),
-                                     placementStorage.getPlacedApplicationId(username, PlacementSide.RIGHT));
+    return new ApplicationPlacements(isPlacementEligibleSite(siteName),
+                                     resolvePlacedApplication(username, PlacementSide.LEFT),
+                                     resolvePlacedApplication(username, PlacementSide.RIGHT));
   }
 
-  public boolean isPlacementEnabled() {
-    return placementEnabled;
+  /**
+   * A placement is validated at stick time, but the world moves afterwards:
+   * the administrator can deactivate the application, revoke the user's
+   * access or turn the stick capability off. Every read therefore
+   * re-validates the stored placement and drops AND clears it when it no
+   * longer qualifies, so callers only ever render what the read returns.
+   */
+  private Application resolvePlacedApplication(String username, PlacementSide side) {
+    Long applicationId = placementStorage.getPlacedApplicationId(username, side);
+    if (applicationId == null) {
+      return null;
+    }
+    Application application = appCenterStorage.getApplication(applicationId);
+    boolean stillQualifies = application != null
+                             && application.isActive()
+                             && application.isAllowStick()
+                             && canAccess(application, username);
+    if (!stillQualifies) {
+      placementStorage.removePlacedApplicationId(username, side);
+      return null;
+    }
+    return application;
   }
 
   public boolean isPlacementEligibleSite(String siteName) {
@@ -554,9 +568,6 @@ public class ApplicationCenterService {
     }
     if (side == null) {
       throw new IllegalArgumentException(SIDE_IS_MANDATORY_MESSAGE);
-    }
-    if (!placementEnabled) {
-      throw new IllegalAccessException(PLACEMENT_NOT_ENABLED_MESSAGE);
     }
     Application application = appCenterStorage.getApplication(applicationId);
     if (application == null) {
