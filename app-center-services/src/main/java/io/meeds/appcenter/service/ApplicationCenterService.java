@@ -576,7 +576,7 @@ public class ApplicationCenterService {
     if (!canAccess(application, username)) {
       throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
     }
-    if (!application.isAllowStick()) {
+    if (!application.isActive() || !application.isAllowStick()) {
       throw new IllegalArgumentException(STICK_NOT_ALLOWED_MESSAGE);
     }
     PlacementSide otherSide = side == PlacementSide.LEFT ? PlacementSide.RIGHT : PlacementSide.LEFT;

@@ -84,6 +84,9 @@ export default {
         } else {
           this.error = true;
         }
+      } catch (e) {
+        this.error = true;
+        throw e;
       } finally {
         this.resolving = false;
       }
