@@ -80,6 +80,10 @@ export function getEligibility(appName) {
     } || null);
 }
 
+export function findApplicationById(applicationId) {
+  return findApplication(application => `${application.id}` === `${applicationId}`);
+}
+
 export function findApplicationByDrawer(drawerName) {
   return findApplication(application => application.type === 'DRAWER' && application.url === drawerName);
 }
