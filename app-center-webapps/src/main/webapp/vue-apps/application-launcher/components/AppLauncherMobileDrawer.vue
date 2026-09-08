@@ -36,7 +36,7 @@
               </v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-content v-if="filter" class="drawerTitle align-start text-header-title py-2 px-5">
+          <v-list-item-content v-if="filter" class="drawerTitle align-start text-title py-2 px-5">
             <div class="text-truncate full-width">
               <v-text-field
                 v-model="keyword"
@@ -52,7 +52,7 @@
             </div>
           </v-list-item-content>
           <template v-else>
-            <v-list-item-content class="drawerTitle align-start text-header-title">
+            <v-list-item-content class="drawerTitle align-start text-title">
               <div class="text-truncate full-width">
                 {{ $t("appCenter.appLauncher.drawer.title") }}
               </div>

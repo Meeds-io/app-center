@@ -22,8 +22,8 @@
   <div class="d-flex align-center justify-space-between">
     <div
       v-if="showHeader"
-      class="widget-text-header align-start">
-      {{ headerLabel }}
+      class="text-header align-start">
+      <span class="text-truncate">{{ headerLabel }}</span>
     </div>
     <div v-else class="flex-grow-1"></div>
     <div

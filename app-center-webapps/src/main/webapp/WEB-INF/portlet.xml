@@ -70,6 +70,10 @@
       <name>preload.resource.rest</name>
       <value>/app-center/rest/favorites</value>
     </init-param>
+    <init-param>
+      <name>layout-content-editable</name>
+      <value>true</value>
+    </init-param>
     <expiration-cache>-1</expiration-cache>
     <cache-scope>PUBLIC</cache-scope>
     <supports>
