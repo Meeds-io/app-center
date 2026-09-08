@@ -732,6 +732,11 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
 
     application.setAllowStick(true);
+    application.setActive(false);
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setActive(true);
     when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(ID);
     applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER);
     verify(placementStorage).setPlacedApplicationId(TEST_USER, PlacementSide.LEFT, ID);
