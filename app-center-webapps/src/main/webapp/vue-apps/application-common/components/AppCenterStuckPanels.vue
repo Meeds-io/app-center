@@ -91,7 +91,10 @@ export default {
           this.$set(this.renderedPortletApps, side, application.id);
           anchor.classList.add('stuck-app-panel');
           anchor.style.width = '420px';
-          portletQuickAction.render(application.url, `#pageBody${side === 'left' && 'Left' || 'Right'}Panel`);
+          const container = document.createElement('div');
+          container.id = `stuckPortletPanel-${side}`;
+          anchor.replaceChildren(container);
+          portletQuickAction.render(application.url, `#${container.id}`);
         }
       }
     },

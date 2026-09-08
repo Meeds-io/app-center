@@ -29,7 +29,9 @@ import java.sql.Statement;
 
 import org.junit.jupiter.api.Test;
 
+import liquibase.ChecksumVersion;
 import liquibase.Liquibase;
+import liquibase.changelog.ChangeSet;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
@@ -41,7 +43,9 @@ import liquibase.resource.ClassLoaderResourceAccessor;
  * rollback proves the hand-written one of 1.0.0-exip-51636-02 exists and
  * parses. The last scenario replays an upgrade of a pre-existing deployment:
  * a DRAWER row present before 1.0.0-exip-51636-01/-02 must come out with both
- * placement flags enabled, without touching other application types.
+ * placement flags enabled, without touching other application types. The
+ * checksum of 1.0.0-exip-51636-02 is pinned below: once a database has run
+ * it, the changeset must never be edited in place, only appended to.
  */
 class ChangelogTest {
 
@@ -64,7 +68,7 @@ class ChangelogTest {
 
       insertApplication(connection, 1, "Drawer app", "notifications", 1);
       insertApplication(connection, 2, "Portlet app", "35", 2);
-      insertApplication(connection, 3, "Unwired drawer app", "spacesList", 1);
+      insertApplication(connection, 3, "Analytics drawer app", "spacesList", 1);
 
       liquibase.update((String) null);
       assertEquals(Boolean.TRUE, placementFlag(connection, 1, "ALLOW_STICK"));
@@ -73,6 +77,17 @@ class ChangelogTest {
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_DETACH"));
       assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_STICK"));
       assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_DETACH"));
+
+      ChangeSet executedChangeSet = liquibase.getDatabaseChangeLog()
+                                             .getChangeSets()
+                                             .stream()
+                                             .filter(changeSet -> changeSet.getId().equals("1.0.0-exip-51636-02"))
+                                             .findFirst()
+                                             .orElseThrow();
+      assertEquals("9:a4419e6cef725f2be39fa780a3b86034",
+                   executedChangeSet.generateCheckSum(ChecksumVersion.latest()).toString(),
+                   "1.0.0-exip-51636-02 must never be edited in place once a database has run it:"
+                       + " append a new changeset instead");
     }
   }
 
