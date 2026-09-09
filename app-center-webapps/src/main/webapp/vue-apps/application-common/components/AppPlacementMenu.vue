@@ -77,14 +77,21 @@ export default {
   },
   created() {
     document.addEventListener('app-placement-changed', this.refreshPlacements);
+    document.addEventListener('app-placement-menu-open', this.closeMenu);
+    document.addEventListener('contextmenu', this.closeMenu);
     this.refreshPlacements();
   },
   beforeDestroy() {
     document.removeEventListener('app-placement-changed', this.refreshPlacements);
+    document.removeEventListener('app-placement-menu-open', this.closeMenu);
+    document.removeEventListener('contextmenu', this.closeMenu);
   },
   methods: {
     refreshPlacements() {
       this.placements = this.$appPlacementService?.getPlacements?.() || null;
+    },
+    closeMenu() {
+      this.menu = false;
     },
     open(event) {
       if (!this.hasActions) {
@@ -92,9 +99,10 @@ export default {
       }
       event.preventDefault();
       event.stopPropagation();
+      document.dispatchEvent(new CustomEvent('app-placement-menu-open'));
       this.x = event.clientX;
       this.y = event.clientY;
-      this.menu = true;
+      this.$nextTick(() => this.menu = true);
     },
     openInNewTab() {
       this.$appPlacementService.openDetached(this.application.id);
