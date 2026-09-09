@@ -79,7 +79,10 @@ export default {
           const portletQuickAction = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension')?.[0];
           if (portletQuickAction?.render) {
             this.displayed = true;
-            await portletQuickAction.render(application.url, '#appStandaloneViewerContent');
+            const container = document.createElement('div');
+            container.id = 'appStandaloneViewerPortlet';
+            document.querySelector('#appStandaloneViewerContent').replaceChildren(container);
+            await portletQuickAction.render(application.url, `#${container.id}`);
           }
         } else {
           this.error = true;
