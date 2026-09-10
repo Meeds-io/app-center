@@ -89,7 +89,7 @@ export default {
         const portletQuickAction = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension')?.[0];
         if (portletQuickAction?.render) {
           this.$set(this.renderedPortletApps, side, application.id);
-          anchor.classList.add('stuck-app-panel');
+          anchor.classList.add('stuck-app-panel', 'white', 'overflow-y-auto');
           anchor.style.width = '420px';
           const container = document.createElement('div');
           container.id = `stuckPortletPanel-${side}`;
@@ -101,7 +101,7 @@ export default {
     cleanRenderedPortlet(side, anchor) {
       if (this.renderedPortletApps[side] && anchor) {
         anchor.replaceChildren();
-        anchor.classList.remove('stuck-app-panel');
+        anchor.classList.remove('stuck-app-panel', 'white', 'overflow-y-auto');
         anchor.style.removeProperty('width');
         this.$set(this.renderedPortletApps, side, null);
       }
