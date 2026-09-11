@@ -31,9 +31,6 @@
       <v-list-item v-if="canStick && stuckSide !== 'right'" @click="stickTo('right')">
         <v-list-item-title>{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="canStick && stuckSide !== 'left'" @click="stickTo('left')">
-        <v-list-item-title>{{ $t('appCenter.placement.stickLeft') }}</v-list-item-title>
-      </v-list-item>
       <v-list-item v-if="stuckSide" @click="unstick">
         <v-list-item-title>{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
       </v-list-item>
