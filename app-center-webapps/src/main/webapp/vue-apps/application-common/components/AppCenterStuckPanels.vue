@@ -33,9 +33,7 @@ export default {
   },
   watch: {
     stuckAllowed() {
-      if (this.stuckAllowed) {
-        this.refresh();
-      }
+      this.refresh();
     },
   },
   created() {
@@ -54,23 +52,19 @@ export default {
   },
   methods: {
     refresh() {
-      if (!this.stuckAllowed) {
-        return;
-      }
-      const placements = this.$appPlacementService.getPlacements();
-      if (!placements?.siteEligible) {
-        return;
-      }
-      this.openStuckApplication(placements.left, 'left');
-      this.openStuckApplication(placements.right, 'right');
+      const placements = this.stuckAllowed && this.$appPlacementService.getPlacements() || null;
+      const eligible = placements?.siteEligible && placements || null;
+      this.placeStuckApplication(eligible?.left || null, 'left');
+      this.placeStuckApplication(eligible?.right || null, 'right');
+      this.applySiteOffsets();
     },
-    openStuckApplication(application, side) {
-      const anchor = document.querySelector(`#pageBody${side === 'left' && 'Left' || 'Right'}Panel`);
+    placeStuckApplication(application, side) {
       if (!application) {
         this.$set(this.triggeredDrawerApps, side, null);
-        this.cleanRenderedPortlet(side, anchor);
+        this.releaseAnchor(side);
         return;
       }
+      const anchor = this.ensureAnchor(side);
       if (application.type === 'DRAWER') {
         if (this.triggeredDrawerApps[side] === application.id
             || document.querySelector(`.stuck-app-panel [data-stuck-app="${window.CSS.escape(application.url)}"]`)) {
@@ -89,18 +83,95 @@ export default {
         const portletQuickAction = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension')?.[0];
         if (portletQuickAction?.render) {
           this.$set(this.renderedPortletApps, side, application.id);
-          anchor.classList.add('stuck-app-panel', 'white', 'overflow-y-auto');
+          anchor.classList.add('overflow-y-auto');
           const container = document.createElement('div');
           container.id = `stuckPortletPanel-${side}`;
-          anchor.replaceChildren(container);
+          this.anchorContent(anchor).replaceChildren(container);
           portletQuickAction.render(application.url, `#${container.id}`);
         }
       }
     },
+    ensureAnchor(side) {
+      // the panel lives beside the whole site column (topbar included), as a
+      // fixed full height band: the site container shrinks by the same width
+      // so the topbar visually ends where the panel begins
+      const host = document.querySelector('#ParentSiteRightContainer');
+      if (!host) {
+        return null;
+      }
+      const anchorId = `pageBody${side === 'left' && 'Left' || 'Right'}Panel`;
+      let anchor = document.querySelector(`#${anchorId}`);
+      if (!anchor) {
+        anchor = document.createElement('div');
+        anchor.id = anchorId;
+        host.appendChild(anchor);
+      }
+      // the anchor lives outside any Vue application root: it carries the
+      // Vuetify scoping classes itself so the docked content keeps its skin
+      anchor.classList.add('stuck-app-panel');
+      anchor.style.position = 'fixed';
+      anchor.style.top = '0';
+      anchor.style.bottom = '0';
+      anchor.style[side] = '0';
+      anchor.style.width = '420px';
+      anchor.style.zIndex = '0';
+      if (!anchor.querySelector('.v-application--wrap')) {
+        // the anchor lives outside any Vue application root: it rebuilds the
+        // Vuetify scoping structure so the docked content keeps its skin
+        const vuetifyApp = document.createElement('div');
+        vuetifyApp.className = 'VuetifyApp full-height';
+        const application = document.createElement('div');
+        application.className = `v-application ${document.dir === 'rtl' && 'v-application--is-rtl' || 'v-application--is-ltr'} theme--light white full-height`;
+        const wrap = document.createElement('div');
+        wrap.className = 'v-application--wrap full-height';
+        application.appendChild(wrap);
+        vuetifyApp.appendChild(application);
+        anchor.replaceChildren(vuetifyApp);
+      }
+      return anchor;
+    },
+    anchorContent(anchor) {
+      return anchor?.querySelector('.v-application--wrap') || anchor;
+    },
+    releaseAnchor(side) {
+      const anchor = document.querySelector(`#pageBody${side === 'left' && 'Left' || 'Right'}Panel`);
+      this.cleanRenderedPortlet(side, anchor);
+      if (anchor) {
+        // the drawer wrapper moves its shell out on the same event: remove
+        // the anchor only once it holds no docked application any more
+        window.requestAnimationFrame(() => {
+          if (!anchor.querySelector('[data-stuck-app]') && !this.anchorContent(anchor).childElementCount) {
+            anchor.remove();
+            this.applySiteOffsets();
+          }
+        });
+      }
+    },
+    applySiteOffsets() {
+      const container = document.querySelector('#ParentSiteContainerChildren');
+      if (!container) {
+        return;
+      }
+      const leftTaken = document.querySelector('#pageBodyLeftPanel') && 420 || 0;
+      const rightTaken = document.querySelector('#pageBodyRightPanel') && 420 || 0;
+      if (leftTaken || rightTaken) {
+        const width = `calc(100% - ${leftTaken + rightTaken}px)`;
+        container.style.left = leftTaken && `${leftTaken}px` || '';
+        container.style.width = width;
+        // the skin clamps the container with min/max-width: 100%
+        container.style.minWidth = width;
+        container.style.maxWidth = width;
+      } else {
+        container.style.removeProperty('left');
+        container.style.removeProperty('width');
+        container.style.removeProperty('min-width');
+        container.style.removeProperty('max-width');
+      }
+    },
     cleanRenderedPortlet(side, anchor) {
       if (this.renderedPortletApps[side] && anchor) {
-        anchor.replaceChildren();
-        anchor.classList.remove('stuck-app-panel', 'white', 'overflow-y-auto');
+        this.anchorContent(anchor).replaceChildren();
+        anchor.classList.remove('overflow-y-auto');
         this.$set(this.renderedPortletApps, side, null);
       }
     },
