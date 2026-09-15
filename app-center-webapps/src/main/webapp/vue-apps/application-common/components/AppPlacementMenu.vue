@@ -27,30 +27,39 @@
     <v-list dense class="pa-0">
       <v-list-item
         v-if="canDetach"
+        class="px-3"
         dense
         @click="openInNewTab">
-        <v-list-item-icon class="mx-1 justify-center">
-          <v-icon size="14" class="icon-default-color">fas fa-external-link-alt</v-icon>
+        <v-list-item-icon class="d-flex align-center justify-center ma-auto">
+          <v-icon size="16" class="icon-default-color">fas fa-external-link-alt</v-icon>
         </v-list-item-icon>
-        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.openInNewTab') }}</v-list-item-title>
+        <v-list-item-content class="ms-2">
+          <v-list-item-title class="menu-text-color">{{ $t('appCenter.placement.openInNewTab') }}</v-list-item-title>
+        </v-list-item-content>
       </v-list-item>
       <v-list-item
         v-if="canStick && stuckSide !== 'right'"
+        class="px-3"
         dense
         @click="stickTo('right')">
-        <v-list-item-icon class="mx-1 justify-center">
-          <v-icon size="14" class="icon-default-color">far fa-window-maximize fa-rotate-90</v-icon>
+        <v-list-item-icon class="d-flex align-center justify-center ma-auto">
+          <v-icon size="16" class="icon-default-color">far fa-window-maximize fa-rotate-90</v-icon>
         </v-list-item-icon>
-        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
+        <v-list-item-content class="ms-2">
+          <v-list-item-title class="menu-text-color">{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
+        </v-list-item-content>
       </v-list-item>
       <v-list-item
         v-if="stuckSide"
+        class="px-3"
         dense
         @click="unstick">
-        <v-list-item-icon class="mx-1 justify-center">
-          <v-icon size="14" class="icon-default-color">fas fa-thumbtack</v-icon>
+        <v-list-item-icon class="d-flex align-center justify-center ma-auto">
+          <v-icon size="16" class="icon-default-color">fas fa-thumbtack</v-icon>
         </v-list-item-icon>
-        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
+        <v-list-item-content class="ms-2">
+          <v-list-item-title class="menu-text-color">{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
+        </v-list-item-content>
       </v-list-item>
     </v-list>
   </v-menu>
