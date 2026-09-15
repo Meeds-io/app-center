@@ -84,9 +84,18 @@ export default {
         if (portletQuickAction?.render) {
           this.$set(this.renderedPortletApps, side, application.id);
           anchor.classList.add('overflow-y-auto');
+          const toolbar = document.createElement('div');
+          toolbar.className = 'd-flex justify-end px-2 pt-2';
+          const unstickButton = document.createElement('button');
+          unstickButton.type = 'button';
+          unstickButton.title = this.$t && this.$t('appCenter.placement.unstick') || 'Unstick';
+          unstickButton.className = 'v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default';
+          unstickButton.innerHTML = '<span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fas fa-thumbtack icon-default-color" style="font-size: 18px;"></i></span>';
+          unstickButton.addEventListener('click', () => this.$appPlacementService.unstickApplication(side));
+          toolbar.appendChild(unstickButton);
           const container = document.createElement('div');
           container.id = `stuckPortletPanel-${side}`;
-          this.anchorContent(anchor).replaceChildren(container);
+          this.anchorContent(anchor).replaceChildren(toolbar, container);
           portletQuickAction.render(application.url, `#${container.id}`);
         }
       }
