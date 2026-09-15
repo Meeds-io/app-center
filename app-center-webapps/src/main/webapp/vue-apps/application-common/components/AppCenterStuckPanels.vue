@@ -66,6 +66,7 @@ export default {
       }
       const anchor = this.ensureAnchor(side);
       if (application.type === 'DRAWER') {
+        this.cleanRenderedPortlet(side, anchor);
         if (this.triggeredDrawerApps[side] === application.id
             || document.querySelector(`.stuck-app-panel [data-stuck-app="${window.CSS.escape(application.url)}"]`)) {
           return;
@@ -82,6 +83,13 @@ export default {
         }
         const portletQuickAction = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension')?.[0];
         if (portletQuickAction?.render) {
+          // a drawer docked on this side hands the anchor back before the
+          // portlet takes it: its wrapper finishes the cleanup on the same
+          // placement event
+          const dockedDrawer = this.anchorContent(anchor).querySelector('[data-stuck-app]');
+          if (dockedDrawer) {
+            document.querySelector('#vuetify-apps')?.appendChild(dockedDrawer);
+          }
           this.$set(this.renderedPortletApps, side, application.id);
           anchor.classList.add('overflow-y-auto');
           const toolbar = document.createElement('div');
