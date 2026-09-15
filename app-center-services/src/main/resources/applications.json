@@ -122,6 +122,31 @@
                 "allowStick": true,
                 "allowDetach": true
             }
+        },
+        {
+            "name": "appCenter",
+            "overrideMode": "merge",
+            "override": false,
+            "enabled": true,
+            "application": {
+                "title": "App Center",
+                "description": "Browse and open your applications",
+                "icon": "fa-th",
+                "type": "DRAWER",
+                "url": "appCenter",
+                "mandatory": false,
+                "active": true,
+                "mobile": true,
+                "default": false,
+                "pwa": false,
+                "order": 50,
+                "permissions": [
+                    "*:/platform/users",
+                    "*:/platform/externals"
+                ],
+                "allowStick": true,
+                "allowDetach": false
+            }
         }
     ]
 }
