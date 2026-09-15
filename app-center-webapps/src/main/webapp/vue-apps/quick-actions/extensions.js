@@ -18,6 +18,37 @@
  */
 
 extensionRegistry.registerExtension('QuickAction', 'Extension', {
+  id: 'appCenter',
+  icon: 'fa-th',
+  name: 'quickActions.appCenter.name',
+  description: 'quickActions.appCenter.description',
+  click: () => new Promise(resolve => {
+    const openWhenReady = attempt => {
+      // at page load the placement host can click before the launcher app
+      // listens: wait for its drawer element before dispatching the event
+      if (document.querySelector('#appCenterDrawer')) {
+        document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer'));
+        resolve();
+      } else if (attempt < 40) {
+        window.setTimeout(() => openWhenReady(attempt + 1), 250);
+      } else {
+        resolve();
+      }
+    };
+    if (document.querySelector('#appLauncher') || document.querySelector('#appShortcuts')) {
+      openWhenReady(0);
+    } else {
+      const parent = document.createElement('div');
+      parent.id = 'appLauncher';
+      document.querySelector('#vuetify-apps').appendChild(parent);
+      window.require(['SHARED/appLauncherBundle'], app =>
+        Promise.resolve(app.init({isAdmin: false, pinnedApplicationIds: []}, true))
+          .then(() => openWhenReady(0)));
+    }
+  }),
+});
+
+extensionRegistry.registerExtension('QuickAction', 'Extension', {
   id: 'activityComposer',
   icon: 'fa-pen-fancy',
   name: 'quickActions.activityComposer.name',
