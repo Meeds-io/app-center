@@ -123,6 +123,10 @@ export default {
       }
     },
     async openApplication(appType, appUrl) {
+      if (appType !== 'LINK'
+          && await this.$appPlacementService.alertWhenStuck(appType, appUrl, this.$t('appCenter.placement.alreadyStuck'))) {
+        return;
+      }
       if (appType === 'PORTLET') {
         this.appLoading = appUrl;
         try {

@@ -32,6 +32,7 @@
         click: () => openApplication(application.type, application.url),
       }"
       :id="`App${application.id}`"
+      @contextmenu="$refs.placementMenu?.open?.($event)"
       :title="applicationDescription"
       :class="[
         $attrs.class,
@@ -53,6 +54,9 @@
       @mousedown="onMouseDown"
       @focusin="onFocusIn"
       @focusout="onFocusOut">
+      <app-center-placement-menu
+        ref="placementMenu"
+        :application="application" />
       <div class="d-flex flex-column justify-center align-center full-width">
         <app-center-badge
           :badge-name="application.badgeName"
@@ -150,6 +154,10 @@ export default {
       this.onFocusOut(event);
       const appType = this.application.type;
       const appUrl = this.application.url;
+      if (appType !== 'LINK'
+          && await this.$appPlacementService.alertWhenStuck(appType, appUrl, this.$t('appCenter.placement.alreadyStuck'))) {
+        return;
+      }
       if (appType === 'PORTLET') {
         this.appLoading = appUrl;
         try {

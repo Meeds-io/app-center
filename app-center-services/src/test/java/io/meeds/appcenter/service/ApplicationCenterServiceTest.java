@@ -58,19 +58,24 @@ import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 
 import io.meeds.appcenter.constant.ApplicationType;
+import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationOrder;
+import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -80,64 +85,71 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
-  private static final String            WEBSITE_URL    = "https://meeds.io";
+  private static final String      SHORTCUT       = "G";
 
-  private static final String            SHORTCUT       = "G";
+  private static final String      KEYWORD        = "keyword";
 
-  private static final String            KEYWORD        = "keyword";
+  private static final String      ADMIN_USERNAME = "admin";
 
-  private static final String            ADMIN_USERNAME = "admin";
+  private static final long        IMAGE_FILE_ID  = 5l;
 
-  private static final long              IMAGE_FILE_ID  = 5l;
+  private static final String      HELP_PAGE_URL  = "./helpPageUrl";
 
-  private static final String            HELP_PAGE_URL  = "./helpPageUrl";
+  private static final String      URL            = "./url";
 
-  private static final String            URL            = "./url";
+  private static final String      PERMISSIONS_2  = "/permissions2";
 
-  private static final String            PERMISSIONS_2  = "/permissions2";
+  private static final String      PERMISSIONS_1  = "/permissions1";
 
-  private static final String            PERMISSIONS_1  = "/permissions1";
+  private static final String      DESCRIPTION    = "description";
 
-  private static final String            DESCRIPTION    = "description";
+  private static final String      TITLE          = "title";
 
-  private static final String            TITLE          = "title";
+  private static final String      TEST_USER      = "testuser";
 
-  private static final String            TEST_USER      = "testuser";
-
-  private static final Long              ID             = 2l;
+  private static final Long        ID             = 2l;
 
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
 
   @MockitoBean
-  private ConfigurationManager           configurationManager;
+  private ConfigurationManager     configurationManager;
 
   @MockitoBean
-  private SettingService                 settingService;
+  private SettingService           settingService;
 
   @MockitoBean
-  private TranslationService             translationService;
+  private TranslationService       translationService;
 
   @MockitoBean
-  private FileService                    fileService;
+  private FileService              fileService;
 
   @MockitoBean
-  private ImageThumbnailService          imageThumbnailService;
+  private ImageThumbnailService    imageThumbnailService;
 
   @MockitoBean
-  private UserACL                        userAcl;
+  private UserACL                  userAcl;
 
   @MockitoBean
-  private ApplicationCenterStorage       appCenterStorage;
+  private ApplicationCenterStorage appCenterStorage;
 
   @MockitoBean
-  private CategoryLinkService            categoryLinkService;
+  private ApplicationPlacementStorage placementStorage;
 
   @MockitoBean
-  private PortalContainer                portalContainer;
+  private NavigationConfigurationService navigationConfigurationService;
+
+  @MockitoBean
+  private UserPortalConfigService  userPortalConfigService;
+
+  @MockitoBean
+  private CategoryLinkService      categoryLinkService;
+
+  @MockitoBean
+  private PortalContainer          portalContainer;
 
   @Autowired
-  private ApplicationCenterService       applicationCenterService;
+  private ApplicationCenterService applicationCenterService;
 
   @BeforeEach
   @SneakyThrows
@@ -597,6 +609,8 @@ public class ApplicationCenterServiceTest {
     Application input = new Application();
     input.setTitle(TITLE);
     input.setUrl(URL);
+    input.setAllowStick(true);
+    input.setAllowDetach(true);
     Application result = applicationCenterService.createPersonalApplication(input, TEST_USER);
 
     assertNotNull(result);
@@ -604,6 +618,9 @@ public class ApplicationCenterServiceTest {
     assertTrue(input.isActive());
     // a personal app is always available on mobile, whatever the client sent
     assertTrue(input.isMobile());
+    // a personal app is a plain link, it can never be stuck nor detached
+    assertFalse(input.isAllowStick());
+    assertFalse(input.isAllowDetach());
     assertEquals(Collections.singletonList(TEST_USER), input.getPermissions());
     verify(appCenterStorage).createApplication(input);
     verify(appCenterStorage).addApplicationToUserFavorite(ID, TEST_USER);
@@ -639,6 +656,8 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.updatePersonalApplication(input, "someoneElse"));
 
     input.setMobile(false);
+    input.setAllowStick(true);
+    input.setAllowDetach(true);
     applicationCenterService.updatePersonalApplication(input, TEST_USER);
     verify(appCenterStorage).updateApplication(input);
     assertTrue(input.isPersonal());
@@ -646,6 +665,93 @@ public class ApplicationCenterServiceTest {
     // an app stored before personal apps were made available on mobile is fixed
     // by its first update
     assertTrue(input.isMobile());
+    assertFalse(input.isAllowStick());
+    assertFalse(input.isAllowDetach());
+  }
+
+  @Test
+  @SneakyThrows
+  void getApplicationPlacements() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getApplicationPlacements("", "dw"));
+
+    when(userPortalConfigService.getMetaPortal()).thenReturn("dw");
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(null);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(null);
+    ApplicationPlacements placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
+    assertNotNull(placements);
+    assertTrue(placements.isSiteEligible());
+    assertNull(placements.getLeft());
+    assertNull(placements.getRight());
+
+    Application application = application();
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application.setAllowStick(true);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
+    assertEquals(application, placements.getLeft());
+    assertNull(placements.getRight());
+
+    // the placement no longer qualifies once the admin turns the capability
+    // off: the read drops it and clears the stored setting
+    application.setAllowStick(false);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "dw");
+    assertNull(placements.getLeft());
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.LEFT);
+
+    application.setAllowStick(true);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "administration");
+    assertFalse(placements.isSiteEligible());
+
+    when(navigationConfigurationService.isMetaSiteNavigation("intranet")).thenReturn(true);
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, "intranet");
+    assertTrue(placements.isSiteEligible());
+
+    placements = applicationCenterService.getApplicationPlacements(TEST_USER, null);
+    assertFalse(placements.isSiteEligible());
+  }
+
+  @Test
+  @SneakyThrows
+  void stickApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, ""));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, null, TEST_USER));
+
+    assertThrows(ApplicationNotFoundException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    Application application = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setAllowStick(true);
+    application.setActive(false);
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER));
+
+    application.setActive(true);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.RIGHT)).thenReturn(ID);
+    applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER);
+    verify(placementStorage).setPlacedApplicationId(TEST_USER, PlacementSide.LEFT, ID);
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.RIGHT);
+  }
+
+  @Test
+  void unstickApplication() {
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.unstickApplication(PlacementSide.LEFT, ""));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.unstickApplication(null, TEST_USER));
+
+    applicationCenterService.unstickApplication(PlacementSide.RIGHT, TEST_USER);
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.RIGHT);
   }
 
   @Test
@@ -678,15 +784,14 @@ public class ApplicationCenterServiceTest {
 
   @Test
   void normalizePersonalUrlAddsMissingScheme() {
-    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl("meeds.io"));
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("meeds.io"));
     assertEquals("https://www.meeds.io/apps?id=1", applicationCenterService.normalizePersonalUrl(" www.meeds.io/apps?id=1 "));
   }
 
   @Test
   void normalizePersonalUrlKeepsExplicitLinks() {
-    assertEquals(WEBSITE_URL, applicationCenterService.normalizePersonalUrl(WEBSITE_URL));
-    // an explicit scheme is trusted, so an intranet host without a dot is
-    // allowed
+    assertEquals("https://meeds.io", applicationCenterService.normalizePersonalUrl("https://meeds.io"));
+    // an explicit scheme is trusted, so an intranet host without a dot is allowed
     assertEquals("http://intranet/tools", applicationCenterService.normalizePersonalUrl("http://intranet/tools"));
     assertEquals("/portal/dw", applicationCenterService.normalizePersonalUrl("/portal/dw"));
     assertEquals("./dw", applicationCenterService.normalizePersonalUrl("./dw"));
@@ -761,7 +866,9 @@ public class ApplicationCenterServiceTest {
                            null,
                            false,
                            false,
-                           null);
+                           null,
+                           false,
+                           false);
   }
 
 }

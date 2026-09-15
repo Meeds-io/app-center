@@ -19,9 +19,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 -->
 <template>
-  <exo-drawer
+  <pinneable-drawer
     id="appCenterDrawer"
     ref="drawer"
+    app-name="appCenter"
     v-model="drawer"
     :right="!$vuetify.rtl"
     :loading="drawerLoading"
@@ -174,19 +175,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         @saved="handleAppSaved"
         @deleted="handleAppDeleted" />
     </template>
-    <template v-if="!expanded && hasAvailableApplications" #footer>
-      <div class="d-flex align-center justify-end">
-        <v-btn
-          :title="$t('appCenter.userSetup.seeAll')"
-          color="primary"
-          elevation="0"
-          outlined
-          @click="expandDrawer">
-          {{ $t('appCenter.userSetup.seeAll') }}
-        </v-btn>
-      </div>
-    </template>
-  </exo-drawer>
+  </pinneable-drawer>
 </template>
 <script>
 export default {
