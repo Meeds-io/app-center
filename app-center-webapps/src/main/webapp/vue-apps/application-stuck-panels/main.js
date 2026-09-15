@@ -16,10 +16,13 @@
  */
 const appId = 'appCenterStuckPanels';
 
+let initialized = false;
+
 export async function init() {
-  if (document.querySelector(`#${appId}`)) {
+  if (initialized || document.querySelector(`#${appId}`)) {
     return;
   }
+  initialized = true;
   const lang = eXo?.env?.portal?.language || 'en';
   const urls = [`/app-center/i18n/locale.addon.appcenter?lang=${lang}`];
   const i18n = await exoi18n.loadLanguageAsync(lang, urls);
