@@ -152,11 +152,11 @@ export default {
       if (!container) {
         return;
       }
-      const leftTaken = document.querySelector('#pageBodyLeftPanel') && 420 || 0;
-      const rightTaken = document.querySelector('#pageBodyRightPanel') && 420 || 0;
-      if (leftTaken || rightTaken) {
-        const width = `calc(100% - ${leftTaken + rightTaken}px)`;
-        container.style.left = leftTaken && `${leftTaken}px` || '';
+      const leftWidth = document.querySelector('#pageBodyLeftPanel')?.style?.width || null;
+      const rightWidth = document.querySelector('#pageBodyRightPanel')?.style?.width || null;
+      if (leftWidth || rightWidth) {
+        const width = `calc(100% - ${leftWidth || '0px'} - ${rightWidth || '0px'})`;
+        container.style.left = leftWidth || '';
         container.style.width = width;
         // the skin clamps the container with min/max-width: 100%
         container.style.minWidth = width;
