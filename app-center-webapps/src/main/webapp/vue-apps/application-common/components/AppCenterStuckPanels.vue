@@ -85,7 +85,11 @@ export default {
           this.$set(this.renderedPortletApps, side, application.id);
           anchor.classList.add('overflow-y-auto');
           const toolbar = document.createElement('div');
-          toolbar.className = 'd-flex justify-end px-2 pt-2';
+          toolbar.className = 'd-flex align-center px-3 py-2';
+          const title = document.createElement('div');
+          title.className = 'text-header text-truncate flex-grow-1';
+          title.textContent = application.title || '';
+          toolbar.appendChild(title);
           const unstickButton = document.createElement('button');
           unstickButton.type = 'button';
           unstickButton.title = this.$t && this.$t('appCenter.placement.unstick') || 'Unstick';
@@ -130,7 +134,10 @@ export default {
         const vuetifyApp = document.createElement('div');
         vuetifyApp.className = 'VuetifyApp full-height';
         const application = document.createElement('div');
-        application.className = `v-application ${document.dir === 'rtl' && 'v-application--is-rtl' || 'v-application--is-ltr'} theme--light white full-height`;
+        application.className = `v-application ${document.dir === 'rtl' && 'v-application--is-rtl' || 'v-application--is-ltr'} theme--light full-height`;
+        // the platform skin keeps v-application transparent: the panel paints
+        // its own white ground so a short application never shows the page
+        application.style.backgroundColor = 'white';
         const wrap = document.createElement('div');
         wrap.className = 'v-application--wrap full-height';
         application.appendChild(wrap);
