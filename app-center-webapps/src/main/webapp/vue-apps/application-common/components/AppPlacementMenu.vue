@@ -24,15 +24,33 @@
     :position-y="y"
     absolute
     offset-y>
-    <v-list dense>
-      <v-list-item v-if="canDetach" @click="openInNewTab">
-        <v-list-item-title>{{ $t('appCenter.placement.openInNewTab') }}</v-list-item-title>
+    <v-list dense class="pa-0">
+      <v-list-item
+        v-if="canDetach"
+        dense
+        @click="openInNewTab">
+        <v-list-item-icon class="mx-1 justify-center">
+          <v-icon size="14" class="icon-default-color">fas fa-external-link-alt</v-icon>
+        </v-list-item-icon>
+        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.openInNewTab') }}</v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="canStick && stuckSide !== 'right'" @click="stickTo('right')">
-        <v-list-item-title>{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
+      <v-list-item
+        v-if="canStick && stuckSide !== 'right'"
+        dense
+        @click="stickTo('right')">
+        <v-list-item-icon class="mx-1 justify-center">
+          <v-icon size="14" class="icon-default-color">far fa-window-maximize fa-rotate-90</v-icon>
+        </v-list-item-icon>
+        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.stickRight') }}</v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="stuckSide" @click="unstick">
-        <v-list-item-title>{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
+      <v-list-item
+        v-if="stuckSide"
+        dense
+        @click="unstick">
+        <v-list-item-icon class="mx-1 justify-center">
+          <v-icon size="14" class="icon-default-color">fas fa-thumbtack</v-icon>
+        </v-list-item-icon>
+        <v-list-item-title class="pl-0 text-start">{{ $t('appCenter.placement.unstick') }}</v-list-item-title>
       </v-list-item>
     </v-list>
   </v-menu>
