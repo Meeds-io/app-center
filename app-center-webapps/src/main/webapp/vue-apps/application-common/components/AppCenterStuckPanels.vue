@@ -135,9 +135,10 @@ export default {
         vuetifyApp.className = 'VuetifyApp full-height';
         const application = document.createElement('div');
         application.className = `v-application ${document.dir === 'rtl' && 'v-application--is-rtl' || 'v-application--is-ltr'} theme--light full-height`;
-        // the platform skin keeps v-application transparent: the panel paints
-        // its own white ground so a short application never shows the page
-        application.style.backgroundColor = 'white';
+        // the platform skin forces v-application transparent with !important:
+        // the panel paints its own white ground at the same priority so a
+        // short application never shows the page through
+        application.style.setProperty('background-color', 'white', 'important');
         const wrap = document.createElement('div');
         wrap.className = 'v-application--wrap full-height';
         application.appendChild(wrap);
