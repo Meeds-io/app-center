@@ -23,27 +23,23 @@ extensionRegistry.registerExtension('QuickAction', 'Extension', {
   name: 'quickActions.appCenter.name',
   description: 'quickActions.appCenter.description',
   click: () => new Promise(resolve => {
-    const openWhenReady = attempt => {
-      // at page load the placement host can click before the launcher app
-      // listens: wait for its drawer element before dispatching the event
-      if (document.querySelector('#appCenterDrawer')) {
-        document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer'));
-        resolve();
-      } else if (attempt < 40) {
-        window.setTimeout(() => openWhenReady(attempt + 1), 250);
-      } else {
-        resolve();
-      }
-    };
-    if (document.querySelector('#appLauncher') || document.querySelector('#appShortcuts')) {
-      openWhenReady(0);
+    if (document.querySelector('#appCenterDrawer')) {
+      document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer'));
+      resolve();
+    } else if (document.querySelector('#appLauncher') || document.querySelector('#appShortcuts')) {
+      // the launcher portlet renders static markup and starts its Vue
+      // application lazily: its own bootstrap event starts the application,
+      // which opens the drawer at mount
+      document.dispatchEvent(new CustomEvent('CustomEventOpenApplicationLauncherDrawer'));
+      resolve();
     } else {
       const parent = document.createElement('div');
       parent.id = 'appLauncher';
       document.querySelector('#vuetify-apps').appendChild(parent);
       window.require(['SHARED/appLauncherBundle'], app =>
         Promise.resolve(app.init({isAdmin: false, pinnedApplicationIds: []}, true))
-          .then(() => openWhenReady(0)));
+          .then(() => document.dispatchEvent(new CustomEvent('openApplicationLauncherDrawer')))
+          .then(resolve));
     }
   }),
 });
