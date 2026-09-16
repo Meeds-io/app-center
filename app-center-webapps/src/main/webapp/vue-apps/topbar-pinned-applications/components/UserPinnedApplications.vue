@@ -88,6 +88,10 @@ export default {
       try {
         const appType = application.type;
         const appUrl = application.url;
+        if (appType !== 'LINK'
+            && await this.$appPlacementService.alertWhenStuck(appType, appUrl, this.$t('appCenter.placement.alreadyStuck'))) {
+          return;
+        }
         if (appType === 'PORTLET') {
           this.openPortletDrawer = true;
           await this.$nextTick();
