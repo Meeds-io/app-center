@@ -91,23 +91,42 @@ export default {
             document.querySelector('#vuetify-apps')?.appendChild(dockedDrawer);
           }
           this.$set(this.renderedPortletApps, side, application.id);
-          anchor.classList.add('overflow-y-auto');
-          const toolbar = document.createElement('div');
-          toolbar.className = 'd-flex align-center px-3 py-2';
+          // a docked drawer brings its own page-side border: the bare
+          // portlet panel draws the same separation line itself
+          anchor.style[side === 'left' && 'borderRight' || 'borderLeft'] = '1px solid rgba(0, 0, 0, 0.12)';
+          // same header idiom as the exo-drawer: v-list-item structure,
+          // text-title title, icon actions, then the divider separator —
+          // header stays put while only the portlet content scrolls
+          const header = document.createElement('div');
+          header.className = 'drawerHeader flex-grow-0';
+          const listItem = document.createElement('div');
+          listItem.className = 'v-list-item px-0 theme--light';
+          const content = document.createElement('div');
+          content.className = 'v-list-item__content drawerTitle align-start text-title ps-4';
           const title = document.createElement('div');
-          title.className = 'text-header text-truncate flex-grow-1';
+          title.className = 'text-truncate full-width';
           title.textContent = application.title || '';
-          toolbar.appendChild(title);
+          content.appendChild(title);
+          const actions = document.createElement('div');
+          actions.className = 'v-list-item__action drawerIcons align-end d-flex flex-row pe-3';
           const unstickButton = document.createElement('button');
           unstickButton.type = 'button';
           unstickButton.title = this.$t && this.$t('appCenter.placement.unstick') || 'Unstick';
           unstickButton.className = 'v-btn v-btn--flat v-btn--icon v-btn--round theme--light v-size--default';
           unstickButton.innerHTML = '<span class="v-btn__content"><i aria-hidden="true" class="v-icon notranslate fas fa-thumbtack icon-default-color" style="font-size: 18px;"></i></span>';
           unstickButton.addEventListener('click', () => this.$appPlacementService.unstickApplication(side));
-          toolbar.appendChild(unstickButton);
+          actions.appendChild(unstickButton);
+          listItem.append(content, actions);
+          header.appendChild(listItem);
+          const divider = document.createElement('hr');
+          divider.setAttribute('role', 'separator');
+          divider.setAttribute('aria-orientation', 'horizontal');
+          divider.className = 'v-divider theme--light my-0 flex-grow-0';
           const container = document.createElement('div');
           container.id = `stuckPortletPanel-${side}`;
-          this.anchorContent(anchor).replaceChildren(toolbar, container);
+          container.className = 'flex-grow-1 overflow-y-auto';
+          container.style.minHeight = '0';
+          this.anchorContent(anchor).replaceChildren(header, divider, container);
           portletQuickAction.render(application.url, `#${container.id}`);
         }
       }
@@ -131,6 +150,10 @@ export default {
       // Vuetify scoping classes itself so the docked content keeps its skin
       anchor.classList.add('stuck-app-panel');
       anchor.style.position = 'fixed';
+      // border-box keeps the page-side border inside the 420px: on a
+      // content-box the extra pixel slides under the topbar, which paints
+      // over it at topbar height
+      anchor.style.boxSizing = 'border-box';
       anchor.style.top = '0';
       anchor.style.bottom = '0';
       anchor.style[side] = '0';
@@ -196,7 +219,8 @@ export default {
     cleanRenderedPortlet(side, anchor) {
       if (this.renderedPortletApps[side] && anchor) {
         this.anchorContent(anchor).replaceChildren();
-        anchor.classList.remove('overflow-y-auto');
+        anchor.style.removeProperty('border-left');
+        anchor.style.removeProperty('border-right');
         this.$set(this.renderedPortletApps, side, null);
       }
     },
