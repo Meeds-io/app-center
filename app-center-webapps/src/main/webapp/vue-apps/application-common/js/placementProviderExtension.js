@@ -1,7 +1,7 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
  *
- * Copyright (C) 2020 - 2025 Meeds Association contact@meeds.io
+ * Copyright (C) 2020 - 2026 Meeds Association contact@meeds.io
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import './initComponents.js';
-import './services.js';
-import './js/placementProviderExtension.js';
+import * as applicationPlacementService from './ApplicationPlacementService.js';
+
+extensionRegistry.registerExtension('Drawer', 'placementProvider', {
+  id: 'appCenter',
+  getEligibility: applicationPlacementService.getEligibility,
+  getPlacements: applicationPlacementService.getPlacements,
+  stick: applicationPlacementService.stickApplication,
+  unstick: applicationPlacementService.unstickApplication,
+  openDetached: applicationPlacementService.openDetached,
+});
+document.dispatchEvent(new CustomEvent('extension-Drawer-placementProvider-updated'));

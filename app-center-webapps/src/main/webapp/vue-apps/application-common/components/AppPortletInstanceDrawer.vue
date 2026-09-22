@@ -18,11 +18,12 @@
   Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
-  <exo-drawer
+  <pinneable-drawer
     ref="drawer"
     v-model="drawer"
     :right="!$vuetify.rtl"
     :loading="loading"
+    :placement-app="placementApplication"
     allow-expand
     @closed="$emit('closed')">
     <template #title>
@@ -33,7 +34,7 @@
         <div id="appLauncherPortletViewer"></div>
       </div>
     </template>
-  </exo-drawer>
+  </pinneable-drawer>
 </template>
 <script>
 export default {
@@ -42,6 +43,7 @@ export default {
     loading: false,
     applicationTitle: null,
     portletInstanceQuickAction: null,
+    placementApplication: null,
   }),
   created() {
     document.addEventListener('extension-QuickAction-PortletExtension-updated', this.refreshQuickActions);
@@ -55,6 +57,8 @@ export default {
     async open(portletInstanceId) {
       this.drawer = false;
       this.applicationTitle = null;
+      this.placementApplication = await this.$appPlacementService.findApplicationByPortletInstance(portletInstanceId)
+        .catch(() => null);
       await this.$nextTick();
       this.drawer = true;
       this.loading = true;
