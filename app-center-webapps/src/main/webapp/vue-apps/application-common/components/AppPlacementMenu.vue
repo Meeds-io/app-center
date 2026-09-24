@@ -95,8 +95,11 @@ export default {
       }
       return null;
     },
+    isMobile() {
+      return !!this.$vuetify?.breakpoint?.smAndDown;
+    },
     hasActions() {
-      return this.canDetach || this.canStick || !!this.stuckSide;
+      return !this.isMobile && (this.canDetach || this.canStick || !!this.stuckSide);
     },
   },
   created() {
