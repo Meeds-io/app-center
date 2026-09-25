@@ -123,6 +123,53 @@ export function openDetached(applicationId) {
   window.open(getDetachUrl(applicationId), `ac-app-${applicationId}`);
 }
 
+export async function applyApplicationFavicon(application) {
+  const href = application?.imageUrl || await renderIconAsDataUrl(application?.icon);
+  if (!href) {
+    return false;
+  }
+  let link = document.querySelector('link[rel~="icon"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = href;
+  return true;
+}
+
+async function renderIconAsDataUrl(icon) {
+  if (!icon) {
+    return null;
+  }
+  const probe = document.createElement('i');
+  probe.className = icon.includes(' ') ? icon : `fa ${icon}`;
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  document.body.appendChild(probe);
+  try {
+    const style = window.getComputedStyle(probe, '::before');
+    const glyph = style.content?.replace(/^["']|["']$/g, '');
+    if (!glyph || glyph === 'none') {
+      return null;
+    }
+    const font = `${style.fontWeight} 52px ${style.fontFamily}`;
+    await document.fonts.load(font, glyph);
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext('2d');
+    context.font = font;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = window.getComputedStyle(document.body).getPropertyValue('--allPagesPrimaryColor')?.trim() || style.color;
+    context.fillText(glyph, 32, 34);
+    return canvas.toDataURL('image/png');
+  } finally {
+    probe.remove();
+  }
+}
+
 function findApplication(predicate) {
   return applicationService.getApplications(false, true)
     .then(data => (data?.applications || []).find(predicate) || null);
