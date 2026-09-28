@@ -19,6 +19,8 @@
  */
 import * as applicationService from './ApplicationService.js';
 
+const DEFAULT_APPLICATION_IMAGE = '/app-center/skin/images/defaultApp.png';
+
 export function getPlacements() {
   return window.eXo?.env?.portal?.appPlacements || null;
 }
@@ -124,9 +126,10 @@ export function openDetached(applicationId) {
 }
 
 export async function applyApplicationFavicon(application) {
-  const href = application?.imageUrl || await renderIconAsDataUrl(application?.icon);
+  const href = application?.imageUrl
+    || (application?.icon ? await renderIconAsDataUrl(application.icon) : DEFAULT_APPLICATION_IMAGE);
   if (!href) {
-    return false;
+    return;
   }
   let link = document.querySelector('link[rel~="icon"]');
   if (!link) {
@@ -135,7 +138,6 @@ export async function applyApplicationFavicon(application) {
     document.head.appendChild(link);
   }
   link.href = href;
-  return true;
 }
 
 async function renderIconAsDataUrl(icon) {
@@ -163,7 +165,7 @@ async function renderIconAsDataUrl(icon) {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = window.getComputedStyle(document.body).getPropertyValue('--allPagesPrimaryColor')?.trim() || style.color;
-    context.fillText(glyph, 32, 34);
+    context.fillText(glyph, 32, 34, 60);
     return canvas.toDataURL('image/png');
   } finally {
     probe.remove();
