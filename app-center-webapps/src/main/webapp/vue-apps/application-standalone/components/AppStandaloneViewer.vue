@@ -67,6 +67,7 @@ export default {
           return;
         }
         document.title = application.title || document.title;
+        this.$appPlacementService.applyApplicationFavicon(application).catch(() => null);
         if (application.type === 'DRAWER') {
           const quickAction = extensionRegistry.loadExtensions('QuickAction', 'Extension')
             .find(extension => extension.id === application.url);
