@@ -18,7 +18,7 @@
 * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-export function saveSettings(saveSettingsURL, settings) {
+export function saveSettings(saveSettingsURL, settings, settingName) {
   const formData = new FormData();
   if (settings) {
     Object.keys(settings).forEach(name => {
@@ -36,5 +36,24 @@ export function saveSettings(saveSettingsURL, settings) {
     if (!resp.ok) {
       throw new Error('Error while saving my applications settings');
     }
+    return resp.text();
+  }).then(renderedPage => {
+    // A refused portlet action still answers 200: check the settings the page was rendered with
+    if (!isRenderedWithSettings(renderedPage, settings, settingName)) {
+      throw new Error('My applications settings were not saved');
+    }
+  });
+}
+
+function isRenderedWithSettings(renderedPage, settings, settingName) {
+  const settingNameIndex = renderedPage ? renderedPage.indexOf(`settingName: '${settingName}'`) : -1;
+  if (settingNameIndex < 0) {
+    return false;
+  }
+  const settingsEndIndex = renderedPage.indexOf('}));', settingNameIndex);
+  const renderedSettings = renderedPage.substring(settingNameIndex, settingsEndIndex < 0 ? renderedPage.length : settingsEndIndex);
+  return Object.keys(settings || {}).every(name => {
+    const value = new RegExp(`${name}: '?([^',\\s]*)'?,`).exec(renderedSettings)?.[1];
+    return value === String(settings[name]);
   });
 }
