@@ -46,7 +46,10 @@
           </v-stepper-step>
           <v-slide-y-transition>
             <div v-show="stepper === 1" class="mt-4">
-              <my-applications-listing-step v-model="maxAppsToList" />
+              <my-applications-listing-step
+                :key="listingStepKey"
+                :listing-mode.sync="listingMode"
+                :max-apps-to-list.sync="maxAppsToList" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -102,6 +105,8 @@ export default {
       isSaving: false,
       showHeader: true,
       maxAppsToList: 4,
+      listingMode: 'FAVORITES',
+      listingStepKey: 0,
       objectType: 'myApplicationsPortlet',
       fieldName: 'headerTitle',
       translations: [],
@@ -119,8 +124,17 @@ export default {
   },
   computed: {
     saveEnabled() {
-      return this.settings.showHeader !== this.showHeader || Number(this.settings.maxAppsToList) !== this.maxAppsToList
+      // A SELECTED listing needs an app or a category, none can be chosen yet
+      if (this.listingMode === 'SELECTED') {
+        return false;
+      }
+      return this.settings.listingMode !== this.listingMode || this.settings.showHeader !== this.showHeader || this.savedMaxAppsToList !== this.maxAppsToList
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
+    },
+    savedMaxAppsToList() {
+      // A value stored before the 1–100 bounds is shown, and compared, clamped
+      const value = Number(this.settings.maxAppsToList);
+      return Number.isNaN(value) ? 4 : Math.min(Math.max(value, 1), 100);
     },
     settingName() {
       return this.settings.settingName;
@@ -145,6 +159,8 @@ export default {
     },
     open() {
       this.restoreSavedSettings();
+      // number-input reads its value only when created, and the drawer keeps its content once opened
+      this.listingStepKey++;
       this.$refs.myApplicationsSettingsDrawer.open();
     },
     close() {
@@ -152,6 +168,7 @@ export default {
     },
     async save() {
       const settings = {
+        listingMode: this.listingMode,
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader
       };
@@ -179,7 +196,8 @@ export default {
     },
     restoreSavedSettings() {
       this.stepper = 1;
-      this.maxAppsToList = Number(this.settings.maxAppsToList);
+      this.listingMode = this.settings.listingMode || 'FAVORITES';
+      this.maxAppsToList = this.savedMaxAppsToList;
       this.showHeader = this.settings.showHeader;
     }
   }
