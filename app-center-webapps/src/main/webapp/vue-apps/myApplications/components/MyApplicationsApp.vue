@@ -32,7 +32,7 @@
           v-if="!isLoading"
           ref="myApplicationsToolbar"
           :hover="hover"
-          :is-admin="isAdmin"
+          :can-edit="canEdit"
           :show-header="showHeader"
           :header-title="headerTitle"
           :has-applications="hasApplications"
@@ -45,7 +45,7 @@
       </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
-      v-if="isAdmin"
+      v-if="canEdit"
       :settings="$root.settings"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated" />
@@ -70,8 +70,8 @@ export default {
     };
   },
   computed: {
-    isAdmin() {
-      return this.$root.settings?.isAdmin;
+    canEdit() {
+      return this.$root.settings?.canEdit;
     },
     filteredApplications() {
       return this.$root.isMobile && this.favoriteApplications.filter(application => application.mobile)

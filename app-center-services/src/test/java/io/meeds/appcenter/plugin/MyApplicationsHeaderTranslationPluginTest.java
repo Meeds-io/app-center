@@ -32,7 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.appcenter.service.MyApplicationsSettingsService;
 import io.meeds.social.translation.service.TranslationService;
 
 @SpringBootTest(classes = { MyApplicationsHeaderTranslationPlugin.class })
@@ -45,7 +45,7 @@ public class MyApplicationsHeaderTranslationPluginTest {
   private TranslationService                    translationService;
 
   @MockitoBean
-  private ApplicationCenterService              applicationCenterService;
+  private MyApplicationsSettingsService         myApplicationsSettingsService;
 
   @Autowired
   private MyApplicationsHeaderTranslationPlugin translationPlugin;
@@ -62,9 +62,19 @@ public class MyApplicationsHeaderTranslationPluginTest {
   }
 
   @Test
-  void hasEditPermission() {
+  void hasEditPermissionOnSettingNameUsesSettingsRight() {
+    String settingName = "Untitled-12-1b4e28ba";
+    when(myApplicationsSettingsService.canEditLegacyHeaderTitle(TEST_USER)).thenReturn(true);
+    assertFalse(translationPlugin.hasEditPermission(settingName, TEST_USER));
+    when(myApplicationsSettingsService.canEditSettings(settingName, TEST_USER)).thenReturn(true);
+    assertTrue(translationPlugin.hasEditPermission(settingName, TEST_USER));
+  }
+
+  @Test
+  void hasEditPermissionOnLegacyIdIsAdministratorOnly() {
+    when(myApplicationsSettingsService.canEditSettings("15", TEST_USER)).thenReturn(true);
     assertFalse(translationPlugin.hasEditPermission("15", TEST_USER));
-    when(applicationCenterService.canEdit(TEST_USER)).thenReturn(true);
+    when(myApplicationsSettingsService.canEditLegacyHeaderTitle(TEST_USER)).thenReturn(true);
     assertTrue(translationPlugin.hasEditPermission("15", TEST_USER));
   }
 

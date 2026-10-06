@@ -23,71 +23,69 @@
     id="myApplicationsSettingsDrawer"
     ref="myApplicationsSettingsDrawer"
     :right="!$vuetify.rtl"
+    :loading="isSaving"
     @closed="reset">
     <template #title>
-      <div class="text-title font-weight-bold text-color">
-        <span class="text-truncate">{{ $t('myApplications.edit.settings.title') }}</span>
-      </div>
+      {{ $t('myApplications.edit.shortcutsList.title') }}
     </template>
     <template #content>
-      <v-form ref="form">
-        <div class="pa-5">
-          <div class="text-header">
-            {{ $t('myApplications.displayOptions.label') }}
-          </div>
-          <div class="d-flex align-center">
-            <label class="v-label mt-2 text-color">
-              {{ $t('myApplications.numberToList.label') }}
-            </label>
-            <div class="ms-auto">
-              <number-input
-                v-model="maxAppsToList"
-                :min="1"
-                :max="100"
-                :step="1"
-                editable />
+      <v-stepper
+        v-model="stepper"
+        class="ma-0 pa-4 d-flex flex-column"
+        vertical
+        flat>
+        <div class="flex-shrink-0">
+          <v-stepper-step
+            :step="1"
+            width="100%"
+            class="ma-0 pa-0"
+            editable>
+            <div class="text-header text-truncate">
+              {{ $t('myApplications.appsListing.label') }}
             </div>
-          </div>
-          <div class="d-flex mt-1 align-center justify-space-between">
-            <label class="v-label text-color align-start">
-              {{ $t('myApplications.addHeader.label') }}
-            </label>
-            <div class="align-end">
-              <v-switch
-                v-model="showHeader"
-                :disabled="isSaving"
-                color="primary"
-                class="pa-0 my-auto"
-                hide-details />
+          </v-stepper-step>
+          <v-slide-y-transition>
+            <div v-show="stepper === 1" class="mt-4">
+              <my-applications-listing-step v-model="maxAppsToList" />
             </div>
-          </div>
-          <translation-text-field
-            v-if="showHeader"
-            :object-id="applicationId"
-            :object-type="objectType"
-            :field-name="fieldName"
-            :field-value="displayedValue"
-            :drawer-title="$t('myApplications.header.translation.title')"
-            class="mt-2"
-            no-expand-icon
-            back-icon
-            required
-            @update:field-value="updateFieldValue"
-            @input="translationUpdated" />
+          </v-slide-y-transition>
         </div>
-      </v-form>
+        <div class="flex-shrink-0 mt-4">
+          <v-stepper-step
+            :step="2"
+            class="ma-0 pa-0"
+            editable>
+            <div class="text-header text-truncate">
+              {{ $t('myApplications.displayOptions.label') }}
+            </div>
+          </v-stepper-step>
+          <v-slide-y-transition>
+            <div v-show="stepper === 2" class="mt-4">
+              <my-applications-display-step
+                :show-header.sync="showHeader"
+                :setting-name="settingName"
+                :object-type="objectType"
+                :field-name="fieldName"
+                :header-title="displayedValue"
+                :disabled="isSaving"
+                @update:header-title="updateFieldValue"
+                @translations-updated="translationUpdated" />
+            </div>
+          </v-slide-y-transition>
+        </div>
+      </v-stepper>
     </template>
     <template #footer>
-      <div class="d-flex width-fit-content ms-auto">
+      <div class="d-flex align-center">
         <v-btn
-          class="btn me-5"
+          class="btn ms-auto me-2"
           @click="reset">
           {{ $t('myApplications.settings.cancel.label') }}
         </v-btn>
         <v-btn
-          class="btn btn-primary"
           :disabled="!saveEnabled"
           :loading="isSaving"
+          class="btn btn-primary"
           @click="save">
           {{ $t('myApplications.settings.save.label') }}
         </v-btn>
@@ -100,6 +98,7 @@
 export default {
   data() {
     return {
+      stepper: 1,
       isSaving: false,
       showHeader: true,
       maxAppsToList: 4,
@@ -123,8 +122,8 @@ export default {
       return this.settings.showHeader !== this.showHeader || Number(this.settings.maxAppsToList) !== this.maxAppsToList
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
     },
-    applicationId() {
-      return this.settings.applicationId;
+    settingName() {
+      return this.settings.settingName;
     },
     saveSettingsUrl() {
       return this.settings?.saveSettingsUrl;
@@ -151,22 +150,26 @@ export default {
     close() {
       this.$refs.myApplicationsSettingsDrawer.close();
     },
-    save() {
+    async save() {
       const settings = {
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader
       };
-      this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings).then(() => {
-        this.saveHeaderTranslations();
+      this.isSaving = true;
+      try {
+        await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName);
+        await this.saveHeaderTranslations();
         this.$emit('settings-updated', settings, this.displayedValue);
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.success.message'), 'success');
-      }).catch(() => {
+      } catch (e) {
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.error.message'), 'error');
-      });
+      } finally {
+        this.isSaving = false;
+      }
     },
     async saveHeaderTranslations() {
       if (this.showHeader) {
-        await this.$translationService.saveTranslations(this.objectType, this.applicationId, this.fieldName, this.translations);
+        await this.$translationService.saveTranslations(this.objectType, this.settingName, this.fieldName, this.translations);
         this.currentTranslations = structuredClone(this.translations);
       }
     },
@@ -175,6 +178,7 @@ export default {
       this.close();
     },
     restoreSavedSettings() {
+      this.stepper = 1;
       this.maxAppsToList = Number(this.settings.maxAppsToList);
       this.showHeader = this.settings.showHeader;
     }
