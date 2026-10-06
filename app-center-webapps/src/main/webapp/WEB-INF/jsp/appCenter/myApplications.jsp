@@ -24,6 +24,7 @@
   <div data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="myApplications">
+    <%-- myApplicationsService.js#isRenderedWithSettings parses this init block to confirm a save: keep settingName first and one "key: value," per line --%>
     <script type="text/javascript">
       require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init({
         settingName: '<%=StringEscapeUtils.escapeEcmaScript(settingName)%>',
