@@ -57,6 +57,14 @@ public class MyApplicationsSettingsService {
 
   public static final String  SHOW_HEADER               = "showHeader";
 
+  public static final String  LISTING_MODE              = "listingMode";
+
+  /** Lists the apps each viewer marked as favorite, the default. */
+  public static final String  LISTING_MODE_FAVORITES    = "FAVORITES";
+
+  /** Lists the apps chosen in the settings. */
+  public static final String  LISTING_MODE_SELECTED     = "SELECTED";
+
   public static final int     MIN_APPS_TO_LIST          = 1;
 
   public static final int     MAX_APPS_TO_LIST_LIMIT    = 100;
@@ -156,6 +164,8 @@ public class MyApplicationsSettingsService {
    * @param parameters posted parameters
    * @return the preferences to store, by name
    * @throws IllegalAccessException when the user may not edit the settings
+   * @throws IllegalArgumentException when the write selects the SELECTED
+   *           listing mode
    */
   public Map<String, String> getSettingsToStore(String settingName,
                                                 String username,
@@ -170,10 +180,14 @@ public class MyApplicationsSettingsService {
    * Filters the parameters of a settings write down to the preferences the
    * Shortcuts portlet owns, each with a valid value. Any other name, among
    * which name, applicationId, data.init, canEdit and settingName, and any
-   * invalid value is dropped.
+   * invalid value is dropped. A write selecting the SELECTED listing mode is
+   * refused as a whole: no application or category can be chosen yet, and a
+   * SELECTED listing with none is never stored.
    *
    * @param parameters posted parameters
    * @return the preferences to store, by name
+   * @throws IllegalArgumentException when the write selects the SELECTED
+   *           listing mode
    */
   public Map<String, String> getWritableSettings(Map<String, String> parameters) {
     Map<String, String> settings = new HashMap<>();
@@ -191,7 +205,24 @@ public class MyApplicationsSettingsService {
     if (StringUtils.equalsAny(showHeader, "true", "false")) {
       settings.put(SHOW_HEADER, showHeader);
     }
+    String listingMode = StringUtils.trim(parameters.get(LISTING_MODE));
+    if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)) {
+      throw new IllegalArgumentException("A SELECTED listing needs at least one application or category");
+    } else if (StringUtils.equals(listingMode, LISTING_MODE_FAVORITES)) {
+      settings.put(LISTING_MODE, listingMode);
+    }
     return settings;
+  }
+
+  /**
+   * Reads a stored listing mode: FAVORITES or SELECTED, FAVORITES for any
+   * other value or none.
+   *
+   * @param storedValue the listingMode preference
+   * @return the listing mode to render
+   */
+  public static String getListingMode(String storedValue) {
+    return StringUtils.equals(storedValue, LISTING_MODE_SELECTED) ? LISTING_MODE_SELECTED : LISTING_MODE_FAVORITES;
   }
 
   /**
