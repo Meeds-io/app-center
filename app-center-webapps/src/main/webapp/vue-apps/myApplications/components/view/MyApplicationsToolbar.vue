@@ -30,7 +30,7 @@
       class="d-flex align-center ms-auto">
       <template v-if="hasApplications">
         <v-btn
-          v-if="!hover || !isAdmin"
+          v-if="!hover || !canEdit"
           :loading="loading === 'seeMore'"
           color="primary"
           class="pa-0 text-font-size"
@@ -61,8 +61,9 @@
         </v-btn>
       </template>
       <v-btn
-        v-if="hover && isAdmin"
+        v-if="hover && canEdit"
         :title="$t('myApplications.editSettings.tooltip')"
+        :aria-label="$t('myApplications.editSettings.tooltip')"
         class="ms-2 text-font-size"
         small
         link
@@ -103,7 +104,7 @@ export default {
       type: Boolean,
       default: false
     },
-    isAdmin: {
+    canEdit: {
       type: Boolean,
       default: false
     },

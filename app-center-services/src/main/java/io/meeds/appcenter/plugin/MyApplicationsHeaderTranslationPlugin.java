@@ -18,10 +18,11 @@
  */
 package io.meeds.appcenter.plugin;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.appcenter.service.MyApplicationsSettingsService;
 import io.meeds.social.translation.plugin.TranslationPlugin;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -30,13 +31,13 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class MyApplicationsHeaderTranslationPlugin extends TranslationPlugin {
 
-  public static final String       MY_APPLICATIONS_OBJECT_TYPE = "myApplicationsPortlet";
+  public static final String            MY_APPLICATIONS_OBJECT_TYPE = MyApplicationsSettingsService.SETTING_TYPE;
 
   @Autowired
-  private TranslationService       translationService;
+  private TranslationService            translationService;
 
   @Autowired
-  private ApplicationCenterService applicationCenterService;
+  private MyApplicationsSettingsService myApplicationsSettingsService;
 
   @PostConstruct
   public void init() {
@@ -55,7 +56,11 @@ public class MyApplicationsHeaderTranslationPlugin extends TranslationPlugin {
 
   @Override
   public boolean hasEditPermission(String objectId, String username) {
-    return applicationCenterService.canEdit(username);
+    if (StringUtils.isNumeric(objectId)) {
+      // Legacy key: the random applicationId the title was stored under
+      return myApplicationsSettingsService.canEditLegacyHeaderTitle(username);
+    }
+    return myApplicationsSettingsService.canEditSettings(objectId, username);
   }
 
   @Override
