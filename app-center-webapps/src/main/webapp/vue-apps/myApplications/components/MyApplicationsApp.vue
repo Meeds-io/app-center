@@ -100,6 +100,7 @@ export default {
     },
     settingsUpdated(settings, headerTitle) {
       const updateList = Number(this.maxAppsToList) !== settings.maxAppsToList;
+      this.$root.settings.listingMode = settings.listingMode;
       this.$root.settings.maxAppsToList = settings.maxAppsToList;
       this.$root.settings.showHeader = settings.showHeader;
       this.$root.settings.headerTitle = headerTitle;

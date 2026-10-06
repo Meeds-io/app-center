@@ -67,6 +67,8 @@ public class MyApplicationsPortlet extends CMSPortlet {
       settings = getSettingsService().getSettingsToStore(preferences.getValue(NAME, null), getCurrentUsername(), parameters);
     } catch (IllegalAccessException e) {
       throw new PortletException("User is not allowed to edit settings", e);
+    } catch (IllegalArgumentException e) {
+      throw new PortletException("Settings refused: " + e.getMessage(), e);
     }
     for (Map.Entry<String, String> setting : settings.entrySet()) {
       preferences.setValue(setting.getKey(), setting.getValue());
