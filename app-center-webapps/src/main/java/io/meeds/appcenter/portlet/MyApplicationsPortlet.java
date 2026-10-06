@@ -20,8 +20,9 @@
 package io.meeds.appcenter.portlet;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -34,76 +35,68 @@ import javax.portlet.RenderResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 
+import io.meeds.appcenter.service.MyApplicationsSettingsService;
 import io.meeds.social.portlet.CMSPortlet;
 
 public class MyApplicationsPortlet extends CMSPortlet {
 
-  private static final String OBJECT_TYPE    = "myApplicationsPortlet";
+  private static final String           APPLICATION_ID = "applicationId";
 
-  private static final String APPLICATION_ID = "applicationId";
-
-  private static final String IS_ADMIN       = "isAdmin";
-
-  private UserACL             userAcl;
-
-  private final SecureRandom  random         = new SecureRandom();
+  private MyApplicationsSettingsService settingsService;
 
   @Override
   public void init(PortletConfig config) throws PortletException {
     super.init(config);
-    this.contentType = OBJECT_TYPE;
+    this.contentType = MyApplicationsSettingsService.SETTING_TYPE;
   }
 
   @Override
   public void processAction(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-    if (!canEditSettings()) {
-      throw new PortletException("User is not allowed to edit settings");
-    }
     PortletPreferences preferences = request.getPreferences();
+    Map<String, String> parameters = new HashMap<>();
     Enumeration<String> parameterNames = request.getParameterNames();
     while (parameterNames.hasMoreElements()) {
-      String name = parameterNames.nextElement();
-      if (StringUtils.equals(name, "action") || StringUtils.contains(name, "portal:")) {
-        continue;
-      }
-      String value = request.getParameter(name);
-      preferences.setValue(name, value);
+      String parameterName = parameterNames.nextElement();
+      parameters.put(parameterName, request.getParameter(parameterName));
+    }
+    Map<String, String> settings;
+    try {
+      settings = getSettingsService().getSettingsToStore(preferences.getValue(NAME, null), getCurrentUsername(), parameters);
+    } catch (IllegalAccessException e) {
+      throw new PortletException("User is not allowed to edit settings", e);
+    }
+    for (Map.Entry<String, String> setting : settings.entrySet()) {
+      preferences.setValue(setting.getKey(), setting.getValue());
     }
     preferences.store();
   }
 
   @Override
-  public void doView(RenderRequest request, RenderResponse response) throws PortletException, IOException {
-    request.setAttribute(APPLICATION_ID, getOrCreateApplicationId(request.getPreferences()));
-    request.setAttribute(IS_ADMIN, getUserAcl().isAdministrator(getCurrentIdentity()));
-    super.doView(request, response);
+  protected boolean canEdit(String name, Identity userAclIdentity) {
+    return getSettingsService().canEditSettings(name, userAclIdentity == null ? null : userAclIdentity.getUserId());
   }
 
-  private boolean canEditSettings() {
-    return getUserAcl().isAdministrator(getCurrentIdentity());
-  }
-
-  private Identity getCurrentIdentity() {
-    return ConversationState.getCurrent() == null ? null : ConversationState.getCurrent().getIdentity();
-  }
-
-  private UserACL getUserAcl() {
-    if (userAcl == null) {
-      userAcl = ExoContainerContext.getService(UserACL.class);
+  @Override
+  protected void setViewRequestAttributes(String name, RenderRequest request, RenderResponse response) {
+    String legacyApplicationId = request.getPreferences().getValue(APPLICATION_ID, null);
+    if (StringUtils.isNotBlank(legacyApplicationId)) {
+      getSettingsService().migrateHeaderTitle(legacyApplicationId, name);
+      savePreference(APPLICATION_ID, "");
     }
-    return userAcl;
   }
 
-  private String getOrCreateApplicationId(PortletPreferences preferences) {
-    String applicationId = preferences.getValue(APPLICATION_ID, null);
-    if (applicationId == null) {
-      applicationId = String.valueOf(random.nextLong() & Long.MAX_VALUE);
-      savePreference(APPLICATION_ID, applicationId);
+  private String getCurrentUsername() {
+    ConversationState conversationState = ConversationState.getCurrent();
+    return conversationState == null ? null : conversationState.getIdentity().getUserId();
+  }
+
+  private MyApplicationsSettingsService getSettingsService() {
+    if (settingsService == null) {
+      settingsService = ExoContainerContext.getService(MyApplicationsSettingsService.class);
     }
-    return applicationId;
+    return settingsService;
   }
 }
