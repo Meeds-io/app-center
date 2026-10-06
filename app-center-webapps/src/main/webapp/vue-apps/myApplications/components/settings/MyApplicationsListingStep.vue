@@ -19,26 +19,47 @@
 -->
 
 <template>
-  <div class="d-flex align-center">
-    <label class="v-label text-color">
-      {{ $t('myApplications.numberToList.label') }}
-    </label>
-    <div class="ms-auto">
-      <number-input
-        :value="value"
-        :min="1"
-        :max="100"
-        :step="1"
-        editable
-        @input="$emit('input', $event)" />
+  <v-radio-group
+    :value="listingMode"
+    class="mt-0 pa-0"
+    hide-details
+    mandatory
+    @change="$emit('update:listing-mode', $event)">
+    <v-radio value="FAVORITES">
+      <template #label>
+        <span class="ms-1 text-color">{{ $t('myApplications.listFavorites.label') }}</span>
+      </template>
+    </v-radio>
+    <div v-if="listingMode === 'FAVORITES'" class="d-flex align-center mb-2">
+      <label class="v-label text-color">
+        {{ $t('myApplications.numberToList.label') }}
+      </label>
+      <div class="ms-auto">
+        <number-input
+          :value="maxAppsToList"
+          :min="1"
+          :max="100"
+          :step="1"
+          editable
+          @input="$emit('update:max-apps-to-list', $event)" />
+      </div>
     </div>
-  </div>
+    <v-radio value="SELECTED">
+      <template #label>
+        <span class="ms-1 text-color">{{ $t('myApplications.selectApps.label') }}</span>
+      </template>
+    </v-radio>
+  </v-radio-group>
 </template>
 
 <script>
 export default {
   props: {
-    value: {
+    listingMode: {
+      type: String,
+      default: 'FAVORITES',
+    },
+    maxAppsToList: {
       type: Number,
       default: 4,
     },
