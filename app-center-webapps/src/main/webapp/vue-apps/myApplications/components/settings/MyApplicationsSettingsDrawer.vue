@@ -47,6 +47,7 @@
           <v-slide-y-transition>
             <div v-show="stepper === 1" class="mt-4">
               <my-applications-listing-step
+                :key="listingStepKey"
                 :listing-mode.sync="listingMode"
                 :max-apps-to-list.sync="maxAppsToList" />
             </div>
@@ -105,6 +106,7 @@ export default {
       showHeader: true,
       maxAppsToList: 4,
       listingMode: 'FAVORITES',
+      listingStepKey: 0,
       objectType: 'myApplicationsPortlet',
       fieldName: 'headerTitle',
       translations: [],
@@ -157,6 +159,8 @@ export default {
     },
     open() {
       this.restoreSavedSettings();
+      // number-input reads its value only when created, and the drawer keeps its content once opened
+      this.listingStepKey++;
       this.$refs.myApplicationsSettingsDrawer.open();
     },
     close() {
