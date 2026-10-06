@@ -19,6 +19,9 @@
 package io.meeds.appcenter.service;
 
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.HEADER_TITLE_FIELD;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_FAVORITES;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_SELECTED;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.MAX_APPS_TO_LIST;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SETTING_TYPE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_HEADER;
@@ -316,6 +319,42 @@ class MyApplicationsSettingsServiceTest {
     assertEquals(Map.of(SHOW_HEADER, "true"), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "true")));
     assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "yes")));
     assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "<script>")));
+  }
+
+  @Test
+  void getWritableSettingsKeepsFavoritesListingMode() {
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE, " FAVORITES ")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "favorites")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "MANUAL")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "")));
+  }
+
+  @Test
+  void getWritableSettingsRefusesSelectedListingModeWhole() {
+    Map<String, String> parameters = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8", SHOW_HEADER, "false");
+
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters));
+  }
+
+  @Test
+  void getSettingsToStoreChecksTheRightBeforeTheListingMode() {
+    Identity identity = mockUser(false);
+    when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 0));
+    Map<String, String> parameters = Map.of(LISTING_MODE, LISTING_MODE_SELECTED);
+
+    assertThrows(IllegalAccessException.class, () -> settingsService.getSettingsToStore(PAGE_NAME, USERNAME, parameters));
+    when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 0)).thenReturn(true);
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getSettingsToStore(PAGE_NAME, USERNAME, parameters));
+  }
+
+  @Test
+  void getListingModeDefaultsToFavorites() {
+    assertEquals(LISTING_MODE_SELECTED, MyApplicationsSettingsService.getListingMode(LISTING_MODE_SELECTED));
+    assertEquals(LISTING_MODE_FAVORITES, MyApplicationsSettingsService.getListingMode(LISTING_MODE_FAVORITES));
+    assertEquals(LISTING_MODE_FAVORITES, MyApplicationsSettingsService.getListingMode(null));
+    assertEquals(LISTING_MODE_FAVORITES, MyApplicationsSettingsService.getListingMode("selected"));
+    assertEquals(LISTING_MODE_FAVORITES, MyApplicationsSettingsService.getListingMode("CATEGORY"));
   }
 
   @Test
