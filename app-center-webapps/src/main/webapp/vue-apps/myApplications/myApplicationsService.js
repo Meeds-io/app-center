@@ -41,7 +41,7 @@ export function saveSettings(saveSettingsURL, settings, settingName) {
     // A page drawn by the page layout renders its body portlets apart from the page:
     // read this window's own rendering when the page does not carry it
     if (renderedPage?.includes?.(`settingName: '${settingName}'`)) {
-      return renderedPage;
+      return Promise.resolve(renderedPage);
     }
     return getRenderedPortlet(saveSettingsURL);
   }).then(renderedPage => {
@@ -78,8 +78,8 @@ function isRenderedWithSettings(renderedPage, settings, settingName) {
   const settingsEndIndex = renderedPage.indexOf('}));', settingNameIndex);
   const renderedSettings = renderedPage.substring(settingNameIndex, settingsEndIndex < 0 ? renderedPage.length : settingsEndIndex);
   return Object.keys(settings || {}).every(name => {
-    const value = new RegExp(`${name}: \\[([^\\]]*)\\],`).exec(renderedSettings)?.[1]
-               ?? new RegExp(`${name}: '?([^',\\s]*)'?,`).exec(renderedSettings)?.[1];
+    const value = new RegExp(String.raw`${name}: \[([^\]]*)\],`).exec(renderedSettings)?.[1]
+               ?? new RegExp(String.raw`${name}: '?([^',\s]*)'?,`).exec(renderedSettings)?.[1];
     return value === String(settings[name]);
   });
 }

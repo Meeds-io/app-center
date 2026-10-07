@@ -101,6 +101,7 @@ export default {
           this.suggestions = suggestions;
         }
       } catch (e) {
+        // A failed search offers nothing: the editor types again
         this.suggestions = [];
       } finally {
         this.searching = false;

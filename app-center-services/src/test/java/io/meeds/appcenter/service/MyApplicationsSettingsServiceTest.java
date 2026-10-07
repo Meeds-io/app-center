@@ -350,33 +350,18 @@ class MyApplicationsSettingsServiceTest {
 
   @Test
   void getWritableSettingsRefusesAnEmptySelectedListingWhole() {
-    assertThrows(IllegalArgumentException.class,
-                 () -> settingsService.getWritableSettings(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8")));
-    assertThrows(IllegalArgumentException.class,
-                 () -> settingsService.getWritableSettings(Map.of(LISTING_MODE,
-                                                                  LISTING_MODE_SELECTED,
-                                                                  SELECTION_MODE,
-                                                                  SELECTION_MODE_MANUAL,
-                                                                  APPLICATION_IDS,
-                                                                  "")));
-    assertThrows(IllegalArgumentException.class,
-                 () -> settingsService.getWritableSettings(Map.of(LISTING_MODE,
-                                                                  LISTING_MODE_SELECTED,
-                                                                  SELECTION_MODE,
-                                                                  SELECTION_MODE_MANUAL,
-                                                                  APPLICATION_IDS,
-                                                                  "1,x")));
+    Map<String, String> parameters1 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters1));
+    Map<String, String> parameters2 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters2));
+    Map<String, String> parameters3 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "1,x");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters3));
   }
 
   @Test
   void getWritableSettingsRefusesASelectedCategoryListing() {
-    assertThrows(IllegalArgumentException.class,
-                 () -> settingsService.getWritableSettings(Map.of(LISTING_MODE,
-                                                                  LISTING_MODE_SELECTED,
-                                                                  SELECTION_MODE,
-                                                                  SELECTION_MODE_CATEGORY,
-                                                                  APPLICATION_IDS,
-                                                                  "3")));
+    Map<String, String> parameters4 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, APPLICATION_IDS, "3");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters4));
   }
 
   @Test
@@ -397,8 +382,8 @@ class MyApplicationsSettingsServiceTest {
 
   @Test
   void getWritableSettingsRefusesASelectedListingWithoutItsSelectionMode() {
-    assertThrows(IllegalArgumentException.class,
-                 () -> settingsService.getWritableSettings(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, APPLICATION_IDS, "4")));
+    Map<String, String> parameters5 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, APPLICATION_IDS, "4");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters5));
   }
 
   @Test
@@ -443,6 +428,14 @@ class MyApplicationsSettingsServiceTest {
 
   private static Map<String, String> withFavorites(String name, String value) {
     return Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, name, value);
+  }
+
+  @Test
+  void getWritableSettingsDropsAVeryLongIdListWithoutOverflowing() {
+    String veryLong = LongStream.rangeClosed(1, 200_000).mapToObj(String::valueOf).collect(Collectors.joining(","));
+
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, veryLong)));
+    assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds(veryLong));
   }
 
   @Test

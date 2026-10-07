@@ -231,6 +231,7 @@ export default {
           this.applicationsLoaded = true;
         }
       } catch (e) {
+        // Save stays disabled: a list that could not be read is never posted
         if (load === this.applicationsLoad) {
           this.$root.$emit('alert-message', this.$t('myApplications.listedApps.error.message'), 'error');
         }

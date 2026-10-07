@@ -102,7 +102,7 @@ public class MyApplicationsSettingsService {
 
   private static final Pattern DIGITS                   = Pattern.compile("^\\d{1,3}$");
 
-  private static final Pattern ID_LIST                  = Pattern.compile("^\\d{1,18}(,\\d{1,18})*$");
+  private static final Pattern ID                       = Pattern.compile("^\\d{1,18}$");
 
   @Autowired
   private CMSService          cmsService;
@@ -290,10 +290,13 @@ public class MyApplicationsSettingsService {
       return null; // NOSONAR
     } else if (value.isEmpty()) {
       return Collections.emptyList();
-    } else if (!ID_LIST.matcher(value).matches()) {
+    }
+    // Each id is matched alone: a repeated group over the whole list recurses per id
+    String[] tokens = value.split(",", -1);
+    if (!Arrays.stream(tokens).allMatch(token -> ID.matcher(token).matches())) {
       return null; // NOSONAR
     }
-    List<Long> ids = Arrays.stream(value.split(",")).map(Long::valueOf).distinct().toList();
+    List<Long> ids = Arrays.stream(tokens).map(Long::valueOf).distinct().toList();
     return ids.size() > ApplicationCenterService.MAX_LISTED_APPLICATIONS ? null : ids;
   }
 

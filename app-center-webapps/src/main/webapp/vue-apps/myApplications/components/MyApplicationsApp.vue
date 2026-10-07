@@ -174,7 +174,7 @@ export default {
         .then(applications => {
           this.favoriteApplications = applications
             .map(app => this.mapApplication(app))
-            .filter(app => app);
+            .filter(Boolean);
           this.listingLoaded = true;
           this.$root.$updateApplicationVisibility(this.portletVisible);
         })
