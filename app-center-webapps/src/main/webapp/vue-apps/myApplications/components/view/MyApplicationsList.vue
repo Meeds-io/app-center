@@ -31,10 +31,10 @@
   <v-layout
     v-else>
     <component
-      v-on="!$root.isMobile && {
+      v-on="draggable && {
         end: onDragEnd
       }"
-      :is="$root.isMobile && 'div' || 'draggable'"
+      :is="draggable && 'draggable' || 'div'"
       v-model="applicationsList"
       item-key="id"
       class="d-flex flex-wrap flex-grow-1">
@@ -61,6 +61,15 @@ export default {
     isLoading: {
       type: Boolean,
       default: false
+    },
+    sortable: {
+      type: Boolean,
+      default: true
+    }
+  },
+  computed: {
+    draggable() {
+      return this.sortable && !this.$root.isMobile;
     }
   },
   methods: {
