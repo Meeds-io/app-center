@@ -19,6 +19,8 @@
   int maxAppsToList = Integer.parseInt(preferences.getValue("maxAppsToList", "4"));
   boolean showHeader = Boolean.parseBoolean(preferences.getValue("showHeader", "true"));
   String listingMode = MyApplicationsSettingsService.getListingMode(preferences.getValue(MyApplicationsSettingsService.LISTING_MODE, null));
+  String selectionMode = MyApplicationsSettingsService.getSelectionMode(preferences.getValue(MyApplicationsSettingsService.SELECTION_MODE, null));
+  String applicationIds = MyApplicationsSettingsService.getApplicationIds(preferences.getValue(MyApplicationsSettingsService.APPLICATION_IDS, null)).toString().replace(" ", "");
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           settingName, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
 %>
@@ -26,12 +28,14 @@
   <div data-app="true"
     class="v-application v-application--is-ltr theme--light"
     id="myApplications">
-    <%-- myApplicationsService.js#isRenderedWithSettings parses this init block to confirm a save: keep settingName first and one "key: value," per line --%>
+    <%-- myApplicationsService.js#isRenderedWithSettings parses this init block to confirm a save: keep settingName first and one "key: value," per line, a list printed as [a,b] --%>
     <script type="text/javascript">
       require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init({
         settingName: '<%=StringEscapeUtils.escapeEcmaScript(settingName)%>',
         maxAppsToList: '<%=maxAppsToList%>',
         listingMode: '<%=listingMode%>',
+        selectionMode: '<%=selectionMode%>',
+        applicationIds: <%=applicationIds%>,
         showHeader: <%=showHeader%>,
         headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeEcmaScript(headerTitle))%>,
         canEdit: <%=canEdit%>,

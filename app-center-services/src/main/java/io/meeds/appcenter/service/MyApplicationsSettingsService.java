@@ -18,7 +18,10 @@
  */
 package io.meeds.appcenter.service;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -35,6 +38,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 
+import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
@@ -65,6 +69,16 @@ public class MyApplicationsSettingsService {
   /** Lists the apps chosen in the settings. */
   public static final String  LISTING_MODE_SELECTED     = "SELECTED";
 
+  public static final String  SELECTION_MODE            = "selectionMode";
+
+  /** Lists the apps picked one by one, in applicationIds, the default. */
+  public static final String  SELECTION_MODE_MANUAL     = "MANUAL";
+
+  /** Lists the apps of the categories picked. */
+  public static final String  SELECTION_MODE_CATEGORY   = "CATEGORY";
+
+  public static final String  APPLICATION_IDS           = "applicationIds";
+
   public static final int     MIN_APPS_TO_LIST          = 1;
 
   public static final int     MAX_APPS_TO_LIST_LIMIT    = 100;
@@ -89,6 +103,8 @@ public class MyApplicationsSettingsService {
 
   private static final Pattern DIGITS                   = Pattern.compile("^\\d{1,3}$");
 
+  private static final Pattern ID                       = Pattern.compile("^\\d{1,18}$");
+
   @Autowired
   private CMSService          cmsService;
 
@@ -100,6 +116,9 @@ public class MyApplicationsSettingsService {
 
   @Autowired
   private UserACL             userAcl;
+
+  @Autowired
+  private ApplicationCenterStorage applicationCenterStorage;
 
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
@@ -165,7 +184,7 @@ public class MyApplicationsSettingsService {
    * @return the preferences to store, by name
    * @throws IllegalAccessException when the user may not edit the settings
    * @throws IllegalArgumentException when the write selects the SELECTED
-   *           listing mode
+   *           listing mode with no application to list
    */
   public Map<String, String> getSettingsToStore(String settingName,
                                                 String username,
@@ -180,14 +199,17 @@ public class MyApplicationsSettingsService {
    * Filters the parameters of a settings write down to the preferences the
    * Shortcuts portlet owns, each with a valid value. Any other name, among
    * which name, applicationId, data.init, canEdit and settingName, and any
-   * invalid value is dropped. A write selecting the SELECTED listing mode is
-   * refused as a whole: no application or category can be chosen yet, and a
-   * SELECTED listing with none is never stored.
+   * invalid value is dropped, and so is the id of an application that no
+   * longer exists. The selection mode and the application ids are stored only
+   * with a listing mode. A write selecting the SELECTED listing
+   * mode is refused as a whole unless it selects the MANUAL mode with at least
+   * one application: a SELECTED listing is never stored empty, and no category
+   * can be chosen yet.
    *
    * @param parameters posted parameters
    * @return the preferences to store, by name
    * @throws IllegalArgumentException when the write selects the SELECTED
-   *           listing mode
+   *           listing mode with no application to list
    */
   public Map<String, String> getWritableSettings(Map<String, String> parameters) {
     Map<String, String> settings = new HashMap<>();
@@ -206,11 +228,27 @@ public class MyApplicationsSettingsService {
       settings.put(SHOW_HEADER, showHeader);
     }
     String listingMode = StringUtils.trim(parameters.get(LISTING_MODE));
-    if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)) {
-      throw new IllegalArgumentException("A SELECTED listing needs at least one application or category");
-    } else if (StringUtils.equals(listingMode, LISTING_MODE_FAVORITES)) {
-      settings.put(LISTING_MODE, listingMode);
+    if (!StringUtils.equalsAny(listingMode, LISTING_MODE_FAVORITES, LISTING_MODE_SELECTED)) {
+      // The selection is written only with its listing mode, so that the
+      // stored state is always the one this write validates
+      return settings;
     }
+    String selectionMode = StringUtils.trim(parameters.get(SELECTION_MODE));
+    if (StringUtils.equalsAny(selectionMode, SELECTION_MODE_MANUAL, SELECTION_MODE_CATEGORY)) {
+      settings.put(SELECTION_MODE, selectionMode);
+    }
+    String applicationIds = StringUtils.deleteWhitespace(parameters.get(APPLICATION_IDS));
+    List<Long> ids = applicationIds == null ? null : parseApplicationIds(applicationIds);
+    if (ids != null) {
+      // The id of a deleted application is dropped: no one could see or remove it
+      ids = ids.stream().filter(id -> applicationCenterStorage.getApplication(id) != null).toList();
+      settings.put(APPLICATION_IDS, StringUtils.join(ids, ","));
+    }
+    if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)
+        && (!StringUtils.equals(selectionMode, SELECTION_MODE_MANUAL) || ids == null || ids.isEmpty())) {
+      throw new IllegalArgumentException("A SELECTED listing needs at least one application");
+    }
+    settings.put(LISTING_MODE, listingMode);
     return settings;
   }
 
@@ -223,6 +261,50 @@ public class MyApplicationsSettingsService {
    */
   public static String getListingMode(String storedValue) {
     return StringUtils.equals(storedValue, LISTING_MODE_SELECTED) ? LISTING_MODE_SELECTED : LISTING_MODE_FAVORITES;
+  }
+
+  /**
+   * Reads a stored selection mode: MANUAL or CATEGORY, MANUAL for any other
+   * value or none.
+   *
+   * @param storedValue the selectionMode preference
+   * @return the selection mode to render
+   */
+  public static String getSelectionMode(String storedValue) {
+    return StringUtils.equals(storedValue, SELECTION_MODE_CATEGORY) ? SELECTION_MODE_CATEGORY : SELECTION_MODE_MANUAL;
+  }
+
+  /**
+   * Reads stored application ids: the ordered ids, without duplicates, empty
+   * for a value that is not a list of at most
+   * {@link ApplicationCenterService#MAX_LISTED_APPLICATIONS} ids.
+   *
+   * @param storedValue the applicationIds preference, comma-separated
+   * @return the ids to render, never null
+   */
+  public static List<Long> getApplicationIds(String storedValue) {
+    List<Long> ids = parseApplicationIds(StringUtils.deleteWhitespace(storedValue));
+    return ids == null ? Collections.emptyList() : ids;
+  }
+
+  /**
+   * @return the ordered ids without duplicates, an empty list for an empty
+   *         value, null for a value that is not a list of at most
+   *         {@link ApplicationCenterService#MAX_LISTED_APPLICATIONS} ids
+   */
+  private static List<Long> parseApplicationIds(String value) {
+    if (value == null) {
+      return null; // NOSONAR
+    } else if (value.isEmpty()) {
+      return Collections.emptyList();
+    }
+    // Each id is matched alone: a repeated group over the whole list recurses per id
+    String[] tokens = value.split(",", -1);
+    if (!Arrays.stream(tokens).allMatch(token -> ID.matcher(token).matches())) {
+      return null; // NOSONAR
+    }
+    List<Long> ids = Arrays.stream(tokens).map(Long::valueOf).distinct().toList();
+    return ids.size() > ApplicationCenterService.MAX_LISTED_APPLICATIONS ? null : ids;
   }
 
   /**
@@ -254,6 +336,14 @@ public class MyApplicationsSettingsService {
     } catch (ObjectNotFoundException e) {
       LOG.debug("No header title to migrate from {} to {}", legacyApplicationId, settingName, e);
     }
+  }
+
+  /**
+   * @param settingName a Shortcuts portlet window's CMS setting name
+   * @return true when the window's setting exists
+   */
+  public boolean hasSetting(String settingName) {
+    return StringUtils.isNotBlank(settingName) && cmsService.getSetting(SETTING_TYPE, settingName) != null;
   }
 
   private boolean canEditSite(String pageReference, String username) {

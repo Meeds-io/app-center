@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
@@ -55,6 +57,7 @@ import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
@@ -106,6 +109,12 @@ public class ApplicationCenterService {
   public static final Context      APP_CENTER_CONTEXT                  = Context.GLOBAL.id("APP_CENTER");
 
   public static final Scope        APP_CENTER_SCOPE                    = Scope.APPLICATION.id("APP_CENTER");
+
+  /** Most applications a Shortcuts portlet lists in its SELECTED mode (D6). */
+  public static final int          MAX_LISTED_APPLICATIONS             = 100;
+
+  /** Most suggestions returned by one call of the Shortcuts app suggester. */
+  public static final int          MAX_SUGGESTIONS                     = 20;
 
   private static final String      USERNAME_IS_MANDATORY_MESSAGE       = "username is mandatory";
 
@@ -163,6 +172,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private PortalContainer          portalContainer;
+
+  @Autowired
+  private MyApplicationsSettingsService myApplicationsSettingsService;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -897,6 +909,147 @@ public class ApplicationCenterService {
                           .setLimit(appCount)
                           .setSize(appCount)
                           .setOffset(0);
+  }
+
+  /**
+   * Reads the applications a Shortcuts portlet window lists, in the order of
+   * its selection: each id is read from the app-center.application cache, kept
+   * when the application is active and the user may access it, and decorated
+   * on a copy with its labels and badge name only. Unknown and duplicate ids
+   * are skipped.
+   *
+   * @param filter the window's setting name and selected ids
+   * @param locale the language of the labels, none when null
+   * @param username the viewer
+   * @return the applications to list, never null
+   * @throws ObjectNotFoundException when the window's setting does not exist
+   * @throws IllegalArgumentException when more than
+   *           {@link #MAX_LISTED_APPLICATIONS} ids are selected
+   */
+  public List<Application> getListedApplications(ApplicationListFilter filter,
+                                                 Locale locale,
+                                                 String username) throws ObjectNotFoundException {
+    checkSettingExists(filter == null ? null : filter.getSettingName());
+    return listApplications(filter.getIds(), locale, username);
+  }
+
+  /**
+   * Reads, in the order of the ids, the active applications the user may
+   * access, decorated on copies, once the caller checked the window.
+   */
+  private List<Application> listApplications(List<Long> ids, Locale locale, String username) {
+    if (CollectionUtils.isEmpty(ids)) {
+      return Collections.emptyList();
+    } else if (ids.size() > MAX_LISTED_APPLICATIONS) {
+      throw new IllegalArgumentException(String.format("At most %s applications can be listed", MAX_LISTED_APPLICATIONS));
+    }
+    List<Application> applications = ids.stream()
+                                        .filter(Objects::nonNull)
+                                        .distinct()
+                                        .map(appCenterStorage::getApplication)
+                                        .filter(Objects::nonNull)
+                                        .filter(Application::isActive)
+                                        .filter(application -> canAccess(application, username))
+                                        .map(this::toTile)
+                                        .toList();
+    setApplicationLabels(applications, locale);
+    setApplicationBadges(applications);
+    return applications;
+  }
+
+  /**
+   * Reads the applications a Shortcuts portlet window lists, for a user
+   * editing its settings: as {@link #getListedApplications}.
+   *
+   * @param filter the window's setting name and selected ids
+   * @param locale the language of the labels, none when null
+   * @param username the user editing the window's settings
+   * @return the applications to list, never null
+   * @throws ObjectNotFoundException when the window's setting does not exist
+   * @throws IllegalAccessException when the user may not edit the window's
+   *           settings
+   * @throws IllegalArgumentException when more than
+   *           {@link #MAX_LISTED_APPLICATIONS} ids are selected
+   */
+  public List<Application> getContextApplications(ApplicationListFilter filter,
+                                                  Locale locale,
+                                                  String username) throws ObjectNotFoundException, IllegalAccessException {
+    String settingName = filter == null ? null : filter.getSettingName();
+    checkSettingExists(settingName);
+    if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
+    }
+    return listApplications(filter.getIds(), locale, username);
+  }
+
+  /**
+   * Suggests the applications a Shortcuts portlet window may list: active,
+   * non-personal applications the user may access, matching the keyword, read
+   * from the app-center.application cache and decorated on a copy.
+   *
+   * @param settingName the window's CMS setting name
+   * @param keyword matched in title and url, all applications when blank
+   * @param excludedIds the applications already selected, never suggested, at
+   *          most {@link #MAX_LISTED_APPLICATIONS}
+   * @param offset the number of matching applications to skip
+   * @param limit the maximum number of suggestions, at most
+   *          {@link #MAX_SUGGESTIONS}
+   * @param locale the language of the labels, none when null
+   * @param username the user editing the window's settings
+   * @return the suggested applications, never null
+   * @throws ObjectNotFoundException when the window's setting does not exist
+   * @throws IllegalAccessException when the user may not edit the window's
+   *           settings
+   * @throws IllegalArgumentException when more than
+   *           {@link #MAX_LISTED_APPLICATIONS} ids are excluded
+   */
+  public List<Application> getContextSuggestions(String settingName,
+                                                 String keyword,
+                                                 List<Long> excludedIds,
+                                                 int offset,
+                                                 int limit,
+                                                 Locale locale,
+                                                 String username) throws ObjectNotFoundException, IllegalAccessException {
+    checkSettingExists(settingName);
+    if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
+    }
+    if (excludedIds != null && excludedIds.size() > MAX_LISTED_APPLICATIONS) {
+      throw new IllegalArgumentException(String.format("At most %s applications can be excluded", MAX_LISTED_APPLICATIONS));
+    }
+    int suggestionsLimit = limit <= 0 ? MAX_SUGGESTIONS : Math.min(limit, MAX_SUGGESTIONS);
+    List<Long> excluded = excludedIds == null ? Collections.emptyList() : excludedIds;
+    List<Application> applications = appCenterStorage.getApplicationIds(keyword)
+                                                     .stream()
+                                                     .filter(id -> !excluded.contains(id))
+                                                     .map(appCenterStorage::getApplication)
+                                                     .filter(Objects::nonNull)
+                                                     .filter(Application::isActive)
+                                                     .filter(application -> !application.isPersonal())
+                                                     .filter(application -> canAccess(application, username))
+                                                     .skip(Math.max(offset, 0))
+                                                     .limit(suggestionsLimit)
+                                                     .map(this::toTile)
+                                                     .toList();
+    setApplicationLabels(applications, locale);
+    setApplicationBadges(applications);
+    return applications;
+  }
+
+  private void checkSettingExists(String settingName) throws ObjectNotFoundException {
+    if (!myApplicationsSettingsService.hasSetting(settingName)) {
+      throw new ObjectNotFoundException(String.format("Shortcuts portlet setting %s doesn't exist", settingName));
+    }
+  }
+
+  /**
+   * Copies a cached application into the tile a listing returns, without its
+   * permissions, which only the server checks.
+   */
+  private Application toTile(Application application) {
+    Application tile = new Application(application);
+    tile.setPermissions(null);
+    return tile;
   }
 
   public List<String> getApplicationShortcuts(String username) {
