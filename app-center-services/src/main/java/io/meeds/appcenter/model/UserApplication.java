@@ -32,31 +32,7 @@ public class UserApplication extends Application {
   private boolean favorite;
 
   public UserApplication(Application app) {
-    super(app.getId(),
-          app.getTitle(),
-          app.getUrl(),
-          app.isSameTab(),
-          app.getHelpPageURL(),
-          app.getDescription(),
-          app.getShortcut(),
-          app.getType(),
-          app.isActive(),
-          app.isMandatory(),
-          app.isDefault(),
-          app.isMobile(),
-          app.isSystem(),
-          app.isPwa(),
-          app.getPermissions(),
-          app.getCategoryIds(),
-          app.getImageFileId(),
-          app.getIcon(),
-          app.getImageUrl(),
-          app.getOrder(),
-          app.isChangedManually(),
-          app.isPersonal(),
-          app.getBadgeName(),
-          app.isAllowStick(),
-          app.isAllowDetach());
+    super(app);
   }
 
 }

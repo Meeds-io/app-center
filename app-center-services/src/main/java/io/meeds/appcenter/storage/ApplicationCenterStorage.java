@@ -286,6 +286,14 @@ public class ApplicationCenterStorage {
     return null;
   }
 
+  /**
+   * @param  keyword matched in title and url, all applications when blank
+   * @return         the ids of the matching applications, sorted by title
+   */
+  public List<Long> getApplicationIds(String keyword) {
+    return StringUtils.isBlank(keyword) ? applicationDAO.getApplicationIds() : applicationDAO.getApplicationIds(keyword);
+  }
+
   public List<Application> getApplications(String keyword) {
     List<Long> applicationIds = StringUtils.isBlank(keyword) ? applicationDAO.getApplicationIds() :
                                                              applicationDAO.getApplicationIds(keyword);
