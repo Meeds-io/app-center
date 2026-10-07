@@ -18,10 +18,10 @@
  */
 package io.meeds.appcenter.service;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,10 +35,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,7 @@ import org.springframework.data.domain.Pageable;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
@@ -68,6 +71,7 @@ import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
@@ -109,6 +113,8 @@ public class ApplicationCenterServiceTest {
 
   private static final Long        ID             = 2l;
 
+  private static final String      SETTING_NAME   = "Untitled-12";
+
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
 
@@ -148,6 +154,9 @@ public class ApplicationCenterServiceTest {
   @MockitoBean
   private PortalContainer          portalContainer;
 
+  @MockitoBean
+  private MyApplicationsSettingsService myApplicationsSettingsService;
+
   @Autowired
   private ApplicationCenterService applicationCenterService;
 
@@ -173,6 +182,7 @@ public class ApplicationCenterServiceTest {
     lenient().when(userAcl.hasPermission(userIdentity, PERMISSIONS_2)).thenReturn(true);
     lenient().when(userAcl.hasPermission(userIdentity, TEST_USER)).thenReturn(true);
     lenient().when(portalContainer.getComponentInstanceOfType(CategoryLinkService.class)).thenReturn(categoryLinkService);
+    lenient().when(myApplicationsSettingsService.hasSetting(SETTING_NAME)).thenReturn(true);
   }
 
   @Test
@@ -829,6 +839,194 @@ public class ApplicationCenterServiceTest {
   private void enablePersonalApps() {
     SettingValue<?> value = SettingValue.create("{\"allowUserPersonalApps\":true}");
     doReturn(value).when(settingService).get(any(), any(), eq(ApplicationCenterService.APP_CENTER_SETTINGS_KEY));
+  }
+
+  @Test
+  void getListedApplicationsKeepsTheOrderOfAccessibleActiveApplications() throws Exception {
+    Application second = accessibleApplication(3L);
+    Application forbidden = application(2L);
+    Application inactive = accessibleApplication(4L);
+    inactive.setActive(false);
+    Application first = accessibleApplication(6L);
+    when(appCenterStorage.getApplication(3L)).thenReturn(second);
+    when(appCenterStorage.getApplication(2L)).thenReturn(forbidden);
+    when(appCenterStorage.getApplication(4L)).thenReturn(inactive);
+    when(appCenterStorage.getApplication(6L)).thenReturn(first);
+
+    List<Application> applications = applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME,
+                                                                                                              Arrays.asList(6L,
+                                                                                                                            5L,
+                                                                                                                            3L,
+                                                                                                                            2L,
+                                                                                                                            4L,
+                                                                                                                            3L,
+                                                                                                                            null)),
+                                                                                    Locale.ENGLISH,
+                                                                                    TEST_USER);
+
+    assertEquals(Arrays.asList(6L, 3L), applications.stream().map(Application::getId).toList());
+  }
+
+  @Test
+  void getListedApplicationsDecoratesCopiesNeverTheCachedInstance() throws Exception {
+    Application cached = accessibleApplication(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(cached);
+    when(translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                         ID,
+                                                         "title",
+                                                         Locale.FRENCH)).thenReturn("Titre");
+    when(badgePluginRegistry.resolveBadgeName(any())).thenReturn("badge");
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, List.of(ID));
+
+    Application french = applicationCenterService.getListedApplications(filter, Locale.FRENCH, TEST_USER).get(0);
+    Application english = applicationCenterService.getListedApplications(filter, Locale.ENGLISH, TEST_USER).get(0);
+
+    assertEquals("Titre", french.getTitle());
+    assertEquals(TITLE, english.getTitle());
+    assertEquals("badge", english.getBadgeName());
+    assertEquals(TITLE, cached.getTitle());
+    assertNull(cached.getBadgeName());
+    assertEquals(List.of(PERMISSIONS_2), cached.getPermissions());
+    assertNull(english.getPermissions());
+  }
+
+  @Test
+  void getListedApplicationsRefusesMoreThanTheCap() throws Exception {
+    List<Long> ids = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS + 1L).boxed().toList();
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, ids);
+
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getListedApplications(filter, null, TEST_USER));
+    assertTrue(applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, null), null, TEST_USER)
+                                       .isEmpty());
+    assertThrows(ObjectNotFoundException.class, () -> applicationCenterService.getListedApplications(null, null, TEST_USER));
+  }
+
+  @Test
+  void listingAndSuggestionReadsRefuseAnUnknownSetting() {
+    ApplicationListFilter filter = new ApplicationListFilter("Untitled-404", List.of(ID));
+    when(myApplicationsSettingsService.canEditSettings("Untitled-404", TEST_USER)).thenReturn(true);
+
+    assertThrows(ObjectNotFoundException.class, () -> applicationCenterService.getListedApplications(filter, null, TEST_USER));
+    assertThrows(ObjectNotFoundException.class, () -> applicationCenterService.getContextApplications(filter, null, TEST_USER));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.getContextSuggestions("Untitled-404", null, null, 0, 10, null, TEST_USER));
+    verify(appCenterStorage, never()).getApplication(ID);
+    verify(appCenterStorage, never()).getApplicationIds(any());
+  }
+
+  @Test
+  void getContextSuggestionsDecorateCopiesNeverTheCachedInstance() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    Application cached = accessibleApplication(ID);
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(List.of(ID));
+    when(appCenterStorage.getApplication(ID)).thenReturn(cached);
+    when(translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                         ID,
+                                                         "title",
+                                                         Locale.FRENCH)).thenReturn("Titre");
+    when(badgePluginRegistry.resolveBadgeName(any())).thenReturn("badge");
+
+    Application french = applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, Locale.FRENCH, TEST_USER)
+                                                 .get(0);
+    Application english = applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, Locale.ENGLISH, TEST_USER)
+                                                  .get(0);
+
+    assertEquals("Titre", french.getTitle());
+    assertEquals(TITLE, english.getTitle());
+    assertEquals(TITLE, cached.getTitle());
+    assertNull(cached.getBadgeName());
+    assertEquals(List.of(PERMISSIONS_2), cached.getPermissions());
+    assertNull(english.getPermissions());
+  }
+
+  @Test
+  void getContextApplicationsRequiresTheSettingsRight() throws Exception {
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, List.of(ID));
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+
+    assertThrows(IllegalAccessException.class, () -> applicationCenterService.getContextApplications(filter, null, TEST_USER));
+    verify(appCenterStorage, never()).getApplication(ID);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertEquals(1, applicationCenterService.getContextApplications(filter, null, TEST_USER).size());
+  }
+
+  @Test
+  void getContextSuggestionsRequiresTheSettingsRight() {
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.getContextSuggestions(SETTING_NAME, KEYWORD, null, 0, 10, null, TEST_USER));
+    verify(appCenterStorage, never()).getApplicationIds(any());
+  }
+
+  @Test
+  void getContextSuggestionsOffersActiveNonPersonalAccessibleApplications() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    Application personal = personalApp(TEST_USER);
+    personal.setId(7L);
+    Application inactive = accessibleApplication(8L);
+    inactive.setActive(false);
+    when(appCenterStorage.getApplicationIds(KEYWORD)).thenReturn(Arrays.asList(1L, 2L, 7L, 8L, 9L, 10L));
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(application(2L));
+    when(appCenterStorage.getApplication(7L)).thenReturn(personal);
+    when(appCenterStorage.getApplication(8L)).thenReturn(inactive);
+    when(appCenterStorage.getApplication(10L)).thenReturn(accessibleApplication(10L));
+
+    assertEquals(Arrays.asList(1L, 10L),
+                 applicationCenterService.getContextSuggestions(SETTING_NAME, KEYWORD, null, 0, 10, null, TEST_USER)
+                                         .stream()
+                                         .map(Application::getId)
+                                         .toList());
+    assertEquals(List.of(10L),
+                 applicationCenterService.getContextSuggestions(SETTING_NAME, KEYWORD, null, 1, 10, null, TEST_USER)
+                                         .stream()
+                                         .map(Application::getId)
+                                         .toList());
+  }
+
+  @Test
+  void getContextSuggestionsReturnsAtMostTheCap() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    List<Long> ids = LongStream.rangeClosed(1, 30).boxed().toList();
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(ids);
+    ids.forEach(id -> when(appCenterStorage.getApplication(id)).thenReturn(accessibleApplication(id)));
+
+    assertEquals(ApplicationCenterService.MAX_SUGGESTIONS,
+                 applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 100, null, TEST_USER).size());
+    assertEquals(ApplicationCenterService.MAX_SUGGESTIONS,
+                 applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 0, null, TEST_USER).size());
+    assertEquals(5, applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 5, null, TEST_USER).size());
+  }
+
+  @Test
+  void getContextSuggestionsExcludesTheSelectedApplicationsBeforeThePage() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    List<Long> ids = LongStream.rangeClosed(1, 30).boxed().toList();
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(ids);
+    ids.forEach(id -> lenient().when(appCenterStorage.getApplication(id)).thenReturn(accessibleApplication(id)));
+    List<Long> excluded = LongStream.rangeClosed(1, 15).boxed().toList();
+
+    List<Long> suggested = applicationCenterService.getContextSuggestions(SETTING_NAME, null, excluded, 0, 20, null, TEST_USER)
+                                                   .stream()
+                                                   .map(Application::getId)
+                                                   .toList();
+
+    assertEquals(LongStream.rangeClosed(16, 30).boxed().toList(), suggested);
+    verify(appCenterStorage, never()).getApplication(1L);
+  }
+
+  @Test
+  void getContextSuggestionsRefusesMoreExcludedIdsThanTheCap() {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    List<Long> excluded = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS + 1L).boxed().toList();
+
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.getContextSuggestions(SETTING_NAME, null, excluded, 0, 20, null, TEST_USER));
+  }
+
+  private Application accessibleApplication(Long id) {
+    Application application = application(id);
+    application.setPermissions(new ArrayList<>(List.of(PERMISSIONS_2)));
+    return application;
   }
 
   private Application personalApp(String owner) {

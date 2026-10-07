@@ -76,7 +76,7 @@
         </v-icon>
       </v-btn>
       <v-btn
-        v-if="!hasApplications"
+        v-if="!hasApplications && favorites"
         :title="$t('myApplications.add.application.tooltip')"
         :loading="loading === 'addAppIcon'"
         class="ms-2 text-font-size"
@@ -113,6 +113,10 @@ export default {
       default: null
     },
     showHeader: {
+      type: Boolean,
+      default: true
+    },
+    favorites: {
       type: Boolean,
       default: true
     },

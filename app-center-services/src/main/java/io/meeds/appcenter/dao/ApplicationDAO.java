@@ -19,7 +19,9 @@
 package io.meeds.appcenter.dao;
 
 import java.util.List;
+import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -55,7 +57,9 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
   List<Long> getApplicationIds(String keyword, Sort sort);
 
   default List<Long> getApplicationIds(String keyword) {
-    return getApplicationIds(keyword, Sort.by(Sort.Order.asc("title").ignoreCase()));
+    // The query lowers the columns, never the keyword: a LIKE is case-sensitive on PostgreSQL
+    return getApplicationIds(StringUtils.lowerCase(StringUtils.trim(keyword), Locale.ROOT),
+                             Sort.by(Sort.Order.asc("title").ignoreCase()));
   }
 
   @Query("""
