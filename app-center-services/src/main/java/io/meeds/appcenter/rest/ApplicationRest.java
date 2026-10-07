@@ -20,10 +20,12 @@ package io.meeds.appcenter.rest;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -53,6 +55,7 @@ import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -98,6 +101,100 @@ public class ApplicationRest {
                                                   keyword.orElse(null),
                                                   request.getLocale(),
                                                   request.getRemoteUser());
+  }
+
+  @GetMapping(path = "list")
+  @Secured("users")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists", method = "GET", description = "Returns, in the order of the ids, the active applications the current user may access, unknown and forbidden ids skipped")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 ids"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getListedApplications(
+                                                 HttpServletRequest request,
+                                                 @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                 @RequestParam("settingName")
+                                                 String settingName,
+                                                 @Parameter(description = "Ordered application ids, comma-separated", required = false)
+                                                 @RequestParam(name = "ids", required = false)
+                                                 List<Long> ids) {
+    try {
+      return appCenterService.getListedApplications(new ApplicationListFilter(settingName, ids),
+                                                    request.getLocale(),
+                                                    request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @GetMapping(path = "contextual/list")
+  @Secured("users")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 ids"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getContextApplications(
+                                                  HttpServletRequest request,
+                                                  @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                  @RequestParam("settingName")
+                                                  String settingName,
+                                                  @Parameter(description = "Ordered application ids, comma-separated", required = false)
+                                                  @RequestParam(name = "ids", required = false)
+                                                  List<Long> ids) {
+    try {
+      return appCenterService.getContextApplications(new ApplicationListFilter(settingName, ids),
+                                                     request.getLocale(),
+                                                     request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @GetMapping(path = "contextual/suggest")
+  @Secured("users")
+  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, matching the keyword")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 excluded ids"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getContextSuggestions(
+                                                 HttpServletRequest request,
+                                                 @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                 @RequestParam("settingName")
+                                                 String settingName,
+                                                 @Parameter(description = "Keyword to search in applications title and url", required = false)
+                                                 @RequestParam(name = "keyword", required = false)
+                                                 String keyword,
+                                                 @Parameter(description = "Application ids already selected, never suggested, at most 100", required = false)
+                                                 @RequestParam(name = "excludedIds", required = false)
+                                                 List<Long> excludedIds,
+                                                 @Parameter(description = "Query Offset", required = false)
+                                                 @RequestParam(name = "offset", defaultValue = "0")
+                                                 int offset,
+                                                 @Parameter(description = "Query results limit, at most 20", required = false)
+                                                 @RequestParam(name = "limit", defaultValue = "20")
+                                                 int limit) {
+    try {
+      return appCenterService.getContextSuggestions(settingName,
+                                                    keyword,
+                                                    excludedIds,
+                                                    offset,
+                                                    limit,
+                                                    request.getLocale(),
+                                                    request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
   }
 
   @GetMapping(path = "all")
