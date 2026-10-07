@@ -43,6 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -65,6 +67,8 @@ import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 
+import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
@@ -107,8 +111,16 @@ class MyApplicationsSettingsServiceTest {
   @MockitoBean
   private UserACL                       userAcl;
 
+  @MockitoBean
+  private ApplicationCenterStorage      applicationCenterStorage;
+
   @Autowired
   private MyApplicationsSettingsService settingsService;
+
+  @BeforeEach
+  void existingApplications() {
+    lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
+  }
 
   @Test
   void canEditSettingsRefusesBlankNameAndGuest() {
@@ -436,6 +448,21 @@ class MyApplicationsSettingsServiceTest {
 
     assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, veryLong)));
     assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds(veryLong));
+  }
+
+  @Test
+  void getWritableSettingsDropsTheIdsOfDeletedApplications() {
+    when(applicationCenterStorage.getApplication(3L)).thenReturn(null);
+
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "5,9"),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                                                            LISTING_MODE_SELECTED,
+                                                            SELECTION_MODE,
+                                                            SELECTION_MODE_MANUAL,
+                                                            APPLICATION_IDS,
+                                                            "5,3,9")));
+    Map<String, String> onlyDeleted = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "3");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(onlyDeleted));
   }
 
   @Test

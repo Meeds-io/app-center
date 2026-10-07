@@ -38,6 +38,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 
+import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
@@ -115,6 +116,9 @@ public class MyApplicationsSettingsService {
 
   @Autowired
   private UserACL             userAcl;
+
+  @Autowired
+  private ApplicationCenterStorage applicationCenterStorage;
 
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
@@ -195,8 +199,9 @@ public class MyApplicationsSettingsService {
    * Filters the parameters of a settings write down to the preferences the
    * Shortcuts portlet owns, each with a valid value. Any other name, among
    * which name, applicationId, data.init, canEdit and settingName, and any
-   * invalid value is dropped. The selection mode and the application ids are
-   * stored only with a listing mode. A write selecting the SELECTED listing
+   * invalid value is dropped, and so is the id of an application that no
+   * longer exists. The selection mode and the application ids are stored only
+   * with a listing mode. A write selecting the SELECTED listing
    * mode is refused as a whole unless it selects the MANUAL mode with at least
    * one application: a SELECTED listing is never stored empty, and no category
    * can be chosen yet.
@@ -235,6 +240,8 @@ public class MyApplicationsSettingsService {
     String applicationIds = StringUtils.deleteWhitespace(parameters.get(APPLICATION_IDS));
     List<Long> ids = applicationIds == null ? null : parseApplicationIds(applicationIds);
     if (ids != null) {
+      // The id of a deleted application is dropped: no one could see or remove it
+      ids = ids.stream().filter(id -> applicationCenterStorage.getApplication(id) != null).toList();
       settings.put(APPLICATION_IDS, StringUtils.join(ids, ","));
     }
     if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)
