@@ -36,10 +36,25 @@
           :show-header="showHeader"
           :header-title="headerTitle"
           :has-applications="hasApplications"
+          :favorites="!selectedListing"
           @open-settings="openSettingsDrawer" />
+        <div
+          v-if="canEdit && selectedListing && !hasDisplayedApplications && !isLoading"
+          class="d-flex flex-column justify-center align-center flex-grow-1 py-4">
+          <p class="mb-2 text-sub-title">
+            {{ $t('myApplications.noApps.label') }}
+          </p>
+          <v-btn
+            class="btn btn-primary"
+            @click="openSettingsDrawer">
+            {{ $t('myApplications.addApps.label') }}
+          </v-btn>
+        </div>
         <my-applications-list
+          v-else
           :applications-list="filteredApplications"
           :is-loading="isLoading"
+          :sortable="!selectedListing"
           @list-updated="handleListOrderUpdate"
           @open-portlet="$refs.portletInstanceDrawer.open($event)" />
       </widget-wrapper>
@@ -67,6 +82,7 @@ export default {
       initialized: false,
       hover: false,
       tabindex: '0',
+      listingLoaded: false,
     };
   },
   computed: {
@@ -76,6 +92,13 @@ export default {
     filteredApplications() {
       return this.$root.isMobile && this.favoriteApplications.filter(application => application.mobile)
                                  || this.favoriteApplications;
+    },
+    hasDisplayedApplications() {
+      return this.filteredApplications?.length > 0;
+    },
+    portletVisible() {
+      // A selected list none of whose apps can be shown is hidden, but from whoever may edit it
+      return !this.selectedListing || this.hasDisplayedApplications || this.canEdit;
     },
     hasApplications() {
       return this.favoriteApplications?.length > 0;
@@ -88,7 +111,20 @@ export default {
     },
     maxAppsToList() {
       return this.$root.settings.maxAppsToList;
-    }
+    },
+    selectedListing() {
+      return this.$root.settings?.listingMode === 'SELECTED';
+    },
+    settingName() {
+      return this.$root.settings?.settingName;
+    },
+  },
+  watch: {
+    portletVisible(visible) {
+      if (this.listingLoaded) {
+        this.$root.$updateApplicationVisibility(visible);
+      }
+    },
   },
   created() {
     this.getFavoriteApplications();
@@ -99,8 +135,13 @@ export default {
       this.$refs.settingsDrawer.open();
     },
     settingsUpdated(settings, headerTitle) {
-      const updateList = Number(this.maxAppsToList) !== settings.maxAppsToList;
+      const updateList = Number(this.maxAppsToList) !== settings.maxAppsToList
+          || this.$root.settings.listingMode !== settings.listingMode
+          || this.$root.settings.selectionMode !== settings.selectionMode
+          || this.$root.settings.applicationIds?.join(',') !== settings.applicationIds;
       this.$root.settings.listingMode = settings.listingMode;
+      this.$root.settings.selectionMode = settings.selectionMode;
+      this.$root.settings.applicationIds = settings.applicationIds ? settings.applicationIds.split(',').map(Number) : [];
       this.$root.settings.maxAppsToList = settings.maxAppsToList;
       this.$root.settings.showHeader = settings.showHeader;
       this.$root.settings.headerTitle = headerTitle;
@@ -111,12 +152,31 @@ export default {
     },
     getFavoriteApplications() {
       this.isLoading = true;
+      if (this.selectedListing) {
+        return this.getListedApplications();
+      }
       return this.$applicationFavoriteService.getFavorites(this.maxAppsToList)
         .then((data) => {
           this.favoriteApplications = (data?.applications || [])
             .map(app => this.mapApplication(app))
             .filter(app => app);
           this.sortAndStoreApplicationsOrder();
+        })
+        .finally(() => {
+          this.isLoading = false;
+          this.initialized = true;
+        });
+    },
+    getListedApplications() {
+      const applicationIds = this.$root.settings.selectionMode === 'MANUAL' && this.$root.settings.applicationIds || [];
+      return this.$myApplicationsService.getListedApplications(this.settingName, applicationIds)
+        .catch(() => [])
+        .then(applications => {
+          this.favoriteApplications = applications
+            .map(app => this.mapApplication(app))
+            .filter(Boolean);
+          this.listingLoaded = true;
+          this.$root.$updateApplicationVisibility(this.portletVisible);
         })
         .finally(() => {
           this.isLoading = false;

@@ -18,11 +18,15 @@
  */
 package io.meeds.appcenter.service;
 
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.APPLICATION_IDS;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.HEADER_TITLE_FIELD;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_FAVORITES;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_SELECTED;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.MAX_APPS_TO_LIST;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE_CATEGORY;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE_MANUAL;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SETTING_TYPE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_HEADER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -39,12 +43,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -58,6 +67,8 @@ import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 
+import io.meeds.appcenter.model.Application;
+import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
@@ -69,6 +80,8 @@ import lombok.SneakyThrows;
 @SpringBootTest(classes = { MyApplicationsSettingsService.class })
 @ExtendWith(MockitoExtension.class)
 class MyApplicationsSettingsServiceTest {
+
+  private static final Map<String, String> FAVORITES_ONLY = Map.of(LISTING_MODE, LISTING_MODE_FAVORITES);
 
   private static final String           USERNAME            = "testuser";
 
@@ -98,8 +111,16 @@ class MyApplicationsSettingsServiceTest {
   @MockitoBean
   private UserACL                       userAcl;
 
+  @MockitoBean
+  private ApplicationCenterStorage      applicationCenterStorage;
+
   @Autowired
   private MyApplicationsSettingsService settingsService;
+
+  @BeforeEach
+  void existingApplications() {
+    lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
+  }
 
   @Test
   void canEditSettingsRefusesBlankNameAndGuest() {
@@ -277,6 +298,15 @@ class MyApplicationsSettingsServiceTest {
   }
 
   @Test
+  void hasSettingChecksTheCmsSetting() {
+    when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 0));
+
+    assertTrue(settingsService.hasSetting(PAGE_NAME));
+    assertFalse(settingsService.hasSetting("Untitled-404"));
+    assertFalse(settingsService.hasSetting(null));
+  }
+
+  @Test
   void canEditLegacyHeaderTitleIsAdministratorOnly() {
     Identity identity = mockUser(false);
 
@@ -331,10 +361,122 @@ class MyApplicationsSettingsServiceTest {
   }
 
   @Test
-  void getWritableSettingsRefusesSelectedListingModeWhole() {
-    Map<String, String> parameters = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8", SHOW_HEADER, "false");
+  void getWritableSettingsRefusesAnEmptySelectedListingWhole() {
+    Map<String, String> parameters1 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters1));
+    Map<String, String> parameters2 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters2));
+    Map<String, String> parameters3 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "1,x");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters3));
+  }
 
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters));
+  @Test
+  void getWritableSettingsRefusesASelectedCategoryListing() {
+    Map<String, String> parameters4 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, APPLICATION_IDS, "3");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters4));
+  }
+
+  @Test
+  void getWritableSettingsStoresASelectedManualListing() {
+    assertEquals(Map.of(LISTING_MODE,
+                        LISTING_MODE_SELECTED,
+                        SELECTION_MODE,
+                        SELECTION_MODE_MANUAL,
+                        APPLICATION_IDS,
+                        "5,3,9"),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                                                            LISTING_MODE_SELECTED,
+                                                            SELECTION_MODE,
+                                                            SELECTION_MODE_MANUAL,
+                                                            APPLICATION_IDS,
+                                                            " 5, 3,9,3 ")));
+  }
+
+  @Test
+  void getWritableSettingsRefusesASelectedListingWithoutItsSelectionMode() {
+    Map<String, String> parameters5 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, APPLICATION_IDS, "4");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters5));
+  }
+
+  @Test
+  void getWritableSettingsIgnoresASelectionWrittenWithoutItsListingMode() {
+    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "4", SELECTION_MODE, SELECTION_MODE_MANUAL)));
+    assertEquals(Map.of(MAX_APPS_TO_LIST, "8"),
+                 settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "4", MAX_APPS_TO_LIST, "8")));
+  }
+
+  @Test
+  void getWritableSettingsKeepsTheApplicationIdsInFavoritesMode() {
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, SELECTION_MODE, SELECTION_MODE_CATEGORY, APPLICATION_IDS, "5"),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                                                            LISTING_MODE_FAVORITES,
+                                                            SELECTION_MODE,
+                                                            SELECTION_MODE_CATEGORY,
+                                                            APPLICATION_IDS,
+                                                            "5")));
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, APPLICATION_IDS, ""),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, APPLICATION_IDS, "")));
+  }
+
+  @Test
+  void getWritableSettingsDropsInvalidSelectionValues() {
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(SELECTION_MODE, "manual")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1;2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "-1")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1,,2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1234567890123456789")));
+    String overCap = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS + 1L)
+                               .mapToObj(String::valueOf)
+                               .collect(Collectors.joining(","));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, overCap)));
+    String atCapWithDuplicate = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS)
+                                          .mapToObj(String::valueOf)
+                                          .collect(Collectors.joining(","))
+        + ",1";
+    assertEquals(ApplicationCenterService.MAX_LISTED_APPLICATIONS,
+                 settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, atCapWithDuplicate)).get(APPLICATION_IDS).split(",").length);
+  }
+
+  private static Map<String, String> withFavorites(String name, String value) {
+    return Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, name, value);
+  }
+
+  @Test
+  void getWritableSettingsDropsAVeryLongIdListWithoutOverflowing() {
+    String veryLong = LongStream.rangeClosed(1, 200_000).mapToObj(String::valueOf).collect(Collectors.joining(","));
+
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, veryLong)));
+    assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds(veryLong));
+  }
+
+  @Test
+  void getWritableSettingsDropsTheIdsOfDeletedApplications() {
+    when(applicationCenterStorage.getApplication(3L)).thenReturn(null);
+
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "5,9"),
+                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                                                            LISTING_MODE_SELECTED,
+                                                            SELECTION_MODE,
+                                                            SELECTION_MODE_MANUAL,
+                                                            APPLICATION_IDS,
+                                                            "5,3,9")));
+    Map<String, String> onlyDeleted = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "3");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(onlyDeleted));
+  }
+
+  @Test
+  void getSelectionModeDefaultsToManual() {
+    assertEquals(SELECTION_MODE_CATEGORY, MyApplicationsSettingsService.getSelectionMode(SELECTION_MODE_CATEGORY));
+    assertEquals(SELECTION_MODE_MANUAL, MyApplicationsSettingsService.getSelectionMode(null));
+    assertEquals(SELECTION_MODE_MANUAL, MyApplicationsSettingsService.getSelectionMode("category"));
+  }
+
+  @Test
+  void getApplicationIdsReadsAValidStoredListOnly() {
+    assertEquals(List.of(5L, 3L), MyApplicationsSettingsService.getApplicationIds("5,3,5"));
+    assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds(null));
+    assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds("5,</script>"));
   }
 
   @Test
