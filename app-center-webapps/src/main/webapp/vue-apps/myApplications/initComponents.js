@@ -36,7 +36,7 @@ const components = {
   'my-applications-settings-drawer': MyApplicationsSettingsDrawer,
   'my-applications-listing-step': MyApplicationsListingStep,
   'my-applications-display-step': MyApplicationsDisplayStep,
-  'app-center-application-suggester': MyApplicationsApplicationSuggester,
+  'my-applications-application-suggester': MyApplicationsApplicationSuggester,
 };
 
 for (const key in components) {

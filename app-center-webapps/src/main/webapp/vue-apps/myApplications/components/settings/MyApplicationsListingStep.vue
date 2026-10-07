@@ -62,7 +62,7 @@
         </template>
       </v-radio>
       <template v-if="selectionMode === 'MANUAL'">
-        <app-center-application-suggester
+        <my-applications-application-suggester
           :setting-name="settingName"
           :selected-ids="applicationIds"
           :disabled="loading || capReached"
@@ -144,6 +144,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    hiddenCount: {
+      type: Number,
+      default: 0,
+    },
   },
   data: () => ({
     maxApplications: 100,
@@ -153,7 +157,7 @@ export default {
       return this.applications.map(application => application.id);
     },
     capReached() {
-      return this.applications.length >= this.maxApplications;
+      return this.applications.length + this.hiddenCount >= this.maxApplications;
     },
   },
   methods: {

@@ -53,7 +53,8 @@
                 :selection-mode.sync="selectionMode"
                 :applications.sync="applications"
                 :setting-name="settingName"
-                :loading="!applicationsLoaded" />
+                :loading="!applicationsLoaded"
+                :hidden-count="hiddenApplicationIds.length" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -116,6 +117,7 @@ export default {
       applicationsLoaded: false,
       applicationsLoad: 0,
       savedApplicationIds: [],
+      hiddenApplicationIds: [],
       listingStepKey: 0,
       objectType: 'myApplicationsPortlet',
       fieldName: 'headerTitle',
@@ -139,12 +141,12 @@ export default {
       if (!this.applicationsLoaded) {
         return false;
       }
-      if (this.listingMode === 'SELECTED' && (this.selectionMode !== 'MANUAL' || !this.applications.length)) {
+      if (this.listingMode === 'SELECTED' && (this.selectionMode !== 'MANUAL' || !this.postedApplicationIds.length)) {
         return false;
       }
       return this.settings.listingMode !== this.listingMode
           || this.settings.selectionMode !== this.selectionMode
-          || this.savedApplicationIds.join(',') !== this.applicationIds.join(',')
+          || this.savedApplicationIds.join(',') !== this.postedApplicationIds.join(',')
           || this.settings.showHeader !== this.showHeader || this.savedMaxAppsToList !== this.maxAppsToList
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
     },
@@ -155,6 +157,13 @@ export default {
     },
     applicationIds() {
       return this.applications.map(application => application.id);
+    },
+    postedApplicationIds() {
+      // The stored apps this editor may not see keep their place: only the visible ones move or go
+      const visibleIds = [...this.applicationIds];
+      const ids = this.savedApplicationIds.map(id => (this.hiddenApplicationIds.includes(id) ? id : visibleIds.shift()))
+        .filter(id => id);
+      return [...ids, ...visibleIds];
     },
     settingName() {
       return this.settings.settingName;
@@ -191,7 +200,7 @@ export default {
       const settings = {
         listingMode: this.listingMode,
         selectionMode: this.selectionMode,
-        applicationIds: this.applicationIds.join(','),
+        applicationIds: this.postedApplicationIds.join(','),
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader
       };
@@ -200,7 +209,7 @@ export default {
         await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName);
         await this.saveHeaderTranslations();
         this.savedApplications = [...this.applications];
-        this.savedApplicationIds = [...this.applicationIds];
+        this.savedApplicationIds = [...this.postedApplicationIds];
         this.$emit('settings-updated', settings, this.displayedValue);
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.success.message'), 'success');
       } catch (e) {
@@ -225,8 +234,10 @@ export default {
       try {
         const applications = await this.$myApplicationsService.getContextApplications(this.settingName, this.settings.applicationIds);
         if (load === this.applicationsLoad) {
+          const visibleIds = applications.map(application => application.id);
           this.savedApplications = applications;
-          this.savedApplicationIds = applications.map(application => application.id);
+          this.savedApplicationIds = [...(this.settings.applicationIds || [])];
+          this.hiddenApplicationIds = this.savedApplicationIds.filter(id => !visibleIds.includes(id));
           this.applications = [...applications];
           this.applicationsLoaded = true;
         }

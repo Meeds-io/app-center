@@ -930,7 +930,14 @@ public class ApplicationCenterService {
                                                  Locale locale,
                                                  String username) throws ObjectNotFoundException {
     checkSettingExists(filter == null ? null : filter.getSettingName());
-    List<Long> ids = filter.getIds();
+    return listApplications(filter.getIds(), locale, username);
+  }
+
+  /**
+   * Reads, in the order of the ids, the active applications the user may
+   * access, decorated on copies, once the caller checked the window.
+   */
+  private List<Application> listApplications(List<Long> ids, Locale locale, String username) {
     if (CollectionUtils.isEmpty(ids)) {
       return Collections.emptyList();
     } else if (ids.size() > MAX_LISTED_APPLICATIONS) {
@@ -972,7 +979,7 @@ public class ApplicationCenterService {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return getListedApplications(filter, locale, username);
+    return listApplications(filter.getIds(), locale, username);
   }
 
   /**
