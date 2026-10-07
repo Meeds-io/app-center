@@ -18,6 +18,9 @@
  */
 package io.meeds.appcenter.rest;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,12 +59,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -82,6 +88,16 @@ public class ApplicationRestTest {
   private static final String ALL_APPLICATIONS_PATH = "/applications/all";// NOSONAR
 
   private static final String PLACEMENTS_PATH       = "/applications/placements";// NOSONAR
+
+  private static final String LISTED_APPLICATIONS_PATH  = "/applications/list";             // NOSONAR
+
+  private static final String CONTEXT_APPLICATIONS_PATH = "/applications/contextual/list";  // NOSONAR
+
+  private static final String CONTEXT_SUGGEST_PATH      = "/applications/contextual/suggest"; // NOSONAR
+
+  private static final String SETTING_NAME_PARAM        = "settingName";
+
+  private static final String SETTING_NAME              = "Untitled-12";
 
   private static final String SIMPLE_USER           = "simple";
 
@@ -120,6 +136,94 @@ public class ApplicationRestTest {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
                              .addFilters(filterChain.getFilters().toArray(new Filter[0]))
                              .build();
+  }
+
+  @Test
+  void getListedApplicationsAnonymously() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).param("ids", "1"))
+           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getListedApplicationsPassesTheIdsInOrder() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "5,3,9")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getListedApplications(eq(new ApplicationListFilter(SETTING_NAME, List.of(5L, 3L, 9L))),
+                                                           any(),
+                                                           eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getListedApplicationsAnswers400OverTheCapOrOnAnInvalidId() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1,x")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getContextApplicationsAnswers403WithoutTheSettingsRight() throws Exception {
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalAccessException.class);
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                  .param("ids", "1")
+                                                  .with(testSimpleUser()))
+           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getContextApplicationsAnswers400OverTheCap() throws Exception {
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                  .param("ids", "1")
+                                                  .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void listingAndSuggestionEndpointsAnswer404OnAnUnknownSetting() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(ObjectNotFoundException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void getContextSuggestions() throws Exception {
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                             .param("keyword", "doc")
+                                             .param("excludedIds", "4,7")
+                                             .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getContextSuggestions(eq(SETTING_NAME), eq("doc"), eq(List.of(4L, 7L)), eq(0), eq(20), any(), eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getContextSuggestionsAnswers400OverTheExclusionCap() throws Exception {
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                                .thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getContextSuggestionsAnswers403WithoutTheSettingsRight() throws Exception {
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(IllegalAccessException.class);
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden());
   }
 
   @Test

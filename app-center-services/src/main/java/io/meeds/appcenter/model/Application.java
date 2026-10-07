@@ -18,6 +18,7 @@
  */
 package io.meeds.appcenter.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -87,5 +88,40 @@ public class Application {
   private boolean         allowStick;
 
   private boolean         allowDetach;
+
+  /**
+   * Copies every field, the permissions and category ids into new lists, so
+   * that decorating or changing the copy never writes into the instance the
+   * app-center.application cache serves.
+   *
+   * @param application the application to copy
+   */
+  public Application(Application application) {
+    this(application.getId(),
+         application.getTitle(),
+         application.getUrl(),
+         application.isSameTab(),
+         application.getHelpPageURL(),
+         application.getDescription(),
+         application.getShortcut(),
+         application.getType(),
+         application.isActive(),
+         application.isMandatory(),
+         application.isDefault(),
+         application.isMobile(),
+         application.isSystem(),
+         application.isPwa(),
+         application.getPermissions() == null ? null : new ArrayList<>(application.getPermissions()),
+         application.getCategoryIds() == null ? null : new ArrayList<>(application.getCategoryIds()),
+         application.getImageFileId(),
+         application.getIcon(),
+         application.getImageUrl(),
+         application.getOrder(),
+         application.isChangedManually(),
+         application.isPersonal(),
+         application.getBadgeName(),
+         application.isAllowStick(),
+         application.isAllowDetach());
+  }
 
 }

@@ -38,11 +38,36 @@ export function saveSettings(saveSettingsURL, settings, settingName) {
     }
     return resp.text();
   }).then(renderedPage => {
-    // A refused portlet action still answers 200: check the settings the page was rendered with
+    // A page drawn by the page layout renders its body portlets apart from the page:
+    // read this window's own rendering when the page does not carry it
+    if (renderedPage?.includes?.(`settingName: '${settingName}'`)) {
+      return renderedPage;
+    }
+    return getRenderedPortlet(saveSettingsURL);
+  }).then(renderedPage => {
+    // A refused portlet action still answers 200: check the settings the portlet was rendered with
     if (!isRenderedWithSettings(renderedPage, settings, settingName)) {
       throw new Error('My applications settings were not saved');
     }
   });
+}
+
+function getRenderedPortlet(saveSettingsURL) {
+  const actionUrl = new URL(saveSettingsURL.replaceAll('&amp;', '&'), window.location.origin);
+  const portletId = actionUrl.searchParams.get('portal:componentId');
+  if (!portletId) {
+    return Promise.resolve(null);
+  }
+  const params = new URLSearchParams({
+    maximizedPortletId: portletId,
+    showMaxWindow: true,
+    hideSharedLayout: true,
+    maximizedPortletMode: 'VIEW',
+  });
+  return fetch(`${actionUrl.pathname}?${params}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => resp?.ok && resp.text() || null);
 }
 
 function isRenderedWithSettings(renderedPage, settings, settingName) {
@@ -53,7 +78,51 @@ function isRenderedWithSettings(renderedPage, settings, settingName) {
   const settingsEndIndex = renderedPage.indexOf('}));', settingNameIndex);
   const renderedSettings = renderedPage.substring(settingNameIndex, settingsEndIndex < 0 ? renderedPage.length : settingsEndIndex);
   return Object.keys(settings || {}).every(name => {
-    const value = new RegExp(`${name}: '?([^',\\s]*)'?,`).exec(renderedSettings)?.[1];
+    const value = new RegExp(`${name}: \\[([^\\]]*)\\],`).exec(renderedSettings)?.[1]
+               ?? new RegExp(`${name}: '?([^',\\s]*)'?,`).exec(renderedSettings)?.[1];
     return value === String(settings[name]);
+  });
+}
+
+export function getListedApplications(settingName, ids) {
+  return getApplications('list', settingName, ids);
+}
+
+export function getContextApplications(settingName, ids) {
+  return getApplications('contextual/list', settingName, ids);
+}
+
+export function getContextSuggestions(settingName, keyword, excludedIds, limit) {
+  const params = new URLSearchParams({settingName, limit: limit || 20});
+  if (keyword) {
+    params.append('keyword', keyword);
+  }
+  if (excludedIds?.length) {
+    params.append('excludedIds', excludedIds.join(','));
+  }
+  return fetch(`/app-center/rest/applications/contextual/suggest?${params}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp?.ok) {
+      throw new Error('Error while suggesting applications');
+    }
+    return resp.json();
+  });
+}
+
+function getApplications(path, settingName, ids) {
+  if (!ids?.length) {
+    return Promise.resolve([]);
+  }
+  const params = new URLSearchParams({settingName, ids: ids.join(',')});
+  return fetch(`/app-center/rest/applications/${path}?${params}`, {
+    method: 'GET',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp?.ok) {
+      throw new Error('Error while retrieving the listed applications');
+    }
+    return resp.json();
   });
 }
