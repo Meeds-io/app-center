@@ -21,6 +21,7 @@
   String listingMode = MyApplicationsSettingsService.getListingMode(preferences.getValue(MyApplicationsSettingsService.LISTING_MODE, null));
   String selectionMode = MyApplicationsSettingsService.getSelectionMode(preferences.getValue(MyApplicationsSettingsService.SELECTION_MODE, null));
   String applicationIds = MyApplicationsSettingsService.getApplicationIds(preferences.getValue(MyApplicationsSettingsService.APPLICATION_IDS, null)).toString().replace(" ", "");
+  String categoryIds = MyApplicationsSettingsService.getCategoryIds(preferences.getValue(MyApplicationsSettingsService.CATEGORY_IDS, null)).toString().replace(" ", "");
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           settingName, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
 %>
@@ -36,6 +37,7 @@
         listingMode: '<%=listingMode%>',
         selectionMode: '<%=selectionMode%>',
         applicationIds: <%=applicationIds%>,
+        categoryIds: <%=categoryIds%>,
         showHeader: <%=showHeader%>,
         headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeEcmaScript(headerTitle))%>,
         canEdit: <%=canEdit%>,

@@ -113,6 +113,13 @@
           <span class="ms-1 text-color">{{ $t('myApplications.categoryApps.label') }}</span>
         </template>
       </v-radio>
+      <my-applications-category-list
+        v-if="selectionMode === 'CATEGORY'"
+        :categories="categories"
+        :hidden-count="hiddenCategoryCount"
+        :loading="loading"
+        @add="$emit('add-category', $event)"
+        @update:categories="$emit('update:categories', $event)" />
     </v-radio-group>
   </v-radio-group>
 </template>
@@ -145,6 +152,14 @@ export default {
       default: false,
     },
     hiddenCount: {
+      type: Number,
+      default: 0,
+    },
+    categories: {
+      type: Array,
+      default: () => [],
+    },
+    hiddenCategoryCount: {
       type: Number,
       default: 0,
     },

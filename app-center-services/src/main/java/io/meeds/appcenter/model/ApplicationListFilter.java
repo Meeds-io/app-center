@@ -26,7 +26,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * The applications a Shortcuts portlet window lists in its SELECTED mode: the
- * window's CMS setting name and the ordered application ids it selected.
+ * window's CMS setting name and either the ordered application ids it selected
+ * or the ordered categories whose applications it lists.
  */
 @Data
 @NoArgsConstructor
@@ -36,5 +37,11 @@ public class ApplicationListFilter {
   private String     settingName;
 
   private List<Long> ids;
+
+  private List<Long> categoryIds;
+
+  public ApplicationListFilter(String settingName, List<Long> ids) {
+    this(settingName, ids, null);
+  }
 
 }
