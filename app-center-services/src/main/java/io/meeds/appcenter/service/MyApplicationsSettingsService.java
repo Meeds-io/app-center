@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ import org.exoplatform.services.security.IdentityConstants;
 
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
+import io.meeds.social.category.service.CategoryService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.translation.model.TranslationField;
@@ -78,6 +80,11 @@ public class MyApplicationsSettingsService {
   public static final String  SELECTION_MODE_CATEGORY   = "CATEGORY";
 
   public static final String  APPLICATION_IDS           = "applicationIds";
+
+  public static final String  CATEGORY_IDS              = "categoryIds";
+
+  /** Most categories a Shortcuts portlet lists the apps of (D6). */
+  public static final int     MAX_LISTED_CATEGORIES     = 100;
 
   public static final int     MIN_APPS_TO_LIST          = 1;
 
@@ -119,6 +126,9 @@ public class MyApplicationsSettingsService {
 
   @Autowired
   private ApplicationCenterStorage applicationCenterStorage;
+
+  @Autowired
+  private CategoryService     categoryService;
 
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
@@ -200,16 +210,18 @@ public class MyApplicationsSettingsService {
    * Shortcuts portlet owns, each with a valid value. Any other name, among
    * which name, applicationId, data.init, canEdit and settingName, and any
    * invalid value is dropped, and so is the id of an application that no
-   * longer exists. The selection mode and the application ids are stored only
-   * with a listing mode. A write selecting the SELECTED listing
-   * mode is refused as a whole unless it selects the MANUAL mode with at least
-   * one application: a SELECTED listing is never stored empty, and no category
-   * can be chosen yet.
+   * longer exists, and of a category that no longer exists. The selection
+   * mode, the application ids and the category ids are stored only with a
+   * listing mode, both lists whatever the selection mode, so that switching
+   * modes keeps the other list. A write selecting the SELECTED listing mode is
+   * refused as a whole unless it selects the MANUAL mode with at least one
+   * application, or the CATEGORY mode with at least one category: a SELECTED
+   * listing is never stored empty.
    *
    * @param parameters posted parameters
    * @return the preferences to store, by name
    * @throws IllegalArgumentException when the write selects the SELECTED
-   *           listing mode with no application to list
+   *           listing mode with nothing to list
    */
   public Map<String, String> getWritableSettings(Map<String, String> parameters) {
     Map<String, String> settings = new HashMap<>();
@@ -238,15 +250,23 @@ public class MyApplicationsSettingsService {
       settings.put(SELECTION_MODE, selectionMode);
     }
     String applicationIds = StringUtils.deleteWhitespace(parameters.get(APPLICATION_IDS));
-    List<Long> ids = applicationIds == null ? null : parseApplicationIds(applicationIds);
+    List<Long> ids = applicationIds == null ? null : parseIds(applicationIds, ApplicationCenterService.MAX_LISTED_APPLICATIONS);
     if (ids != null) {
       // The id of a deleted application is dropped: no one could see or remove it
       ids = ids.stream().filter(id -> applicationCenterStorage.getApplication(id) != null).toList();
       settings.put(APPLICATION_IDS, StringUtils.join(ids, ","));
     }
+    String categoryIds = StringUtils.deleteWhitespace(parameters.get(CATEGORY_IDS));
+    List<Long> categories = categoryIds == null ? null : parseIds(categoryIds, MAX_LISTED_CATEGORIES);
+    if (categories != null) {
+      // The id of a deleted category is dropped as well
+      categories = categories.stream().filter(id -> categoryService.getCategory(id) != null).toList();
+      settings.put(CATEGORY_IDS, StringUtils.join(categories, ","));
+    }
     if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)
-        && (!StringUtils.equals(selectionMode, SELECTION_MODE_MANUAL) || ids == null || ids.isEmpty())) {
-      throw new IllegalArgumentException("A SELECTED listing needs at least one application");
+        && !(StringUtils.equals(selectionMode, SELECTION_MODE_MANUAL) && CollectionUtils.isNotEmpty(ids))
+        && !(StringUtils.equals(selectionMode, SELECTION_MODE_CATEGORY) && CollectionUtils.isNotEmpty(categories))) {
+      throw new IllegalArgumentException("A SELECTED listing needs at least one application or category");
     }
     settings.put(LISTING_MODE, listingMode);
     return settings;
@@ -283,16 +303,27 @@ public class MyApplicationsSettingsService {
    * @return the ids to render, never null
    */
   public static List<Long> getApplicationIds(String storedValue) {
-    List<Long> ids = parseApplicationIds(StringUtils.deleteWhitespace(storedValue));
+    List<Long> ids = parseIds(StringUtils.deleteWhitespace(storedValue), ApplicationCenterService.MAX_LISTED_APPLICATIONS);
+    return ids == null ? Collections.emptyList() : ids;
+  }
+
+  /**
+   * Reads stored category ids: the ordered ids, without duplicates, empty for
+   * a value that is not a list of at most {@link #MAX_LISTED_CATEGORIES} ids.
+   *
+   * @param storedValue the categoryIds preference, comma-separated
+   * @return the ids to render, never null
+   */
+  public static List<Long> getCategoryIds(String storedValue) {
+    List<Long> ids = parseIds(StringUtils.deleteWhitespace(storedValue), MAX_LISTED_CATEGORIES);
     return ids == null ? Collections.emptyList() : ids;
   }
 
   /**
    * @return the ordered ids without duplicates, an empty list for an empty
-   *         value, null for a value that is not a list of at most
-   *         {@link ApplicationCenterService#MAX_LISTED_APPLICATIONS} ids
+   *         value, null for a value that is not a list of at most maxIds ids
    */
-  private static List<Long> parseApplicationIds(String value) {
+  private static List<Long> parseIds(String value, int maxIds) {
     if (value == null) {
       return null; // NOSONAR
     } else if (value.isEmpty()) {
@@ -304,7 +335,7 @@ public class MyApplicationsSettingsService {
       return null; // NOSONAR
     }
     List<Long> ids = Arrays.stream(tokens).map(Long::valueOf).distinct().toList();
-    return ids.size() > ApplicationCenterService.MAX_LISTED_APPLICATIONS ? null : ids;
+    return ids.size() > maxIds ? null : ids;
   }
 
   /**
