@@ -105,9 +105,9 @@ public class ApplicationRest {
 
   @GetMapping(path = "list")
   @Secured("users")
-  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists", method = "GET", description = "Returns, in the order of the ids, the active applications the current user may access, unknown and forbidden ids skipped")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists", method = "GET", description = "Returns, in the order of the ids, or grouped per category in the order of the category ids, the active applications the current user may access, unknown and forbidden ids skipped")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "More than 100 ids"),
+    @ApiResponse(responseCode = "400", description = "More than 100 ids or category ids, or both ids and category ids"),
     @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
   public List<Application> getListedApplications(
                                                  HttpServletRequest request,
@@ -116,9 +116,12 @@ public class ApplicationRest {
                                                  String settingName,
                                                  @Parameter(description = "Ordered application ids, comma-separated", required = false)
                                                  @RequestParam(name = "ids", required = false)
-                                                 List<Long> ids) {
+                                                 List<Long> ids,
+                                                 @Parameter(description = "Ordered category ids, comma-separated", required = false)
+                                                 @RequestParam(name = "categoryIds", required = false)
+                                                 List<Long> categoryIds) {
     try {
-      return appCenterService.getListedApplications(new ApplicationListFilter(settingName, ids),
+      return appCenterService.getListedApplications(new ApplicationListFilter(settingName, ids, categoryIds),
                                                     request.getLocale(),
                                                     request.getRemoteUser());
     } catch (ObjectNotFoundException e) {

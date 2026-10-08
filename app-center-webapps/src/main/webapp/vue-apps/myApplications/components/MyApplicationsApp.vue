@@ -138,10 +138,12 @@ export default {
       const updateList = Number(this.maxAppsToList) !== settings.maxAppsToList
           || this.$root.settings.listingMode !== settings.listingMode
           || this.$root.settings.selectionMode !== settings.selectionMode
-          || this.$root.settings.applicationIds?.join(',') !== settings.applicationIds;
+          || this.$root.settings.applicationIds?.join(',') !== settings.applicationIds
+          || this.$root.settings.categoryIds?.join(',') !== settings.categoryIds;
       this.$root.settings.listingMode = settings.listingMode;
       this.$root.settings.selectionMode = settings.selectionMode;
       this.$root.settings.applicationIds = settings.applicationIds ? settings.applicationIds.split(',').map(Number) : [];
+      this.$root.settings.categoryIds = settings.categoryIds ? settings.categoryIds.split(',').map(Number) : [];
       this.$root.settings.maxAppsToList = settings.maxAppsToList;
       this.$root.settings.showHeader = settings.showHeader;
       this.$root.settings.headerTitle = headerTitle;
@@ -168,8 +170,10 @@ export default {
         });
     },
     getListedApplications() {
-      const applicationIds = this.$root.settings.selectionMode === 'MANUAL' && this.$root.settings.applicationIds || [];
-      return this.$myApplicationsService.getListedApplications(this.settingName, applicationIds)
+      const byCategory = this.$root.settings.selectionMode === 'CATEGORY';
+      const applicationIds = !byCategory && this.$root.settings.applicationIds || [];
+      const categoryIds = byCategory && this.$root.settings.categoryIds || [];
+      return this.$myApplicationsService.getListedApplications(this.settingName, applicationIds, categoryIds)
         .catch(() => [])
         .then(applications => {
           this.favoriteApplications = applications
