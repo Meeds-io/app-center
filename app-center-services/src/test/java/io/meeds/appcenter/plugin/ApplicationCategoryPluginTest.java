@@ -114,6 +114,20 @@ public class ApplicationCategoryPluginTest {
   }
 
   @Test
+  void canAccessRefusesABlankUsername() {
+    Application application = mock(Application.class);
+    when(applicationCenterService.getApplication(Long.parseLong(APP_ID))).thenReturn(application);
+    lenient().when(application.isActive()).thenReturn(true);
+    lenient().when(applicationCenterService.canAccess(application, null)).thenReturn(true);
+    lenient().when(applicationCenterService.canEdit(null)).thenReturn(true);
+    lenient().when(applicationCenterService.canEdit("")).thenReturn(true);
+
+    assertFalse(categoryPlugin.canAccess(APP_ID, null));
+    assertFalse(categoryPlugin.canAccess(APP_ID, ""));
+    assertFalse(categoryPlugin.canAccess(APP_ID, " "));
+  }
+
+  @Test
   void canEdit() {
     assertFalse(categoryPlugin.canEdit(APP_ID, TEST_USER));
     when(applicationCenterService.canEdit(TEST_USER)).thenReturn(true);

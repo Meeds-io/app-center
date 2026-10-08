@@ -125,10 +125,26 @@ class ApplicationCategoryCacheListenerTest {
 
       when(categoryLinkService.getLinkedObjects(10l, OBJECT_TYPES, 0, 0)).thenReturn(List.of(app("3"), app("4")));
       assertEquals(List.of(3l), categoryStorage.getApplicationIds(10l), eventName);
-      listener.onEvent(new Event<>(eventName, null, null));
+      listener.onEvent(new Event<>(eventName, 10l, app("4")));
       assertEquals(List.of(3l, 4l), categoryStorage.getApplicationIds(10l), eventName);
       categoryStorage.clearCache();
     }
+  }
+
+  @Test
+  void aLinkOfAnotherObjectTypeKeepsTheCachedApplications() throws Exception {
+    when(categoryLinkService.getLinkedObjects(10l, OBJECT_TYPES, 0, 0)).thenReturn(List.of(app("3")));
+    assertEquals(List.of(3l), categoryStorage.getApplicationIds(10l));
+    when(categoryLinkService.getLinkedObjects(10l, OBJECT_TYPES, 0, 0)).thenReturn(List.of(app("3"), app("4")));
+
+    listener.onEvent(new Event<>("category.link.added", 10l, new CategoryObject("activity", "8", 0)));
+    listener.onEvent(new Event<>("category.link.removed", 10l, new CategoryObject("space", "2", 0)));
+    listener.onEvent(new Event<>("category.link.added", 10l, null));
+    assertEquals(List.of(3l), categoryStorage.getApplicationIds(10l));
+
+    // A category change clears it whatever its data
+    listener.onEvent(new Event<>("social.category.updated", null, null));
+    assertEquals(List.of(3l, 4l), categoryStorage.getApplicationIds(10l));
   }
 
   private CategoryObject app(String id) {

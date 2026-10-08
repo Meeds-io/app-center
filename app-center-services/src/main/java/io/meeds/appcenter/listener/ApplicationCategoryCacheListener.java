@@ -20,6 +20,7 @@ package io.meeds.appcenter.listener;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,16 +28,19 @@ import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.listener.ListenerService;
 
+import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
 import io.meeds.social.category.service.CategoryService;
 
 import jakarta.annotation.PostConstruct;
 
 /**
- * Clears the applications listed per category when a link or a category
- * changes. Synchronous, so that the change is listed by the next read on this
- * node.
+ * Clears the applications listed per category when an application's category
+ * link or a category changes. Synchronous, so that the change is listed by the
+ * next read on this node; another cluster node lists it once the cache's TTL
+ * expires.
  */
 @Component
 public class ApplicationCategoryCacheListener extends Listener<Object, Object> {
@@ -60,7 +64,20 @@ public class ApplicationCategoryCacheListener extends Listener<Object, Object> {
 
   @Override
   public void onEvent(Event<Object, Object> event) {
+    // A link of another object type (an activity, a space...) changes no
+    // application list; application links are stored as given, untransformed
+    if (isLinkEvent(event.getEventName())
+        && !(event.getData() instanceof CategoryObject object
+             && StringUtils.equals(object.getType(), ApplicationCategoryPlugin.OBJECT_TYPE))) {
+      return;
+    }
     applicationCenterService.clearCategoryApplications();
+  }
+
+  private boolean isLinkEvent(String eventName) {
+    return StringUtils.equalsAny(eventName,
+                                 CategoryLinkService.EVENT_CATEGORY_LINK_ADDED,
+                                 CategoryLinkService.EVENT_CATEGORY_LINK_REMOVED);
   }
 
 }

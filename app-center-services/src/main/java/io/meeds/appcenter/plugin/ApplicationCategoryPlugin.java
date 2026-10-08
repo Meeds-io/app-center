@@ -20,6 +20,7 @@ package io.meeds.appcenter.plugin;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +64,10 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
 
   @Override
   public boolean canAccess(String applicationId, String username) {
+    if (StringUtils.isBlank(username)) {
+      // ApplicationCenterService#canEdit grants a blank username, an internal call
+      return false;
+    }
     Application application = getApplicationCenterService().getApplication(Long.parseLong(applicationId));
     return application != null
            && ((application.isActive() && getApplicationCenterService().canAccess(application, username))
