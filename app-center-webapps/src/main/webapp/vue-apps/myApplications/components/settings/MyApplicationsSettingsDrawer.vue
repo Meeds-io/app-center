@@ -52,9 +52,12 @@
                 :max-apps-to-list.sync="maxAppsToList"
                 :selection-mode.sync="selectionMode"
                 :applications.sync="applications"
+                :categories.sync="categories"
                 :setting-name="settingName"
-                :loading="!applicationsLoaded"
-                :hidden-count="hiddenApplicationIds.length" />
+                :loading="!applicationsLoaded || !categoriesLoaded"
+                :hidden-count="hiddenApplicationIds.length"
+                :hidden-category-count="hiddenCategoryIds.length"
+                @add-category="addCategory" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -118,6 +121,12 @@ export default {
       applicationsLoad: 0,
       savedApplicationIds: [],
       hiddenApplicationIds: [],
+      categories: [],
+      savedCategories: [],
+      categoriesLoaded: false,
+      categoriesLoad: 0,
+      savedCategoryIds: [],
+      hiddenCategoryIds: [],
       listingStepKey: 0,
       objectType: 'myApplicationsPortlet',
       fieldName: 'headerTitle',
@@ -136,17 +145,19 @@ export default {
   },
   computed: {
     saveEnabled() {
-      // Never post a list that could not be read, and never a SELECTED listing
-      // that is empty or by category, which cannot be chosen yet
-      if (!this.applicationsLoaded) {
+      // Never post a list that could not be read, and never an empty SELECTED listing
+      if (!this.applicationsLoaded || !this.categoriesLoaded) {
         return false;
       }
-      if (this.listingMode === 'SELECTED' && (this.selectionMode !== 'MANUAL' || !this.postedApplicationIds.length)) {
+      if (this.listingMode === 'SELECTED'
+          && !(this.selectionMode === 'MANUAL' && this.postedApplicationIds.length)
+          && !(this.selectionMode === 'CATEGORY' && this.postedCategoryIds.length)) {
         return false;
       }
       return this.settings.listingMode !== this.listingMode
           || this.settings.selectionMode !== this.selectionMode
           || this.savedApplicationIds.join(',') !== this.postedApplicationIds.join(',')
+          || this.savedCategoryIds.join(',') !== this.postedCategoryIds.join(',')
           || this.settings.showHeader !== this.showHeader || this.savedMaxAppsToList !== this.maxAppsToList
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
     },
@@ -162,6 +173,13 @@ export default {
       // The stored apps this editor may not see keep their place: only the visible ones move or go
       const visibleIds = [...this.applicationIds];
       const ids = this.savedApplicationIds.map(id => (this.hiddenApplicationIds.includes(id) ? id : visibleIds.shift()))
+        .filter(id => id);
+      return [...ids, ...visibleIds];
+    },
+    postedCategoryIds() {
+      // As for the apps: the stored categories this editor may not read keep their place
+      const visibleIds = this.categories.map(category => category.id);
+      const ids = this.savedCategoryIds.map(id => (this.hiddenCategoryIds.includes(id) ? id : visibleIds.shift()))
         .filter(id => id);
       return [...ids, ...visibleIds];
     },
@@ -189,6 +207,7 @@ export default {
     open() {
       this.restoreSavedSettings();
       this.loadApplications();
+      this.loadCategories();
       // number-input reads its value only when created, and the drawer keeps its content once opened
       this.listingStepKey++;
       this.$refs.myApplicationsSettingsDrawer.open();
@@ -201,15 +220,21 @@ export default {
         listingMode: this.listingMode,
         selectionMode: this.selectionMode,
         applicationIds: this.postedApplicationIds.join(','),
+        categoryIds: this.postedCategoryIds.join(','),
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader
       };
       this.isSaving = true;
       try {
-        await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName);
+        await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName, {
+          applicationIds: this.hiddenApplicationIds,
+          categoryIds: this.hiddenCategoryIds,
+        });
         await this.saveHeaderTranslations();
         this.savedApplications = [...this.applications];
         this.savedApplicationIds = [...this.postedApplicationIds];
+        this.savedCategories = [...this.categories];
+        this.savedCategoryIds = [...this.postedCategoryIds];
         this.$emit('settings-updated', settings, this.displayedValue);
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.success.message'), 'success');
       } catch (e) {
@@ -248,11 +273,33 @@ export default {
         }
       }
     },
+    async loadCategories() {
+      const load = ++this.categoriesLoad;
+      this.categoriesLoaded = false;
+      const ids = [...(this.settings.categoryIds || [])];
+      // A category this editor may not read, or deleted since, is kept hidden in place
+      const categories = await Promise.all(ids.map(id => this.$categoryService.getCategory(id).catch(() => null)));
+      if (load === this.categoriesLoad) {
+        this.savedCategories = categories.filter(Boolean);
+        this.savedCategoryIds = ids;
+        this.hiddenCategoryIds = ids.filter((id, index) => !categories[index]);
+        this.categories = [...this.savedCategories];
+        this.categoriesLoaded = true;
+      }
+    },
+    addCategory(category) {
+      if (this.categories.length + this.hiddenCategoryIds.length < 100
+          && !this.categories.some(c => c.id === category.id)
+          && !this.hiddenCategoryIds.includes(category.id)) {
+        this.categories = [...this.categories, category];
+      }
+    },
     restoreSavedSettings() {
       this.stepper = 1;
       this.listingMode = this.settings.listingMode || 'FAVORITES';
       this.selectionMode = this.settings.selectionMode || 'MANUAL';
       this.applications = [...this.savedApplications];
+      this.categories = [...this.savedCategories];
       this.maxAppsToList = this.savedMaxAppsToList;
       this.showHeader = this.settings.showHeader;
     }

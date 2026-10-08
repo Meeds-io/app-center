@@ -20,6 +20,7 @@ package io.meeds.appcenter.plugin;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ import org.exoplatform.container.PortalContainer;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.social.category.plugin.CategoryPlugin;
+import io.meeds.social.category.service.CategoryPluginService;
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class ApplicationCategoryPlugin implements CategoryPlugin {
@@ -37,7 +41,21 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
   @Autowired
   private PortalContainer          portalContainer;
 
+  @Autowired(required = false)
+  private CategoryPluginService    categoryPluginService;
+
   private ApplicationCenterService applicationCenterService;
+
+  /**
+   * Registers this plugin, without which every category read of applications
+   * falls back to the default plugin
+   */
+  @PostConstruct
+  public void init() {
+    if (categoryPluginService != null) {
+      categoryPluginService.addPlugin(this);
+    }
+  }
 
   @Override
   public String getType() {
@@ -46,6 +64,10 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
 
   @Override
   public boolean canAccess(String applicationId, String username) {
+    if (StringUtils.isBlank(username)) {
+      // ApplicationCenterService#canEdit grants a blank username, an internal call
+      return false;
+    }
     Application application = getApplicationCenterService().getApplication(Long.parseLong(applicationId));
     return application != null
            && ((application.isActive() && getApplicationCenterService().canAccess(application, username))

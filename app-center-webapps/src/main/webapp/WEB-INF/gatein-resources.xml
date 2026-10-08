@@ -123,6 +123,12 @@
       <depends>
         <module>appCenterCommon</module>
       </depends>
+      <depends>
+        <module>fontIcons</module>
+      </depends>
+      <depends>
+        <module>categoryVueComponents</module>
+      </depends>
     </module>
   </portlet>
 

@@ -21,11 +21,17 @@ package io.meeds.appcenter.service;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.Collator;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -49,6 +55,7 @@ import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
@@ -64,6 +71,7 @@ import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
+import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
@@ -113,8 +121,15 @@ public class ApplicationCenterService {
   /** Most applications a Shortcuts portlet lists in its SELECTED mode (D6). */
   public static final int          MAX_LISTED_APPLICATIONS             = 100;
 
+  /** The bundle of the titles the portlets show system applications with. */
+  public static final String       SYSTEM_APPLICATIONS_BUNDLE          = "locale.addon.appcenter";
+
   /** Most suggestions returned by one call of the Shortcuts app suggester. */
   public static final int          MAX_SUGGESTIONS                     = 20;
+
+  private static final String      SYSTEM_APPLICATION_KEY_PREFIX       = "appCenter.system.application.";
+
+  private static final Pattern     WHITESPACE                          = Pattern.compile("\\s");
 
   private static final String      USERNAME_IS_MANDATORY_MESSAGE       = "username is mandatory";
 
@@ -175,6 +190,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private MyApplicationsSettingsService myApplicationsSettingsService;
+
+  @Autowired
+  private ApplicationCategoryStorage    applicationCategoryStorage;
+
+  @Autowired
+  private ResourceBundleService         resourceBundleService;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -912,25 +933,83 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Reads the applications a Shortcuts portlet window lists, in the order of
-   * its selection: each id is read from the app-center.application cache, kept
-   * when the application is active and the user may access it, and decorated
-   * on a copy with its labels and badge name only. Unknown and duplicate ids
-   * are skipped.
+   * Reads the applications a Shortcuts portlet window lists. With application
+   * ids, in the order of its selection. With category ids, the applications
+   * linked to each category or to one of its sub-categories, grouped per
+   * category in the order of the selection, sorted by title within a group,
+   * each application once, where it first appears, and at most
+   * {@link #MAX_LISTED_APPLICATIONS}. Each application is read from the
+   * app-center.application cache, kept when it is active and the user may
+   * access it, and decorated on a copy with its labels and badge name only.
+   * Unknown and duplicate ids are skipped.
    *
-   * @param filter the window's setting name and selected ids
-   * @param locale the language of the labels, none when null
+   * @param filter the window's setting name and selected ids or category ids
+   * @param locale the language of the labels and of the title order, none
+   *          when null
    * @param username the viewer
    * @return the applications to list, never null
    * @throws ObjectNotFoundException when the window's setting does not exist
-   * @throws IllegalArgumentException when more than
-   *           {@link #MAX_LISTED_APPLICATIONS} ids are selected
+   * @throws IllegalArgumentException when both ids and category ids are
+   *           given, when more than {@link #MAX_LISTED_APPLICATIONS} ids or
+   *           more than {@link MyApplicationsSettingsService#MAX_LISTED_CATEGORIES}
+   *           category ids are selected
    */
   public List<Application> getListedApplications(ApplicationListFilter filter,
                                                  Locale locale,
                                                  String username) throws ObjectNotFoundException {
     checkSettingExists(filter == null ? null : filter.getSettingName());
-    return listApplications(filter.getIds(), locale, username);
+    return listApplications(filter, locale, username);
+  }
+
+  /**
+   * Clears the applications listed per category, after a change of a category
+   * or of a category link.
+   */
+  public void clearCategoryApplications() {
+    applicationCategoryStorage.clearCache();
+  }
+
+  private List<Application> listApplications(ApplicationListFilter filter, Locale locale, String username) {
+    if (CollectionUtils.isEmpty(filter.getCategoryIds())) {
+      return listApplications(filter.getIds(), locale, username);
+    } else if (CollectionUtils.isNotEmpty(filter.getIds())) {
+      throw new IllegalArgumentException("Either application ids or category ids can be listed");
+    } else if (filter.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
+      throw new IllegalArgumentException(String.format("At most %s categories can be listed",
+                                                       MyApplicationsSettingsService.MAX_LISTED_CATEGORIES));
+    }
+    Comparator<Application> byTitle = Comparator.comparing(Application::getTitle,
+                                                           Comparator.nullsLast(Collator.getInstance(locale == null ? Locale.ENGLISH
+                                                                                                                    : locale)));
+    Set<Long> listedIds = new HashSet<>();
+    List<Application> applications = new ArrayList<>();
+    for (Long categoryId : filter.getCategoryIds().stream().filter(Objects::nonNull).distinct().toList()) {
+      // A group is read whole before it is sorted, then truncated
+      List<Application> group = new ArrayList<>(applicationCategoryStorage.getApplicationIds(categoryId)
+                                                                          .stream()
+                                                                          .filter(id -> !listedIds.contains(id))
+                                                                          .map(appCenterStorage::getApplication)
+                                                                          .filter(Objects::nonNull)
+                                                                          .filter(Application::isActive)
+                                                                          .filter(application -> canAccess(application,
+                                                                                                           username))
+                                                                          .map(this::toTile)
+                                                                          .toList());
+      setApplicationLabels(group, locale);
+      setSystemApplicationTitles(group, locale);
+      group.sort(byTitle);
+      group.stream()
+           .limit((long) MAX_LISTED_APPLICATIONS - applications.size())
+           .forEach(application -> {
+             listedIds.add(application.getId());
+             applications.add(application);
+           });
+      if (applications.size() >= MAX_LISTED_APPLICATIONS) {
+        break;
+      }
+    }
+    setApplicationBadges(applications);
+    return applications;
   }
 
   /**
@@ -979,7 +1058,7 @@ public class ApplicationCenterService {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return listApplications(filter.getIds(), locale, username);
+    return listApplications(filter, locale, username);
   }
 
   /**
@@ -1034,6 +1113,37 @@ public class ApplicationCenterService {
     setApplicationLabels(applications, locale);
     setApplicationBadges(applications);
     return applications;
+  }
+
+  /**
+   * Gives the system applications the title, and the description when they
+   * have none, the portlet shows them with, from
+   * the {@value #SYSTEM_APPLICATIONS_BUNDLE} bundle, keyed as
+   * MyApplicationsApp.vue#i18nSystemApplicationTitle keys it, so that a
+   * category is sorted on the titles it displays
+   */
+  private void setSystemApplicationTitles(List<Application> applications, Locale locale) {
+    if (locale == null || applications.stream().noneMatch(Application::isSystem)) {
+      return;
+    }
+    ResourceBundle bundle = resourceBundleService.getResourceBundle(SYSTEM_APPLICATIONS_BUNDLE, locale);
+    if (bundle == null) {
+      return;
+    }
+    applications.stream()
+                .filter(Application::isSystem)
+                .filter(application -> StringUtils.isNotBlank(application.getTitle()))
+                .forEach(application -> {
+                  String title = application.getTitle();
+                  String key = SYSTEM_APPLICATION_KEY_PREFIX
+                      + (WHITESPACE.matcher(title).find() ? title.replace(' ', '.') : title).toLowerCase(Locale.ROOT);
+                  if (bundle.containsKey(key)) {
+                    application.setTitle(bundle.getString(key));
+                    if (StringUtils.isBlank(application.getDescription()) && bundle.containsKey(key + ".description")) {
+                      application.setDescription(bundle.getString(key + ".description"));
+                    }
+                  }
+                });
   }
 
   private void checkSettingExists(String settingName) throws ObjectNotFoundException {

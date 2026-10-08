@@ -18,7 +18,9 @@
 * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-export function saveSettings(saveSettingsURL, settings, settingName) {
+// droppedIds: per list setting, the posted ids the server may drop, the hidden
+// ones, which may belong to an app or a category deleted since
+export function saveSettings(saveSettingsURL, settings, settingName, droppedIds) {
   const formData = new FormData();
   if (settings) {
     Object.keys(settings).forEach(name => {
@@ -46,7 +48,7 @@ export function saveSettings(saveSettingsURL, settings, settingName) {
     return getRenderedPortlet(saveSettingsURL);
   }).then(renderedPage => {
     // A refused portlet action still answers 200: check the settings the portlet was rendered with
-    if (!isRenderedWithSettings(renderedPage, settings, settingName)) {
+    if (!isRenderedWithSettings(renderedPage, settings, settingName, droppedIds)) {
       throw new Error('My applications settings were not saved');
     }
   });
@@ -70,7 +72,7 @@ function getRenderedPortlet(saveSettingsURL) {
   }).then(resp => resp?.ok && resp.text() || null);
 }
 
-function isRenderedWithSettings(renderedPage, settings, settingName) {
+function isRenderedWithSettings(renderedPage, settings, settingName, droppedIds) {
   const settingNameIndex = renderedPage ? renderedPage.indexOf(`settingName: '${settingName}'`) : -1;
   if (settingNameIndex < 0) {
     return false;
@@ -78,14 +80,27 @@ function isRenderedWithSettings(renderedPage, settings, settingName) {
   const settingsEndIndex = renderedPage.indexOf('}));', settingNameIndex);
   const renderedSettings = renderedPage.substring(settingNameIndex, settingsEndIndex < 0 ? renderedPage.length : settingsEndIndex);
   return Object.keys(settings || {}).every(name => {
-    const value = new RegExp(String.raw`${name}: \[([^\]]*)\],`).exec(renderedSettings)?.[1]
-               ?? new RegExp(String.raw`${name}: '?([^',\s]*)'?,`).exec(renderedSettings)?.[1];
+    const list = new RegExp(String.raw`${name}: \[([^\]]*)\],`).exec(renderedSettings)?.[1];
+    if (typeof list === 'string' && droppedIds?.[name]?.length) {
+      return isRenderedList(list, String(settings[name]), droppedIds[name]);
+    }
+    const value = list ?? new RegExp(String.raw`${name}: '?([^',\s]*)'?,`).exec(renderedSettings)?.[1];
     return value === String(settings[name]);
   });
 }
 
-export function getListedApplications(settingName, ids) {
-  return getApplications('list', settingName, ids);
+// The rendered list is the posted one, but for droppable ids the server
+// dropped: any other difference is a refused save
+function isRenderedList(renderedList, postedList, droppableIds) {
+  const renderedIds = renderedList ? renderedList.split(',') : [];
+  const droppable = droppableIds.map(String);
+  const expectedIds = (postedList ? postedList.split(',') : [])
+    .filter(id => renderedIds.includes(id) || !droppable.includes(id));
+  return expectedIds.join(',') === renderedIds.join(',');
+}
+
+export function getListedApplications(settingName, ids, categoryIds) {
+  return getApplications('list', settingName, ids, categoryIds);
 }
 
 export function getContextApplications(settingName, ids) {
@@ -111,11 +126,15 @@ export function getContextSuggestions(settingName, keyword, excludedIds, limit) 
   });
 }
 
-function getApplications(path, settingName, ids) {
-  if (!ids?.length) {
+function getApplications(path, settingName, ids, categoryIds) {
+  const params = new URLSearchParams({settingName});
+  if (categoryIds?.length) {
+    params.append('categoryIds', categoryIds.join(','));
+  } else if (ids?.length) {
+    params.append('ids', ids.join(','));
+  } else {
     return Promise.resolve([]);
   }
-  const params = new URLSearchParams({settingName, ids: ids.join(',')});
   return fetch(`/app-center/rest/applications/${path}?${params}`, {
     method: 'GET',
     credentials: 'include',
