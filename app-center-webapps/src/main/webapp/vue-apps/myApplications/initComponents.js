@@ -25,6 +25,7 @@ import MyApplicationsSettingsDrawer from './components/settings/MyApplicationsSe
 import MyApplicationsListingStep from './components/settings/MyApplicationsListingStep.vue';
 import MyApplicationsDisplayStep from './components/settings/MyApplicationsDisplayStep.vue';
 import MyApplicationsApplicationSuggester from './components/settings/MyApplicationsApplicationSuggester.vue';
+import MyApplicationsCategoryList from './components/settings/MyApplicationsCategoryList.vue';
 
 import * as myApplicationsService from './myApplicationsService.js';
 
@@ -37,6 +38,7 @@ const components = {
   'my-applications-listing-step': MyApplicationsListingStep,
   'my-applications-display-step': MyApplicationsDisplayStep,
   'my-applications-application-suggester': MyApplicationsApplicationSuggester,
+  'my-applications-category-list': MyApplicationsCategoryList,
 };
 
 for (const key in components) {

@@ -156,6 +156,31 @@ public class ApplicationRestTest {
   }
 
   @Test
+  void getListedApplicationsPassesTheCategoryIdsInOrder() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("categoryIds", "7,4")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getListedApplications(eq(new ApplicationListFilter(SETTING_NAME, null, List.of(7L, 4L))),
+                                                           any(),
+                                                           eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getListedApplicationsAnswers400OnAnInvalidCategoryListing() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1")
+                                                 .param("categoryIds", "7")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("categoryIds", "7,x")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void getListedApplicationsAnswers400OverTheCapOrOnAnInvalidId() throws Exception {
     when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
     mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)

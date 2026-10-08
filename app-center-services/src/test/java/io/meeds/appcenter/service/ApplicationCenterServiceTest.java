@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -39,7 +40,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListResourceBundle;
 import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +68,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
+import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
@@ -77,6 +84,7 @@ import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
+import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
@@ -156,6 +164,12 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private MyApplicationsSettingsService myApplicationsSettingsService;
+
+  @MockitoBean
+  private ApplicationCategoryStorage applicationCategoryStorage;
+
+  @MockitoBean
+  private ResourceBundleService    resourceBundleService;
 
   @Autowired
   private ApplicationCenterService applicationCenterService;
@@ -902,6 +916,167 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
+  void getListedApplicationsGroupsCategoriesInOrderSortedByTitle() throws Exception {
+    titled(1L, "alpha");
+    titled(2L, "Bravo");
+    titled(3L, "Charlie");
+    titled(4L, "Delta");
+    titled(5L, "Echo");
+    when(appCenterStorage.getApplication(6L)).thenReturn(application(6L));
+    titled(7L, "Foxtrot").setActive(false);
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(3L, 1L, 2L));
+    when(applicationCategoryStorage.getApplicationIds(20L)).thenReturn(List.of(5L, 6L, 1L, 7L, 8L, 4L));
+
+    assertEquals(List.of(1L, 2L, 3L, 4L, 5L), listedIds(Arrays.asList(10L, 20L, 10L, null), Locale.ENGLISH));
+    // An application listed by several categories is listed in the first one only
+    assertEquals(List.of(1L, 4L, 5L, 2L, 3L), listedIds(List.of(20L, 10L), Locale.ENGLISH));
+  }
+
+  @Test
+  void getListedApplicationsSortsEachCategoryByTheLocalizedTitle() throws Exception {
+    titled(1L, "alpha");
+    Application third = titled(3L, "Charlie");
+    when(translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                         3L,
+                                                         "title",
+                                                         Locale.FRENCH)).thenReturn("Abricot");
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(1L, 3L));
+
+    assertEquals(List.of(3L, 1L), listedIds(List.of(10L), Locale.FRENCH));
+    assertEquals(List.of(1L, 3L), listedIds(List.of(10L), Locale.ENGLISH));
+    assertEquals("Charlie", third.getTitle());
+  }
+
+  @Test
+  void getListedApplicationsSortsSystemApplicationsByTheirDisplayedTitle() throws Exception {
+    titled(1L, "Lima");
+    Application drives = titled(2L, "Drives");
+    drives.setSystem(true);
+    Application spaces = titled(3L, "List Spaces");
+    spaces.setSystem(true);
+    spaces.setDescription(null);
+    // Not a system application: its stored title is the displayed one
+    titled(4L, "Wallet");
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(1L, 2L, 3L, 4L));
+    when(resourceBundleService.getResourceBundle(ApplicationCenterService.SYSTEM_APPLICATIONS_BUNDLE,
+                                                 Locale.ENGLISH)).thenReturn(bundle("appCenter.system.application.drives",
+                                                                                    "My Drive",
+                                                                                    "appCenter.system.application.list.spaces",
+                                                                                    "Spaces",
+                                                                                    "appCenter.system.application.list.spaces.description",
+                                                                                    "List your spaces",
+                                                                                    "appCenter.system.application.drives.description",
+                                                                                    "Your files",
+                                                                                    "appCenter.system.application.wallet",
+                                                                                    "A Wallet"));
+    when(resourceBundleService.getResourceBundle(ApplicationCenterService.SYSTEM_APPLICATIONS_BUNDLE,
+                                                 Locale.FRENCH)).thenReturn(bundle("appCenter.system.application.drives",
+                                                                                   "Lecteurs"));
+
+    // Stored titles would give Drives, Lima, List Spaces, Wallet
+    assertEquals(List.of(1L, 2L, 3L, 4L), listedIds(List.of(10L), Locale.ENGLISH));
+    assertEquals(List.of(2L, 1L, 3L, 4L), listedIds(List.of(10L), Locale.FRENCH));
+    assertEquals("Drives", drives.getTitle());
+    Map<Long, Application> english = applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME,
+                                                                                                              null,
+                                                                                                              List.of(10L)),
+                                                                                    Locale.ENGLISH,
+                                                                                    TEST_USER)
+                                                             .stream()
+                                                             .collect(Collectors.toMap(Application::getId, Function.identity()));
+    // The description is filled only when the application has none
+    assertEquals("List your spaces", english.get(3L).getDescription());
+    assertEquals(DESCRIPTION, english.get(2L).getDescription());
+    assertNull(spaces.getDescription());
+  }
+
+  @Test
+  void getListedApplicationsSortsACategoryBeforeTruncatingIt() throws Exception {
+    List<Long> ids = LongStream.rangeClosed(1, 150).boxed().toList();
+    ids.forEach(id -> titled(id, String.format("App %03d", 151 - id)));
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(ids);
+
+    List<Long> listedIds = listedIds(List.of(10L, 20L), Locale.ENGLISH);
+
+    assertEquals(ApplicationCenterService.MAX_LISTED_APPLICATIONS, listedIds.size());
+    assertEquals(150L, listedIds.get(0));
+    assertEquals(51L, listedIds.get(listedIds.size() - 1));
+    verify(applicationCategoryStorage, never()).getApplicationIds(20L);
+  }
+
+  @Test
+  void getListedApplicationsFillsTheCapAcrossCategories() throws Exception {
+    List<Long> ids = LongStream.rangeClosed(1, 99).boxed().toList();
+    ids.forEach(id -> titled(id, String.format("App %03d", id)));
+    titled(200L, "Zulu");
+    titled(201L, "Yankee");
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(ids);
+    when(applicationCategoryStorage.getApplicationIds(20L)).thenReturn(List.of(200L, 201L));
+
+    List<Long> listedIds = listedIds(List.of(10L, 20L), Locale.ENGLISH);
+
+    assertEquals(ApplicationCenterService.MAX_LISTED_APPLICATIONS, listedIds.size());
+    assertEquals(201L, listedIds.get(99));
+  }
+
+  @Test
+  void getListedApplicationsRefusesAnInvalidCategoryListing() throws Exception {
+    ApplicationListFilter both = new ApplicationListFilter(SETTING_NAME, List.of(ID), List.of(10L));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getListedApplications(both, null, TEST_USER));
+    List<Long> overCap = LongStream.rangeClosed(1, MyApplicationsSettingsService.MAX_LISTED_CATEGORIES + 1L).boxed().toList();
+    ApplicationListFilter tooMany = new ApplicationListFilter(SETTING_NAME, null, overCap);
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.getListedApplications(tooMany, null, TEST_USER));
+    verify(applicationCategoryStorage, never()).getApplicationIds(anyLong());
+
+    List<Long> atCap = LongStream.rangeClosed(1, MyApplicationsSettingsService.MAX_LISTED_CATEGORIES).boxed().toList();
+    when(applicationCategoryStorage.getApplicationIds(anyLong())).thenReturn(List.of());
+    assertTrue(applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, List.of(), atCap),
+                                                              null,
+                                                              TEST_USER)
+                                       .isEmpty());
+  }
+
+  @Test
+  void getListedApplicationsByCategoryDecoratesCopiesNeverTheCachedInstance() throws Exception {
+    Application cached = titled(ID, TITLE);
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(ID));
+    when(translationService.getTranslationLabelOrDefault(ApplicationTranslationPlugin.APPLICATION_OBJECT_TYPE,
+                                                         ID,
+                                                         "title",
+                                                         Locale.FRENCH)).thenReturn("Titre");
+    when(badgePluginRegistry.resolveBadgeName(any())).thenReturn("badge");
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, null, List.of(10L));
+
+    Application french = applicationCenterService.getListedApplications(filter, Locale.FRENCH, TEST_USER).get(0);
+    Application english = applicationCenterService.getListedApplications(filter, Locale.ENGLISH, TEST_USER).get(0);
+
+    assertEquals("Titre", french.getTitle());
+    assertEquals(TITLE, english.getTitle());
+    assertEquals("badge", english.getBadgeName());
+    assertEquals(TITLE, cached.getTitle());
+    assertNull(cached.getBadgeName());
+    assertNull(english.getPermissions());
+  }
+
+  @Test
+  void getContextApplicationsByCategoryRequiresTheSettingsRight() throws Exception {
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, null, List.of(10L));
+    titled(ID, TITLE);
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(ID));
+
+    assertThrows(IllegalAccessException.class, () -> applicationCenterService.getContextApplications(filter, null, TEST_USER));
+    verify(applicationCategoryStorage, never()).getApplicationIds(10L);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertEquals(1, applicationCenterService.getContextApplications(filter, null, TEST_USER).size());
+  }
+
+  @Test
+  void clearCategoryApplicationsClearsTheStorageCache() {
+    applicationCenterService.clearCategoryApplications();
+    verify(applicationCategoryStorage).clearCache();
+  }
+
+  @Test
   void listingAndSuggestionReadsRefuseAnUnknownSetting() {
     ApplicationListFilter filter = new ApplicationListFilter("Untitled-404", List.of(ID));
     when(myApplicationsSettingsService.canEditSettings("Untitled-404", TEST_USER)).thenReturn(true);
@@ -1021,6 +1196,35 @@ public class ApplicationCenterServiceTest {
 
     assertThrows(IllegalArgumentException.class,
                  () -> applicationCenterService.getContextSuggestions(SETTING_NAME, null, excluded, 0, 20, null, TEST_USER));
+  }
+
+  private List<Long> listedIds(List<Long> categoryIds, Locale locale) throws ObjectNotFoundException {
+    return applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, null, categoryIds),
+                                                          locale,
+                                                          TEST_USER)
+                                   .stream()
+                                   .map(Application::getId)
+                                   .toList();
+  }
+
+  private static ResourceBundle bundle(String... keyValues) {
+    Object[][] contents = new Object[keyValues.length / 2][];
+    for (int i = 0; i < contents.length; i++) {
+      contents[i] = new Object[] { keyValues[2 * i], keyValues[2 * i + 1] };
+    }
+    return new ListResourceBundle() {
+      @Override
+      protected Object[][] getContents() {
+        return contents;
+      }
+    };
+  }
+
+  private Application titled(Long id, String title) {
+    Application application = accessibleApplication(id);
+    application.setTitle(title);
+    lenient().when(appCenterStorage.getApplication(id)).thenReturn(application);
+    return application;
   }
 
   private Application accessibleApplication(Long id) {

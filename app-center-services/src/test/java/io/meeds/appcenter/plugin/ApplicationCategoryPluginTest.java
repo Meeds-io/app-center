@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -32,12 +33,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.container.PortalContainer;
 
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.social.category.service.CategoryPluginService;
+
+import jakarta.annotation.PostConstruct;
 
 @SpringBootTest(classes = { ApplicationCategoryPlugin.class })
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +58,10 @@ public class ApplicationCategoryPluginTest {
   @MockitoBean
   private PortalContainer           portalContainer;
 
+  /** Not reset: the registration happens once, when the context starts */
+  @MockitoBean(reset = MockReset.NONE)
+  private CategoryPluginService     categoryPluginService;
+
   @Autowired
   private ApplicationCategoryPlugin categoryPlugin;
 
@@ -60,6 +69,16 @@ public class ApplicationCategoryPluginTest {
   void setup() {
     lenient().when(portalContainer.getComponentInstanceOfType(ApplicationCenterService.class))
              .thenReturn(applicationCenterService);
+  }
+
+  /**
+   * Also fails the mutant removing {@link PostConstruct} from init, which a
+   * test calling init by hand cannot detect
+   */
+  @Test
+  void registersOnStartup() throws NoSuchMethodException {
+    verify(categoryPluginService).addPlugin(categoryPlugin);
+    assertTrue(ApplicationCategoryPlugin.class.getMethod("init").isAnnotationPresent(PostConstruct.class));
   }
 
   @Test

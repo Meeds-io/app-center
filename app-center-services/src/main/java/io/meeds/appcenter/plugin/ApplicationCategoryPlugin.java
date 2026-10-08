@@ -28,6 +28,9 @@ import org.exoplatform.container.PortalContainer;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.social.category.plugin.CategoryPlugin;
+import io.meeds.social.category.service.CategoryPluginService;
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class ApplicationCategoryPlugin implements CategoryPlugin {
@@ -37,7 +40,21 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
   @Autowired
   private PortalContainer          portalContainer;
 
+  @Autowired(required = false)
+  private CategoryPluginService    categoryPluginService;
+
   private ApplicationCenterService applicationCenterService;
+
+  /**
+   * Registers this plugin, without which every category read of applications
+   * falls back to the default plugin
+   */
+  @PostConstruct
+  public void init() {
+    if (categoryPluginService != null) {
+      categoryPluginService.addPlugin(this);
+    }
+  }
 
   @Override
   public String getType() {
