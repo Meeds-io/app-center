@@ -20,6 +20,7 @@ package io.meeds.appcenter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -41,11 +42,14 @@ import liquibase.resource.ClassLoaderResourceAccessor;
  * Runs the addon changelog through the real Liquibase engine: a mocked suite
  * stays green with a changeset the engine refuses, and only an executed
  * rollback proves the hand-written one of 1.0.0-exip-51636-02 exists and
- * parses. The last scenario replays an upgrade of a pre-existing deployment:
- * a DRAWER row present before 1.0.0-exip-51636-01/-02 must come out with both
- * placement flags enabled, without touching other application types. The
- * checksum of 1.0.0-exip-51636-02 is pinned below: once a database has run
- * it, the changeset must never be edited in place, only appended to.
+ * parses, and that the automatic one of 1.0.0-exip-7.3.0.40-01 drops its two
+ * owner columns only. The last scenario replays an upgrade of a pre-existing
+ * deployment: a DRAWER row present before 1.0.0-exip-51636-01/-02 must come
+ * out with both placement flags enabled, without touching other application
+ * types, and every row present before 1.0.0-exip-7.3.0.40-01 must come out
+ * owned by no Shortcuts portlet. The checksum of 1.0.0-exip-51636-02 is
+ * pinned below: once a database has run it, the changeset must never be
+ * edited in place, only appended to.
  */
 class ChangelogTest {
 
@@ -59,6 +63,14 @@ class ChangelogTest {
       Liquibase liquibase = new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(), database);
 
       liquibase.update((String) null);
+      assertTrue(columnExists(connection, "ALLOW_STICK"));
+      assertTrue(columnExists(connection, "ALLOW_DETACH"));
+      assertTrue(columnExists(connection, "CONTEXT_SETTING_NAME"));
+      assertTrue(columnExists(connection, "CONTEXT_SPACE_ID"));
+
+      liquibase.rollback(1, (String) null);
+      assertFalse(columnExists(connection, "CONTEXT_SETTING_NAME"));
+      assertFalse(columnExists(connection, "CONTEXT_SPACE_ID"));
       assertTrue(columnExists(connection, "ALLOW_STICK"));
       assertTrue(columnExists(connection, "ALLOW_DETACH"));
 
@@ -77,6 +89,10 @@ class ChangelogTest {
       assertEquals(Boolean.FALSE, placementFlag(connection, 2, "ALLOW_DETACH"));
       assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_STICK"));
       assertEquals(Boolean.TRUE, placementFlag(connection, 3, "ALLOW_DETACH"));
+      for (int id = 1; id <= 3; id++) {
+        assertNull(columnValue(connection, id, "CONTEXT_SETTING_NAME"));
+        assertNull(columnValue(connection, id, "CONTEXT_SPACE_ID"));
+      }
 
       ChangeSet executedChangeSet = liquibase.getDatabaseChangeLog()
                                              .getChangeSets()
@@ -104,6 +120,16 @@ class ChangelogTest {
                                             title,
                                             url,
                                             type));
+    }
+  }
+
+  private Object columnValue(Connection connection, int id, String columnName) throws Exception {
+    try (Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(String.format("SELECT %s FROM AC_APPLICATION WHERE ID = %d",
+                                                                   columnName,
+                                                                   id))) {
+      resultSet.next();
+      return resultSet.getObject(1);
     }
   }
 

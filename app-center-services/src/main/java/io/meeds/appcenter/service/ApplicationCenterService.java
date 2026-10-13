@@ -38,13 +38,16 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import org.exoplatform.commons.ObjectAlreadyExistsException;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
@@ -59,10 +62,14 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 
+import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationOrder;
@@ -74,9 +81,12 @@ import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.util.ImageTypeUtils;
+import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
+import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.translation.service.TranslationService;
 import io.meeds.social.util.JsonUtils;
 
@@ -97,6 +107,8 @@ public class ApplicationCenterService {
   public static final String       DEFAULT_USERS_GROUP                 = "/platform/users";
 
   public static final String       DEFAULT_USERS_PERMISSION            = "*:" + DEFAULT_USERS_GROUP;
+
+  public static final String       EXTERNAL_USERS_PERMISSION           = "*:/platform/externals";
 
   public static final String       MAX_FAVORITE_APPS                   = "maxFavoriteApps";
 
@@ -127,6 +139,21 @@ public class ApplicationCenterService {
   /** Most suggestions returned by one call of the Shortcuts app suggester. */
   public static final int          MAX_SUGGESTIONS                     = 20;
 
+  /** Largest illustration of an application created from a Shortcuts portlet, in bytes. */
+  public static final int          MAX_ILLUSTRATION_SIZE               = 102400;
+
+  public static final String       NOT_FAVORITABLE_MESSAGE             = "appCenter.contextual.notFavoritable";
+
+  public static final String       NOT_CONTEXTUAL_MESSAGE              = "appCenter.contextual.notContextual";
+
+  public static final String       NOT_OWNED_MESSAGE                   = "appCenter.contextual.notOwned";
+
+  public static final String       INVALID_UPLOAD_MESSAGE              = "appCenter.illustration.invalidUpload";
+
+  public static final String       INVALID_TYPE_MESSAGE                = "appCenter.illustration.invalidType";
+
+  public static final String       TOO_LARGE_MESSAGE                   = "appCenter.illustration.tooLarge";
+
   private static final String      SYSTEM_APPLICATION_KEY_PREFIX       = "appCenter.system.application.";
 
   private static final Pattern     WHITESPACE                          = Pattern.compile("\\s");
@@ -154,6 +181,23 @@ public class ApplicationCenterService {
   private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
   private static final Pattern     CONTROL_CHARS_PATTERN               = Pattern.compile("[\\t\\n\\r]");
+
+  private static final String      SETTING_NOT_FOUND_MESSAGE           = "Shortcuts portlet setting %s doesn't exist";
+
+  private static final String      ANY_MEMBERSHIP                      = "*:";
+
+  /** Name of a drawer an application of type DRAWER opens */
+  private static final Pattern     DRAWER_NAME_PATTERN                 = Pattern.compile("^[A-Za-z0-9_-]{1,100}$");
+
+  /** Name of the font icon of an application */
+  private static final Pattern     ICON_PATTERN                        = Pattern.compile("^[a-z0-9 -]{1,100}$");
+
+  /** Lengths of the AC_APPLICATION columns a Shortcuts portlet form fills */
+  private static final int         MAX_TITLE_LENGTH                    = 250;
+
+  private static final int         MAX_DESCRIPTION_LENGTH              = 1000;
+
+  private static final int         MAX_URL_LENGTH                      = 500;
 
   @Autowired
   private UserACL                  userAcl;
@@ -196,6 +240,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private ResourceBundleService         resourceBundleService;
+
+  @Autowired
+  private SpaceService                  spaceService;
+
+  @Autowired
+  private PortletInstanceService        portletInstanceService;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -277,6 +327,11 @@ public class ApplicationCenterService {
                                                      username,
                                                      application.getTitle()));
     }
+    if (storedApplication.isContextual()) {
+      // Whatever an administrator sends, an application created from a
+      // Shortcuts portlet stays out of the users' Application Center
+      setContextualForcedFields(application);
+    }
     updateApplication(application);
   }
 
@@ -319,14 +374,13 @@ public class ApplicationCenterService {
   public void deleteApplication(Long applicationId) throws ApplicationNotFoundException {
     Application application = appCenterStorage.getApplication(applicationId);
     if (application != null) {
-      if (CollectionUtils.isNotEmpty(application.getCategoryIds())) {
-        application.getCategoryIds()
-                   .forEach(id -> getCategoryLinkService().unlink(id,
-                                                                  new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
-                                                                                     String.valueOf(applicationId),
-                                                                                     0l)));
-      }
       appCenterStorage.deleteApplication(applicationId);
+      unlinkCategories(applicationId);
+      if (application.isContextual() && application.getImageFileId() != null) {
+        // The server stored the illustration of an application created from
+        // a Shortcuts portlet for that application alone
+        appCenterStorage.deleteIllustration(application.getImageFileId());
+      }
     }
   }
 
@@ -338,6 +392,9 @@ public class ApplicationCenterService {
    * @throws ApplicationNotFoundException when application is not found
    * @throws IllegalAccessException if user hasn't access permission to the
    *           application
+   * @throws IllegalArgumentException with the message
+   *           {@value #NOT_FAVORITABLE_MESSAGE} for an application created from
+   *           a Shortcuts portlet
    */
   public void addFavoriteApplication(long applicationId, String username) throws ApplicationNotFoundException,
                                                                           IllegalAccessException {
@@ -347,15 +404,7 @@ public class ApplicationCenterService {
     if (applicationId <= 0) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplication(applicationId);
-    if (application == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    }
-    if (!canAccess(application, username)) {
-      throw new IllegalAccessException(String.format("User %s doesn't have enough permissions to delete application '%s'",
-                                                     username,
-                                                     application.getTitle()));
-    }
+    Application application = getFavoritableApplication(applicationId, username);
     appCenterStorage.addApplicationToUserFavorite(applicationId, username);
     reorderFavoritesForNewEntry(application.getId(), username);
   }
@@ -576,6 +625,7 @@ public class ApplicationCenterService {
     boolean stillQualifies = application != null
                              && application.isActive()
                              && application.isAllowStick()
+                             && !application.isContextual()
                              && canAccess(application, username);
     if (!stillQualifies) {
       placementStorage.removePlacedApplicationId(username, side);
@@ -609,7 +659,8 @@ public class ApplicationCenterService {
     if (!canAccess(application, username)) {
       throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
     }
-    if (!application.isActive() || !application.isAllowStick()) {
+    // An application created from a Shortcuts portlet is used in that list only
+    if (!application.isActive() || !application.isAllowStick() || application.isContextual()) {
       throw new IllegalArgumentException(STICK_NOT_ALLOWED_MESSAGE);
     }
     PlacementSide otherSide = side == PlacementSide.LEFT ? PlacementSide.RIGHT : PlacementSide.LEFT;
@@ -828,23 +879,59 @@ public class ApplicationCenterService {
    *
    * @param applicationOrder
    * @param userName
+   * @deprecated use {@link #updateFavoriteApplicationsOrder(List, String)},
+   *             which checks every application before it writes any order;
+   *             since 7.3.0, for removal
    */
+  @Deprecated(since = "7.3.0", forRemoval = true)
   public void updateFavoriteApplicationOrder(ApplicationOrder applicationOrder,
-                                             String userName) throws ApplicationNotFoundException {
+                                             String userName) throws ApplicationNotFoundException,
+                                                              IllegalAccessException {
+    updateFavoriteApplicationsOrder(Collections.singletonList(applicationOrder), userName);
+  }
+
+  /**
+   * Orders the favorite applications of a user, an application not yet
+   * favorite becoming one, unless mandatory. Every application is checked
+   * before any order is written: the batch is refused as a whole when one of
+   * them does not exist, is not accessible to the user or was created from a
+   * Shortcuts portlet. The orders are written in one transaction: a write
+   * failing midway writes none.
+   *
+   * @param applicationOrders the applications and their order
+   * @param userName the user
+   * @throws ApplicationNotFoundException when an application does not exist
+   * @throws IllegalAccessException when the user may not access an
+   *           application
+   * @throws IllegalArgumentException with the message
+   *           {@value #NOT_FAVORITABLE_MESSAGE} for an application created from
+   *           a Shortcuts portlet
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public void updateFavoriteApplicationsOrder(List<ApplicationOrder> applicationOrders,
+                                              String userName) throws ApplicationNotFoundException,
+                                                               IllegalAccessException {
     if (StringUtils.isBlank(userName)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    if (applicationOrder.getId() <= 0) {
+    if (applicationOrders == null
+        || applicationOrders.stream()
+                            .anyMatch(applicationOrder -> applicationOrder == null
+                                                          || applicationOrder.getId() == null
+                                                          || applicationOrder.getId() <= 0)) {
       throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
     }
-    Application application = appCenterStorage.getApplication(applicationOrder.getId());
-    if (application == null) {
-      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationOrder.getId()));
+    List<Application> applications = new ArrayList<>();
+    for (ApplicationOrder applicationOrder : applicationOrders) {
+      applications.add(getFavoritableApplication(applicationOrder.getId(), userName));
     }
-    if (!application.isMandatory()) {
-      appCenterStorage.addApplicationToUserFavorite(applicationOrder.getId(), userName);
+    for (int i = 0; i < applicationOrders.size(); i++) {
+      ApplicationOrder applicationOrder = applicationOrders.get(i);
+      if (!applications.get(i).isMandatory()) {
+        appCenterStorage.addApplicationToUserFavorite(applicationOrder.getId(), userName);
+      }
+      appCenterStorage.updateFavoriteApplicationOrder(applicationOrder.getId(), userName, applicationOrder.getOrder());
     }
-    appCenterStorage.updateFavoriteApplicationOrder(applicationOrder.getId(), userName, applicationOrder.getOrder());
   }
 
   /**
@@ -916,9 +1003,19 @@ public class ApplicationCenterService {
     return getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE);
   }
 
+  /**
+   * Reads the mandatory and favorite applications of a user, never one created
+   * from a Shortcuts portlet, which only that portlet lists.
+   *
+   * @param pageable the page to read
+   * @param username the user
+   * @param locale the language of the labels, none when null
+   * @return the applications
+   */
   public ApplicationList getMandatoryAndFavoriteApplications(Pageable pageable, String username, Locale locale) {
     List<Application> applications = appCenterStorage.getMandatoryAndFavoriteApplications(username, pageable)
                                                      .stream()
+                                                     .filter(app -> !app.isContextual())
                                                      .filter(app -> canAccess(app, username))
                                                      .collect(Collectors.toList());
     int appCount = applications.size();
@@ -971,7 +1068,7 @@ public class ApplicationCenterService {
 
   private List<Application> listApplications(ApplicationListFilter filter, Locale locale, String username) {
     if (CollectionUtils.isEmpty(filter.getCategoryIds())) {
-      return listApplications(filter.getIds(), locale, username);
+      return listApplications(filter.getSettingName(), filter.getIds(), locale, username);
     } else if (CollectionUtils.isNotEmpty(filter.getIds())) {
       throw new IllegalArgumentException("Either application ids or category ids can be listed");
     } else if (filter.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
@@ -990,6 +1087,8 @@ public class ApplicationCenterService {
                                                                           .filter(id -> !listedIds.contains(id))
                                                                           .map(appCenterStorage::getApplication)
                                                                           .filter(Objects::nonNull)
+                                                                          .filter(application -> isListedBy(application,
+                                                                                                            filter.getSettingName()))
                                                                           .filter(Application::isActive)
                                                                           .filter(application -> canAccess(application,
                                                                                                            username))
@@ -1014,9 +1113,11 @@ public class ApplicationCenterService {
 
   /**
    * Reads, in the order of the ids, the active applications the user may
-   * access, decorated on copies, once the caller checked the window.
+   * access, decorated on copies, once the caller checked the window. An
+   * application created from a Shortcuts portlet is read for that window
+   * only.
    */
-  private List<Application> listApplications(List<Long> ids, Locale locale, String username) {
+  private List<Application> listApplications(String settingName, List<Long> ids, Locale locale, String username) {
     if (CollectionUtils.isEmpty(ids)) {
       return Collections.emptyList();
     } else if (ids.size() > MAX_LISTED_APPLICATIONS) {
@@ -1027,6 +1128,7 @@ public class ApplicationCenterService {
                                         .distinct()
                                         .map(appCenterStorage::getApplication)
                                         .filter(Objects::nonNull)
+                                        .filter(application -> isListedBy(application, settingName))
                                         .filter(Application::isActive)
                                         .filter(application -> canAccess(application, username))
                                         .map(this::toTile)
@@ -1064,7 +1166,9 @@ public class ApplicationCenterService {
   /**
    * Suggests the applications a Shortcuts portlet window may list: active,
    * non-personal applications the user may access, matching the keyword, read
-   * from the app-center.application cache and decorated on a copy.
+   * from the app-center.application cache and decorated on a copy. An
+   * application created from a Shortcuts portlet is never suggested, that
+   * window's own included: it is in its list already.
    *
    * @param settingName the window's CMS setting name
    * @param keyword matched in title and url, all applications when blank
@@ -1105,6 +1209,7 @@ public class ApplicationCenterService {
                                                      .filter(Objects::nonNull)
                                                      .filter(Application::isActive)
                                                      .filter(application -> !application.isPersonal())
+                                                     .filter(application -> !application.isContextual())
                                                      .filter(application -> canAccess(application, username))
                                                      .skip(Math.max(offset, 0))
                                                      .limit(suggestionsLimit)
@@ -1113,6 +1218,133 @@ public class ApplicationCenterService {
     setApplicationLabels(applications, locale);
     setApplicationBadges(applications);
     return applications;
+  }
+
+  /**
+   * Creates an application from the settings of a Shortcuts portlet window,
+   * owned by that window: listed there only, never in the users' Application
+   * Center. Its audience derives from the context the window's setting
+   * recorded server-side, the members of its space, or every platform user,
+   * internal and external alike, never from the request. Every field the form
+   * does not offer is forced, every one it offers is validated, and its
+   * illustration is read from an upload only.
+   *
+   * @param application the form's fields
+   * @param settingName the window's CMS setting name
+   * @param username the user creating the application
+   * @return the created application
+   * @throws ObjectNotFoundException when the window's setting, or the space of
+   *           its context, does not exist
+   * @throws IllegalAccessException when the user may not manage the window's
+   *           applications
+   * @throws IllegalArgumentException when a field or the illustration is
+   *           invalid, the message naming it
+   */
+  public Application createContextApplication(ApplicationForm application,
+                                              String settingName,
+                                              String username) throws ObjectNotFoundException, IllegalAccessException {
+    CMSSetting setting = getContextSetting(settingName);
+    checkCanManageContextApplications(settingName, username);
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    long spaceId = Math.max(setting.getSpaceId(), 0);
+    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), username);
+    String uploadId = application.getImageUploadId();
+    byte[] illustration = null;
+    String illustrationMimeType = null;
+    if (StringUtils.isNotBlank(uploadId)) {
+      illustration = appCenterStorage.readUpload(uploadId, MAX_ILLUSTRATION_SIZE);
+      illustrationMimeType = getIllustrationMimeType(illustration);
+    }
+    if (illustration != null) {
+      contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
+    }
+    Application createdApplication = new Application(appCenterStorage.createContextApplication(contextApplication,
+                                                                                                 settingName,
+                                                                                                 spaceId));
+    if (illustration != null) {
+      appCenterStorage.removeUpload(uploadId);
+    }
+    createdApplication.setCategoryIds(linkCategories(createdApplication.getId(), application.getCategoryIds(), username));
+    return createdApplication;
+  }
+
+  /**
+   * Deletes an application created from the settings of a Shortcuts portlet
+   * window, from that window's settings.
+   *
+   * @param applicationId the application id
+   * @param settingName the window's CMS setting name
+   * @param username the user deleting the application
+   * @throws ObjectNotFoundException when the window's setting does not exist,
+   *           or when the application does not exist or the user may not
+   *           access it
+   * @throws IllegalAccessException when the user may not manage the window's
+   *           applications
+   * @throws IllegalArgumentException with the message
+   *           {@value #NOT_CONTEXTUAL_MESSAGE} for an application of the
+   *           Application Center, {@value #NOT_OWNED_MESSAGE} for one another
+   *           window created
+   */
+  public void deleteContextApplication(long applicationId,
+                                       String settingName,
+                                       String username) throws ObjectNotFoundException, IllegalAccessException {
+    getContextSetting(settingName);
+    checkCanManageContextApplications(settingName, username);
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null || !canAccess(application, username)) {
+      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    } else if (!application.isContextual()) {
+      throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
+    } else if (!StringUtils.equals(application.getContextSettingName(), settingName)) {
+      throw new IllegalArgumentException(NOT_OWNED_MESSAGE);
+    }
+    try {
+      deleteApplication(applicationId);
+    } catch (ApplicationNotFoundException e) {
+      throw new ObjectNotFoundException(e.getMessage());
+    }
+  }
+
+  /**
+   * Deletes the applications Shortcuts portlet windows created in the context
+   * of a deleted space: a space created later with the same name gets the
+   * same group, so the same audience. One application failing to delete does
+   * not keep the others.
+   *
+   * @param spaceId the deleted space id
+   */
+  public void deleteSpaceApplications(long spaceId) {
+    if (spaceId <= 0) {
+      return;
+    }
+    for (Long applicationId : appCenterStorage.getContextApplicationIds(spaceId)) {
+      try {
+        deleteApplication(applicationId);
+      } catch (ApplicationNotFoundException e) {
+        LOG.debug("Application {} of space {} is already deleted", applicationId, spaceId, e);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to delete application {} of deleted space {}", applicationId, spaceId, e);
+      }
+    }
+  }
+
+  /**
+   * Whether a user may edit an application from the settings of a Shortcuts
+   * portlet window: an administrator any application, whoever manages the
+   * applications of the window that created one that application only. When
+   * that window's setting no longer exists, administrators only.
+   *
+   * @param application the application
+   * @param username the user, blank for a guest
+   * @return true when the user may edit the application
+   */
+  public boolean canEditContextApplication(Application application, String username) {
+    return isAdministrator(username)
+           || (application != null
+               && application.isContextual()
+               && myApplicationsSettingsService.canEditSettings(application.getContextSettingName(), username));
   }
 
   /**
@@ -1148,7 +1380,206 @@ public class ApplicationCenterService {
 
   private void checkSettingExists(String settingName) throws ObjectNotFoundException {
     if (!myApplicationsSettingsService.hasSetting(settingName)) {
-      throw new ObjectNotFoundException(String.format("Shortcuts portlet setting %s doesn't exist", settingName));
+      throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
+    }
+  }
+
+  private CMSSetting getContextSetting(String settingName) throws ObjectNotFoundException {
+    CMSSetting setting = myApplicationsSettingsService.getSetting(settingName);
+    if (setting == null) {
+      throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
+    }
+    return setting;
+  }
+
+  private void checkCanManageContextApplications(String settingName, String username) throws IllegalAccessException {
+    if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to manage the applications of %s",
+                                                     username,
+                                                     settingName));
+    }
+  }
+
+  /**
+   * @return the audience of an application created in a context: the members
+   *         of its space, external ones included, or every platform user,
+   *         internal and external alike
+   */
+  private List<String> getContextAudience(long spaceId) throws ObjectNotFoundException {
+    if (spaceId <= 0) {
+      return List.of(DEFAULT_USERS_PERMISSION, EXTERNAL_USERS_PERMISSION);
+    }
+    Space space = spaceService.getSpaceById(spaceId);
+    if (space == null) {
+      throw new ObjectNotFoundException(String.format("Space %s doesn't exist", spaceId));
+    }
+    return List.of(ANY_MEMBERSHIP + space.getGroupId());
+  }
+
+  /**
+   * Builds an application created from a Shortcuts portlet from the fields
+   * its form offers, each one validated, every other one forced.
+   */
+  private Application toContextApplication(ApplicationForm form, List<String> audience, String username) {
+    if (StringUtils.isBlank(form.getTitle())) {
+      throw new IllegalArgumentException("title is mandatory");
+    } else if (form.getCategoryIds() != null && form.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
+      throw new IllegalArgumentException(String.format("At most %s categories can be linked",
+                                                       MyApplicationsSettingsService.MAX_LISTED_CATEGORIES));
+    }
+    ApplicationType type = form.getType() == null ? ApplicationType.LINK : form.getType();
+    Application application = new Application();
+    application.setTitle(checkLength("title", StringUtils.trim(form.getTitle()), MAX_TITLE_LENGTH));
+    application.setDescription(checkLength("description", form.getDescription(), MAX_DESCRIPTION_LENGTH));
+    application.setType(type);
+    application.setUrl(checkLength("url", getContextApplicationUrl(type, form.getUrl(), username), MAX_URL_LENGTH));
+    application.setHelpPageURL(StringUtils.isBlank(form.getHelpPageURL()) ? null
+                                                                          : checkLength("helpPageURL",
+                                                                                        normalizePersonalUrl(form.getHelpPageURL()),
+                                                                                        MAX_URL_LENGTH));
+    application.setIcon(getContextApplicationIcon(form.getIcon()));
+    application.setBadgeName(getContextApplicationBadgeName(form.getBadgeName()));
+    application.setSameTab(form.isSameTab());
+    application.setMobile(form.isMobile());
+    application.setAllowDetach(form.isAllowDetach());
+    application.setActive(true);
+    application.setPermissions(new ArrayList<>(audience));
+    setContextualForcedFields(application);
+    return application;
+  }
+
+  /**
+   * @return the url of an application created from a Shortcuts portlet: an
+   *         http(s) or portal-relative link, the name of a drawer, which the
+   *         server cannot check is registered, or a portlet instance the user
+   *         may access
+   */
+  private String getContextApplicationUrl(ApplicationType type, String url, String username) {
+    return switch (type) {
+    case DRAWER -> getDrawerName(url);
+    case PORTLET -> getPortletInstanceId(url, username);
+    default -> normalizePersonalUrl(url);
+    };
+  }
+
+  private String getDrawerName(String url) {
+    if (url == null || !DRAWER_NAME_PATTERN.matcher(url).matches()) {
+      throw new IllegalArgumentException(String.format("url %s is not a drawer name", url));
+    }
+    return url;
+  }
+
+  private String getPortletInstanceId(String url, String username) {
+    long portletInstanceId = NumberUtils.toLong(url, 0);
+    if (portletInstanceId <= 0) {
+      throw new IllegalArgumentException(String.format("url %s is not a portlet instance id", url));
+    }
+    try {
+      portletInstanceService.getPortletInstance(portletInstanceId, username, null, false);
+    } catch (ObjectNotFoundException | IllegalAccessException e) {
+      throw new IllegalArgumentException(String.format("url %s is not a portlet instance the user may access", url), e);
+    }
+    return String.valueOf(portletInstanceId);
+  }
+
+  /**
+   * @return the value, refused with a message naming the field when it does
+   *         not fit its column
+   */
+  private String checkLength(String fieldName, String value, int maxLength) {
+    if (value != null && value.length() > maxLength) {
+      throw new IllegalArgumentException(String.format("%s is longer than %s characters", fieldName, maxLength));
+    }
+    return value;
+  }
+
+  private String getContextApplicationIcon(String icon) {
+    if (StringUtils.isBlank(icon)) {
+      return null;
+    } else if (!ICON_PATTERN.matcher(icon).matches()) {
+      throw new IllegalArgumentException(String.format("icon %s is not an icon name", icon));
+    }
+    return icon;
+  }
+
+  /**
+   * @return the badge name when a badge plugin declares it, or when it turns
+   *         the badge off, null otherwise
+   */
+  private String getContextApplicationBadgeName(String badgeName) {
+    return StringUtils.equals(badgeName, ApplicationBadgePluginRegistry.BADGE_DISABLED)
+           || (StringUtils.isNotBlank(badgeName) && badgePluginRegistry.getPlugin(badgeName) != null) ? badgeName : null;
+  }
+
+  /**
+   * @return the type of an illustration decided from its content, once its
+   *         upload is known and small enough
+   */
+  private String getIllustrationMimeType(byte[] illustration) {
+    if (illustration == null) {
+      throw new IllegalArgumentException(INVALID_UPLOAD_MESSAGE);
+    } else if (illustration.length > MAX_ILLUSTRATION_SIZE) {
+      throw new IllegalArgumentException(TOO_LARGE_MESSAGE);
+    }
+    String mimeType = ImageTypeUtils.detectImageMimeType(illustration);
+    if (mimeType == null) {
+      throw new IllegalArgumentException(INVALID_TYPE_MESSAGE);
+    }
+    return mimeType;
+  }
+
+  /**
+   * Links an application created from a Shortcuts portlet to the categories
+   * of its form. A category the user may not link to, that no longer exists or
+   * that fails to link is skipped: the application is created already, and is
+   * returned with the categories it got.
+   *
+   * @return the ids of the linked categories
+   */
+  private List<Long> linkCategories(long applicationId, List<Long> categoryIds, String username) {
+    if (CollectionUtils.isEmpty(categoryIds)) {
+      return new ArrayList<>();
+    }
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                       String.valueOf(applicationId),
+                                                       0L);
+    List<Long> linkedCategoryIds = new ArrayList<>();
+    for (Long categoryId : categoryIds.stream().filter(Objects::nonNull).distinct().toList()) {
+      try {
+        getCategoryLinkService().link(categoryId, categoryObject, username);
+        linkedCategoryIds.add(categoryId);
+      } catch (ObjectNotFoundException | ObjectAlreadyExistsException | IllegalAccessException e) {
+        LOG.debug("Application {} not linked to category {} by {}", applicationId, categoryId, username, e);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to link application {} to category {}", applicationId, categoryId, e);
+      }
+    }
+    return linkedCategoryIds;
+  }
+
+  /**
+   * Removes the category links of a deleted application, read from the
+   * category service since the stored application carries no category: a
+   * link that fails to go is left, with a warning, so that the delete still
+   * removes what the application owns
+   */
+  private void unlinkCategories(long applicationId) {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                       String.valueOf(applicationId),
+                                                       0L);
+    List<Long> categoryIds;
+    try {
+      categoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    } catch (RuntimeException e) {
+      LOG.warn("Unable to read the categories of deleted application {}", applicationId, e);
+      return;
+    }
+    for (Long categoryId : CollectionUtils.emptyIfNull(categoryIds)) {
+      try {
+        getCategoryLinkService().unlink(categoryId, categoryObject);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to unlink deleted application {} from category {}", applicationId, categoryId, e);
+      }
     }
   }
 
@@ -1169,9 +1600,21 @@ public class ApplicationCenterService {
                                                 .toList();
   }
 
+  /**
+   * Whether a user may see an application. An application created from a
+   * Shortcuts portlet whose audience an administrator emptied is shown to
+   * administrators only, where any other application without permissions is
+   * shown to every platform user.
+   *
+   * @param application the application
+   * @param username the user, blank for a guest
+   * @return true when the user may see the application
+   */
   public boolean canAccess(Application application, String username) {
     if (application.isPersonal()) {
       return isOwner(application, username);
+    } else if (application.isContextual() && CollectionUtils.isEmpty(application.getPermissions())) {
+      return isAdministrator(username);
     }
     return canAccess(application.getPermissions(), username);
   }
@@ -1184,6 +1627,56 @@ public class ApplicationCenterService {
     return StringUtils.isNotBlank(username)
            && application.getPermissions() != null
            && application.getPermissions().contains(username);
+  }
+
+  /**
+   * @return true for an administrator, false for a blank, guest or unknown
+   *         user, where {@link #canEdit(String)} grants a blank username
+   */
+  private boolean isAdministrator(String username) {
+    if (StringUtils.isBlank(username) || StringUtils.equals(username, IdentityConstants.ANONIM)) {
+      return false;
+    }
+    Identity identity = userAcl.getUserIdentity(username);
+    return identity != null && userAcl.isAdministrator(identity);
+  }
+
+  /**
+   * @return true when the window may list the application: any application of
+   *         the Application Center, one created from a Shortcuts portlet by
+   *         that window only
+   */
+  private boolean isListedBy(Application application, String settingName) {
+    return !application.isContextual() || StringUtils.equals(application.getContextSettingName(), settingName);
+  }
+
+  private Application getFavoritableApplication(long applicationId, String username) throws ApplicationNotFoundException,
+                                                                                    IllegalAccessException {
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    } else if (!canAccess(application, username)) {
+      throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
+    } else if (application.isContextual()) {
+      throw new IllegalArgumentException(NOT_FAVORITABLE_MESSAGE);
+    }
+    return application;
+  }
+
+  /**
+   * Sets the fields an application created from a Shortcuts portlet never
+   * changes: it is neither mandatory, default, PWA-suggested, system nor
+   * personal, it cannot be stuck to a side of the layout and has no keyboard
+   * shortcut.
+   */
+  private void setContextualForcedFields(Application application) {
+    application.setMandatory(false);
+    application.setDefault(false);
+    application.setPwa(false);
+    application.setSystem(false);
+    application.setPersonal(false);
+    application.setAllowStick(false);
+    application.setShortcut(null);
   }
 
   private boolean canAccess(List<String> storedPermissions, String username) {
@@ -1204,9 +1697,14 @@ public class ApplicationCenterService {
     }
   }
 
+  /**
+   * Reads the applications of the user's Application Center: never one
+   * created from a Shortcuts portlet, which only that portlet lists.
+   */
   private List<Application> getActiveApplications(String keyword, String username) {
     return appCenterStorage.getApplications(keyword)
                            .stream()
+                           .filter(app -> !app.isContextual())
                            .filter(app -> canAccess(app, username))
                            .filter(Application::isActive)
                            .toList();

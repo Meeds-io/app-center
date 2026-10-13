@@ -18,11 +18,14 @@
  */
 package io.meeds.appcenter.rest;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Arrays;
@@ -54,6 +57,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.meeds.appcenter.model.ApplicationOrder;
+import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.spring.web.security.PortalAuthenticationManager;
 import io.meeds.spring.web.security.WebSecurityConfiguration;
@@ -135,12 +139,61 @@ public class ApplicationFavoriteRestTest {
     response.andExpect(status().isForbidden());
   }
 
+  /**
+   * Fails the mutant refusing with a ResponseStatusException, whose reason
+   * never reaches the client
+   */
+  @Test
+  void addFavoriteApplicationRefusals() throws Exception {
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE)).when(applicationCenterService)
+                                                                                         .addFavoriteApplication(1L,
+                                                                                                                 SIMPLE_USER);
+    mockMvc.perform(post(FAVORITES_PATH + "/1").with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
+
+    doThrow(new IllegalAccessException("denied")).when(applicationCenterService).addFavoriteApplication(2L, SIMPLE_USER);
+    mockMvc.perform(post(FAVORITES_PATH + "/2").with(testSimpleUser())).andExpect(status().isForbidden());
+
+    doThrow(new ApplicationNotFoundException("missing")).when(applicationCenterService)
+                                                        .addFavoriteApplication(3L, SIMPLE_USER);
+    mockMvc.perform(post(FAVORITES_PATH + "/3").with(testSimpleUser())).andExpect(status().isNotFound());
+  }
+
   @Test
   void updateApplicationsOrder() throws Exception {
     ResultActions response = mockMvc.perform(put(FAVORITES_PATH).with(testSimpleUser())
                                                                 .content(asJsonString(applicationOrders()))
                                                                 .contentType(MediaType.APPLICATION_JSON));
     response.andExpect(status().isOk());
+    verify(applicationCenterService).updateFavoriteApplicationsOrder(applicationOrders(), SIMPLE_USER);
+  }
+
+  /**
+   * Fails the mutant refusing with a ResponseStatusException, whose reason
+   * never reaches the client
+   */
+  @Test
+  void updateApplicationsOrderRefusals() throws Exception {
+    doThrow(new IllegalAccessException("denied")).when(applicationCenterService)
+                                                 .updateFavoriteApplicationsOrder(applicationOrders(), SIMPLE_USER);
+    putApplicationOrders().andExpect(status().isForbidden());
+
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE)).when(applicationCenterService)
+                                                                                         .updateFavoriteApplicationsOrder(applicationOrders(),
+                                                                                                                          SIMPLE_USER);
+    putApplicationOrders().andExpect(status().isBadRequest())
+                          .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
+
+    doThrow(new ApplicationNotFoundException("missing")).when(applicationCenterService)
+                                                        .updateFavoriteApplicationsOrder(applicationOrders(), SIMPLE_USER);
+    putApplicationOrders().andExpect(status().isNotFound());
+  }
+
+  private ResultActions putApplicationOrders() throws Exception {
+    return mockMvc.perform(put(FAVORITES_PATH).with(testSimpleUser())
+                                              .content(asJsonString(applicationOrders()))
+                                              .contentType(MediaType.APPLICATION_JSON));
   }
 
   @Test

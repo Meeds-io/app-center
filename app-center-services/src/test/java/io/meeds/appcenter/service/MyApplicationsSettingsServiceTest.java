@@ -33,6 +33,7 @@ import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_HEAD
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,15 +43,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -68,7 +73,10 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 
+import io.meeds.appcenter.constant.WindowKind;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
@@ -120,6 +128,9 @@ class MyApplicationsSettingsServiceTest {
 
   @MockitoBean
   private CategoryService               categoryService;
+
+  @MockitoBean
+  private SpaceService                  spaceService;
 
   @Autowired
   private MyApplicationsSettingsService settingsService;
@@ -173,9 +184,9 @@ class MyApplicationsSettingsServiceTest {
   }
 
   /**
-   * The -shared- marker is generated only once MyApplicationsPortlet overrides
-   * generateRandomId (shared-layout windows, spec mechanism M2): this pins the
-   * right for the names that change will produce.
+   * MyApplicationsPortlet#generateRandomId marks the name of a shared-layout
+   * window that has a storage id with -shared- (spec mechanism M2), which a
+   * configured shared layout never gives: this pins that name's right.
    */
   @Test
   void canEditSettingsOfSharedLayoutWindowIsAdministratorOnly() {
@@ -198,10 +209,11 @@ class MyApplicationsSettingsServiceTest {
   }
 
   /**
-   * The -sdraft- marker and the untruncated section_draft_ reference are
-   * recorded only once MyApplicationsPortlet overrides generateRandomId and
-   * saveSettingName (spec mechanism M2, D15); the reference CMSPortlet records
-   * today is pinned by canEditSettingsOfWindowRecordedOnSectionTemplateDraftIsAdministratorOnly.
+   * MyApplicationsPortlet marks no section-template draft window with
+   * -sdraft- nor records its untruncated section_draft_ reference (spec
+   * mechanism M2, D15): this pins the right of such a name; the cut reference
+   * CMSPortlet records is pinned by
+   * canEditSettingsOfWindowRecordedOnSectionTemplateDraftIsAdministratorOnly.
    */
   @Test
   void canEditSettingsOfSectionTemplateDraftIsAdministratorOnly() {
@@ -224,9 +236,8 @@ class MyApplicationsSettingsServiceTest {
   }
 
   /**
-   * The -site- marker is generated only once MyApplicationsPortlet overrides
-   * generateRandomId (site-layout windows, spec mechanism M2, D13): this pins
-   * the right for the names that change will produce.
+   * MyApplicationsPortlet#generateRandomId marks the name of a site-layout
+   * window with -site- (spec mechanism M2, D13): this pins that name's right.
    */
   @Test
   void canEditSettingsOfSiteLayoutWindowUsesSiteEditRight() {
@@ -337,51 +348,51 @@ class MyApplicationsSettingsServiceTest {
     parameters.put("settingName", "other");
     parameters.put("action", "save");
 
-    assertEquals(Map.of(MAX_APPS_TO_LIST, "12", SHOW_HEADER, "false"), settingsService.getWritableSettings(parameters));
-    assertEquals(Map.of(), settingsService.getWritableSettings(null));
+    assertEquals(Map.of(MAX_APPS_TO_LIST, "12", SHOW_HEADER, "false"), settingsService.getWritableSettings(PAGE_NAME, parameters));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, null));
   }
 
   @Test
   void getWritableSettingsValidatesMaxAppsToListRange() {
-    assertEquals(Map.of(MAX_APPS_TO_LIST, "1"), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "1")));
-    assertEquals(Map.of(MAX_APPS_TO_LIST, "100"), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "100")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "0")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "101")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "-1")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "1e2")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(MAX_APPS_TO_LIST, "99999999999")));
+    assertEquals(Map.of(MAX_APPS_TO_LIST, "1"), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "1")));
+    assertEquals(Map.of(MAX_APPS_TO_LIST, "100"), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "100")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "0")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "101")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "-1")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "1e2")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(MAX_APPS_TO_LIST, "99999999999")));
   }
 
   @Test
   void getWritableSettingsValidatesShowHeader() {
-    assertEquals(Map.of(SHOW_HEADER, "true"), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "true")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "yes")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(SHOW_HEADER, "<script>")));
+    assertEquals(Map.of(SHOW_HEADER, "true"), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "true")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "yes")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "<script>")));
   }
 
   @Test
   void getWritableSettingsKeepsFavoritesListingMode() {
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE, " FAVORITES ")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "favorites")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "MANUAL")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(LISTING_MODE, "")));
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE, " FAVORITES ")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE, "favorites")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE, "MANUAL")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE, "")));
   }
 
   @Test
   void getWritableSettingsRefusesAnEmptySelectedListingWhole() {
     Map<String, String> parameters1 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, MAX_APPS_TO_LIST, "8");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters1));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, parameters1));
     Map<String, String> parameters2 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters2));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, parameters2));
     Map<String, String> parameters3 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "1,x");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters3));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, parameters3));
   }
 
   @Test
   void getWritableSettingsRefusesACategoryListingWithApplicationsOnly() {
     Map<String, String> parameters4 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, APPLICATION_IDS, "3");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters4));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, parameters4));
   }
 
   @Test
@@ -392,7 +403,7 @@ class MyApplicationsSettingsServiceTest {
                         SELECTION_MODE_MANUAL,
                         APPLICATION_IDS,
                         "5,3,9"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_MANUAL,
@@ -403,47 +414,47 @@ class MyApplicationsSettingsServiceTest {
   @Test
   void getWritableSettingsRefusesASelectedListingWithoutItsSelectionMode() {
     Map<String, String> parameters5 = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, APPLICATION_IDS, "4");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(parameters5));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, parameters5));
   }
 
   @Test
   void getWritableSettingsIgnoresASelectionWrittenWithoutItsListingMode() {
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "")));
-    assertEquals(Map.of(), settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "4", SELECTION_MODE, SELECTION_MODE_MANUAL)));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(APPLICATION_IDS, "")));
+    assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(APPLICATION_IDS, "4", SELECTION_MODE, SELECTION_MODE_MANUAL)));
     assertEquals(Map.of(MAX_APPS_TO_LIST, "8"),
-                 settingsService.getWritableSettings(Map.of(APPLICATION_IDS, "4", MAX_APPS_TO_LIST, "8")));
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(APPLICATION_IDS, "4", MAX_APPS_TO_LIST, "8")));
   }
 
   @Test
   void getWritableSettingsKeepsTheApplicationIdsInFavoritesMode() {
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, SELECTION_MODE, SELECTION_MODE_CATEGORY, APPLICATION_IDS, "5"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_FAVORITES,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_CATEGORY,
                                                             APPLICATION_IDS,
                                                             "5")));
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, APPLICATION_IDS, ""),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, APPLICATION_IDS, "")));
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE, LISTING_MODE_FAVORITES, APPLICATION_IDS, "")));
   }
 
   @Test
   void getWritableSettingsDropsInvalidSelectionValues() {
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(SELECTION_MODE, "manual")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1;2")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "-1")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1,,2")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, "1234567890123456789")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(SELECTION_MODE, "manual")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, "1;2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, "-1")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, "1,,2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, "1234567890123456789")));
     String overCap = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS + 1L)
                                .mapToObj(String::valueOf)
                                .collect(Collectors.joining(","));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, overCap)));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, overCap)));
     String atCapWithDuplicate = LongStream.rangeClosed(1, ApplicationCenterService.MAX_LISTED_APPLICATIONS)
                                           .mapToObj(String::valueOf)
                                           .collect(Collectors.joining(","))
         + ",1";
     assertEquals(ApplicationCenterService.MAX_LISTED_APPLICATIONS,
-                 settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, atCapWithDuplicate)).get(APPLICATION_IDS).split(",").length);
+                 settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, atCapWithDuplicate)).get(APPLICATION_IDS).split(",").length);
   }
 
   private static Map<String, String> withFavorites(String name, String value) {
@@ -454,7 +465,7 @@ class MyApplicationsSettingsServiceTest {
   void getWritableSettingsDropsAVeryLongIdListWithoutOverflowing() {
     String veryLong = LongStream.rangeClosed(1, 200_000).mapToObj(String::valueOf).collect(Collectors.joining(","));
 
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(APPLICATION_IDS, veryLong)));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(APPLICATION_IDS, veryLong)));
     assertEquals(List.of(), MyApplicationsSettingsService.getApplicationIds(veryLong));
   }
 
@@ -463,20 +474,45 @@ class MyApplicationsSettingsServiceTest {
     when(applicationCenterStorage.getApplication(3L)).thenReturn(null);
 
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "5,9"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_MANUAL,
                                                             APPLICATION_IDS,
                                                             "5,3,9")));
     Map<String, String> onlyDeleted = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "3");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(onlyDeleted));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, onlyDeleted));
+  }
+
+  @Test
+  void getWritableSettingsDropsTheIdsOfApplicationsAnotherWindowCreated() {
+    Application owned = new Application();
+    owned.setContextSettingName(PAGE_NAME);
+    Application other = new Application();
+    other.setContextSettingName(SITE_NAME);
+    when(applicationCenterStorage.getApplication(4L)).thenReturn(owned);
+    when(applicationCenterStorage.getApplication(6L)).thenReturn(other);
+
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "5,4"),
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
+                                                                       LISTING_MODE_SELECTED,
+                                                                       SELECTION_MODE,
+                                                                       SELECTION_MODE_MANUAL,
+                                                                       APPLICATION_IDS,
+                                                                       "5,6,4")));
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_MANUAL, APPLICATION_IDS, "5,6"),
+                 settingsService.getWritableSettings(SITE_NAME, Map.of(LISTING_MODE,
+                                                                       LISTING_MODE_SELECTED,
+                                                                       SELECTION_MODE,
+                                                                       SELECTION_MODE_MANUAL,
+                                                                       APPLICATION_IDS,
+                                                                       "5,6,4")));
   }
 
   @Test
   void getWritableSettingsStoresASelectedCategoryListing() {
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "7,4"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_CATEGORY,
@@ -487,7 +523,7 @@ class MyApplicationsSettingsServiceTest {
   @Test
   void getWritableSettingsRefusesAnEmptySelectedCategoryListing() {
     Map<String, String> noCategory = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY);
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(noCategory));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, noCategory));
     Map<String, String> emptyCategories = Map.of(LISTING_MODE,
                                                  LISTING_MODE_SELECTED,
                                                  SELECTION_MODE,
@@ -496,14 +532,14 @@ class MyApplicationsSettingsServiceTest {
                                                  "",
                                                  APPLICATION_IDS,
                                                  "3");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(emptyCategories));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, emptyCategories));
     Map<String, String> invalidCategories = Map.of(LISTING_MODE,
                                                    LISTING_MODE_SELECTED,
                                                    SELECTION_MODE,
                                                    SELECTION_MODE_CATEGORY,
                                                    CATEGORY_IDS,
                                                    "1,x");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(invalidCategories));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, invalidCategories));
     // The categories of a MANUAL listing do not make it listable
     Map<String, String> manualWithCategories = Map.of(LISTING_MODE,
                                                       LISTING_MODE_SELECTED,
@@ -511,7 +547,7 @@ class MyApplicationsSettingsServiceTest {
                                                       SELECTION_MODE_MANUAL,
                                                       CATEGORY_IDS,
                                                       "7");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(manualWithCategories));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, manualWithCategories));
   }
 
   @Test
@@ -524,7 +560,7 @@ class MyApplicationsSettingsServiceTest {
                         "5,9",
                         CATEGORY_IDS,
                         "7"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_CATEGORY,
@@ -540,7 +576,7 @@ class MyApplicationsSettingsServiceTest {
                         "5",
                         CATEGORY_IDS,
                         "7,8"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_MANUAL,
@@ -552,27 +588,27 @@ class MyApplicationsSettingsServiceTest {
 
   @Test
   void getWritableSettingsDropsInvalidCategoryIds() {
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(CATEGORY_IDS, "1;2")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(CATEGORY_IDS, "-1")));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(CATEGORY_IDS, "1,,2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(CATEGORY_IDS, "1;2")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(CATEGORY_IDS, "-1")));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(CATEGORY_IDS, "1,,2")));
     String overCap = IntStream.rangeClosed(1, 101).mapToObj(String::valueOf).collect(Collectors.joining(","));
-    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(withFavorites(CATEGORY_IDS, overCap)));
+    assertEquals(FAVORITES_ONLY, settingsService.getWritableSettings(PAGE_NAME, withFavorites(CATEGORY_IDS, overCap)));
     String atCap = IntStream.rangeClosed(1, 100).mapToObj(String::valueOf).collect(Collectors.joining(","));
-    assertEquals(atCap, settingsService.getWritableSettings(withFavorites(CATEGORY_IDS, atCap)).get(CATEGORY_IDS));
+    assertEquals(atCap, settingsService.getWritableSettings(PAGE_NAME, withFavorites(CATEGORY_IDS, atCap)).get(CATEGORY_IDS));
   }
 
   @Test
   void getWritableSettingsDropsTheIdsOfDeletedCategories() {
     when(categoryService.getCategory(4l)).thenReturn(null);
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "7"),
-                 settingsService.getWritableSettings(Map.of(LISTING_MODE,
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
                                                             SELECTION_MODE,
                                                             SELECTION_MODE_CATEGORY,
                                                             CATEGORY_IDS,
                                                             "4,7")));
     Map<String, String> onlyDeleted = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "4");
-    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(onlyDeleted));
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, onlyDeleted));
   }
 
   @Test
@@ -620,52 +656,307 @@ class MyApplicationsSettingsServiceTest {
 
   @Test
   @SneakyThrows
-  void migrateHeaderTitleCopiesLegacyLabelsWhenNoneUnderSettingName() {
+  void copyHeaderTitleCopiesLegacyLabelsWhenNoneUnderSettingName() {
     Map<Locale, String> labels = Map.of(Locale.ENGLISH, "My shortcuts", Locale.FRENCH, "Mes raccourcis");
     when(translationService.getTranslationField(SETTING_TYPE, LEGACY_ID, HEADER_TITLE_FIELD)).thenReturn(field(labels));
 
-    settingsService.migrateHeaderTitle(LEGACY_ID, PAGE_NAME);
+    settingsService.copyHeaderTitle(LEGACY_ID, PAGE_NAME);
     verify(translationService).saveTranslationLabels(SETTING_TYPE, PAGE_NAME, HEADER_TITLE_FIELD, labels, false);
   }
 
   @Test
   @SneakyThrows
-  void migrateHeaderTitleCopiesLegacyLabelsOverBlankLabels() {
+  void copyHeaderTitleCopiesLegacyLabelsOverBlankLabels() {
     Map<Locale, String> labels = Map.of(Locale.ENGLISH, "My shortcuts");
     when(translationService.getTranslationField(SETTING_TYPE, PAGE_NAME, HEADER_TITLE_FIELD)).thenReturn(field(Map.of(Locale.ENGLISH,
                                                                                                                              " ")));
     when(translationService.getTranslationField(SETTING_TYPE, LEGACY_ID, HEADER_TITLE_FIELD)).thenReturn(field(labels));
 
-    settingsService.migrateHeaderTitle(LEGACY_ID, PAGE_NAME);
+    settingsService.copyHeaderTitle(LEGACY_ID, PAGE_NAME);
     verify(translationService).saveTranslationLabels(SETTING_TYPE, PAGE_NAME, HEADER_TITLE_FIELD, labels, false);
   }
 
   @Test
   @SneakyThrows
-  void migrateHeaderTitleKeepsLabelsAlreadyUnderSettingName() {
+  void copyHeaderTitleKeepsLabelsAlreadyUnderSettingName() {
     when(translationService.getTranslationField(SETTING_TYPE, PAGE_NAME, HEADER_TITLE_FIELD)).thenReturn(field(Map.of(Locale.ENGLISH,
                                                                                                                              "New")));
     when(translationService.getTranslationField(SETTING_TYPE, LEGACY_ID, HEADER_TITLE_FIELD)).thenReturn(field(Map.of(Locale.ENGLISH,
                                                                                                                              "Old")));
 
-    settingsService.migrateHeaderTitle(LEGACY_ID, PAGE_NAME);
+    settingsService.copyHeaderTitle(LEGACY_ID, PAGE_NAME);
     verify(translationService, never()).saveTranslationLabels(anyString(), anyString(), anyString(), any(), anyBoolean());
   }
 
   @Test
   @SneakyThrows
-  void migrateHeaderTitleWithoutLegacyLabelsSavesNothing() {
+  void copyHeaderTitleWithoutLegacyLabelsSavesNothing() {
     when(translationService.getTranslationField(SETTING_TYPE, LEGACY_ID, HEADER_TITLE_FIELD)).thenThrow(new ObjectNotFoundException(LEGACY_ID));
 
-    settingsService.migrateHeaderTitle(LEGACY_ID, PAGE_NAME);
+    settingsService.copyHeaderTitle(LEGACY_ID, PAGE_NAME);
     verify(translationService, never()).saveTranslationLabels(anyString(), anyString(), anyString(), any(), anyBoolean());
   }
 
   @Test
-  void migrateHeaderTitleWithBlankKeysDoesNothing() {
-    settingsService.migrateHeaderTitle(null, PAGE_NAME);
-    settingsService.migrateHeaderTitle(LEGACY_ID, " ");
+  void copyHeaderTitleWithBlankKeysDoesNothing() {
+    settingsService.copyHeaderTitle(null, PAGE_NAME);
+    settingsService.copyHeaderTitle(LEGACY_ID, " ");
     verifyNoInteractions(translationService);
+  }
+
+  @Test
+  void generateSettingNameMarksTheKindOfWindow() {
+    String pageName = settingsService.generateSettingName("12", WindowKind.PAGE);
+    String siteName = settingsService.generateSettingName("12", WindowKind.SITE_LAYOUT);
+    String sharedName = settingsService.generateSettingName("12", WindowKind.SHARED_LAYOUT);
+
+    assertTrue(pageName.matches("^Untitled-12-[0-9a-f]{8}-[0-9a-f-]{27}$"), pageName);
+    assertTrue(siteName.matches("^Untitled-12-site-[0-9a-f]{8}-[0-9a-f-]{27}$"), siteName);
+    assertTrue(sharedName.matches("^Untitled-12-shared-[0-9a-f]{8}-[0-9a-f-]{27}$"), sharedName);
+    assertNotEquals(pageName, settingsService.generateSettingName("12", WindowKind.PAGE));
+    assertTrue(settingsService.keepsSettingName(pageName, "12", WindowKind.PAGE, PAGE_REFERENCE, 0, this::noScan));
+    assertTrue(settingsService.keepsSettingName(siteName, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0, this::noScan));
+    assertTrue(settingsService.keepsSettingName(sharedName, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 0, this::noScan));
+  }
+
+  @Test
+  void getContextSpaceIdRecordsTheSpaceOwningTheRecordedSiteOfASiteLayoutWindow() {
+    Space space = new Space();
+    space.setId(7L);
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
+
+    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, PAGE_REFERENCE, 0L));
+    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "portal::meeds::home", 0L));
+    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "group::/spaces/deleted::home", 0L));
+    assertEquals(0L, settingsService.getContextSpaceId(SHARED_NAME, PAGE_REFERENCE, 3L));
+    assertEquals(3L, settingsService.getContextSpaceId(PAGE_NAME, PAGE_REFERENCE, 3L));
+  }
+
+  /**
+   * The layout editor previews a space template page as a space of the
+   * editor's choice, which the request then carries: fails the mutant
+   * recording that space, where the template's apps would take its audience
+   * and be deleted with it
+   */
+  @Test
+  void getContextSpaceIdRecordsThePlatformContextForATemplateWindow() {
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "group_template::workspace::home", 7L));
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal_template::intranet::home", 7L));
+    assertEquals(7L, settingsService.getContextSpaceId(PAGE_NAME, "group::/spaces/space1::home", 7L));
+  }
+
+  /**
+   * Fails the mutant comparing the space the request carries: a template
+   * window whose storage id changed would give up its name, and its apps, when
+   * rendered previewed as a space
+   */
+  @Test
+  void pageWindowOfATemplateKeepsItsNameWhateverSpaceItIsPreviewedAs() {
+    String name = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000013";
+    when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name, "group_template::workspace::home", 0L));
+
+    assertTrue(settingsService.keepsSettingName(name,
+                                                "21",
+                                                WindowKind.PAGE,
+                                                "group_template::workspace::home",
+                                                7L,
+                                                List::of));
+  }
+
+  @Test
+  void getSettingPageReferencePutsASiteLayoutWindowOnTheSiteWhoseLayoutHoldsIt() {
+    assertEquals("portal::meeds::profile",
+                 settingsService.getSettingPageReference(SITE_NAME, "portal::global::profile", SiteKey.portal("meeds")));
+    assertEquals("portal::meeds::stream",
+                 settingsService.getSettingPageReference(SITE_NAME, "portal::mycraft::stream", SiteKey.portal("meeds")));
+    assertEquals("group::/spaces/space1::profile",
+                 settingsService.getSettingPageReference(SITE_NAME,
+                                                         "portal::global::profile",
+                                                         SiteKey.group("/spaces/space1")));
+  }
+
+  @Test
+  void getSettingPageReferenceKeepsTheRenderedPageOfAnyOtherWindow() {
+    assertEquals("portal::global::profile",
+                 settingsService.getSettingPageReference(PAGE_NAME, "portal::global::profile", SiteKey.portal("meeds")));
+    assertEquals("portal::global::profile",
+                 settingsService.getSettingPageReference(SHARED_NAME, "portal::global::profile", SiteKey.portal("meeds")));
+    assertEquals("portal::global::profile",
+                 settingsService.getSettingPageReference(SITE_NAME, "portal::global::profile", null));
+    assertEquals("not a page", settingsService.getSettingPageReference(SITE_NAME, "not a page", SiteKey.portal("meeds")));
+  }
+
+  /**
+   * A site-layout window of the meta portal's layout is rendered with the
+   * pages of other sites and under every displayed site, and gets a new
+   * storage id on each publish of that layout: fails the mutant comparing and
+   * recording the rendered page, where the window takes a new name, so that
+   * its apps are listed nowhere, and the right of the rendered page's site
+   */
+  @Test
+  void siteLayoutWindowKeepsItsNameAndRightWhateverPageRendersIt() {
+    String name = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000012";
+    String recordedPage = settingsService.getSettingPageReference(name, "portal::meeds::home", SiteKey.portal("meeds"));
+    when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name,
+                                                                       recordedPage,
+                                                                       settingsService.getContextSpaceId(name, recordedPage, 0L)));
+
+    assertTrue(settingsService.keepsSettingName(name,
+                                                "21",
+                                                WindowKind.SITE_LAYOUT,
+                                                settingsService.getSettingPageReference(name,
+                                                                                        "portal::global::activity",
+                                                                                        SiteKey.portal("meeds")),
+                                                0L,
+                                                List::of));
+    assertTrue(settingsService.keepsSettingName(name,
+                                                "22",
+                                                WindowKind.SITE_LAYOUT,
+                                                settingsService.getSettingPageReference(name,
+                                                                                        "portal::mycraft::stream",
+                                                                                        SiteKey.portal("meeds")),
+                                                0L,
+                                                List::of));
+    mockUser(false);
+    when(layoutAclService.canEditSite(SiteKey.portal("meeds"), USERNAME)).thenReturn(true);
+    assertTrue(settingsService.canEditSettings(name, USERNAME));
+  }
+
+  /**
+   * Fails the mutant recording the rendered page: a space site's layout
+   * window first rendered with a page of another site would take the platform
+   * context, its apps the platform audience, and would not be deleted with
+   * the space
+   */
+  @Test
+  void siteLayoutWindowOfASpaceSiteRecordsTheSpaceWhateverPageRendersIt() {
+    Space space = new Space();
+    space.setId(7L);
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
+
+    String recordedPage = settingsService.getSettingPageReference(SITE_NAME,
+                                                                  "portal::global::profile",
+                                                                  SiteKey.group("/spaces/space1"));
+
+    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, recordedPage, 0L));
+  }
+
+  @Test
+  void keepsSettingNameGeneratedForTheWindowWithoutReadingAnything() {
+    assertTrue(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
+    assertTrue(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    assertTrue(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    verifyNoInteractions(cmsService);
+  }
+
+  @Test
+  void keepsSettingNameMarkedForItsKindOfWindowOnly() {
+    assertFalse(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SECTION_DRAFT_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
+    // A site-layout or shared-layout window from before the markers existed
+    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    // The shared-layout name of another window
+    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "13", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    verifyNoInteractions(cmsService);
+  }
+
+  @Test
+  void pageWindowKeepsANameOfThisPageAndSpaceThatNoOtherWindowCarries() {
+    String republished = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000001";
+    when(cmsService.getSetting(SETTING_TYPE, republished)).thenReturn(setting(republished, PAGE_REFERENCE, 5L));
+
+    assertTrue(settingsService.keepsSettingName(republished,
+                                                "12",
+                                                WindowKind.PAGE,
+                                                PAGE_REFERENCE,
+                                                5L,
+                                                () -> List.of(PAGE_NAME)));
+  }
+
+  @Test
+  void pageWindowGivesUpANameOfAnotherPageSpaceOrWindow() {
+    String otherPage = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000002";
+    String otherSpace = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000003";
+    String duplicated = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000004";
+    String forged = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000005";
+    when(cmsService.getSetting(SETTING_TYPE, otherPage)).thenReturn(setting(otherPage, "group::/spaces/space1::other", 5L));
+    when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 6L));
+    when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 5L));
+
+    assertFalse(settingsService.keepsSettingName(otherPage, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
+    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
+    assertFalse(settingsService.keepsSettingName(duplicated,
+                                                 "12",
+                                                 WindowKind.PAGE,
+                                                 PAGE_REFERENCE,
+                                                 5L,
+                                                 () -> List.of(PAGE_NAME, duplicated)));
+    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
+  }
+
+  @Test
+  void keepsSettingNameDecidesOncePerWindow() {
+    String republished = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000006";
+    when(cmsService.getSetting(SETTING_TYPE, republished)).thenReturn(setting(republished, PAGE_REFERENCE, 5L));
+    AtomicInteger scans = new AtomicInteger();
+    Supplier<Collection<String>> otherWindowNames = () -> {
+      scans.incrementAndGet();
+      return List.of();
+    };
+
+    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, otherWindowNames));
+    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, otherWindowNames));
+    verify(cmsService, times(1)).getSetting(SETTING_TYPE, republished);
+    assertEquals(1, scans.get());
+    // Another window carrying the same name is decided on its own
+    assertFalse(settingsService.keepsSettingName(republished,
+                                                 "14",
+                                                 WindowKind.PAGE,
+                                                 PAGE_REFERENCE,
+                                                 5L,
+                                                 () -> List.of(republished)));
+  }
+
+  @Test
+  void siteLayoutWindowKeepsASiteNameOfThisSiteAndItsSpaceThatNoOtherWindowCarries() {
+    String copied = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000007";
+    Space space = new Space();
+    space.setId(7L);
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
+    when(cmsService.getSetting(SETTING_TYPE, copied)).thenReturn(setting(copied, "group::/spaces/space1::other", 7L));
+
+    // Rendered on another page of the same site
+    assertTrue(settingsService.keepsSettingName(copied, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, () -> List.of(SITE_NAME)));
+  }
+
+  @Test
+  void siteLayoutWindowGivesUpASiteNameOfAnotherSiteSpaceOrWindow() {
+    String otherSite = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000008";
+    String otherSpace = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000009";
+    String duplicated = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000010";
+    String forged = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000011";
+    Space space = new Space();
+    space.setId(7L);
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
+    when(cmsService.getSetting(SETTING_TYPE, otherSite)).thenReturn(setting(otherSite, "group::/spaces/space2::home", 7L));
+    when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 8L));
+    when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 7L));
+
+    assertFalse(settingsService.keepsSettingName(otherSite, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
+    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
+    assertFalse(settingsService.keepsSettingName(duplicated,
+                                                 "12",
+                                                 WindowKind.SITE_LAYOUT,
+                                                 PAGE_REFERENCE,
+                                                 0L,
+                                                 () -> List.of(duplicated)));
+    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
+  }
+
+  private Collection<String> noScan() {
+    throw new AssertionError("The other windows must not be read for a name generated for the window");
   }
 
   private Identity mockUser(boolean administrator) {

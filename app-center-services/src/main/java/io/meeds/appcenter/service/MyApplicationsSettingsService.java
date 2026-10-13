@@ -19,10 +19,14 @@
 package io.meeds.appcenter.service;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -32,13 +36,18 @@ import org.springframework.stereotype.Service;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.mop.page.PageKey;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 
+import io.meeds.appcenter.constant.WindowKind;
+import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.category.service.CategoryService;
@@ -92,11 +101,23 @@ public class MyApplicationsSettingsService {
 
   private static final Log    LOG                       = ExoLogger.getLogger(MyApplicationsSettingsService.class);
 
-  /** Window of a shared layout: rendered on every site, edited by administrators only. */
+  /**
+   * Name generated for a shared-layout window that has a storage id, which a
+   * configured shared layout never gives: edited by administrators only.
+   */
   private static final Pattern SHARED_LAYOUT_NAME       = Pattern.compile("^Untitled-\\d+-shared-");
 
   /** Window of a site layout: edited by whoever may edit that site. */
   private static final Pattern SITE_LAYOUT_NAME         = Pattern.compile("^Untitled-\\d+-site-");
+
+  /** Window of a section-template draft page. */
+  private static final Pattern SECTION_DRAFT_NAME       = Pattern.compile("^Untitled-\\d+-sdraft-\\d+-");
+
+  private static final String  UNTITLED_PREFIX          = "Untitled-";
+
+  private static final String  SITE_LAYOUT_MARKER       = "site-";
+
+  private static final String  SHARED_LAYOUT_MARKER     = "shared-";
 
   /**
    * Section-template editor draft page, named section_draft_TEMPLATE_USER in
@@ -130,12 +151,25 @@ public class MyApplicationsSettingsService {
   @Autowired
   private CategoryService     categoryService;
 
+  @Autowired
+  private SpaceService        spaceService;
+
+  /**
+   * Whether a window keeps a setting name generated for another storage id,
+   * by storage id and name: the setting read and the page scan run once per
+   * window and node.
+   */
+  private final Map<String, Boolean> keptSettingNames = new ConcurrentHashMap<>();
+
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
    * header title included: the page-content right of the window's page, the
-   * site edit right for a site-layout window, administrators only for a
-   * shared-layout window and for a window whose setting was recorded on a
-   * section-template draft page, whatever its name.
+   * site edit right for a site-layout window, administrators only for the
+   * generated name of a shared-layout window and for a window whose setting
+   * was recorded on a section-template draft page, whatever its name. A window
+   * of a configured shared layout has no storage id, so no generated name: its
+   * name must be configured, and it takes the right of the page that first
+   * rendered it.
    *
    * @param settingName the window's CMS setting name
    * @param username the user, null or anonymous for a guest
@@ -202,7 +236,7 @@ public class MyApplicationsSettingsService {
     if (!canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return getWritableSettings(parameters);
+    return getWritableSettings(settingName, parameters);
   }
 
   /**
@@ -210,20 +244,22 @@ public class MyApplicationsSettingsService {
    * Shortcuts portlet owns, each with a valid value. Any other name, among
    * which name, applicationId, data.init, canEdit and settingName, and any
    * invalid value is dropped, and so is the id of an application that no
-   * longer exists, and of a category that no longer exists. The selection
-   * mode, the application ids and the category ids are stored only with a
-   * listing mode, both lists whatever the selection mode, so that switching
-   * modes keeps the other list. A write selecting the SELECTED listing mode is
-   * refused as a whole unless it selects the MANUAL mode with at least one
-   * application, or the CATEGORY mode with at least one category: a SELECTED
-   * listing is never stored empty.
+   * longer exists or that another Shortcuts portlet window created, and of a
+   * category that no longer exists. The selection mode, the application ids
+   * and the category ids are stored only with a listing mode, both lists
+   * whatever the selection mode, so that switching modes keeps the other
+   * list. A write selecting the SELECTED listing mode is refused as a whole
+   * unless it selects the MANUAL mode with at least one application, or the
+   * CATEGORY mode with at least one category: a SELECTED listing is never
+   * stored empty.
    *
+   * @param settingName the window's CMS setting name
    * @param parameters posted parameters
    * @return the preferences to store, by name
    * @throws IllegalArgumentException when the write selects the SELECTED
    *           listing mode with nothing to list
    */
-  public Map<String, String> getWritableSettings(Map<String, String> parameters) {
+  public Map<String, String> getWritableSettings(String settingName, Map<String, String> parameters) {
     Map<String, String> settings = new HashMap<>();
     if (parameters == null) {
       return settings;
@@ -252,8 +288,10 @@ public class MyApplicationsSettingsService {
     String applicationIds = StringUtils.deleteWhitespace(parameters.get(APPLICATION_IDS));
     List<Long> ids = applicationIds == null ? null : parseIds(applicationIds, ApplicationCenterService.MAX_LISTED_APPLICATIONS);
     if (ids != null) {
-      // The id of a deleted application is dropped: no one could see or remove it
-      ids = ids.stream().filter(id -> applicationCenterStorage.getApplication(id) != null).toList();
+      // The id of a deleted application is dropped: no one could see or remove
+      // it, and so is the id of an application another window created, which
+      // only that window lists
+      ids = ids.stream().filter(id -> isListable(applicationCenterStorage.getApplication(id), settingName)).toList();
       settings.put(APPLICATION_IDS, StringUtils.join(ids, ","));
     }
     String categoryIds = StringUtils.deleteWhitespace(parameters.get(CATEGORY_IDS));
@@ -339,16 +377,17 @@ public class MyApplicationsSettingsService {
   }
 
   /**
-   * Copies the header title, every language, from the legacy applicationId key
-   * to the setting name key when the latter holds none. Reads and writes go
-   * through the ACL-free translation API: the migration runs at render, for
-   * any viewer.
+   * Copies the header title, every language, from one key to another when the
+   * latter holds none: from the legacy applicationId key to the setting name,
+   * or from the setting name a window gave up to the one it got. Reads and
+   * writes go through the ACL-free translation API: the copy runs at render,
+   * for any viewer.
    *
-   * @param legacyApplicationId the window's legacy applicationId preference
+   * @param sourceKey the key the header title is stored under
    * @param settingName the window's CMS setting name
    */
-  public void migrateHeaderTitle(String legacyApplicationId, String settingName) {
-    if (StringUtils.isBlank(legacyApplicationId) || StringUtils.isBlank(settingName)) {
+  public void copyHeaderTitle(String sourceKey, String settingName) {
+    if (StringUtils.isBlank(sourceKey) || StringUtils.isBlank(settingName)) {
       return;
     }
     try {
@@ -356,17 +395,128 @@ public class MyApplicationsSettingsService {
       if (hasLabels(current)) {
         return;
       }
-      TranslationField legacy = translationService.getTranslationField(SETTING_TYPE, legacyApplicationId, HEADER_TITLE_FIELD);
-      if (hasLabels(legacy)) {
+      TranslationField source = translationService.getTranslationField(SETTING_TYPE, sourceKey, HEADER_TITLE_FIELD);
+      if (hasLabels(source)) {
         translationService.saveTranslationLabels(SETTING_TYPE,
                                                  settingName,
                                                  HEADER_TITLE_FIELD,
-                                                 new HashMap<>(legacy.getLabels()),
+                                                 new HashMap<>(source.getLabels()),
                                                  false);
       }
     } catch (ObjectNotFoundException e) {
-      LOG.debug("No header title to migrate from {} to {}", legacyApplicationId, settingName, e);
+      LOG.debug("No header title to copy from {} to {}", sourceKey, settingName, e);
     }
+  }
+
+  /**
+   * Generates the setting name of a window: Untitled-STORAGEID-UUID for a page
+   * window, with a site- or shared- marker before the UUID for a site-layout
+   * or a shared-layout window, so that its name tells which right and which
+   * context apply to it.
+   *
+   * @param storageId the window's storage id
+   * @param windowKind where the window is placed
+   * @return a new setting name
+   */
+  public String generateSettingName(String storageId, WindowKind windowKind) {
+    String marker = switch (windowKind) {
+    case SITE_LAYOUT -> SITE_LAYOUT_MARKER;
+    case SHARED_LAYOUT -> SHARED_LAYOUT_MARKER;
+    default -> "";
+    };
+    return UNTITLED_PREFIX + storageId + "-" + marker + UUID.randomUUID();
+  }
+
+  /**
+   * Decides the space a window's setting records: the space owning the site
+   * of the recorded page reference for a site-layout window, the site whose
+   * layout holds it, none for the generated name of a shared-layout window,
+   * which is rendered on every site, nor for a window of a site or space
+   * template, which belongs to no space even when previewed as one, and the
+   * space of the request otherwise.
+   *
+   * @param settingName the window's CMS setting name
+   * @param pageReference the page reference the window's setting records,
+   *          see {@link #getSettingPageReference(String, String, SiteKey)}
+   * @param spaceId the space of the request
+   *          (SpaceUtils.getSpaceByContext()), 0 for none
+   * @return the space id to record, 0 for the platform context
+   */
+  public long getContextSpaceId(String settingName, String pageReference, long spaceId) {
+    if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
+      return 0;
+    } else if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
+      return getSiteSpaceId(getSiteKey(pageReference));
+    } else {
+      return isTemplateSite(getSiteKey(pageReference)) ? 0 : spaceId;
+    }
+  }
+
+  /**
+   * Decides the page reference a window's setting records and is compared
+   * with: for a site-layout window, the rendered page's name on the site whose
+   * layout holds the window, whatever page and site render it, so that its
+   * context, its right and the check of its name follow that site; the
+   * rendered page otherwise. A site renders the pages of other sites, and a
+   * displayed site renders the meta portal's layout.
+   *
+   * @param settingName the window's CMS setting name
+   * @param pageReference the page the window is rendered on
+   * @param layoutSite the site whose layout holds a site-layout window
+   * @return the page reference to record and compare
+   */
+  public String getSettingPageReference(String settingName, String pageReference, SiteKey layoutSite) {
+    PageKey pageKey = layoutSite == null || !SITE_LAYOUT_NAME.matcher(settingName).find() ? null : getPageKey(pageReference);
+    return pageKey == null ? pageReference : new PageKey(layoutSite, pageKey.getName()).format();
+  }
+
+  /**
+   * Whether a window keeps the setting name its preferences carry. A layout
+   * copy carries the preferences of its source, the setting name included, and
+   * a page editor may rewrite it: such a window would act in the context of
+   * another window's setting. It keeps its name when the name was generated
+   * for it: its storage id and the marker of its kind of window. Otherwise, a
+   * page window keeps an unmarked name recorded on this page, with the space
+   * of its context ({@link #getContextSpaceId(String, String, long)}), that no
+   * other window of the page carries, as after a same-page publish, and a
+   * site-layout window keeps a site-marked name recorded on this site, with
+   * the space owning the site, that no other window of the site carries. Every
+   * other name is given up, a shared-layout window's included. The decision
+   * on a name generated for another storage id is memoised per window.
+   *
+   * @param settingName the name the window's preferences carry, not blank
+   * @param storageId the window's storage id, not blank
+   * @param windowKind where the window is placed
+   * @param pageReference the page reference the window's setting records,
+   *          see {@link #getSettingPageReference(String, String, SiteKey)}
+   * @param spaceId the space of the request
+   *          (SpaceUtils.getSpaceByContext()), 0 for none
+   * @param otherWindowNames reads the setting names of the other windows of
+   *          the page, or of the site for a site-layout window
+   * @return true when the window keeps its setting name
+   */
+  public boolean keepsSettingName(String settingName,
+                                  String storageId,
+                                  WindowKind windowKind,
+                                  String pageReference,
+                                  long spaceId,
+                                  Supplier<Collection<String>> otherWindowNames) {
+    if (getWindowKind(settingName) != windowKind) {
+      // A name marked for another kind of window, or an unmarked one on a
+      // site-layout or shared-layout window, as before this marker existed
+      return false;
+    } else if (StringUtils.startsWith(settingName, UNTITLED_PREFIX + storageId + "-")) {
+      return true;
+    } else if (windowKind == WindowKind.SHARED_LAYOUT) {
+      return false;
+    }
+    String key = storageId + "/" + settingName;
+    Boolean kept = keptSettingNames.get(key);
+    if (kept == null) {
+      kept = isSettingOfWindow(settingName, windowKind, pageReference, spaceId, otherWindowNames);
+      keptSettingNames.put(key, kept);
+    }
+    return kept;
   }
 
   /**
@@ -374,7 +524,83 @@ public class MyApplicationsSettingsService {
    * @return true when the window's setting exists
    */
   public boolean hasSetting(String settingName) {
-    return StringUtils.isNotBlank(settingName) && cmsService.getSetting(SETTING_TYPE, settingName) != null;
+    return getSetting(settingName) != null;
+  }
+
+  /**
+   * @param settingName a Shortcuts portlet window's CMS setting name
+   * @return the window's setting, recorded server-side when the window was
+   *         first rendered, null when it does not exist
+   */
+  public CMSSetting getSetting(String settingName) {
+    return StringUtils.isBlank(settingName) ? null : cmsService.getSetting(SETTING_TYPE, settingName);
+  }
+
+  private boolean isSettingOfWindow(String settingName,
+                                    WindowKind windowKind,
+                                    String pageReference,
+                                    long spaceId,
+                                    Supplier<Collection<String>> otherWindowNames) {
+    CMSSetting setting = getSetting(settingName);
+    if (setting == null) {
+      return false;
+    } else if (windowKind == WindowKind.SITE_LAYOUT) {
+      SiteKey site = getSiteKey(pageReference);
+      if (site == null
+          || !site.equals(getSiteKey(setting.getPageReference()))
+          || setting.getSpaceId() != getSiteSpaceId(site)) {
+        return false;
+      }
+    } else if (!StringUtils.equals(setting.getPageReference(), pageReference)
+               || setting.getSpaceId() != getContextSpaceId(settingName, pageReference, spaceId)) {
+      return false;
+    }
+    return !otherWindowNames.get().contains(settingName);
+  }
+
+  /**
+   * @return the kind of window a setting name was generated for, from its
+   *         marker, null for a section-template draft window
+   */
+  private WindowKind getWindowKind(String settingName) {
+    if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
+      return WindowKind.SITE_LAYOUT;
+    } else if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
+      return WindowKind.SHARED_LAYOUT;
+    } else if (SECTION_DRAFT_NAME.matcher(settingName).find()) {
+      return null;
+    } else {
+      return WindowKind.PAGE;
+    }
+  }
+
+  /**
+   * @return the space whose group owns a group site, 0 for any other site
+   */
+  private long getSiteSpaceId(SiteKey site) {
+    if (site == null || site.getType() != SiteType.GROUP) {
+      return 0;
+    }
+    Space space = spaceService.getSpaceByGroupId(site.getName());
+    return space == null ? 0 : space.getSpaceId();
+  }
+
+  private boolean isTemplateSite(SiteKey site) {
+    return site != null && (site.getType() == SiteType.GROUP_TEMPLATE || site.getType() == SiteType.PORTAL_TEMPLATE);
+  }
+
+  private SiteKey getSiteKey(String pageReference) {
+    PageKey pageKey = getPageKey(pageReference);
+    return pageKey == null ? null : pageKey.getSite();
+  }
+
+  private PageKey getPageKey(String pageReference) {
+    try {
+      return PageKey.parse(pageReference);
+    } catch (RuntimeException e) {
+      LOG.debug("Unable to parse page reference {}", pageReference, e);
+      return null;
+    }
   }
 
   private boolean canEditSite(String pageReference, String username) {
@@ -397,6 +623,11 @@ public class MyApplicationsSettingsService {
       LOG.debug("Unable to parse page reference {}", pageReference, e);
       return false;
     }
+  }
+
+  private boolean isListable(Application application, String settingName) {
+    return application != null
+           && (!application.isContextual() || StringUtils.equals(application.getContextSettingName(), settingName));
   }
 
   private boolean hasLabels(TranslationField translationField) {

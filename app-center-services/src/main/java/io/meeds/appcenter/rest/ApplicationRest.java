@@ -21,6 +21,7 @@ package io.meeds.appcenter.rest;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -200,6 +201,58 @@ public class ApplicationRest {
     }
   }
 
+  @PostMapping(path = "contextual")
+  @Secured("users")
+  @Operation(summary = "Creates an application listed only by a Shortcuts portlet", method = "POST", description = "Creates, from the settings of a Shortcuts portlet, an application only that portlet lists, displayed to the audience of the portlet's context, and returns it")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, the response's message naming it"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or space of its context") })
+  public ResponseEntity<Object> createContextApplication(
+                                                         HttpServletRequest request,
+                                                         @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                         @RequestParam("settingName")
+                                                         String settingName,
+                                                         @RequestBody
+                                                         ApplicationForm application) {
+    try {
+      return ResponseEntity.ok(appCenterService.createContextApplication(application, settingName, request.getRemoteUser()));
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+  }
+
+  @DeleteMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Deletes an application a Shortcuts portlet created", method = "DELETE", description = "Deletes, from the settings of the Shortcuts portlet that created it, an application only that portlet lists")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Application not created by a Shortcuts portlet, or by another one, the response's message telling which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+  public ResponseEntity<Object> deleteContextApplication(
+                                                         HttpServletRequest request,
+                                                         @Parameter(description = "Application technical id to delete", required = true)
+                                                         @PathVariable("applicationId")
+                                                         long applicationId,
+                                                         @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                         @RequestParam("settingName")
+                                                         String settingName) {
+    try {
+      appCenterService.deleteContextApplication(applicationId, settingName, request.getRemoteUser());
+      return ResponseEntity.ok().build();
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      return badRequest(e.getMessage());
+    }
+  }
+
   @GetMapping(path = "all")
   @Secured("administrators")
   @Operation(summary = "Retrieves all available applications", method = "GET", description = "Return list of applications in json format")
@@ -326,25 +379,26 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "400", description = "Bad Request: an application that may not be stuck, the response's message telling it; or an invalid side, with no message"),
     @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
     @ApiResponse(responseCode = "404", description = "Not found") })
-  public void stickApplication(
-                               HttpServletRequest request,
-                               @Parameter(description = "Layout side to stick the application to: left or right", required = true)
-                               @PathVariable("side")
-                               String side,
-                               @Parameter(description = "Application technical id to stick", required = true)
-                               @RequestParam("applicationId")
-                               Long applicationId) {
+  public ResponseEntity<Object> stickApplication(
+                                                 HttpServletRequest request,
+                                                 @Parameter(description = "Layout side to stick the application to: left or right", required = true)
+                                                 @PathVariable("side")
+                                                 String side,
+                                                 @Parameter(description = "Application technical id to stick", required = true)
+                                                 @RequestParam("applicationId")
+                                                 Long applicationId) {
     try {
       appCenterService.stickApplication(applicationId, placementSide(side), request.getRemoteUser());
+      return ResponseEntity.ok().build();
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+      return badRequest(e.getMessage());
     }
   }
 
@@ -363,6 +417,15 @@ public class ApplicationRest {
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
+  }
+
+  /**
+   * @return a refusal whose body carries its message, a code or a sentence
+   *         naming what is refused, which the reason of a
+   *         ResponseStatusException never brings to the client
+   */
+  private static ResponseEntity<Object> badRequest(String message) {
+    return ResponseEntity.badRequest().body(Map.of("message", Objects.toString(message, "")));
   }
 
   private PlacementSide placementSide(String side) {

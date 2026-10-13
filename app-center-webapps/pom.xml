@@ -31,6 +31,9 @@
   <artifactId>app-center-webapps</artifactId>
   <packaging>war</packaging>
   <name>Add-on:: Application Center - Webapp</name>
+  <properties>
+    <exo.test.coverage.ratio>0.83</exo.test.coverage.ratio>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -47,6 +50,12 @@
       <groupId>io.meeds.social</groupId>
       <artifactId>social-component-web</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <!-- Types of the services the portlet test mocks -->
+    <dependency>
+      <groupId>io.meeds.layout</groupId>
+      <artifactId>layout-service</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

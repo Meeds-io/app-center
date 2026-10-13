@@ -224,4 +224,11 @@
     </rollback>
   </changeSet>
 
+  <changeSet author="appCenter" id="1.0.0-exip-7.3.0.40-01">
+    <addColumn tableName="AC_APPLICATION">
+      <column name="CONTEXT_SETTING_NAME" type="VARCHAR(200)" />
+      <column name="CONTEXT_SPACE_ID" type="BIGINT" />
+    </addColumn>
+  </changeSet>
+
 </databaseChangeLog>

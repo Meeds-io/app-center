@@ -20,8 +20,10 @@ package io.meeds.appcenter.rest;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
@@ -94,6 +97,8 @@ public class ApplicationRestTest {
   private static final String CONTEXT_APPLICATIONS_PATH = "/applications/contextual/list";  // NOSONAR
 
   private static final String CONTEXT_SUGGEST_PATH      = "/applications/contextual/suggest"; // NOSONAR
+
+  private static final String CONTEXT_PATH              = "/applications/contextual";       // NOSONAR
 
   private static final String SETTING_NAME_PARAM        = "settingName";
 
@@ -252,6 +257,90 @@ public class ApplicationRestTest {
   }
 
   @Test
+  void createContextApplication() throws Exception {
+    Application created = application();
+    created.setContextSettingName(SETTING_NAME);
+    when(applicationCenterService.createContextApplication(any(), eq(SETTING_NAME), eq(SIMPLE_USER))).thenReturn(created);
+
+    mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                      .content("{\"title\":\"title\",\"url\":\"https://meeds.io\",\"contextual\":false,\"imageUploadId\":\"upload\"}")
+                                      .contentType(MediaType.APPLICATION_JSON)
+                                      .with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.contextual").value(true))
+           .andExpect(jsonPath("$.contextSettingName").value(SETTING_NAME));
+    verify(applicationCenterService).createContextApplication(argThat(form -> "title".equals(form.getTitle())
+                                                                              && "upload".equals(form.getImageUploadId())),
+                                                              eq(SETTING_NAME),
+                                                              eq(SIMPLE_USER));
+  }
+
+  @Test
+  void createContextApplicationAnonymously() throws Exception {
+    mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                      .content("{\"title\":\"title\"}")
+                                      .contentType(MediaType.APPLICATION_JSON))
+           .andExpect(status().isForbidden());
+    verify(applicationCenterService, never()).createContextApplication(any(), any(), any());
+  }
+
+  /**
+   * The reason of a ResponseStatusException never reaches the client: fails
+   * the mutant refusing with one, whose body carries no message code
+   */
+  @Test
+  void createContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    when(applicationCenterService.createContextApplication(any(), eq("unknown"), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.createContextApplication(any(), eq("forbidden"), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.createContextApplication(any(),
+                                                           eq("invalid"),
+                                                           any())).thenThrow(new IllegalArgumentException(ApplicationCenterService.INVALID_TYPE_MESSAGE));
+
+    postContextApplication("unknown").andExpect(status().isNotFound());
+    postContextApplication("forbidden").andExpect(status().isForbidden());
+    postContextApplication("invalid").andExpect(status().isBadRequest())
+                                     .andExpect(jsonPath("$.message").value(ApplicationCenterService.INVALID_TYPE_MESSAGE));
+  }
+
+  @Test
+  void deleteContextApplication() throws Exception {
+    mockMvc.perform(delete(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).deleteContextApplication(7L, SETTING_NAME, SIMPLE_USER);
+
+    mockMvc.perform(delete(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)).andExpect(status().isForbidden());
+  }
+
+  /**
+   * Fails the mutant refusing with a ResponseStatusException, whose reason
+   * never reaches the client
+   */
+  @Test
+  void deleteContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    doThrow(ObjectNotFoundException.class).when(applicationCenterService).deleteContextApplication(1L, SETTING_NAME, SIMPLE_USER);
+    doThrow(IllegalAccessException.class).when(applicationCenterService).deleteContextApplication(2L, SETTING_NAME, SIMPLE_USER);
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_OWNED_MESSAGE)).when(applicationCenterService)
+                                                                                    .deleteContextApplication(3L,
+                                                                                                              SETTING_NAME,
+                                                                                                              SIMPLE_USER);
+
+    mockMvc.perform(delete(CONTEXT_PATH + "/1").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(delete(CONTEXT_PATH + "/2").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden());
+    mockMvc.perform(delete(CONTEXT_PATH + "/3").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_OWNED_MESSAGE));
+  }
+
+  private ResultActions postContextApplication(String settingName) throws Exception {
+    return mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, settingName)
+                                             .content("{\"title\":\"title\"}")
+                                             .contentType(MediaType.APPLICATION_JSON)
+                                             .with(testSimpleUser()));
+  }
+
+  @Test
   void getAllApplicationsAnonymously() throws Exception {
     ResultActions response = mockMvc.perform(get(ALL_APPLICATIONS_PATH));
     response.andExpect(status().isForbidden());
@@ -344,6 +433,10 @@ public class ApplicationRestTest {
     response.andExpect(status().isUnauthorized());
   }
 
+  /**
+   * Fails the mutant refusing with a ResponseStatusException, whose reason
+   * never reaches the client
+   */
   @Test
   void stickApplicationNotAllowed() throws Exception {
     doThrow(new IllegalArgumentException("appCenter.placement.stickNotAllowed")).when(applicationCenterService)
@@ -351,7 +444,7 @@ public class ApplicationRestTest {
                                                                                                   PlacementSide.LEFT,
                                                                                                   SIMPLE_USER);
     ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
-    response.andExpect(status().isBadRequest());
+    response.andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("appCenter.placement.stickNotAllowed"));
   }
 
   @Test
@@ -402,7 +495,9 @@ public class ApplicationRestTest {
                            false,
                            null,
                            false,
-                           false);
+                           false,
+                           null,
+                           null);
   }
 
   @SneakyThrows

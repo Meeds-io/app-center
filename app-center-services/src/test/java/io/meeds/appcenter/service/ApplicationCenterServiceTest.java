@@ -18,6 +18,7 @@
  */
 package io.meeds.appcenter.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,8 +35,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,6 +51,7 @@ import java.util.ListResourceBundle;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -53,6 +61,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -70,25 +79,34 @@ import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
+import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
+import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
 import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
+import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
+import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
+import io.meeds.social.category.model.CategoryObject;
 import io.meeds.social.category.service.CategoryLinkService;
+import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.translation.service.TranslationService;
 
 import lombok.SneakyThrows;
@@ -122,6 +140,18 @@ public class ApplicationCenterServiceTest {
   private static final Long        ID             = 2l;
 
   private static final String      SETTING_NAME   = "Untitled-12";
+
+  private static final String      OTHER_SETTING_NAME = "Untitled-13";
+
+  private static final String      PAGE_REFERENCE = "group::/spaces/team::home";
+
+  private static final long        SPACE_ID       = 5L;
+
+  private static final String      SPACE_GROUP    = "/spaces/team";
+
+  private static final long        CREATED_ID     = 30L;
+
+  private static final String      UPLOAD_ID      = "uploadId";
 
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
@@ -170,6 +200,12 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ResourceBundleService    resourceBundleService;
+
+  @MockitoBean
+  private SpaceService             spaceService;
+
+  @MockitoBean
+  private PortletInstanceService   portletInstanceService;
 
   @Autowired
   private ApplicationCenterService applicationCenterService;
@@ -377,31 +413,48 @@ public class ApplicationCenterServiceTest {
 
   @Test
   @SneakyThrows
-  void updateFavoriteApplicationOrder() {
+  void updateFavoriteApplicationsOrder() {
     assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ""));
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(ID, 1L)), ""));
     assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(0L, 1L), ADMIN_USERNAME));
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(0L, 1L)),
+                                                                                ADMIN_USERNAME));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(null, ADMIN_USERNAME));
     assertThrows(ApplicationNotFoundException.class,
-                 () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME));
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(ID, 1L)),
+                                                                                ADMIN_USERNAME));
 
     when(appCenterStorage.getApplication(ID)).thenReturn(application());
-    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME);
+    applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(ID, 1L)), ADMIN_USERNAME);
     verify(appCenterStorage).updateFavoriteApplicationOrder(ID, ADMIN_USERNAME, 1L);
   }
 
   @Test
   @SneakyThrows
-  void updateFavoriteApplicationOrderWhenMandatory() {
+  @SuppressWarnings("removal")
+  void updateFavoriteApplicationOrderOrdersOneApplicationAsTheBatchDoes() {
+    when(appCenterStorage.getApplication(ID)).thenReturn(application());
+    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME);
+    verify(appCenterStorage).updateFavoriteApplicationOrder(ID, ADMIN_USERNAME, 1L);
+
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 2L), TEST_USER));
+    verify(appCenterStorage, never()).updateFavoriteApplicationOrder(ID, TEST_USER, 2L);
+  }
+
+  @Test
+  @SneakyThrows
+  void updateFavoriteApplicationsOrderWhenMandatory() {
     Application application = application();
 
     when(appCenterStorage.getApplication(ID)).thenReturn(application);
-    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME);
+    applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(ID, 1L)), ADMIN_USERNAME);
     verify(appCenterStorage).updateFavoriteApplicationOrder(ID, ADMIN_USERNAME, 1L);
     verify(appCenterStorage, never()).addApplicationToUserFavorite(ID, ADMIN_USERNAME);
 
     application.setMandatory(false);
-    applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(ID, 1L), ADMIN_USERNAME);
+    applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(ID, 1L)), ADMIN_USERNAME);
     verify(appCenterStorage).addApplicationToUserFavorite(ID, ADMIN_USERNAME);
   }
 
@@ -1198,6 +1251,722 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.getContextSuggestions(SETTING_NAME, null, excluded, 0, 20, null, TEST_USER));
   }
 
+  @Test
+  void createContextApplicationRefusesAnUnknownSettingBeforeTheRight() throws Exception {
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER));
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createContextApplication(contextForm(), null, TEST_USER));
+    verify(myApplicationsSettingsService, never()).canEditSettings(any(), any());
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createContextApplicationRequiresTheRightToManageTheWindowApplications() throws Exception {
+    mockContext(SPACE_ID);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(false);
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(UPLOAD_ID);
+
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).readUpload(any(), anyInt());
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createContextApplicationGivesTheSpaceMembersAudienceInASpaceContext() throws Exception {
+    mockContext(SPACE_ID);
+    ApplicationForm form = contextForm();
+    form.setPermissions(List.of("*:/platform/administrators"));
+
+    Application created = applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:" + SPACE_GROUP)
+                                                                                 .equals(application.getPermissions())),
+                                                      eq(SETTING_NAME),
+                                                      eq(SPACE_ID));
+    assertEquals(CREATED_ID, created.getId());
+    assertEquals(SETTING_NAME, created.getContextSettingName());
+    assertEquals(SPACE_ID, created.getContextSpaceId());
+  }
+
+  @Test
+  void createContextApplicationGivesEveryPlatformUserAudienceInThePlatformContext() throws Exception {
+    mockContext(0L);
+
+    applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER);
+
+    verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:/platform/users",
+                                                                                     "*:/platform/externals")
+                                                                                 .equals(application.getPermissions())),
+                                                      eq(SETTING_NAME),
+                                                      eq(0L));
+    verify(spaceService, never()).getSpaceById(anyLong());
+  }
+
+  @Test
+  void createContextApplicationRefusesTheContextOfADeletedSpace() throws Exception {
+    mockContext(SPACE_ID);
+    when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER));
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createContextApplicationForcesTheFieldsTheFormDoesNotOffer() throws Exception {
+    mockContext(SPACE_ID);
+    ApplicationForm form = contextForm();
+    form.setMandatory(true);
+    form.setDefault(true);
+    form.setPwa(true);
+    form.setSystem(true);
+    form.setPersonal(true);
+    form.setAllowStick(true);
+    form.setShortcut(SHORTCUT);
+    form.setActive(false);
+    form.setImageFileId(IMAGE_FILE_ID);
+    form.setOrder(3L);
+    form.setChangedManually(true);
+    form.setContextSettingName("Untitled-13-forged");
+    form.setContextSpaceId(SPACE_ID + 1);
+
+    applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
+    verify(appCenterStorage).createContextApplication(captor.capture(), eq(SETTING_NAME), eq(SPACE_ID));
+    Application stored = captor.getValue();
+    assertFalse(stored.isMandatory());
+    assertFalse(stored.isDefault());
+    assertFalse(stored.isPwa());
+    assertFalse(stored.isSystem());
+    assertFalse(stored.isPersonal());
+    assertFalse(stored.isAllowStick());
+    assertNull(stored.getShortcut());
+    assertTrue(stored.isActive());
+    assertNull(stored.getImageFileId());
+    assertNull(stored.getOrder());
+    assertFalse(stored.isChangedManually());
+    assertNull(stored.getContextSettingName());
+    assertNull(stored.getContextSpaceId());
+  }
+
+  @Test
+  void createContextApplicationKeepsTheFieldsTheFormOffers() throws Exception {
+    mockContext(SPACE_ID);
+    when(badgePluginRegistry.getPlugin("agenda")).thenReturn(mock(ApplicationBadgePlugin.class));
+    ApplicationForm form = contextForm();
+    form.setSameTab(false);
+    form.setMobile(false);
+    form.setAllowDetach(true);
+    form.setBadgeName("agenda");
+    form.setHelpPageURL("meeds.io/help");
+
+    applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    Application stored = lastCreatedContextApplication();
+    assertEquals(TITLE, stored.getTitle());
+    assertEquals(DESCRIPTION, stored.getDescription());
+    assertEquals(ApplicationType.LINK, stored.getType());
+    assertEquals("https://meeds.io", stored.getUrl());
+    assertFalse(stored.isSameTab());
+    assertFalse(stored.isMobile());
+    assertTrue(stored.isAllowDetach());
+    assertEquals("fa-star", stored.getIcon());
+    assertEquals("agenda", stored.getBadgeName());
+    assertEquals("https://meeds.io/help", stored.getHelpPageURL());
+  }
+
+  @Test
+  void createContextApplicationValidatesTheUrlOfEachType() throws Exception {
+    mockContext(SPACE_ID);
+    assertEquals("https://meeds.io", createdContextApplication(form -> form.setUrl("meeds.io")).getUrl());
+    assertEquals("/portal/dw", createdContextApplication(form -> form.setUrl("/portal/dw")).getUrl());
+    assertEquals("https://meeds.io", createdContextApplication(form -> {
+      form.setType(null);
+      form.setUrl("meeds.io");
+    }).getUrl());
+    assertEquals("notifications", createdContextApplication(form -> {
+      form.setType(ApplicationType.DRAWER);
+      form.setUrl("notifications");
+    }).getUrl());
+    assertEquals("35", createdContextApplication(form -> {
+      form.setType(ApplicationType.PORTLET);
+      form.setUrl("35");
+    }).getUrl());
+    verify(portletInstanceService).getPortletInstance(35L, TEST_USER, null, false);
+
+    when(portletInstanceService.getPortletInstance(36L, TEST_USER, null, false)).thenThrow(new IllegalAccessException());
+    when(portletInstanceService.getPortletInstance(37L, TEST_USER, null, false)).thenThrow(new ObjectNotFoundException("missing"));
+    assertContextApplicationRefused(form -> form.setUrl("javascript:alert(1)"));
+    assertContextApplicationRefused(form -> form.setUrl("//evil.example.org"));
+    assertContextApplicationRefused(form -> form.setUrl(null));
+    for (String url : Arrays.asList("../notifications", "notifications\"><img>", "", null)) {
+      assertContextApplicationRefused(form -> {
+        form.setType(ApplicationType.DRAWER);
+        form.setUrl(url);
+      });
+    }
+    for (String url : Arrays.asList("abc", "0", "-35", "36", "37", null)) {
+      assertContextApplicationRefused(form -> {
+        form.setType(ApplicationType.PORTLET);
+        form.setUrl(url);
+      });
+    }
+    verify(appCenterStorage, times(5)).createContextApplication(any(), eq(SETTING_NAME), eq(SPACE_ID));
+  }
+
+  @Test
+  void createContextApplicationValidatesTheIconTheBadgeAndTheHelpPage() throws Exception {
+    mockContext(SPACE_ID);
+    when(badgePluginRegistry.getPlugin("agenda")).thenReturn(mock(ApplicationBadgePlugin.class));
+
+    assertEquals("agenda", createdContextApplication(form -> form.setBadgeName("agenda")).getBadgeName());
+    assertEquals(ApplicationBadgePluginRegistry.BADGE_DISABLED,
+                 createdContextApplication(form -> form.setBadgeName(ApplicationBadgePluginRegistry.BADGE_DISABLED))
+                                                                                                                  .getBadgeName());
+    assertNull(createdContextApplication(form -> form.setBadgeName("unknown")).getBadgeName());
+    assertEquals("fas fa-star", createdContextApplication(form -> form.setIcon("fas fa-star")).getIcon());
+    assertNull(createdContextApplication(form -> form.setIcon(" ")).getIcon());
+    assertNull(createdContextApplication(form -> form.setHelpPageURL(" ")).getHelpPageURL());
+
+    assertContextApplicationRefused(form -> form.setIcon("fa-star\"><img src=x>"));
+    assertContextApplicationRefused(form -> form.setIcon("fa-star;color:red"));
+    assertContextApplicationRefused(form -> form.setHelpPageURL("javascript:alert(1)"));
+  }
+
+  @Test
+  void createContextApplicationRefusesABlankTitleOrTooManyCategories() throws Exception {
+    mockContext(SPACE_ID);
+
+    assertContextApplicationRefused(form -> form.setTitle(" "));
+    assertContextApplicationRefused(form -> form.setCategoryIds(LongStream.rangeClosed(1,
+                                                                                      MyApplicationsSettingsService.MAX_LISTED_CATEGORIES
+                                                                                         + 1L)
+                                                                          .boxed()
+                                                                          .toList()));
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createContextApplicationStoresAnUploadedImageWithTheTypeOfItsContent() throws Exception {
+    mockContext(SPACE_ID);
+    byte[] png = png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE);
+    when(appCenterStorage.readUpload(UPLOAD_ID, ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID);
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(UPLOAD_ID);
+    form.setIllustrationMimeType("image/svg+xml");
+
+    applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    assertEquals(IMAGE_FILE_ID, lastCreatedContextApplication().getImageFileId());
+    InOrder inOrder = inOrder(appCenterStorage);
+    inOrder.verify(appCenterStorage).saveIllustration(png, "image/png");
+    inOrder.verify(appCenterStorage).createContextApplication(any(), eq(SETTING_NAME), eq(SPACE_ID));
+    inOrder.verify(appCenterStorage).removeUpload(UPLOAD_ID);
+  }
+
+  @Test
+  void createContextApplicationRefusesAnInvalidIllustration() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.readUpload("unknown", ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(null);
+    when(appCenterStorage.readUpload("tooLarge",
+                                     ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE
+                                         + 1));
+    when(appCenterStorage.readUpload("svg", ApplicationCenterService.MAX_ILLUSTRATION_SIZE))
+                                                                                             .thenReturn("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".getBytes(StandardCharsets.UTF_8));
+
+    assertIllustrationRefused("unknown", ApplicationCenterService.INVALID_UPLOAD_MESSAGE);
+    assertIllustrationRefused("tooLarge", ApplicationCenterService.TOO_LARGE_MESSAGE);
+    assertIllustrationRefused("svg", ApplicationCenterService.INVALID_TYPE_MESSAGE);
+    verify(appCenterStorage, never()).saveIllustration(any(), any());
+    verify(appCenterStorage, never()).removeUpload(any());
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createContextApplicationLinksTheCategoriesTheUserMayLink() throws Exception {
+    mockContext(SPACE_ID);
+    doThrow(new IllegalAccessException("denied")).when(categoryLinkService).link(eq(20L), any(), eq(TEST_USER));
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(Arrays.asList(10L, 20L, 10L, null, 30L));
+
+    Application created = applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    assertEquals(List.of(10L, 30L), created.getCategoryIds());
+    CategoryObject object = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(CREATED_ID), 0L);
+    verify(categoryLinkService).link(10L, object, TEST_USER);
+    verify(categoryLinkService).link(30L, object, TEST_USER);
+    verify(categoryLinkService, times(3)).link(anyLong(), any(), any());
+  }
+
+  @Test
+  void createContextApplicationKeepsTheUploadWhenTheApplicationIsNotCreated() throws Exception {
+    mockContext(SPACE_ID);
+    byte[] png = png(100);
+    when(appCenterStorage.readUpload(UPLOAD_ID, ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID);
+    when(appCenterStorage.createContextApplication(any(), eq(SETTING_NAME), anyLong())).thenThrow(new IllegalStateException("insert refused"));
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(UPLOAD_ID);
+
+    assertThrows(IllegalStateException.class, () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).removeUpload(any());
+    verify(categoryLinkService, never()).link(anyLong(), any(), any());
+  }
+
+  @Test
+  void createContextApplicationReturnsTheApplicationWhenACategoryFailsToLink() throws Exception {
+    mockContext(SPACE_ID);
+    doThrow(new IllegalStateException("database unreachable")).when(categoryLinkService).link(eq(20L), any(), eq(TEST_USER));
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(List.of(20L, 30L));
+
+    Application created = applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+
+    assertEquals(CREATED_ID, created.getId());
+    assertEquals(List.of(30L), created.getCategoryIds());
+  }
+
+  @Test
+  void createContextApplicationRefusesAFieldLongerThanItsColumn() throws Exception {
+    mockContext(SPACE_ID);
+    assertEquals(250, createdContextApplication(form -> form.setTitle("t".repeat(250))).getTitle().length());
+    assertEquals(1000, createdContextApplication(form -> form.setDescription("d".repeat(1000))).getDescription().length());
+    String longestUrl = "https://meeds.io/" + "p".repeat(500 - "https://meeds.io/".length());
+    assertEquals(longestUrl, createdContextApplication(form -> form.setUrl(longestUrl)).getUrl());
+
+    assertContextApplicationRefused(form -> form.setTitle("t".repeat(251)));
+    assertContextApplicationRefused(form -> form.setDescription("d".repeat(1001)));
+    assertContextApplicationRefused(form -> form.setUrl(longestUrl + "p"));
+    // The scheme added to a schemeless url counts
+    assertContextApplicationRefused(form -> form.setUrl(longestUrl.substring("https://".length()) + "p"));
+    assertContextApplicationRefused(form -> form.setHelpPageURL(longestUrl + "p"));
+    verify(appCenterStorage, times(3)).createContextApplication(any(), eq(SETTING_NAME), eq(SPACE_ID));
+  }
+
+  @Test
+  void deleteContextApplicationChecksTheSettingTheRightTheApplicationAndItsOwner() throws Exception {
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER));
+    mockContext(SPACE_ID);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(false);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).getApplication(ID);
+
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER));
+    Application inaccessible = contextApplication(ID, SETTING_NAME);
+    inaccessible.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(inaccessible);
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER));
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    assertEquals(ApplicationCenterService.NOT_CONTEXTUAL_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER))
+                                                                                                                   .getMessage());
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, OTHER_SETTING_NAME));
+    assertEquals(ApplicationCenterService.NOT_OWNED_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER))
+                                                                                                                   .getMessage());
+    verify(appCenterStorage, never()).deleteApplication(anyLong());
+
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    when(categoryLinkService.getLinkedIds(categoryObject)).thenReturn(List.of(10L));
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER);
+    InOrder inOrder = inOrder(appCenterStorage);
+    inOrder.verify(appCenterStorage).deleteApplication(ID);
+    inOrder.verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID);
+    verify(categoryLinkService).unlink(10L, categoryObject);
+  }
+
+  /**
+   * The storage returns an application without its categories, as its DTO
+   * mapping does: fails the mutant unlinking the categories the application
+   * carries instead of the ones linked to it
+   */
+  @Test
+  void deleteApplicationUnlinksTheCategoriesLinkedToTheApplication() throws Exception {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    when(categoryLinkService.getLinkedIds(categoryObject)).thenReturn(List.of(10L, 20L));
+    when(appCenterStorage.getApplication(ID)).thenReturn(application(ID));
+
+    applicationCenterService.deleteApplication(ID);
+
+    InOrder inOrder = inOrder(categoryLinkService, appCenterStorage);
+    inOrder.verify(appCenterStorage).deleteApplication(ID);
+    inOrder.verify(categoryLinkService).unlink(10L, categoryObject);
+    inOrder.verify(categoryLinkService).unlink(20L, categoryObject);
+  }
+
+  /**
+   * Fails the mutants letting a failing category read or unlink end the
+   * delete: the deleted application's illustration would stay, its other
+   * links too, and the delete would be reported as failed
+   */
+  @Test
+  void deleteApplicationDeletesAContextApplicationWhoseCategoriesFailToUnlink() throws Exception {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    when(categoryLinkService.getLinkedIds(categoryObject)).thenReturn(List.of(10L, 20L));
+    doThrow(new IllegalStateException("database unreachable")).when(categoryLinkService).unlink(10L, categoryObject);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertDoesNotThrow(() -> applicationCenterService.deleteApplication(ID));
+    verify(categoryLinkService).unlink(20L, categoryObject);
+    verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID);
+
+    when(categoryLinkService.getLinkedIds(categoryObject)).thenThrow(new IllegalStateException("database unreachable"));
+    assertDoesNotThrow(() -> applicationCenterService.deleteApplication(ID));
+    verify(appCenterStorage, times(2)).deleteIllustration(IMAGE_FILE_ID);
+  }
+
+  /**
+   * Fails the mutants unlinking the categories, or deleting the illustration,
+   * before or whatever the delete of the application: a refused delete would
+   * leave the application without them
+   */
+  @Test
+  void deleteApplicationKeepsTheCategoriesAndIllustrationOfAContextApplicationItFailsToDelete() throws Exception {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    lenient().when(categoryLinkService.getLinkedIds(categoryObject)).thenReturn(List.of(10L));
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    doThrow(new IllegalStateException("delete refused")).when(appCenterStorage).deleteApplication(ID);
+
+    assertThrows(IllegalStateException.class, () -> applicationCenterService.deleteApplication(ID));
+    verify(categoryLinkService, never()).unlink(anyLong(), any(CategoryObject.class));
+    verify(appCenterStorage, never()).deleteIllustration(anyLong());
+  }
+
+  @Test
+  void deleteApplicationKeepsTheIllustrationOfAnApplicationOfTheApplicationCenter() throws Exception {
+    when(appCenterStorage.getApplication(ID)).thenReturn(application(ID));
+
+    applicationCenterService.deleteApplication(ID);
+
+    verify(appCenterStorage).deleteApplication(ID);
+    verify(appCenterStorage, never()).deleteIllustration(anyLong());
+  }
+
+  @Test
+  void deleteSpaceApplicationsDeletesTheApplicationsOfThatSpaceContext() throws Exception {
+    when(appCenterStorage.getContextApplicationIds(SPACE_ID)).thenReturn(List.of(1L, 2L, 3L));
+    when(appCenterStorage.getApplication(1L)).thenReturn(contextApplication(1L, SETTING_NAME));
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, OTHER_SETTING_NAME));
+    doThrow(new IllegalStateException("database unreachable")).when(appCenterStorage).deleteApplication(2L);
+
+    applicationCenterService.deleteSpaceApplications(SPACE_ID);
+
+    verify(appCenterStorage).deleteApplication(1L);
+    verify(appCenterStorage).deleteApplication(3L);
+    verify(myApplicationsSettingsService, never()).getSetting(any());
+  }
+
+  @Test
+  void deleteSpaceApplicationsIgnoresThePlatformContext() {
+    applicationCenterService.deleteSpaceApplications(0);
+    applicationCenterService.deleteSpaceApplications(-1);
+    verify(appCenterStorage, never()).getContextApplicationIds(anyLong());
+  }
+
+  @Test
+  void canEditContextApplication() {
+    Application owned = contextApplication(ID, SETTING_NAME);
+    Application catalog = accessibleApplication(ID);
+    assertTrue(applicationCenterService.canEditContextApplication(catalog, ADMIN_USERNAME));
+    assertTrue(applicationCenterService.canEditContextApplication(owned, ADMIN_USERNAME));
+    assertFalse(applicationCenterService.canEditContextApplication(owned, TEST_USER));
+
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertTrue(applicationCenterService.canEditContextApplication(owned, TEST_USER));
+    // Whoever manages a window's applications edits those it created only
+    assertFalse(applicationCenterService.canEditContextApplication(catalog, TEST_USER));
+    assertFalse(applicationCenterService.canEditContextApplication(contextApplication(ID, OTHER_SETTING_NAME), TEST_USER));
+    assertFalse(applicationCenterService.canEditContextApplication(owned, null));
+    assertFalse(applicationCenterService.canEditContextApplication(owned, IdentityConstants.ANONIM));
+  }
+
+  @Test
+  void canAccessAContextApplicationWithoutAudienceIsForAdministratorsOnly() {
+    Application owned = contextApplication(ID, SETTING_NAME);
+    owned.setPermissions(Collections.emptyList());
+    lenient().when(userAcl.hasPermission(any(Identity.class),
+                                         eq(ApplicationCenterService.DEFAULT_USERS_PERMISSION))).thenReturn(true);
+    assertTrue(applicationCenterService.canAccess(owned, ADMIN_USERNAME));
+    assertFalse(applicationCenterService.canAccess(owned, TEST_USER));
+    assertFalse(applicationCenterService.canAccess(owned, null));
+    owned.setPermissions(null);
+    assertFalse(applicationCenterService.canAccess(owned, TEST_USER));
+
+    // Any other application without permissions is for every platform user
+    Application catalog = application(ID);
+    catalog.setPermissions(Collections.emptyList());
+    assertTrue(applicationCenterService.canAccess(catalog, TEST_USER));
+  }
+
+  @Test
+  void usersApplicationCenterNeverListsAContextApplication() {
+    Application catalog = accessibleApplication(1L);
+    Application owned = contextApplication(2L, SETTING_NAME);
+    owned.setShortcut("K");
+    when(appCenterStorage.getApplications(null)).thenReturn(List.of(catalog, owned));
+
+    assertEquals(List.of(1L), ids(applicationCenterService.getActiveApplications(0, 0, null, TEST_USER).getApplications()));
+    assertEquals(List.of(SHORTCUT), applicationCenterService.getApplicationShortcuts(TEST_USER));
+    // The administrators' list shows them
+    assertEquals(List.of(1L, 2L), ids(applicationCenterService.getApplications(0, 0, null).getApplications()));
+  }
+
+  @Test
+  void favoritesNeverListAContextApplication() {
+    UserApplication catalog = new UserApplication(accessibleApplication(1L));
+    UserApplication owned = new UserApplication(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getMandatoryAndFavoriteApplications(TEST_USER, null)).thenReturn(List.of(catalog, owned));
+
+    assertEquals(List.of(1L),
+                 ids(applicationCenterService.getMandatoryAndFavoriteApplications(null, TEST_USER, null).getApplications()));
+  }
+
+  @Test
+  void addFavoriteApplicationRefusesAContextApplication() throws Exception {
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertEquals(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.addFavoriteApplication(ID, TEST_USER)).getMessage());
+    verify(appCenterStorage, never()).addApplicationToUserFavorite(anyLong(), any());
+  }
+
+  @Test
+  void updateFavoriteApplicationsOrderChecksEveryApplicationBeforeWritingAnyOrder() throws Exception {
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(application(2L));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, SETTING_NAME));
+
+    List<ApplicationOrder> inaccessible = List.of(new ApplicationOrder(1L, 0L), new ApplicationOrder(2L, 1L));
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(inaccessible, TEST_USER));
+    List<ApplicationOrder> contextual = List.of(new ApplicationOrder(1L, 0L), new ApplicationOrder(3L, 1L));
+    assertEquals(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.updateFavoriteApplicationsOrder(contextual, TEST_USER))
+                                                                                                                    .getMessage());
+    List<ApplicationOrder> unknown = List.of(new ApplicationOrder(1L, 0L), new ApplicationOrder(4L, 1L));
+    assertThrows(ApplicationNotFoundException.class,
+                 () -> applicationCenterService.updateFavoriteApplicationsOrder(unknown, TEST_USER));
+    verify(appCenterStorage, never()).addApplicationToUserFavorite(anyLong(), any());
+    verify(appCenterStorage, never()).updateFavoriteApplicationOrder(anyLong(), any(), any());
+
+    applicationCenterService.updateFavoriteApplicationsOrder(List.of(new ApplicationOrder(1L, 0L)), TEST_USER);
+    verify(appCenterStorage).updateFavoriteApplicationOrder(1L, TEST_USER, 0L);
+  }
+
+  @Test
+  void stickApplicationRefusesAContextApplication() {
+    Application owned = contextApplication(ID, SETTING_NAME);
+    owned.setAllowStick(true);
+    when(appCenterStorage.getApplication(ID)).thenReturn(owned);
+
+    assertEquals("appCenter.placement.stickNotAllowed",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.stickApplication(ID, PlacementSide.LEFT, TEST_USER)).getMessage());
+    verify(placementStorage, never()).setPlacedApplicationId(any(), any(), anyLong());
+  }
+
+  @Test
+  void getApplicationPlacementsDropsAStuckContextApplication() {
+    Application owned = contextApplication(ID, SETTING_NAME);
+    owned.setAllowStick(true);
+    when(placementStorage.getPlacedApplicationId(TEST_USER, PlacementSide.LEFT)).thenReturn(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(owned);
+
+    assertNull(applicationCenterService.getApplicationPlacements(TEST_USER, "dw").getLeft());
+    verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.LEFT);
+  }
+
+  @Test
+  void updateApplicationRestoresTheForcedFieldsOfAStoredContextApplication() throws Exception {
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    Application update = application(ID);
+    update.setDefault(true);
+    update.setPersonal(true);
+    update.setAllowStick(true);
+    update.setActive(false);
+    update.setPermissions(List.of(PERMISSIONS_2));
+
+    applicationCenterService.updateApplication(update, ADMIN_USERNAME);
+
+    verify(appCenterStorage).updateApplication(argThat(application -> !application.isMandatory()
+                                                                      && !application.isDefault()
+                                                                      && !application.isPwa()
+                                                                      && !application.isSystem()
+                                                                      && !application.isPersonal()
+                                                                      && !application.isAllowStick()
+                                                                      && application.getShortcut() == null
+                                                                      && !application.isActive()
+                                                                      && List.of(PERMISSIONS_2)
+                                                                             .equals(application.getPermissions())));
+  }
+
+  @Test
+  void updateApplicationKeepsTheFieldsAnAdministratorSetsOnAStoredCatalogApplication() throws Exception {
+    when(appCenterStorage.getApplication(ID)).thenReturn(application(ID));
+    Application update = application(ID);
+    update.setAllowStick(true);
+    update.setContextSettingName(SETTING_NAME);
+
+    applicationCenterService.updateApplication(update, ADMIN_USERNAME);
+
+    verify(appCenterStorage).updateApplication(argThat(application -> application.isMandatory()
+                                                                      && application.isPwa()
+                                                                      && application.isAllowStick()
+                                                                      && SHORTCUT.equals(application.getShortcut())));
+  }
+
+  @Test
+  void getListedApplicationsListsAContextApplicationForItsWindowOnly() throws Exception {
+    when(myApplicationsSettingsService.hasSetting(OTHER_SETTING_NAME)).thenReturn(true);
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, OTHER_SETTING_NAME));
+
+    assertEquals(List.of(1L, 2L),
+                 ids(applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, List.of(1L, 2L, 3L)),
+                                                                    null,
+                                                                    TEST_USER)));
+    assertEquals(List.of(1L, 3L),
+                 ids(applicationCenterService.getListedApplications(new ApplicationListFilter(OTHER_SETTING_NAME,
+                                                                                              List.of(1L, 2L, 3L)),
+                                                                    null,
+                                                                    TEST_USER)));
+  }
+
+  @Test
+  void getListedApplicationsByCategoryListsAContextApplicationForItsWindowOnly() throws Exception {
+    titled(1L, "alpha");
+    titled(2L, "bravo").setContextSettingName(SETTING_NAME);
+    titled(3L, "charlie").setContextSettingName(OTHER_SETTING_NAME);
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(3L, 2L, 1L));
+
+    assertEquals(List.of(1L, 2L), listedIds(List.of(10L), Locale.ENGLISH));
+  }
+
+  @Test
+  void getContextApplicationsListsAContextApplicationForItsWindowOnly() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, OTHER_SETTING_NAME));
+
+    List<Application> applications = applicationCenterService.getContextApplications(new ApplicationListFilter(SETTING_NAME,
+                                                                                                               List.of(3L, 2L)),
+                                                                                     null,
+                                                                                     TEST_USER);
+    assertEquals(List.of(2L), ids(applications));
+    assertTrue(applications.get(0).isContextual());
+  }
+
+  @Test
+  void getContextSuggestionsNeverOffersAContextApplication() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(List.of(1L, 2L, 3L));
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, OTHER_SETTING_NAME));
+
+    assertEquals(List.of(1L), ids(applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, null, TEST_USER)));
+  }
+
+  private void mockContext(long spaceId) {
+    lenient().when(myApplicationsSettingsService.getSetting(SETTING_NAME))
+             .thenReturn(new CMSSetting(MyApplicationsSettingsService.SETTING_TYPE, SETTING_NAME, PAGE_REFERENCE, spaceId));
+    lenient().when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    Space space = new Space();
+    space.setGroupId(SPACE_GROUP);
+    lenient().when(spaceService.getSpaceById(SPACE_ID)).thenReturn(space);
+    lenient().when(appCenterStorage.createContextApplication(any(), eq(SETTING_NAME), anyLong())).thenAnswer(invocation -> {
+      Application created = new Application(invocation.getArgument(0, Application.class));
+      created.setId(CREATED_ID);
+      created.setContextSettingName(invocation.getArgument(1));
+      created.setContextSpaceId(invocation.getArgument(2));
+      return created;
+    });
+  }
+
+  private ApplicationForm contextForm() {
+    ApplicationForm form = new ApplicationForm();
+    form.setTitle(TITLE);
+    form.setDescription(DESCRIPTION);
+    form.setType(ApplicationType.LINK);
+    form.setUrl("https://meeds.io");
+    form.setSameTab(true);
+    form.setMobile(true);
+    form.setIcon("fa-star");
+    return form;
+  }
+
+  private Application createdContextApplication(Consumer<ApplicationForm> formChange) throws Exception {
+    ApplicationForm form = contextForm();
+    formChange.accept(form);
+    applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER);
+    return lastCreatedContextApplication();
+  }
+
+  private void assertContextApplicationRefused(Consumer<ApplicationForm> formChange) {
+    ApplicationForm form = contextForm();
+    formChange.accept(form);
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER));
+  }
+
+  private void assertIllustrationRefused(String uploadId, String messageCode) {
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(uploadId);
+    form.setIllustrationMimeType("image/png");
+    assertEquals(messageCode,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER))
+                                                                                                                     .getMessage());
+  }
+
+  private Application lastCreatedContextApplication() {
+    ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
+    verify(appCenterStorage, atLeastOnce()).createContextApplication(captor.capture(), eq(SETTING_NAME), anyLong());
+    return captor.getValue();
+  }
+
+  private void verifyNoContextApplicationCreated() throws Exception {
+    verify(appCenterStorage, never()).createContextApplication(any(), any(), anyLong());
+    verify(appCenterStorage, never()).saveIllustration(any(), any());
+    verify(categoryLinkService, never()).link(anyLong(), any(), any());
+  }
+
+  private Application contextApplication(Long id, String settingName) {
+    Application application = accessibleApplication(id);
+    application.setMandatory(false);
+    application.setPwa(false);
+    application.setContextSettingName(settingName);
+    application.setContextSpaceId(SPACE_ID);
+    return application;
+  }
+
+  private static byte[] png(int size) {
+    byte[] content = new byte[size];
+    System.arraycopy(new byte[] { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n' }, 0, content, 0, 8);
+    return content;
+  }
+
+  private static List<Long> ids(List<Application> applications) {
+    return applications.stream().map(Application::getId).toList();
+  }
+
   private List<Long> listedIds(List<Long> categoryIds, Locale locale) throws ObjectNotFoundException {
     return applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, null, categoryIds),
                                                           locale,
@@ -1270,7 +2039,9 @@ public class ApplicationCenterServiceTest {
                            false,
                            null,
                            false,
-                           false);
+                           false,
+                           null,
+                           null);
   }
 
 }
