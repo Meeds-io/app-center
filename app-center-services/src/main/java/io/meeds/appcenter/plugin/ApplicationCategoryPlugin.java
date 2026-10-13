@@ -21,6 +21,7 @@ package io.meeds.appcenter.plugin;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -68,20 +69,35 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
       // ApplicationCenterService#canEdit grants a blank username, an internal call
       return false;
     }
-    Application application = getApplicationCenterService().getApplication(Long.parseLong(applicationId));
+    Application application = getApplication(applicationId);
     return application != null
            && ((application.isActive() && getApplicationCenterService().canAccess(application, username))
                || canEdit(applicationId, username));
   }
 
+  /**
+   * An administrator links any application to a category, and whoever manages
+   * the applications of a Shortcuts portlet window links those it created.
+   */
   @Override
   public boolean canEdit(String applicationId, String username) {
-    return getApplicationCenterService().canEdit(username);
+    if (getApplicationCenterService().canEdit(username)) {
+      return true;
+    }
+    Application application = getApplication(applicationId);
+    return application != null
+           && application.isContextual()
+           && getApplicationCenterService().canEditContextApplication(application, username);
   }
 
   @Override
   public List<Long> getCategoryIds() {
     return getApplicationCenterService().getCategoryIds();
+  }
+
+  private Application getApplication(String applicationId) {
+    long id = NumberUtils.toLong(applicationId, 0);
+    return id > 0 ? getApplicationCenterService().getApplication(id) : null;
   }
 
   private ApplicationCenterService getApplicationCenterService() {

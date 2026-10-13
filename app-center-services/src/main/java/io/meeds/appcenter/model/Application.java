@@ -21,6 +21,10 @@ package io.meeds.appcenter.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.meeds.appcenter.constant.ApplicationType;
 
 import lombok.AllArgsConstructor;
@@ -90,6 +94,19 @@ public class Application {
   private boolean         allowDetach;
 
   /**
+   * CMS setting name of the Shortcuts portlet window that created the
+   * application, the only list showing it; null for an application of the
+   * Application Center. Set on creation by the server, never changed.
+   */
+  private String          contextSettingName;
+
+  /**
+   * Space of the context the application was created in, 0 for the platform
+   * context, null for an application of the Application Center.
+   */
+  private Long            contextSpaceId;
+
+  /**
    * Copies every field, the permissions and category ids into new lists, so
    * that decorating or changing the copy never writes into the instance the
    * app-center.application cache serves.
@@ -121,7 +138,19 @@ public class Application {
          application.isPersonal(),
          application.getBadgeName(),
          application.isAllowStick(),
-         application.isAllowDetach());
+         application.isAllowDetach(),
+         application.getContextSettingName(),
+         application.getContextSpaceId());
+  }
+
+  /**
+   * @return true for an application created from a Shortcuts portlet window,
+   *         listed only by that window and never in the users' Application
+   *         Center; read only, never taken from a request body
+   */
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  public boolean isContextual() {
+    return StringUtils.isNotBlank(contextSettingName);
   }
 
 }

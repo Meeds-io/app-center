@@ -48,7 +48,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.service.LinkProvider;
 
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
@@ -133,7 +132,7 @@ public class ApplicationRest {
 
   @GetMapping(path = "contextual/list")
   @Secured("users")
-  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings, plus the applications the portlet created whose audience excludes the user, unless an administrator emptied that audience")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "More than 100 ids"),
     @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
@@ -161,7 +160,7 @@ public class ApplicationRest {
 
   @GetMapping(path = "contextual/suggest")
   @Secured("users")
-  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, matching the keyword")
+  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, and the applications the portlet created, matching the keyword")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "More than 100 excluded ids"),
     @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
@@ -191,6 +190,57 @@ public class ApplicationRest {
                                                     limit,
                                                     request.getLocale(),
                                                     request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @PostMapping(path = "contextual")
+  @Secured("users")
+  @Operation(summary = "Creates an application listed only by a Shortcuts portlet", method = "POST", description = "Creates, from the settings of a Shortcuts portlet, an application only that portlet lists, displayed to the audience of the portlet's context, and returns it")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, the response's message naming it"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or space of its context") })
+  public Application createContextApplication(
+                                              HttpServletRequest request,
+                                              @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                              @RequestParam("settingName")
+                                              String settingName,
+                                              @RequestBody
+                                              ApplicationForm application) {
+    try {
+      return appCenterService.createContextApplication(application, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @DeleteMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Deletes an application a Shortcuts portlet created", method = "DELETE", description = "Deletes, from the settings of the Shortcuts portlet that created it, an application only that portlet lists")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Application not created by a Shortcuts portlet, or by another one, the response's message telling which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+  public void deleteContextApplication(
+                                       HttpServletRequest request,
+                                       @Parameter(description = "Application technical id to delete", required = true)
+                                       @PathVariable("applicationId")
+                                       long applicationId,
+                                       @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                       @RequestParam("settingName")
+                                       String settingName) {
+    try {
+      appCenterService.deleteContextApplication(applicationId, settingName, request.getRemoteUser());
     } catch (ObjectNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     } catch (IllegalAccessException e) {
@@ -326,7 +376,7 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "400", description = "Bad Request: an application that may not be stuck, the response's message telling it; or an invalid side, with no message"),
     @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
     @ApiResponse(responseCode = "404", description = "Not found") })
   public void stickApplication(
@@ -364,6 +414,7 @@ public class ApplicationRest {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
+
 
   private PlacementSide placementSide(String side) {
     try {
@@ -448,7 +499,7 @@ public class ApplicationRest {
                                                                         @Parameter(description = "Application id", required = true)
                                                                         @PathVariable("applicationId")
                                                                         long applicationId,
-                                                                        @Parameter(description = "A token that is used to authorize anonymous request")
+                                                                        @Parameter(description = "The token of the illustration URL, which authorizes a user who may not see the application, anonymous included")
                                                                         @RequestParam(name = "r", required = false)
                                                                         String token,
                                                                         @Parameter(description = "Dimensions of size")
@@ -462,21 +513,13 @@ public class ApplicationRest {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
-        if (!LinkProvider.isAttachmentTokenValid(token,
-                                                 "appcenter",
-                                                 String.valueOf(applicationId),
-                                                 "icon",
-                                                 String.valueOf(lastModified.orElse(0l)))) {
+        if (!appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
           throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
       } else if (!appCenterService.canEdit(request.getRemoteUser())
                  && !appCenterService.canAccess(application, request.getRemoteUser())
-                 && !LinkProvider.isAttachmentTokenValid(token,
-                                                         "appCenter",
-                                                         String.valueOf(applicationId),
-                                                         "icon",
-                                                         String.valueOf(lastModified.orElse(0l)))) {
+                 && !appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
       }
