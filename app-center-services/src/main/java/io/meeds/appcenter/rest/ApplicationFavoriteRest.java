@@ -72,7 +72,10 @@ public class ApplicationFavoriteRest {
              summary = "Adds an existing application identified by its id as favorite for current authenticated user",
              method = "POST",
              description = "Adds an existing application identified by its id as favorite for current authenticated user")
-  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+                          @ApiResponse(responseCode = "400", description = "Application created from a Shortcuts portlet, never a favorite, or an invalid id, the response's message telling it"),
+                          @ApiResponse(responseCode = "403", description = "Application not accessible to the user"),
+                          @ApiResponse(responseCode = "404", description = "Unknown application"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
   public void addFavoriteApplication(
                                      HttpServletRequest request,
@@ -85,6 +88,8 @@ public class ApplicationFavoriteRest {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
@@ -93,20 +98,24 @@ public class ApplicationFavoriteRest {
   @Operation(
              summary = "Updates an existing application's order identified by its id",
              method = "PUT",
-             description = "Updates an existing application's order identified by its id and returns an empty response")
-  @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Request fulfilled"),
-                          @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
+             description = "Updates the order of the given applications, each one becoming a favorite unless mandatory, and returns an empty response. Every application is checked before any order is written: one refused application refuses the whole request.")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+                          @ApiResponse(responseCode = "400", description = "An application created from a Shortcuts portlet, never a favorite, or an invalid id, the response's message telling it"),
+                          @ApiResponse(responseCode = "403", description = "An application not accessible to the user"),
+                          @ApiResponse(responseCode = "404", description = "An unknown application"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
   public void updateApplicationsOrder(
                                       HttpServletRequest request,
                                       @RequestBody(required = true)
                                       List<ApplicationOrder> applicationOrders) {
     try {
-      for (ApplicationOrder applicationOrder : applicationOrders) {
-        appCenterService.updateFavoriteApplicationOrder(applicationOrder, request.getRemoteUser());
-      }
+      appCenterService.updateFavoriteApplicationsOrder(applicationOrders, request.getRemoteUser());
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 

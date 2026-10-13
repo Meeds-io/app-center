@@ -31,10 +31,10 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -190,12 +190,14 @@ class AppCenterMcpToolTest {
   // --- reorder_favorite_apps -----------------------------------------------
 
   @Test
+  @SuppressWarnings("unchecked")
   void reorderFavoriteApps() throws Exception {
     String message = appCenterMcpTool.reorderFavoriteApps(List.of(3L, 1L, 2L));
     assertTrue(message.contains("3"));
-    ArgumentCaptor<ApplicationOrder> captor = ArgumentCaptor.forClass(ApplicationOrder.class);
-    verify(applicationCenterService, times(3)).updateFavoriteApplicationOrder(captor.capture(), eq(USERNAME));
-    List<ApplicationOrder> orders = captor.getAllValues();
+    ArgumentCaptor<List<ApplicationOrder>> captor = ArgumentCaptor.forClass(List.class);
+    verify(applicationCenterService).updateFavoriteApplicationsOrder(captor.capture(), eq(USERNAME));
+    List<ApplicationOrder> orders = captor.getValue();
+    assertEquals(3, orders.size());
     assertEquals(3L, orders.get(0).getId());
     assertEquals(0L, orders.get(0).getOrder());
     assertEquals(1L, orders.get(1).getId());
@@ -211,11 +213,46 @@ class AppCenterMcpToolTest {
   }
 
   @Test
+  void reorderFavoriteAppsInvalidIdOrdersNothing() throws Exception {
+    assertThrows(IllegalArgumentException.class, () -> appCenterMcpTool.reorderFavoriteApps(Arrays.asList(APP_ID, null)));
+    verify(applicationCenterService, never()).updateFavoriteApplicationsOrder(any(), any());
+  }
+
+  @Test
   void reorderFavoriteAppsUnknownFails() throws Exception {
     doThrow(new ApplicationNotFoundException("missing")).when(applicationCenterService)
-                                                        .updateFavoriteApplicationOrder(any(ApplicationOrder.class),
-                                                                                        eq(USERNAME));
+                                                        .updateFavoriteApplicationsOrder(any(), eq(USERNAME));
     assertThrows(ObjectNotFoundException.class, () -> appCenterMcpTool.reorderFavoriteApps(List.of(APP_ID)));
+  }
+
+  @Test
+  void reorderFavoriteAppsDeniedFails() throws Exception {
+    doThrow(new IllegalAccessException("denied")).when(applicationCenterService)
+                                                 .updateFavoriteApplicationsOrder(any(), eq(USERNAME));
+    assertThrows(IllegalStateException.class, () -> appCenterMcpTool.reorderFavoriteApps(List.of(APP_ID)));
+  }
+
+  @Test
+  void reorderFavoriteAppsCreatedFromAShortcutsPortletFails() throws Exception {
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE)).when(applicationCenterService)
+                                                                                         .updateFavoriteApplicationsOrder(any(),
+                                                                                                                          eq(USERNAME));
+    IllegalStateException e = assertThrows(IllegalStateException.class,
+                                           () -> appCenterMcpTool.reorderFavoriteApps(List.of(APP_ID)));
+    assertTrue(e.getMessage().contains("Shortcuts portlet"));
+  }
+
+  @Test
+  void addFavoriteAppCreatedFromAShortcutsPortletFails() throws Exception {
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE)).when(applicationCenterService)
+                                                                                         .addFavoriteApplication(APP_ID,
+                                                                                                                 USERNAME);
+    IllegalStateException e = assertThrows(IllegalStateException.class, () -> appCenterMcpTool.addFavoriteApp(APP_ID));
+    assertTrue(e.getMessage().contains("Shortcuts portlet"));
+
+    doThrow(new IllegalArgumentException("username is mandatory")).when(applicationCenterService)
+                                                                 .addFavoriteApplication(APP_ID, USERNAME);
+    assertThrows(IllegalArgumentException.class, () -> appCenterMcpTool.addFavoriteApp(APP_ID));
   }
 
   // --- create_personal_app -------------------------------------------------

@@ -20,7 +20,9 @@ package io.meeds.appcenter.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,16 +38,28 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 /**
- * Runs the keyword query of {@link ApplicationDAO} through the Spring Data
- * proxy on HSQLDB, whose LIKE is case-sensitive as PostgreSQL's is.
+ * Runs the queries of {@link ApplicationDAO} through the Spring Data proxy on
+ * HSQLDB, whose LIKE is case-sensitive as PostgreSQL's is.
  */
 class ApplicationDAOTest {
+
+  private static final long           SPACE_ID       = 5L;
+
+  private static final long           OTHER_SPACE_ID = 6L;
 
   private static EntityManagerFactory entityManagerFactory;
 
   private static EntityManager        entityManager;
 
   private static ApplicationDAO       applicationDAO;
+
+  private static ApplicationEntity    spaceApplication;
+
+  private static ApplicationEntity    otherSpaceApplication;
+
+  private static ApplicationEntity    secondSpaceApplication;
+
+  private static ApplicationEntity    platformApplication;
 
   @BeforeAll
   static void setup() {
@@ -63,6 +77,10 @@ class ApplicationDAOTest {
     entityManager.getTransaction().begin();
     entityManager.persist(application("Documents", "Shared files", "/portal/documents"));
     entityManager.persist(application("Agenda", "Events", "/portal/agenda"));
+    spaceApplication = contextApplication("Team wiki", SPACE_ID);
+    secondSpaceApplication = contextApplication("Team board", SPACE_ID);
+    otherSpaceApplication = contextApplication("Other team wiki", OTHER_SPACE_ID);
+    platformApplication = contextApplication("Platform wiki", 0L);
     entityManager.flush();
   }
 
@@ -85,11 +103,28 @@ class ApplicationDAOTest {
     assertEquals(0, applicationDAO.getApplicationIds("Calendar").size());
   }
 
+  @Test
+  void findIdsByContextSpaceIdReadsTheApplicationsOfThatSpaceContextOnly() {
+    assertEquals(Set.of(spaceApplication.getId(), secondSpaceApplication.getId()),
+                 new HashSet<>(applicationDAO.findIdsByContextSpaceId(SPACE_ID)));
+    assertEquals(List.of(otherSpaceApplication.getId()), applicationDAO.findIdsByContextSpaceId(OTHER_SPACE_ID));
+    assertEquals(List.of(platformApplication.getId()), applicationDAO.findIdsByContextSpaceId(0L));
+    assertEquals(List.of(), applicationDAO.findIdsByContextSpaceId(7L));
+  }
+
   private static ApplicationEntity application(String title, String description, String url) {
     ApplicationEntity application = new ApplicationEntity();
     application.setTitle(title);
     application.setDescription(description);
     application.setUrl(url);
+    return application;
+  }
+
+  private static ApplicationEntity contextApplication(String title, long spaceId) {
+    ApplicationEntity application = application(title, title, "https://wiki.example.org/" + spaceId);
+    application.setContextSettingName("Untitled-12-" + title);
+    application.setContextSpaceId(spaceId);
+    entityManager.persist(application);
     return application;
   }
 
