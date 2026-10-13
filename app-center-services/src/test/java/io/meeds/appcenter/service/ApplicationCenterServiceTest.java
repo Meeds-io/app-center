@@ -115,6 +115,8 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationCenterServiceTest {
 
+  private static final String CONTEXTUAL_PREFIX = ApplicationCenterService.CONTEXTUAL_MESSAGE_PREFIX;
+
   private static final String      SHORTCUT       = "G";
 
   private static final String      KEYWORD        = "keyword";
@@ -1178,6 +1180,63 @@ public class ApplicationCenterServiceTest {
     assertEquals(1, applicationCenterService.getContextApplications(filter, null, TEST_USER).size());
   }
 
+  /**
+   * The window's editors see what it created, whatever its audience: fails the
+   * mutant listing it only to whoever may access it, where an editor outside
+   * the audience, such as a publisher outside the space, creates an
+   * application the list then hides from them, and the mutant listing it to
+   * every viewer
+   */
+  @Test
+  void getListedApplicationsShowsTheWindowsOwnApplicationToItsEditorsOnly() throws Exception {
+    Application outsideAudience = contextApplication(ID, SETTING_NAME);
+    outsideAudience.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(outsideAudience);
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, List.of(ID));
+
+    assertTrue(applicationCenterService.getListedApplications(filter, null, TEST_USER).isEmpty());
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertEquals(List.of(ID), ids(applicationCenterService.getListedApplications(filter, null, TEST_USER)));
+
+    // An administrator emptied its audience: shown to administrators only
+    Application emptied = contextApplication(ID, SETTING_NAME);
+    emptied.setPermissions(List.of());
+    when(appCenterStorage.getApplication(ID)).thenReturn(emptied);
+    assertTrue(applicationCenterService.getListedApplications(filter, null, TEST_USER).isEmpty());
+  }
+
+  /**
+   * Fails the mutant also requiring the editor to access the application: the
+   * window's right authorizes the delete of what the window created
+   */
+  @Test
+  void deleteContextApplicationDeletesTheWindowsOwnApplicationOutsideTheEditorsAudience() throws Exception {
+    mockContext(SPACE_ID);
+    Application outsideAudience = contextApplication(ID, SETTING_NAME);
+    outsideAudience.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(outsideAudience);
+
+    applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER);
+
+    verify(appCenterStorage).deleteApplication(ID);
+  }
+
+  /**
+   * The url columns of a MySQL database are utf8mb3: fails the mutant letting
+   * a character outside the Basic Multilingual Plane reach the insert, which
+   * MySQL refuses, answering a 500
+   */
+  @Test
+  void createContextApplicationRefusesAUrlCharacterTheColumnCannotStore() throws Exception {
+    mockContext(SPACE_ID);
+
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "urlUnsupportedCharacter",
+                                    form -> form.setUrl("https://meeds.io/a\uD83D\uDE00b"));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "helpPageURLUnsupportedCharacter",
+                                    form -> form.setHelpPageURL("/portal/\uD83D\uDE00"));
+    assertEquals("https://meeds.io/caf\u00e9", createdContextApplication(form -> form.setUrl("https://meeds.io/caf\u00e9")).getUrl());
+  }
+
   @Test
   void getContextSuggestionsRequiresTheSettingsRight() {
     assertThrows(IllegalAccessException.class,
@@ -1400,17 +1459,17 @@ public class ApplicationCenterServiceTest {
 
     when(portletInstanceService.getPortletInstance(36L, TEST_USER, null, false)).thenThrow(new IllegalAccessException());
     when(portletInstanceService.getPortletInstance(37L, TEST_USER, null, false)).thenThrow(new ObjectNotFoundException("missing"));
-    assertContextApplicationRefused(form -> form.setUrl("javascript:alert(1)"));
-    assertContextApplicationRefused(form -> form.setUrl("//evil.example.org"));
-    assertContextApplicationRefused(form -> form.setUrl(null));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl("javascript:alert(1)"));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl("//evil.example.org"));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl(null));
     for (String url : Arrays.asList("../notifications", "notifications\"><img>", "", null)) {
-      assertContextApplicationRefused(form -> {
+      assertContextApplicationRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> {
         form.setType(ApplicationType.DRAWER);
         form.setUrl(url);
       });
     }
     for (String url : Arrays.asList("abc", "0", "-35", "36", "37", null)) {
-      assertContextApplicationRefused(form -> {
+      assertContextApplicationRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> {
         form.setType(ApplicationType.PORTLET);
         form.setUrl(url);
       });
@@ -1432,17 +1491,18 @@ public class ApplicationCenterServiceTest {
     assertNull(createdContextApplication(form -> form.setIcon(" ")).getIcon());
     assertNull(createdContextApplication(form -> form.setHelpPageURL(" ")).getHelpPageURL());
 
-    assertContextApplicationRefused(form -> form.setIcon("fa-star\"><img src=x>"));
-    assertContextApplicationRefused(form -> form.setIcon("fa-star;color:red"));
-    assertContextApplicationRefused(form -> form.setHelpPageURL("javascript:alert(1)"));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_ICON_MESSAGE, form -> form.setIcon("fa-star\"><img src=x>"));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_ICON_MESSAGE, form -> form.setIcon("fa-star;color:red"));
+    assertContextApplicationRefused(ApplicationCenterService.INVALID_HELP_PAGE_URL_MESSAGE,
+                                    form -> form.setHelpPageURL("javascript:alert(1)"));
   }
 
   @Test
   void createContextApplicationRefusesABlankTitleOrTooManyCategories() throws Exception {
     mockContext(SPACE_ID);
 
-    assertContextApplicationRefused(form -> form.setTitle(" "));
-    assertContextApplicationRefused(form -> form.setCategoryIds(LongStream.rangeClosed(1,
+    assertContextApplicationRefused(ApplicationCenterService.TITLE_MANDATORY_MESSAGE, form -> form.setTitle(" "));
+    assertContextApplicationRefused(ApplicationCenterService.TOO_MANY_CATEGORIES_MESSAGE, form -> form.setCategoryIds(LongStream.rangeClosed(1,
                                                                                       MyApplicationsSettingsService.MAX_LISTED_CATEGORIES
                                                                                          + 1L)
                                                                           .boxed()
@@ -1539,12 +1599,12 @@ public class ApplicationCenterServiceTest {
     String longestUrl = "https://meeds.io/" + "p".repeat(500 - "https://meeds.io/".length());
     assertEquals(longestUrl, createdContextApplication(form -> form.setUrl(longestUrl)).getUrl());
 
-    assertContextApplicationRefused(form -> form.setTitle("t".repeat(251)));
-    assertContextApplicationRefused(form -> form.setDescription("d".repeat(1001)));
-    assertContextApplicationRefused(form -> form.setUrl(longestUrl + "p"));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "titleTooLong", form -> form.setTitle("t".repeat(251)));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "descriptionTooLong", form -> form.setDescription("d".repeat(1001)));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "urlTooLong", form -> form.setUrl(longestUrl + "p"));
     // The scheme added to a schemeless url counts
-    assertContextApplicationRefused(form -> form.setUrl(longestUrl.substring("https://".length()) + "p"));
-    assertContextApplicationRefused(form -> form.setHelpPageURL(longestUrl + "p"));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "urlTooLong", form -> form.setUrl(longestUrl.substring("https://".length()) + "p"));
+    assertContextApplicationRefused(CONTEXTUAL_PREFIX + "helpPageURLTooLong", form -> form.setHelpPageURL(longestUrl + "p"));
     verify(appCenterStorage, times(3)).createContextApplication(any(), eq(SETTING_NAME), eq(SPACE_ID));
   }
 
@@ -1561,7 +1621,7 @@ public class ApplicationCenterServiceTest {
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
     assertThrows(ObjectNotFoundException.class,
                  () -> applicationCenterService.deleteContextApplication(ID, SETTING_NAME, TEST_USER));
-    Application inaccessible = contextApplication(ID, SETTING_NAME);
+    Application inaccessible = contextApplication(ID, OTHER_SETTING_NAME);
     inaccessible.setPermissions(List.of(PERMISSIONS_1));
     when(appCenterStorage.getApplication(ID)).thenReturn(inaccessible);
     assertThrows(ObjectNotFoundException.class,
@@ -1873,15 +1933,25 @@ public class ApplicationCenterServiceTest {
     assertTrue(applications.get(0).isContextual());
   }
 
+  /**
+   * Fails the mutants offering another window's applications, and hiding the
+   * window's own: one created then left out of the list, by a failed save or a
+   * closed drawer, could never be selected again, even by an editor outside
+   * its audience
+   */
   @Test
-  void getContextSuggestionsNeverOffersAContextApplication() throws Exception {
+  void getContextSuggestionsOffersTheWindowsOwnApplicationsOnly() throws Exception {
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
-    when(appCenterStorage.getApplicationIds(null)).thenReturn(List.of(1L, 2L, 3L));
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(List.of(1L, 2L, 3L, 4L));
     when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
     when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
     when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, OTHER_SETTING_NAME));
+    Application outsideAudience = contextApplication(4L, SETTING_NAME);
+    outsideAudience.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(4L)).thenReturn(outsideAudience);
 
-    assertEquals(List.of(1L), ids(applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, null, TEST_USER)));
+    assertEquals(List.of(1L, 2L, 4L),
+                 ids(applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, null, TEST_USER)));
   }
 
   private void mockContext(long spaceId) {
@@ -1919,11 +1989,12 @@ public class ApplicationCenterServiceTest {
     return lastCreatedContextApplication();
   }
 
-  private void assertContextApplicationRefused(Consumer<ApplicationForm> formChange) {
+  private void assertContextApplicationRefused(String messageCode, Consumer<ApplicationForm> formChange) {
     ApplicationForm form = contextForm();
     formChange.accept(form);
-    assertThrows(IllegalArgumentException.class,
-                 () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER));
+    assertEquals(messageCode,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER)).getMessage());
   }
 
   private void assertIllustrationRefused(String uploadId, String messageCode) {

@@ -26,9 +26,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -153,6 +155,19 @@ public class ApplicationCenterService {
   public static final String       INVALID_TYPE_MESSAGE                = "appCenter.illustration.invalidType";
 
   public static final String       TOO_LARGE_MESSAGE                   = "appCenter.illustration.tooLarge";
+
+  public static final String       TITLE_MANDATORY_MESSAGE             = "appCenter.contextual.titleMandatory";
+
+  public static final String       TOO_MANY_CATEGORIES_MESSAGE         = "appCenter.contextual.tooManyCategories";
+
+  public static final String       INVALID_URL_MESSAGE                 = "appCenter.contextual.invalidUrl";
+
+  public static final String       INVALID_HELP_PAGE_URL_MESSAGE       = "appCenter.contextual.invalidHelpPageURL";
+
+  public static final String       INVALID_ICON_MESSAGE                = "appCenter.contextual.invalidIcon";
+
+  /** Prefix of the codes naming a field: {@code <prefix><field>TooLong} */
+  public static final String       CONTEXTUAL_MESSAGE_PREFIX           = "appCenter.contextual.";
 
   private static final String      SYSTEM_APPLICATION_KEY_PREFIX       = "appCenter.system.application.";
 
@@ -1136,6 +1151,9 @@ public class ApplicationCenterService {
     } else if (ids.size() > MAX_LISTED_APPLICATIONS) {
       throw new IllegalArgumentException(String.format("At most %s applications can be listed", MAX_LISTED_APPLICATIONS));
     }
+    // The window's editors see the applications it created, whatever their
+    // audience: the right is read once, and only for such an application
+    Map<String, Boolean> editorRight = new HashMap<>(1);
     List<Application> applications = ids.stream()
                                         .filter(Objects::nonNull)
                                         .distinct()
@@ -1143,7 +1161,11 @@ public class ApplicationCenterService {
                                         .filter(Objects::nonNull)
                                         .filter(application -> isListedBy(application, settingName))
                                         .filter(Application::isActive)
-                                        .filter(application -> canAccess(application, username))
+                                        .filter(application -> canAccess(application, username)
+                                                               || isManagedBy(application, settingName)
+                                                                  && editorRight.computeIfAbsent(settingName,
+                                                                                                 name -> myApplicationsSettingsService.canEditSettings(name,
+                                                                                                                                                       username)))
                                         .map(this::toTile)
                                         .toList();
     setApplicationLabels(applications, locale);
@@ -1180,8 +1202,10 @@ public class ApplicationCenterService {
    * Suggests the applications a Shortcuts portlet window may list: active,
    * non-personal applications the user may access, matching the keyword, read
    * from the app-center.application cache and decorated on a copy. An
-   * application created from a Shortcuts portlet is never suggested, that
-   * window's own included: it is in its list already.
+   * application created from a Shortcuts portlet is suggested to its own
+   * window only, whatever its audience unless an administrator emptied it, so
+   * that one left out of the list, by a failed save or a closed drawer, can be
+   * selected again.
    *
    * @param settingName the window's CMS setting name
    * @param keyword matched in title and url, all applications when blank
@@ -1222,8 +1246,9 @@ public class ApplicationCenterService {
                                                      .filter(Objects::nonNull)
                                                      .filter(Application::isActive)
                                                      .filter(application -> !application.isPersonal())
-                                                     .filter(application -> !application.isContextual())
-                                                     .filter(application -> canAccess(application, username))
+                                                     .filter(application -> isListedBy(application, settingName))
+                                                     .filter(application -> canAccess(application, username)
+                                                                            || isManagedBy(application, settingName))
                                                      .skip(Math.max(offset, 0))
                                                      .limit(suggestionsLimit)
                                                      .map(this::toTile)
@@ -1306,7 +1331,9 @@ public class ApplicationCenterService {
     getContextSetting(settingName);
     checkCanManageContextApplications(settingName, username);
     Application application = appCenterStorage.getApplication(applicationId);
-    if (application == null || !canAccess(application, username)) {
+    if (application == null || !isManagedBy(application, settingName) && !canAccess(application, username)) {
+      // The window's right covers the applications it created, whatever
+      // their audience
       throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
     } else if (!application.isContextual()) {
       throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
@@ -1435,21 +1462,20 @@ public class ApplicationCenterService {
    */
   private Application toContextApplication(ApplicationForm form, List<String> audience, String username) {
     if (StringUtils.isBlank(form.getTitle())) {
-      throw new IllegalArgumentException("title is mandatory");
+      throw new IllegalArgumentException(TITLE_MANDATORY_MESSAGE);
     } else if (form.getCategoryIds() != null && form.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
-      throw new IllegalArgumentException(String.format("At most %s categories can be linked",
-                                                       MyApplicationsSettingsService.MAX_LISTED_CATEGORIES));
+      throw new IllegalArgumentException(TOO_MANY_CATEGORIES_MESSAGE);
     }
     ApplicationType type = form.getType() == null ? ApplicationType.LINK : form.getType();
     Application application = new Application();
     application.setTitle(checkLength("title", StringUtils.trim(form.getTitle()), MAX_TITLE_LENGTH));
     application.setDescription(checkLength("description", form.getDescription(), MAX_DESCRIPTION_LENGTH));
     application.setType(type);
-    application.setUrl(checkLength("url", getContextApplicationUrl(type, form.getUrl(), username), MAX_URL_LENGTH));
+    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), username)));
     application.setHelpPageURL(StringUtils.isBlank(form.getHelpPageURL()) ? null
-                                                                          : checkLength("helpPageURL",
-                                                                                        normalizePersonalUrl(form.getHelpPageURL()),
-                                                                                        MAX_URL_LENGTH));
+                                                                          : checkUrl("helpPageURL",
+                                                                                     getContextLink(form.getHelpPageURL(),
+                                                                                                    INVALID_HELP_PAGE_URL_MESSAGE)));
     application.setIcon(getContextApplicationIcon(form.getIcon()));
     application.setBadgeName(getContextApplicationBadgeName(form.getBadgeName()));
     application.setSameTab(form.isSameTab());
@@ -1471,13 +1497,33 @@ public class ApplicationCenterService {
     return switch (type) {
     case DRAWER -> getDrawerName(url);
     case PORTLET -> getPortletInstanceId(url, username);
-    default -> normalizePersonalUrl(url);
+    default -> getContextLink(url, INVALID_URL_MESSAGE);
     };
+  }
+
+  private String getContextLink(String url, String invalidMessage) {
+    try {
+      return normalizePersonalUrl(url);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(invalidMessage, e);
+    }
+  }
+
+  /**
+   * @return the url of a field, refused when it does not fit its column or
+   *         holds a character outside the Basic Multilingual Plane, which the
+   *         url columns of a MySQL database, utf8mb3, cannot store
+   */
+  private String checkUrl(String fieldName, String url) {
+    if (url != null && url.codePoints().anyMatch(Character::isSupplementaryCodePoint)) {
+      throw new IllegalArgumentException(CONTEXTUAL_MESSAGE_PREFIX + fieldName + "UnsupportedCharacter");
+    }
+    return checkLength(fieldName, url, MAX_URL_LENGTH);
   }
 
   private String getDrawerName(String url) {
     if (url == null || !DRAWER_NAME_PATTERN.matcher(url).matches()) {
-      throw new IllegalArgumentException(String.format("url %s is not a drawer name", url));
+      throw new IllegalArgumentException(INVALID_URL_MESSAGE);
     }
     return url;
   }
@@ -1485,12 +1531,12 @@ public class ApplicationCenterService {
   private String getPortletInstanceId(String url, String username) {
     long portletInstanceId = NumberUtils.toLong(url, 0);
     if (portletInstanceId <= 0) {
-      throw new IllegalArgumentException(String.format("url %s is not a portlet instance id", url));
+      throw new IllegalArgumentException(INVALID_URL_MESSAGE);
     }
     try {
       portletInstanceService.getPortletInstance(portletInstanceId, username, null, false);
     } catch (ObjectNotFoundException | IllegalAccessException e) {
-      throw new IllegalArgumentException(String.format("url %s is not a portlet instance the user may access", url), e);
+      throw new IllegalArgumentException(INVALID_URL_MESSAGE, e);
     }
     return String.valueOf(portletInstanceId);
   }
@@ -1501,7 +1547,7 @@ public class ApplicationCenterService {
    */
   private String checkLength(String fieldName, String value, int maxLength) {
     if (value != null && value.length() > maxLength) {
-      throw new IllegalArgumentException(String.format("%s is longer than %s characters", fieldName, maxLength));
+      throw new IllegalArgumentException(CONTEXTUAL_MESSAGE_PREFIX + fieldName + "TooLong");
     }
     return value;
   }
@@ -1510,7 +1556,7 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(icon)) {
       return null;
     } else if (!ICON_PATTERN.matcher(icon).matches()) {
-      throw new IllegalArgumentException(String.format("icon %s is not an icon name", icon));
+      throw new IllegalArgumentException(INVALID_ICON_MESSAGE);
     }
     return icon;
   }
@@ -1660,7 +1706,21 @@ public class ApplicationCenterService {
    *         that window only
    */
   private boolean isListedBy(Application application, String settingName) {
-    return !application.isContextual() || StringUtils.equals(application.getContextSettingName(), settingName);
+    return !application.isContextual() || isOwnedBy(application, settingName);
+  }
+
+  private boolean isOwnedBy(Application application, String settingName) {
+    return application.isContextual() && StringUtils.equals(application.getContextSettingName(), settingName);
+  }
+
+  /**
+   * @return true when the window's editors may see and delete the application
+   *         outside its audience: one the window created, unless an
+   *         administrator emptied its audience, which shows it to
+   *         administrators only
+   */
+  private boolean isManagedBy(Application application, String settingName) {
+    return isOwnedBy(application, settingName) && CollectionUtils.isNotEmpty(application.getPermissions());
   }
 
   private Application getFavoritableApplication(long applicationId, String username) throws ApplicationNotFoundException,

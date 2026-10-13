@@ -285,8 +285,8 @@ public class ApplicationRestTest {
   }
 
   /**
-   * The reason of a ResponseStatusException never reaches the client: fails
-   * the mutant refusing with one, whose body carries no message code
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
    */
   @Test
   void createContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
@@ -299,7 +299,7 @@ public class ApplicationRestTest {
     postContextApplication("unknown").andExpect(status().isNotFound());
     postContextApplication("forbidden").andExpect(status().isForbidden());
     postContextApplication("invalid").andExpect(status().isBadRequest())
-                                     .andExpect(jsonPath("$.message").value(ApplicationCenterService.INVALID_TYPE_MESSAGE));
+                                     .andExpect(status().reason(ApplicationCenterService.INVALID_TYPE_MESSAGE));
   }
 
   @Test
@@ -312,8 +312,8 @@ public class ApplicationRestTest {
   }
 
   /**
-   * Fails the mutant refusing with a ResponseStatusException, whose reason
-   * never reaches the client
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
    */
   @Test
   void deleteContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
@@ -330,7 +330,7 @@ public class ApplicationRestTest {
            .andExpect(status().isForbidden());
     mockMvc.perform(delete(CONTEXT_PATH + "/3").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
            .andExpect(status().isBadRequest())
-           .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_OWNED_MESSAGE));
+           .andExpect(status().reason(ApplicationCenterService.NOT_OWNED_MESSAGE));
   }
 
   private ResultActions postContextApplication(String settingName) throws Exception {
@@ -434,8 +434,8 @@ public class ApplicationRestTest {
   }
 
   /**
-   * Fails the mutant refusing with a ResponseStatusException, whose reason
-   * never reaches the client
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
    */
   @Test
   void stickApplicationNotAllowed() throws Exception {
@@ -444,7 +444,7 @@ public class ApplicationRestTest {
                                                                                                   PlacementSide.LEFT,
                                                                                                   SIMPLE_USER);
     ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
-    response.andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("appCenter.placement.stickNotAllowed"));
+    response.andExpect(status().isBadRequest()).andExpect(status().reason("appCenter.placement.stickNotAllowed"));
   }
 
   @Test

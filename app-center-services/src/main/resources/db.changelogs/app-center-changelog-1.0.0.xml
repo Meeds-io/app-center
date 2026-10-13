@@ -229,6 +229,9 @@
       <column name="CONTEXT_SETTING_NAME" type="VARCHAR(200)" />
       <column name="CONTEXT_SPACE_ID" type="BIGINT" />
     </addColumn>
+    <createIndex indexName="IDX_AC_APP_CONTEXT_SPACE" tableName="AC_APPLICATION">
+      <column name="CONTEXT_SPACE_ID" />
+    </createIndex>
   </changeSet>
 
 </databaseChangeLog>

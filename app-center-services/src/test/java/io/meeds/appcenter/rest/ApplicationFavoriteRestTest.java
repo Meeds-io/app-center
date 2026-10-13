@@ -140,8 +140,8 @@ public class ApplicationFavoriteRestTest {
   }
 
   /**
-   * Fails the mutant refusing with a ResponseStatusException, whose reason
-   * never reaches the client
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
    */
   @Test
   void addFavoriteApplicationRefusals() throws Exception {
@@ -150,7 +150,7 @@ public class ApplicationFavoriteRestTest {
                                                                                                                  SIMPLE_USER);
     mockMvc.perform(post(FAVORITES_PATH + "/1").with(testSimpleUser()))
            .andExpect(status().isBadRequest())
-           .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
+           .andExpect(status().reason(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
 
     doThrow(new IllegalAccessException("denied")).when(applicationCenterService).addFavoriteApplication(2L, SIMPLE_USER);
     mockMvc.perform(post(FAVORITES_PATH + "/2").with(testSimpleUser())).andExpect(status().isForbidden());
@@ -170,8 +170,8 @@ public class ApplicationFavoriteRestTest {
   }
 
   /**
-   * Fails the mutant refusing with a ResponseStatusException, whose reason
-   * never reaches the client
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
    */
   @Test
   void updateApplicationsOrderRefusals() throws Exception {
@@ -183,7 +183,7 @@ public class ApplicationFavoriteRestTest {
                                                                                          .updateFavoriteApplicationsOrder(applicationOrders(),
                                                                                                                           SIMPLE_USER);
     putApplicationOrders().andExpect(status().isBadRequest())
-                          .andExpect(jsonPath("$.message").value(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
+                          .andExpect(status().reason(ApplicationCenterService.NOT_FAVORITABLE_MESSAGE));
 
     doThrow(new ApplicationNotFoundException("missing")).when(applicationCenterService)
                                                         .updateFavoriteApplicationsOrder(applicationOrders(), SIMPLE_USER);

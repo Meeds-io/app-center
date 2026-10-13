@@ -19,15 +19,12 @@
 package io.meeds.appcenter.rest;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -80,20 +77,19 @@ public class ApplicationFavoriteRest {
                           @ApiResponse(responseCode = "403", description = "Application not accessible to the user"),
                           @ApiResponse(responseCode = "404", description = "Unknown application"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ResponseEntity<Object> addFavoriteApplication(
-                                                       HttpServletRequest request,
-                                                       @Parameter(description = "Application technical id to add as favorite", required = true)
-                                                       @PathVariable("applicationId")
-                                                       Long applicationId) {
+  public void addFavoriteApplication(
+                                     HttpServletRequest request,
+                                     @Parameter(description = "Application technical id to add as favorite", required = true)
+                                     @PathVariable("applicationId")
+                                     Long applicationId) {
     try {
       appCenterService.addFavoriteApplication(applicationId, request.getRemoteUser());
-      return ResponseEntity.ok().build();
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
     } catch (IllegalArgumentException e) {
-      return badRequest(e.getMessage());
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
@@ -108,19 +104,18 @@ public class ApplicationFavoriteRest {
                           @ApiResponse(responseCode = "403", description = "An application not accessible to the user"),
                           @ApiResponse(responseCode = "404", description = "An unknown application"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ResponseEntity<Object> updateApplicationsOrder(
-                                                        HttpServletRequest request,
-                                                        @RequestBody(required = true)
-                                                        List<ApplicationOrder> applicationOrders) {
+  public void updateApplicationsOrder(
+                                      HttpServletRequest request,
+                                      @RequestBody(required = true)
+                                      List<ApplicationOrder> applicationOrders) {
     try {
       appCenterService.updateFavoriteApplicationsOrder(applicationOrders, request.getRemoteUser());
-      return ResponseEntity.ok().build();
     } catch (ApplicationNotFoundException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
     } catch (IllegalAccessException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
     } catch (IllegalArgumentException e) {
-      return badRequest(e.getMessage());
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
@@ -139,15 +134,6 @@ public class ApplicationFavoriteRest {
                                         @PathVariable("applicationId")
                                         Long applicationId) {
     appCenterService.deleteFavoriteApplication(applicationId, request.getRemoteUser());
-  }
-
-  /**
-   * @return a refusal whose body carries its message, a code or a sentence
-   *         naming what is refused, which the reason of a
-   *         ResponseStatusException never brings to the client
-   */
-  private static ResponseEntity<Object> badRequest(String message) {
-    return ResponseEntity.badRequest().body(Map.of("message", Objects.toString(message, "")));
   }
 
 }

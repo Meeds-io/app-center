@@ -841,6 +841,22 @@ class MyApplicationsSettingsServiceTest {
     assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, recordedPage, 0L));
   }
 
+  /**
+   * Fails the mutant memoising every window's decision for the life of the
+   * node: past the bound, the memo is emptied and a window is decided again
+   */
+  @Test
+  void keepsSettingNameMemoisesABoundedNumberOfDecisions() {
+    String name = "Untitled-99-0a1b2c3d-0000-0000-0000-000000000099";
+    when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name, PAGE_REFERENCE, 0L));
+    for (int storageId = 100; storageId <= 1100; storageId++) {
+      settingsService.keepsSettingName(name, String.valueOf(storageId), WindowKind.PAGE, PAGE_REFERENCE, 0L, List::of);
+    }
+    settingsService.keepsSettingName(name, "100", WindowKind.PAGE, PAGE_REFERENCE, 0L, List::of);
+
+    verify(cmsService, times(1002)).getSetting(SETTING_TYPE, name);
+  }
+
   @Test
   void keepsSettingNameGeneratedForTheWindowWithoutReadingAnything() {
     assertTrue(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));

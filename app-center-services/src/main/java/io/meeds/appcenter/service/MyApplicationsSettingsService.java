@@ -133,6 +133,8 @@ public class MyApplicationsSettingsService {
 
   private static final Pattern ID                       = Pattern.compile("^\\d{1,18}$");
 
+  private static final int     MAX_KEPT_SETTING_NAMES   = 1000;
+
   @Autowired
   private CMSService          cmsService;
 
@@ -157,7 +159,8 @@ public class MyApplicationsSettingsService {
   /**
    * Whether a window keeps a setting name generated for another storage id,
    * by storage id and name: the setting read and the page scan run once per
-   * window and node.
+   * window and node; past {@value #MAX_KEPT_SETTING_NAMES} decisions, the map
+   * is emptied, and a window is decided again.
    */
   private final Map<String, Boolean> keptSettingNames = new ConcurrentHashMap<>();
 
@@ -514,6 +517,9 @@ public class MyApplicationsSettingsService {
     Boolean kept = keptSettingNames.get(key);
     if (kept == null) {
       kept = isSettingOfWindow(settingName, windowKind, pageReference, spaceId, otherWindowNames);
+      if (keptSettingNames.size() >= MAX_KEPT_SETTING_NAMES) {
+        keptSettingNames.clear();
+      }
       keptSettingNames.put(key, kept);
     }
     return kept;
