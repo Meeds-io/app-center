@@ -75,6 +75,10 @@ public class ApplicationCenterStorage {
 
   private static final String    APPLICATION_NOT_FOUND_MESSAGE       = "Application with id %s doesn't exist";
 
+  private static final String    ILLUSTRATION_TOKEN_PROVIDER         = "appcenter";
+
+  private static final String    ILLUSTRATION_TOKEN_TYPE             = "icon";
+
   private static final String    APPLICATION_ID_IS_MANDATORY_MESSAGE = "applicationId is mandatory";
 
   private static final String    USERNAME_IS_MANDATORY_MESSAGE       = "username is mandatory";
@@ -339,6 +343,21 @@ public class ApplicationCenterStorage {
   }
 
   /**
+   * @param id the application's id
+   * @param token the token of an illustration URL
+   * @param imageLastModified the version of the illustration the URL names
+   * @return true when the token is the one the application's illustration URL
+   *         carries for that version
+   */
+  public boolean isIllustrationTokenValid(long id, String token, long imageLastModified) {
+    return LinkProvider.isAttachmentTokenValid(token,
+                                               ILLUSTRATION_TOKEN_PROVIDER,
+                                               String.valueOf(id),
+                                               ILLUSTRATION_TOKEN_TYPE,
+                                               String.valueOf(imageLastModified));
+  }
+
+  /**
    * @param  keyword matched in title and url, all applications when blank
    * @return         the ids of the matching applications, sorted by title
    */
@@ -570,9 +589,9 @@ public class ApplicationCenterStorage {
     if (codecInitializer == null) {
       return StringUtils.EMPTY;
     } else {
-      return URLEncoder.encode(LinkProvider.generateAttachmentToken("appcenter",
+      return URLEncoder.encode(LinkProvider.generateAttachmentToken(ILLUSTRATION_TOKEN_PROVIDER,
                                                                     String.valueOf(id),
-                                                                    "icon",
+                                                                    ILLUSTRATION_TOKEN_TYPE,
                                                                     String.valueOf(imageLastModified)),
                                StandardCharsets.UTF_8);
     }

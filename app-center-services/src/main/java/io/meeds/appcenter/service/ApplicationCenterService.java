@@ -26,11 +26,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -982,6 +980,17 @@ public class ApplicationCenterService {
   }
 
   /**
+   * @param applicationId technical id of application
+   * @param token the token of an illustration URL
+   * @param lastModified the version of the illustration the URL names
+   * @return true when the token is the one the application's illustration URL
+   *         carries for that version
+   */
+  public boolean isIllustrationTokenValid(long applicationId, String token, long lastModified) {
+    return appCenterStorage.isIllustrationTokenValid(applicationId, token, lastModified);
+  }
+
+  /**
    * Return the {@link Application} illustration {@link InputStream}, if not
    * found, the default image {@link InputStream} will be retrieved
    *
@@ -1083,7 +1092,7 @@ public class ApplicationCenterService {
                                                  Locale locale,
                                                  String username) throws ObjectNotFoundException {
     checkSettingExists(filter == null ? null : filter.getSettingName());
-    return listApplications(filter, locale, username);
+    return listApplications(filter, locale, username, false);
   }
 
   /**
@@ -1094,9 +1103,14 @@ public class ApplicationCenterService {
     applicationCategoryStorage.clearCache();
   }
 
-  private List<Application> listApplications(ApplicationListFilter filter, Locale locale, String username) {
+  /**
+   * @param editor true when the user may edit the window's settings, who then
+   *          also sees the applications the window created outside their
+   *          audience
+   */
+  private List<Application> listApplications(ApplicationListFilter filter, Locale locale, String username, boolean editor) {
     if (CollectionUtils.isEmpty(filter.getCategoryIds())) {
-      return listApplications(filter.getSettingName(), filter.getIds(), locale, username);
+      return listApplications(filter.getSettingName(), filter.getIds(), locale, username, editor);
     } else if (CollectionUtils.isNotEmpty(filter.getIds())) {
       throw new IllegalArgumentException("Either application ids or category ids can be listed");
     } else if (filter.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
@@ -1118,8 +1132,10 @@ public class ApplicationCenterService {
                                                                           .filter(application -> isListedBy(application,
                                                                                                             filter.getSettingName()))
                                                                           .filter(Application::isActive)
-                                                                          .filter(application -> canAccess(application,
-                                                                                                           username))
+                                                                          .filter(application -> isShown(application,
+                                                                                                         filter.getSettingName(),
+                                                                                                         username,
+                                                                                                         editor))
                                                                           .map(this::toTile)
                                                                           .toList());
       setApplicationLabels(group, locale);
@@ -1141,19 +1157,20 @@ public class ApplicationCenterService {
 
   /**
    * Reads, in the order of the ids, the active applications the user may
-   * access, decorated on copies, once the caller checked the window. An
-   * application created from a Shortcuts portlet is read for that window
-   * only.
+   * access, and for an editor the ones the window created, decorated on
+   * copies, once the caller checked the window. An application created from a
+   * Shortcuts portlet is read for that window only.
    */
-  private List<Application> listApplications(String settingName, List<Long> ids, Locale locale, String username) {
+  private List<Application> listApplications(String settingName,
+                                             List<Long> ids,
+                                             Locale locale,
+                                             String username,
+                                             boolean editor) {
     if (CollectionUtils.isEmpty(ids)) {
       return Collections.emptyList();
     } else if (ids.size() > MAX_LISTED_APPLICATIONS) {
       throw new IllegalArgumentException(String.format("At most %s applications can be listed", MAX_LISTED_APPLICATIONS));
     }
-    // The window's editors see the applications it created, whatever their
-    // audience: the right is read once, and only for such an application
-    Map<String, Boolean> editorRight = new HashMap<>(1);
     List<Application> applications = ids.stream()
                                         .filter(Objects::nonNull)
                                         .distinct()
@@ -1161,11 +1178,7 @@ public class ApplicationCenterService {
                                         .filter(Objects::nonNull)
                                         .filter(application -> isListedBy(application, settingName))
                                         .filter(Application::isActive)
-                                        .filter(application -> canAccess(application, username)
-                                                               || isManagedBy(application, settingName)
-                                                                  && editorRight.computeIfAbsent(settingName,
-                                                                                                 name -> myApplicationsSettingsService.canEditSettings(name,
-                                                                                                                                                       username)))
+                                        .filter(application -> isShown(application, settingName, username, editor))
                                         .map(this::toTile)
                                         .toList();
     setApplicationLabels(applications, locale);
@@ -1175,7 +1188,9 @@ public class ApplicationCenterService {
 
   /**
    * Reads the applications a Shortcuts portlet window lists, for a user
-   * editing its settings: as {@link #getListedApplications}.
+   * editing its settings: as {@link #getListedApplications}, plus the
+   * applications the window created whose audience excludes the user, unless
+   * an administrator emptied that audience.
    *
    * @param filter the window's setting name and selected ids
    * @param locale the language of the labels, none when null
@@ -1195,7 +1210,7 @@ public class ApplicationCenterService {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return listApplications(filter, locale, username);
+    return listApplications(filter, locale, username, true);
   }
 
   /**
@@ -1374,7 +1389,8 @@ public class ApplicationCenterService {
    * Whether a user may edit an application from the settings of a Shortcuts
    * portlet window: an administrator any application, whoever manages the
    * applications of the window that created one that application only. When
-   * that window's setting no longer exists, administrators only.
+   * that window's setting no longer exists, or an administrator emptied the
+   * application's audience, administrators only.
    *
    * @param application the application
    * @param username the user, blank for a guest
@@ -1383,7 +1399,7 @@ public class ApplicationCenterService {
   public boolean canEditContextApplication(Application application, String username) {
     return isAdministrator(username)
            || (application != null
-               && application.isContextual()
+               && isManagedBy(application, application.getContextSettingName())
                && myApplicationsSettingsService.canEditSettings(application.getContextSettingName(), username));
   }
 
@@ -1721,6 +1737,15 @@ public class ApplicationCenterService {
    */
   private boolean isManagedBy(Application application, String settingName) {
     return isOwnedBy(application, settingName) && CollectionUtils.isNotEmpty(application.getPermissions());
+  }
+
+  /**
+   * @return true when a window lists the application to the user: one the
+   *         user may access, and for an editor of the window's settings one
+   *         the window manages
+   */
+  private boolean isShown(Application application, String settingName, String username, boolean editor) {
+    return canAccess(application, username) || editor && isManagedBy(application, settingName);
   }
 
   private Application getFavoritableApplication(long applicationId, String username) throws ApplicationNotFoundException,

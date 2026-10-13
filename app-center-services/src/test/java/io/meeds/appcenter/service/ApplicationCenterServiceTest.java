@@ -1181,28 +1181,52 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
-   * The window's editors see what it created, whatever its audience: fails the
-   * mutant listing it only to whoever may access it, where an editor outside
-   * the audience, such as a publisher outside the space, creates an
-   * application the list then hides from them, and the mutant listing it to
-   * every viewer
+   * The rendered view lists the same applications to every viewer: fails the
+   * mutant listing to the window's editors, in either selection mode, an
+   * application the window created whose audience excludes them
    */
   @Test
-  void getListedApplicationsShowsTheWindowsOwnApplicationToItsEditorsOnly() throws Exception {
+  void getListedApplicationsShowsTheWindowsOwnApplicationToItsAudienceOnly() throws Exception {
     Application outsideAudience = contextApplication(ID, SETTING_NAME);
     outsideAudience.setPermissions(List.of(PERMISSIONS_1));
     when(appCenterStorage.getApplication(ID)).thenReturn(outsideAudience);
-    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, List.of(ID));
+    lenient().when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(ID));
+    lenient().when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
 
-    assertTrue(applicationCenterService.getListedApplications(filter, null, TEST_USER).isEmpty());
+    assertTrue(applicationCenterService.getListedApplications(new ApplicationListFilter(SETTING_NAME, List.of(ID)),
+                                                              null,
+                                                              TEST_USER)
+                                       .isEmpty());
+    assertTrue(listedIds(List.of(10L), null).isEmpty());
+  }
+
+  /**
+   * The window's editors get what it created from its settings listing,
+   * whatever its audience: fails the mutant listing it only to whoever may
+   * access it, where an editor outside the audience, such as a publisher
+   * outside the space, creates an application the drawer then hides from them,
+   * whether the filter selects applications or categories, and the mutant
+   * listing it once an administrator emptied its audience
+   */
+  @Test
+  void getContextApplicationsShowsTheWindowsOwnApplicationToItsEditors() throws Exception {
+    Application outsideAudience = contextApplication(ID, SETTING_NAME);
+    outsideAudience.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(outsideAudience);
+    when(applicationCategoryStorage.getApplicationIds(10L)).thenReturn(List.of(ID));
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
-    assertEquals(List.of(ID), ids(applicationCenterService.getListedApplications(filter, null, TEST_USER)));
+    ApplicationListFilter byIds = new ApplicationListFilter(SETTING_NAME, List.of(ID));
+    ApplicationListFilter byCategories = new ApplicationListFilter(SETTING_NAME, null, List.of(10L));
+
+    assertEquals(List.of(ID), ids(applicationCenterService.getContextApplications(byIds, null, TEST_USER)));
+    assertEquals(List.of(ID), ids(applicationCenterService.getContextApplications(byCategories, null, TEST_USER)));
 
     // An administrator emptied its audience: shown to administrators only
     Application emptied = contextApplication(ID, SETTING_NAME);
     emptied.setPermissions(List.of());
     when(appCenterStorage.getApplication(ID)).thenReturn(emptied);
-    assertTrue(applicationCenterService.getListedApplications(filter, null, TEST_USER).isEmpty());
+    assertTrue(applicationCenterService.getContextApplications(byIds, null, TEST_USER).isEmpty());
+    assertTrue(applicationCenterService.getContextApplications(byCategories, null, TEST_USER).isEmpty());
   }
 
   /**
@@ -1752,6 +1776,12 @@ public class ApplicationCenterServiceTest {
     assertFalse(applicationCenterService.canEditContextApplication(contextApplication(ID, OTHER_SETTING_NAME), TEST_USER));
     assertFalse(applicationCenterService.canEditContextApplication(owned, null));
     assertFalse(applicationCenterService.canEditContextApplication(owned, IdentityConstants.ANONIM));
+
+    // An administrator emptied its audience: administrators only, as it is
+    // shown to them only
+    owned.setPermissions(List.of());
+    assertFalse(applicationCenterService.canEditContextApplication(owned, TEST_USER));
+    assertTrue(applicationCenterService.canEditContextApplication(owned, ADMIN_USERNAME));
   }
 
   @Test

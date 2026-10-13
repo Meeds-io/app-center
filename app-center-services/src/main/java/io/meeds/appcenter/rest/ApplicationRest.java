@@ -48,7 +48,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.service.LinkProvider;
 
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
@@ -133,7 +132,7 @@ public class ApplicationRest {
 
   @GetMapping(path = "contextual/list")
   @Secured("users")
-  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings, plus the applications the portlet created whose audience excludes the user, unless an administrator emptied that audience")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "More than 100 ids"),
     @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
@@ -500,7 +499,7 @@ public class ApplicationRest {
                                                                         @Parameter(description = "Application id", required = true)
                                                                         @PathVariable("applicationId")
                                                                         long applicationId,
-                                                                        @Parameter(description = "A token that is used to authorize anonymous request")
+                                                                        @Parameter(description = "The token of the illustration URL, which authorizes a user who may not see the application, anonymous included")
                                                                         @RequestParam(name = "r", required = false)
                                                                         String token,
                                                                         @Parameter(description = "Dimensions of size")
@@ -514,21 +513,13 @@ public class ApplicationRest {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
-        if (!LinkProvider.isAttachmentTokenValid(token,
-                                                 "appcenter",
-                                                 String.valueOf(applicationId),
-                                                 "icon",
-                                                 String.valueOf(lastModified.orElse(0l)))) {
+        if (!appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
           throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
       } else if (!appCenterService.canEdit(request.getRemoteUser())
                  && !appCenterService.canAccess(application, request.getRemoteUser())
-                 && !LinkProvider.isAttachmentTokenValid(token,
-                                                         "appCenter",
-                                                         String.valueOf(applicationId),
-                                                         "icon",
-                                                         String.valueOf(lastModified.orElse(0l)))) {
+                 && !appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
       }

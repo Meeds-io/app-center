@@ -32,11 +32,14 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,20 +48,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.web.security.codec.CodecInitializer;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.dao.ApplicationDAO;
@@ -570,6 +578,31 @@ public class ApplicationCenterStorageTest {
     lenient().when(uploadResource.getStoreLocation()).thenReturn(storeLocation);
     lenient().when(uploadResource.getStatus()).thenReturn(status);
     when(uploadService.getUploadResource(uploadId)).thenReturn(uploadResource);
+  }
+
+  /**
+   * The token of an illustration URL authorizes that URL: fails the mutant
+   * checking a token with another provider or type than the one the URL's
+   * token is generated with, which no token then matches
+   */
+  @Test
+  void isIllustrationTokenValidAcceptsTheTokenOfTheIllustrationUrl() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity(ID)));
+    ReflectionTestUtils.setField(applicationCenterStorage, "codecInitializer", mock(CodecInitializer.class));
+    try (MockedStatic<LinkProvider> linkProvider = mockStatic(LinkProvider.class)) {
+      linkProvider.when(() -> LinkProvider.generateAttachmentToken(any(), any(), any(), any()))
+                  .thenAnswer(invocation -> StringUtils.join(invocation.getArguments(), ':'));
+      linkProvider.when(() -> LinkProvider.isAttachmentTokenValid(any(), any(), any(), any(), any())).thenCallRealMethod();
+      String imageUrl = applicationCenterStorage.getApplication(ID).getImageUrl();
+      String token = URLDecoder.decode(StringUtils.substringAfter(imageUrl, "&r="), StandardCharsets.UTF_8);
+      long version = Long.parseLong(StringUtils.substringBetween(imageUrl, "?v=", "&r="));
+
+      assertTrue(applicationCenterStorage.isIllustrationTokenValid(ID, token, version));
+      assertFalse(applicationCenterStorage.isIllustrationTokenValid(ID, token, version + 1));
+      assertFalse(applicationCenterStorage.isIllustrationTokenValid(ID + 1, token, version));
+    } finally {
+      ReflectionTestUtils.setField(applicationCenterStorage, "codecInitializer", null);
+    }
   }
 
   private ApplicationEntity applicationEntity(Long id) {

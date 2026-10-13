@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,6 +65,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.services.FileService;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -99,6 +102,8 @@ public class ApplicationRestTest {
   private static final String CONTEXT_SUGGEST_PATH      = "/applications/contextual/suggest"; // NOSONAR
 
   private static final String CONTEXT_PATH              = "/applications/contextual";       // NOSONAR
+
+  private static final String ILLUSTRATION_PATH         = "/applications/illustration/1";   // NOSONAR
 
   private static final String SETTING_NAME_PARAM        = "settingName";
 
@@ -457,6 +462,28 @@ public class ApplicationRestTest {
   private RequestPostProcessor testAdminUser() {
     return user(ADMIN_USER).password(TEST_PASSWORD)
                            .authorities(new SimpleGrantedAuthority("administrators"));
+  }
+
+  /**
+   * A tile's illustration URL authorizes its illustration for a signed-in user
+   * who may not see the application, such as an editor of the window that
+   * created it: fails the mutant refusing that token to a signed-in user
+   */
+  @Test
+  void getApplicationIllustrationWithTheTokenOfItsUrl() throws Exception {
+    Application application = application();
+    when(applicationCenterService.getApplication(1L)).thenReturn(application);
+    FileInfo fileInfo = mock(FileInfo.class);
+    when(fileInfo.getMimetype()).thenReturn("image/png");
+    when(fileService.getFileInfo(application.getImageFileId())).thenReturn(fileInfo);
+    when(applicationCenterService.getApplicationImageInputStream(1L, null)).thenReturn(new ByteArrayInputStream(new byte[] { 1 }));
+    when(applicationCenterService.getApplicationImageLastUpdated(1L)).thenReturn(3L);
+    when(applicationCenterService.isIllustrationTokenValid(1L, "token", 3L)).thenReturn(true);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("r", "token").param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isOk());
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("r", "other").param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isUnauthorized());
   }
 
   private RequestPostProcessor testSimpleUser() {
