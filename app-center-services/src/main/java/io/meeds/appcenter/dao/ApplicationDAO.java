@@ -91,6 +91,17 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       """)
   List<Long> getApplicationIdsByBadgeName(@Param("badgeName") String badgeName);
 
+  /**
+   * @param  spaceId the space of the context the applications were created in
+   * @return         the ids of the applications Shortcuts portlet windows
+   *                 created in that space context
+   */
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.contextSpaceId = :spaceId
+      """)
+  List<Long> findIdsByContextSpaceId(@Param("spaceId") long spaceId);
+
   @Query("""
       SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order, favoriteApp.favorite)
       FROM ApplicationEntity app
