@@ -51,6 +51,7 @@ import java.util.ListResourceBundle;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1420,18 +1421,56 @@ public class ApplicationCenterServiceTest {
 
   /**
    * A deleted space's site no longer resolves to a space: fails the mutant
-   * ignoring the recorded space, where a window of a deleted space would
+   * creating without checking it, where a window of a deleted space would
    * create an application for every platform user
    */
   @Test
-  void createContextApplicationRefusesAWindowRecordedInADeletedSpace() throws Exception {
-    mockContext(SPACE_ID);
-    when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenReturn(0L);
-    when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
+  void createContextApplicationRefusesAWindowOfADeletedSpace() throws Exception {
+    mockContext(0L);
+    when(myApplicationsSettingsService.isContextDeleted(SETTING_NAME, PAGE_REFERENCE)).thenReturn(true);
 
     assertThrows(ObjectNotFoundException.class,
                  () -> applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER));
     verifyNoContextApplicationCreated();
+  }
+
+  /**
+   * A space deleted while the creation resolves it resolves to none: fails
+   * the mutant checking the deletion before resolving the space, where such a
+   * window would create an application for every platform user
+   */
+  @Test
+  void createContextApplicationRefusesAWindowWhoseSpaceIsDeletedWhileItResolves() throws Exception {
+    mockContext(SPACE_ID);
+    AtomicBoolean deleted = new AtomicBoolean();
+    when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenAnswer(invocation -> {
+      deleted.set(true);
+      return 0L;
+    });
+    when(myApplicationsSettingsService.isContextDeleted(SETTING_NAME, PAGE_REFERENCE)).thenAnswer(invocation -> deleted.get());
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER));
+    verifyNoContextApplicationCreated();
+  }
+
+  /**
+   * A portal page first rendered through a space's navigation recorded that
+   * space: fails the mutant falling back to the recorded space, where an
+   * application created from a portal page takes a space's audience
+   */
+  @Test
+  void createContextApplicationGivesAPortalPageThePlatformAudienceWhateverSpaceItsSettingRecorded() throws Exception {
+    mockContext(SPACE_ID);
+    when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenReturn(0L);
+
+    applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER);
+
+    verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:/platform/users",
+                                                                                     "*:/platform/externals")
+                                                                                 .equals(application.getPermissions())),
+                                                      eq(SETTING_NAME),
+                                                      eq(0L));
   }
 
   @Test

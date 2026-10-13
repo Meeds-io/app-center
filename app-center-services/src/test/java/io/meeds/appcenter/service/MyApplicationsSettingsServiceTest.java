@@ -145,7 +145,6 @@ class MyApplicationsSettingsServiceTest {
   void existingApplications() {
     lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
     lenient().when(categoryService.getCategory(anyLong())).thenReturn(new Category());
-    lenient().when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(5L));
   }
 
   @Test
@@ -180,10 +179,28 @@ class MyApplicationsSettingsServiceTest {
     assertFalse(settingsService.canEditSettings(PAGE_NAME, USERNAME));
   }
 
+  /**
+   * A window rendered before its space was keyed on its page's site may have
+   * recorded another space: fails the mutant reading the recorded space, where
+   * the publishers and managers of a space would not edit a window of its page
+   * first reached through a portal site's navigation, though they edit one
+   * placed there today
+   */
+  @Test
+  void canEditSettingsTakesTheSpaceOfTheRecordedPageNotTheRecordedSpace() {
+    Identity identity = mockUser(false);
+    when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 0));
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(5L));
+    when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 5)).thenReturn(true);
+
+    assertTrue(settingsService.canEditSettings(PAGE_NAME, USERNAME));
+  }
+
   @Test
   void canEditSettingsOfPageWindowUsesPageContentRight() {
     Identity identity = mockUser(false);
     when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 3));
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(3L));
 
     assertFalse(settingsService.canEditSettings(PAGE_NAME, USERNAME));
     when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 3)).thenReturn(true);
@@ -206,12 +223,20 @@ class MyApplicationsSettingsServiceTest {
     assertTrue(settingsService.canEditSettings(SHARED_NAME, USERNAME));
   }
 
+  /**
+   * A shared-layout window's context is the platform's whatever space its
+   * setting recorded, as its applications' audience is: fails the mutant
+   * reading the recorded space, where a space's publishers would create an
+   * application for every platform user
+   */
   @Test
-  void canEditSettingsOfSharedMarkerInSpaceUsesPageContentRight() {
+  void canEditSettingsOfSharedMarkerIsAdministratorOnlyWhateverSpaceItsSettingRecorded() {
     Identity identity = mockUser(false);
     when(cmsService.getSetting(SETTING_TYPE, SHARED_NAME)).thenReturn(setting(SHARED_NAME, PAGE_REFERENCE, 3));
-    when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 3)).thenReturn(true);
+    lenient().when(cmsService.hasEditPermission(any(Identity.class), anyString(), anyLong())).thenReturn(true);
 
+    assertFalse(settingsService.canEditSettings(SHARED_NAME, USERNAME));
+    when(userAcl.isAdministrator(identity)).thenReturn(true);
     assertTrue(settingsService.canEditSettings(SHARED_NAME, USERNAME));
   }
 
@@ -237,6 +262,7 @@ class MyApplicationsSettingsServiceTest {
   void canEditSettingsOfSectionDraftMarkerOutsideDraftUsesPageContentRight() {
     Identity identity = mockUser(false);
     when(cmsService.getSetting(SETTING_TYPE, SECTION_DRAFT_NAME)).thenReturn(setting(SECTION_DRAFT_NAME, PAGE_REFERENCE, 3));
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(3L));
     when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 3)).thenReturn(true);
 
     assertTrue(settingsService.canEditSettings(SECTION_DRAFT_NAME, USERNAME));
@@ -766,6 +792,31 @@ class MyApplicationsSettingsServiceTest {
   }
 
   /**
+   * Fails the mutant missing a deleted space's site, group or public, where a
+   * window of a deleted space would create an application for every platform
+   * user; the mutant missing a removed portal site, as a space's public site
+   * is once its space's deletion completes; and the mutant taking any other
+   * site, or a shared-layout window, for a deleted context
+   */
+  @Test
+  void isContextDeletedForTheSiteOfASpaceThatNoLongerExists() {
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(7L));
+    PortalConfig publicSite = mock(PortalConfig.class);
+    when(publicSite.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID)).thenReturn("10");
+    when(layoutService.getPortalConfig(SiteKey.portal("deletedpublic"))).thenReturn(publicSite);
+    when(layoutService.getPortalConfig(SiteKey.portal("meeds"))).thenReturn(mock(PortalConfig.class));
+
+    assertTrue(settingsService.isContextDeleted(PAGE_NAME, "group::/spaces/deleted::home"));
+    assertTrue(settingsService.isContextDeleted(SITE_NAME, "portal::deletedpublic::home"));
+    assertTrue(settingsService.isContextDeleted(SITE_NAME, "portal::removedpublic::home"));
+    assertFalse(settingsService.isContextDeleted(PAGE_NAME, PAGE_REFERENCE));
+    assertFalse(settingsService.isContextDeleted(PAGE_NAME, "group::/platform/users::home"));
+    assertFalse(settingsService.isContextDeleted(PAGE_NAME, "portal::meeds::home"));
+    assertFalse(settingsService.isContextDeleted(PAGE_NAME, "group_template::workspace::home"));
+    assertFalse(settingsService.isContextDeleted(SHARED_NAME, "group::/spaces/deleted::home"));
+  }
+
+  /**
    * The layout editor previews a space template page as a space of the
    * editor's choice, which the request then carries, while a site or space
    * template belongs to no space: fails the mutant resolving a template site
@@ -926,18 +977,31 @@ class MyApplicationsSettingsServiceTest {
                                                 () -> List.of(PAGE_NAME)));
   }
 
+  /**
+   * A page publish gives every window a new storage id, and a window rendered
+   * before its space was keyed on its page's site may have recorded another
+   * space: fails the mutant comparing the recorded space, where such a window
+   * gives up its name at its first render after a publish, and the
+   * applications it created are listed nowhere
+   */
   @Test
-  void pageWindowGivesUpANameOfAnotherPageSpaceOrWindow() {
+  void pageWindowKeepsANameOfThisPageWhateverSpaceItsSettingRecorded() {
+    String legacy = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000003";
+    when(cmsService.getSetting(SETTING_TYPE, legacy)).thenReturn(setting(legacy, PAGE_REFERENCE, 0L));
+    lenient().when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(7L));
+
+    assertTrue(settingsService.keepsSettingName(legacy, "21", WindowKind.PAGE, PAGE_REFERENCE, List::of));
+  }
+
+  @Test
+  void pageWindowGivesUpANameOfAnotherPageOrWindow() {
     String otherPage = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000002";
-    String otherSpace = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000003";
     String duplicated = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000004";
     String forged = "Untitled-13-0a1b2c3d-0000-0000-0000-000000000005";
     when(cmsService.getSetting(SETTING_TYPE, otherPage)).thenReturn(setting(otherPage, "group::/spaces/space1::other", 5L));
-    when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 6L));
     when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 5L));
 
     assertFalse(settingsService.keepsSettingName(otherPage, "12", WindowKind.PAGE, PAGE_REFERENCE, List::of));
-    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.PAGE, PAGE_REFERENCE, List::of));
     assertFalse(settingsService.keepsSettingName(duplicated,
                                                  "12",
                                                  WindowKind.PAGE,
@@ -980,21 +1044,29 @@ class MyApplicationsSettingsServiceTest {
     assertTrue(settingsService.keepsSettingName(copied, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, () -> List.of(SITE_NAME)));
   }
 
+  /**
+   * Fails the mutant comparing the recorded space: a site-layout window of a
+   * space's public site, recorded before that site resolved to the space,
+   * would give up its name at its first render after a layout publish
+   */
   @Test
-  void siteLayoutWindowGivesUpASiteNameOfAnotherSiteSpaceOrWindow() {
+  void siteLayoutWindowKeepsASiteNameOfThisSiteWhateverSpaceItsSettingRecorded() {
+    String legacy = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000009";
+    when(cmsService.getSetting(SETTING_TYPE, legacy)).thenReturn(setting(legacy, PAGE_REFERENCE, 0L));
+    lenient().when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(7L));
+
+    assertTrue(settingsService.keepsSettingName(legacy, "21", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
+  }
+
+  @Test
+  void siteLayoutWindowGivesUpASiteNameOfAnotherSiteOrWindow() {
     String otherSite = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000008";
-    String otherSpace = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000009";
     String duplicated = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000010";
     String forged = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000011";
-    Space space = new Space();
-    space.setId(7L);
-    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
     when(cmsService.getSetting(SETTING_TYPE, otherSite)).thenReturn(setting(otherSite, "group::/spaces/space2::home", 7L));
-    when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 8L));
     when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 7L));
 
     assertFalse(settingsService.keepsSettingName(otherSite, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
-    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
     assertFalse(settingsService.keepsSettingName(duplicated,
                                                  "12",
                                                  WindowKind.SITE_LAYOUT,

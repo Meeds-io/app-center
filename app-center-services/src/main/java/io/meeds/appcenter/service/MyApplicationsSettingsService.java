@@ -172,9 +172,11 @@ public class MyApplicationsSettingsService {
 
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
-   * header title included: the page-content right of the window's page, the
+   * header title included: the page-content right of the window's page, in the
+   * space owning that page's site, whatever space its setting recorded, the
    * site edit right for a site-layout window, administrators only for the
-   * generated name of a shared-layout window and for a window whose setting
+   * generated name of a shared-layout window, whose context is the platform's
+   * whatever space its setting recorded, and for a window whose setting
    * was recorded on a section-template draft page, whatever its name. A window
    * of a configured shared layout has no storage id, so no generated name: its
    * name must be configured, and it takes the right of the page that first
@@ -198,14 +200,18 @@ public class MyApplicationsSettingsService {
     if (identity == null) {
       return false;
     }
-    if (SHARED_LAYOUT_NAME.matcher(settingName).find() && setting.getSpaceId() == 0) {
+    if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
       return userAcl.isAdministrator(identity);
     } else if (isSectionTemplateDraft(setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
     } else if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
       return canEditSite(setting.getPageReference(), username);
     } else {
-      return cmsService.hasEditPermission(identity, setting.getPageReference(), setting.getSpaceId());
+      // The page-content right in the space owning the recorded page's site,
+      // which a window rendered before that rule may not have recorded
+      return cmsService.hasEditPermission(identity,
+                                          setting.getPageReference(),
+                                          getSiteSpaceId(getSiteKey(setting.getPageReference())));
     }
   }
 
@@ -453,6 +459,33 @@ public class MyApplicationsSettingsService {
   }
 
   /**
+   * Whether a window's context no longer exists: the page its setting records
+   * is on a space's group site, or on a space's public site, and that space
+   * is gone, or on a portal site that was removed. A space's public site is
+   * removed with its space, after which nothing tells it from another removed
+   * site. A shared-layout window's context is the platform's.
+   *
+   * @param settingName the window's CMS setting name
+   * @param pageReference the page reference the window's setting records
+   * @return true when the window's space or portal site was deleted
+   */
+  public boolean isContextDeleted(String settingName, String pageReference) {
+    SiteKey site = getSiteKey(pageReference);
+    if (site == null || SHARED_LAYOUT_NAME.matcher(settingName).find()) {
+      return false;
+    } else if (site.getType() == SiteType.GROUP) {
+      return StringUtils.startsWith(site.getName(), SpaceUtils.SPACE_GROUP_PREFIX)
+             && spaceService.getSpaceByGroupId(site.getName()) == null;
+    } else if (site.getType() == SiteType.PORTAL) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(site);
+      String spaceId = portalConfig == null ? null : portalConfig.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID);
+      return portalConfig == null || StringUtils.isNotBlank(spaceId) && spaceService.getSpaceById(spaceId) == null;
+    } else {
+      return false;
+    }
+  }
+
+  /**
    * Decides the page reference a window's setting records and is compared
    * with: for a site-layout window, the rendered page's name on the site whose
    * layout holds the window, whatever page and site render it, so that its
@@ -476,11 +509,12 @@ public class MyApplicationsSettingsService {
    * a page editor may rewrite it: such a window would act in the context of
    * another window's setting. It keeps its name when the name was generated
    * for it: its storage id and the marker of its kind of window. Otherwise, a
-   * page window keeps an unmarked name recorded on this page, with the space
-   * of its context ({@link #getContextSpaceId(String, String)}), that no
-   * other window of the page carries, as after a same-page publish, and a
-   * site-layout window keeps a site-marked name recorded on this site, with
-   * the space owning the site, that no other window of the site carries. Every
+   * page window keeps an unmarked name recorded on this page that no other
+   * window of the page carries, as after a same-page publish, and a
+   * site-layout window keeps a site-marked name recorded on this site that no
+   * other window of the site carries, whatever space their setting recorded,
+   * since the space is read from the recorded page
+   * ({@link #getContextSpaceId(String, String)}). Every
    * other name is given up, a shared-layout window's included. The decision
    * on a name generated for another storage id is memoised per window.
    *
@@ -545,13 +579,10 @@ public class MyApplicationsSettingsService {
       return false;
     } else if (windowKind == WindowKind.SITE_LAYOUT) {
       SiteKey site = getSiteKey(pageReference);
-      if (site == null
-          || !site.equals(getSiteKey(setting.getPageReference()))
-          || setting.getSpaceId() != getSiteSpaceId(site)) {
+      if (site == null || !site.equals(getSiteKey(setting.getPageReference()))) {
         return false;
       }
-    } else if (!StringUtils.equals(setting.getPageReference(), pageReference)
-               || setting.getSpaceId() != getContextSpaceId(settingName, pageReference)) {
+    } else if (!StringUtils.equals(setting.getPageReference(), pageReference)) {
       return false;
     }
     return !otherWindowNames.get().contains(settingName);
@@ -585,11 +616,19 @@ public class MyApplicationsSettingsService {
     } else if (site.getType() == SiteType.GROUP) {
       space = spaceService.getSpaceByGroupId(site.getName());
     } else if (site.getType() == SiteType.PORTAL) {
-      PortalConfig portalConfig = layoutService.getPortalConfig(site);
-      String spaceId = portalConfig == null ? null : portalConfig.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID);
+      String spaceId = getPublicSiteSpaceId(site);
       space = StringUtils.isBlank(spaceId) ? null : spaceService.getSpaceById(spaceId);
     }
     return space == null ? 0 : space.getSpaceId();
+  }
+
+  /**
+   * @return the id of the space whose public site a portal site is, null for
+   *         any other portal site
+   */
+  private String getPublicSiteSpaceId(SiteKey site) {
+    PortalConfig portalConfig = layoutService.getPortalConfig(site);
+    return portalConfig == null ? null : portalConfig.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID);
   }
 
   private SiteKey getSiteKey(String pageReference) {

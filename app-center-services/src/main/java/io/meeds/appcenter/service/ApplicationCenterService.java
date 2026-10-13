@@ -1302,11 +1302,11 @@ public class ApplicationCenterService {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
     // The space owning the recorded page's site, which a window rendered
-    // before that rule may not have recorded; else the recorded space, so
-    // that the window of a deleted space is still refused
+    // before that rule may not have recorded. A window whose space is gone is
+    // refused, checked once resolved so that a deletion in between is seen
     long spaceId = myApplicationsSettingsService.getContextSpaceId(settingName, setting.getPageReference());
-    if (spaceId <= 0) {
-      spaceId = Math.max(setting.getSpaceId(), 0);
+    if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
+      throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
     Application contextApplication = toContextApplication(application, getContextAudience(spaceId), username);
     String uploadId = application.getImageUploadId();
