@@ -18,9 +18,11 @@
  */
 package io.meeds.appcenter.plugin;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.social.translation.plugin.TranslationPlugin;
 import io.meeds.social.translation.service.TranslationService;
@@ -48,14 +50,26 @@ public class ApplicationTranslationPlugin extends TranslationPlugin {
     return APPLICATION_OBJECT_TYPE;
   }
 
+  /**
+   * The labels of an application are read by whoever may see or edit it.
+   */
   @Override
   public boolean hasAccessPermission(String applicationId, String username) {
-    return true;
+    Application application = getApplication(applicationId);
+    return application != null
+           && (applicationCenterService.canAccess(application, username)
+               || applicationCenterService.canEditContextApplication(application, username));
   }
 
+  /**
+   * The labels of an application are written by an administrator, and those
+   * of an application created from a Shortcuts portlet by whoever manages
+   * that portlet's applications too.
+   */
   @Override
   public boolean hasEditPermission(String applicationId, String username) {
-    return applicationCenterService.canEdit(username);
+    Application application = getApplication(applicationId);
+    return application != null && applicationCenterService.canEditContextApplication(application, username);
   }
 
   @Override
@@ -66,5 +80,10 @@ public class ApplicationTranslationPlugin extends TranslationPlugin {
   @Override
   public long getSpaceId(String applicationId) {
     return 0;
+  }
+
+  private Application getApplication(String applicationId) {
+    long id = NumberUtils.toLong(applicationId, 0);
+    return id > 0 ? applicationCenterService.getApplication(id) : null;
   }
 }

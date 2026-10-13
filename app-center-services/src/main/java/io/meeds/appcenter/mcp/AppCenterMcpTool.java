@@ -102,6 +102,8 @@ public class AppCenterMcpTool implements McpToolPlugin {
     } catch (IllegalAccessException e) {
       throw new IllegalStateException("You are not allowed to add application " + id
           + " to your favorites. Only applications you can access can be favorited.");
+    } catch (IllegalArgumentException e) {
+      throw notFavoritable(e);
     }
     return "Application " + id + " has been added to your favorites.";
   }
@@ -119,21 +121,28 @@ public class AppCenterMcpTool implements McpToolPlugin {
   /**
    * Reorders the current user's favorite applications. Pass the favorite
    * application ids in the desired display order (first id shown first). Any id
-   * that is not yet a favorite gets added while being ordered.
+   * that is not yet a favorite gets added while being ordered. Nothing is
+   * reordered when one of the ids is refused.
    */
   public String reorderFavoriteApps(List<Long> applicationIds) throws ObjectNotFoundException {
     if (CollectionUtils.isEmpty(applicationIds)) {
       throw new IllegalArgumentException("application_ids is required: pass the favorite app ids in the desired order.");
     }
     String currentUser = getCurrentUserName();
+    List<ApplicationOrder> applicationOrders = new ArrayList<>();
     long order = 0;
     for (Long applicationId : applicationIds) {
-      long id = requirePositiveId(applicationId);
-      try {
-        applicationCenterService.updateFavoriteApplicationOrder(new ApplicationOrder(id, order++), currentUser);
-      } catch (ApplicationNotFoundException e) {
-        throw notFound(id);
-      }
+      applicationOrders.add(new ApplicationOrder(requirePositiveId(applicationId), order++));
+    }
+    try {
+      applicationCenterService.updateFavoriteApplicationsOrder(applicationOrders, currentUser);
+    } catch (ApplicationNotFoundException e) {
+      throw new ObjectNotFoundException(e.getMessage() + ". List the current user's apps with list_my_apps to find a valid id.");
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException("You are not allowed to reorder these applications: "
+          + "only applications you can access can be favorited. Nothing was reordered.");
+    } catch (IllegalArgumentException e) {
+      throw notFavoritable(e);
     }
     return "Reordered " + applicationIds.size() + " favorite application(s).";
   }
@@ -230,6 +239,19 @@ public class AppCenterMcpTool implements McpToolPlugin {
   private ObjectNotFoundException notFound(long id) {
     return new ObjectNotFoundException("No application found with id " + id
         + ". List the current user's apps with list_my_apps to find a valid id.");
+  }
+
+  /**
+   * @return the refusal of an application created from a Shortcuts portlet,
+   *         which only that portlet lists, in words; any other invalid
+   *         argument as is
+   */
+  private RuntimeException notFavoritable(IllegalArgumentException e) {
+    if (StringUtils.equals(e.getMessage(), ApplicationCenterService.NOT_FAVORITABLE_MESSAGE)) {
+      return new IllegalStateException("This application was created from a Shortcuts portlet and is listed only there:"
+          + " it cannot be added to your favorites. Nothing was changed.");
+    }
+    return e;
   }
 
   private int clampOffset(Integer offset) {
