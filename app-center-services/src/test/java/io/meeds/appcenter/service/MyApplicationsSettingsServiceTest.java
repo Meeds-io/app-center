@@ -70,9 +70,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteKey;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 
@@ -132,6 +135,9 @@ class MyApplicationsSettingsServiceTest {
   @MockitoBean
   private SpaceService                  spaceService;
 
+  @MockitoBean
+  private LayoutService                 layoutService;
+
   @Autowired
   private MyApplicationsSettingsService settingsService;
 
@@ -139,6 +145,7 @@ class MyApplicationsSettingsServiceTest {
   void existingApplications() {
     lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
     lenient().when(categoryService.getCategory(anyLong())).thenReturn(new Category());
+    lenient().when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(5L));
   }
 
   @Test
@@ -714,41 +721,74 @@ class MyApplicationsSettingsServiceTest {
     assertTrue(siteName.matches("^Untitled-12-site-[0-9a-f]{8}-[0-9a-f-]{27}$"), siteName);
     assertTrue(sharedName.matches("^Untitled-12-shared-[0-9a-f]{8}-[0-9a-f-]{27}$"), sharedName);
     assertNotEquals(pageName, settingsService.generateSettingName("12", WindowKind.PAGE));
-    assertTrue(settingsService.keepsSettingName(pageName, "12", WindowKind.PAGE, PAGE_REFERENCE, 0, this::noScan));
-    assertTrue(settingsService.keepsSettingName(siteName, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0, this::noScan));
-    assertTrue(settingsService.keepsSettingName(sharedName, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 0, this::noScan));
+    assertTrue(settingsService.keepsSettingName(pageName, "12", WindowKind.PAGE, PAGE_REFERENCE, this::noScan));
+    assertTrue(settingsService.keepsSettingName(siteName, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, this::noScan));
+    assertTrue(settingsService.keepsSettingName(sharedName, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, this::noScan));
   }
 
+  /**
+   * A space's page reached through a portal site's navigation is still a page
+   * of the space: fails the mutant keying a page window on anything but its
+   * page's site, where its apps would take the platform audience and outlive
+   * the space
+   */
   @Test
-  void getContextSpaceIdRecordsTheSpaceOwningTheRecordedSiteOfASiteLayoutWindow() {
-    Space space = new Space();
-    space.setId(7L);
-    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space);
+  void getContextSpaceIdRecordsTheSpaceOwningTheRecordedPagesSite() {
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(7L));
 
-    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, PAGE_REFERENCE, 0L));
-    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "portal::meeds::home", 0L));
-    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "group::/spaces/deleted::home", 0L));
-    assertEquals(0L, settingsService.getContextSpaceId(SHARED_NAME, PAGE_REFERENCE, 3L));
-    assertEquals(3L, settingsService.getContextSpaceId(PAGE_NAME, PAGE_REFERENCE, 3L));
+    assertEquals(7L, settingsService.getContextSpaceId(PAGE_NAME, PAGE_REFERENCE));
+    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, PAGE_REFERENCE));
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal::meeds::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "portal::meeds::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(SITE_NAME, "group::/spaces/deleted::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(SHARED_NAME, PAGE_REFERENCE));
+  }
+
+  /**
+   * A space's public site is a portal site carrying the space's id: fails the
+   * mutant reading group sites only, where a window of the public site, on a
+   * page or in its layout, would take the platform context
+   */
+  @Test
+  void getContextSpaceIdRecordsTheSpaceOfAPublicSite() {
+    PortalConfig publicSite = mock(PortalConfig.class);
+    when(publicSite.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID)).thenReturn("9");
+    when(layoutService.getPortalConfig(SiteKey.portal("space1public"))).thenReturn(publicSite);
+    when(spaceService.getSpaceById("9")).thenReturn(space(9L));
+    PortalConfig deletedSpaceSite = mock(PortalConfig.class);
+    when(deletedSpaceSite.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID)).thenReturn("10");
+    when(layoutService.getPortalConfig(SiteKey.portal("deletedpublic"))).thenReturn(deletedSpaceSite);
+
+    assertEquals(9L, settingsService.getContextSpaceId(PAGE_NAME, "portal::space1public::home"));
+    assertEquals(9L, settingsService.getContextSpaceId(SITE_NAME, "portal::space1public::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal::deletedpublic::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal::meeds::home"));
   }
 
   /**
    * The layout editor previews a space template page as a space of the
-   * editor's choice, which the request then carries: fails the mutant
-   * recording that space, where the template's apps would take its audience
-   * and be deleted with it
+   * editor's choice, which the request then carries, while a site or space
+   * template belongs to no space: fails the mutant resolving a template site
+   * as a space site or a public site, where the template's apps would take
+   * that space's audience and be deleted with it
    */
   @Test
   void getContextSpaceIdRecordsThePlatformContextForATemplateWindow() {
-    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "group_template::workspace::home", 7L));
-    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal_template::intranet::home", 7L));
-    assertEquals(7L, settingsService.getContextSpaceId(PAGE_NAME, "group::/spaces/space1::home", 7L));
+    lenient().when(spaceService.getSpaceByGroupId(anyString())).thenReturn(space(7L));
+    PortalConfig site = mock(PortalConfig.class);
+    lenient().when(site.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID)).thenReturn("7");
+    lenient().when(layoutService.getPortalConfig(any(SiteKey.class))).thenReturn(site);
+    lenient().when(spaceService.getSpaceById("7")).thenReturn(space(7L));
+
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "group_template::workspace::home"));
+    assertEquals(0L, settingsService.getContextSpaceId(PAGE_NAME, "portal_template::intranet::home"));
+    assertEquals(7L, settingsService.getContextSpaceId(PAGE_NAME, "group::/spaces/space1::home"));
   }
 
   /**
-   * Fails the mutant comparing the space the request carries: a template
-   * window whose storage id changed would give up its name, and its apps, when
-   * rendered previewed as a space
+   * A template window's name is compared with the platform context, whatever
+   * space a preview attaches to the request: a template window whose storage
+   * id changed keeps its name, and its apps
    */
   @Test
   void pageWindowOfATemplateKeepsItsNameWhateverSpaceItIsPreviewedAs() {
@@ -759,7 +799,6 @@ class MyApplicationsSettingsServiceTest {
                                                 "21",
                                                 WindowKind.PAGE,
                                                 "group_template::workspace::home",
-                                                7L,
                                                 List::of));
   }
 
@@ -797,9 +836,8 @@ class MyApplicationsSettingsServiceTest {
   void siteLayoutWindowKeepsItsNameAndRightWhateverPageRendersIt() {
     String name = "Untitled-13-site-0a1b2c3d-0000-0000-0000-000000000012";
     String recordedPage = settingsService.getSettingPageReference(name, "portal::meeds::home", SiteKey.portal("meeds"));
-    when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name,
-                                                                       recordedPage,
-                                                                       settingsService.getContextSpaceId(name, recordedPage, 0L)));
+    long recordedSpaceId = settingsService.getContextSpaceId(name, recordedPage);
+    when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name, recordedPage, recordedSpaceId));
 
     assertTrue(settingsService.keepsSettingName(name,
                                                 "21",
@@ -807,7 +845,6 @@ class MyApplicationsSettingsServiceTest {
                                                 settingsService.getSettingPageReference(name,
                                                                                         "portal::global::activity",
                                                                                         SiteKey.portal("meeds")),
-                                                0L,
                                                 List::of));
     assertTrue(settingsService.keepsSettingName(name,
                                                 "22",
@@ -815,7 +852,6 @@ class MyApplicationsSettingsServiceTest {
                                                 settingsService.getSettingPageReference(name,
                                                                                         "portal::mycraft::stream",
                                                                                         SiteKey.portal("meeds")),
-                                                0L,
                                                 List::of));
     mockUser(false);
     when(layoutAclService.canEditSite(SiteKey.portal("meeds"), USERNAME)).thenReturn(true);
@@ -838,7 +874,7 @@ class MyApplicationsSettingsServiceTest {
                                                                   "portal::global::profile",
                                                                   SiteKey.group("/spaces/space1"));
 
-    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, recordedPage, 0L));
+    assertEquals(7L, settingsService.getContextSpaceId(SITE_NAME, recordedPage));
   }
 
   /**
@@ -850,31 +886,31 @@ class MyApplicationsSettingsServiceTest {
     String name = "Untitled-99-0a1b2c3d-0000-0000-0000-000000000099";
     when(cmsService.getSetting(SETTING_TYPE, name)).thenReturn(setting(name, PAGE_REFERENCE, 0L));
     for (int storageId = 100; storageId <= 1100; storageId++) {
-      settingsService.keepsSettingName(name, String.valueOf(storageId), WindowKind.PAGE, PAGE_REFERENCE, 0L, List::of);
+      settingsService.keepsSettingName(name, String.valueOf(storageId), WindowKind.PAGE, PAGE_REFERENCE, List::of);
     }
-    settingsService.keepsSettingName(name, "100", WindowKind.PAGE, PAGE_REFERENCE, 0L, List::of);
+    settingsService.keepsSettingName(name, "100", WindowKind.PAGE, PAGE_REFERENCE, List::of);
 
     verify(cmsService, times(1002)).getSetting(SETTING_TYPE, name);
   }
 
   @Test
   void keepsSettingNameGeneratedForTheWindowWithoutReadingAnything() {
-    assertTrue(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
-    assertTrue(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
-    assertTrue(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    assertTrue(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, this::noScan));
+    assertTrue(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, this::noScan));
+    assertTrue(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, this::noScan));
     verifyNoInteractions(cmsService);
   }
 
   @Test
   void keepsSettingNameMarkedForItsKindOfWindowOnly() {
-    assertFalse(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
-    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
-    assertFalse(settingsService.keepsSettingName(SECTION_DRAFT_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SITE_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SECTION_DRAFT_NAME, "12", WindowKind.PAGE, PAGE_REFERENCE, this::noScan));
     // A site-layout or shared-layout window from before the markers existed
-    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
-    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, this::noScan));
+    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, this::noScan));
     // The shared-layout name of another window
-    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "13", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, 5L, this::noScan));
+    assertFalse(settingsService.keepsSettingName(SHARED_NAME, "13", WindowKind.SHARED_LAYOUT, PAGE_REFERENCE, this::noScan));
     verifyNoInteractions(cmsService);
   }
 
@@ -887,7 +923,6 @@ class MyApplicationsSettingsServiceTest {
                                                 "12",
                                                 WindowKind.PAGE,
                                                 PAGE_REFERENCE,
-                                                5L,
                                                 () -> List.of(PAGE_NAME)));
   }
 
@@ -901,15 +936,14 @@ class MyApplicationsSettingsServiceTest {
     when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 6L));
     when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 5L));
 
-    assertFalse(settingsService.keepsSettingName(otherPage, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
-    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
+    assertFalse(settingsService.keepsSettingName(otherPage, "12", WindowKind.PAGE, PAGE_REFERENCE, List::of));
+    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.PAGE, PAGE_REFERENCE, List::of));
     assertFalse(settingsService.keepsSettingName(duplicated,
                                                  "12",
                                                  WindowKind.PAGE,
                                                  PAGE_REFERENCE,
-                                                 5L,
                                                  () -> List.of(PAGE_NAME, duplicated)));
-    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, List::of));
+    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.PAGE, PAGE_REFERENCE, List::of));
   }
 
   @Test
@@ -922,8 +956,8 @@ class MyApplicationsSettingsServiceTest {
       return List.of();
     };
 
-    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, otherWindowNames));
-    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, 5L, otherWindowNames));
+    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, otherWindowNames));
+    assertTrue(settingsService.keepsSettingName(republished, "12", WindowKind.PAGE, PAGE_REFERENCE, otherWindowNames));
     verify(cmsService, times(1)).getSetting(SETTING_TYPE, republished);
     assertEquals(1, scans.get());
     // Another window carrying the same name is decided on its own
@@ -931,7 +965,6 @@ class MyApplicationsSettingsServiceTest {
                                                  "14",
                                                  WindowKind.PAGE,
                                                  PAGE_REFERENCE,
-                                                 5L,
                                                  () -> List.of(republished)));
   }
 
@@ -944,7 +977,7 @@ class MyApplicationsSettingsServiceTest {
     when(cmsService.getSetting(SETTING_TYPE, copied)).thenReturn(setting(copied, "group::/spaces/space1::other", 7L));
 
     // Rendered on another page of the same site
-    assertTrue(settingsService.keepsSettingName(copied, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, () -> List.of(SITE_NAME)));
+    assertTrue(settingsService.keepsSettingName(copied, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, () -> List.of(SITE_NAME)));
   }
 
   @Test
@@ -960,15 +993,14 @@ class MyApplicationsSettingsServiceTest {
     when(cmsService.getSetting(SETTING_TYPE, otherSpace)).thenReturn(setting(otherSpace, PAGE_REFERENCE, 8L));
     when(cmsService.getSetting(SETTING_TYPE, duplicated)).thenReturn(setting(duplicated, PAGE_REFERENCE, 7L));
 
-    assertFalse(settingsService.keepsSettingName(otherSite, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
-    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
+    assertFalse(settingsService.keepsSettingName(otherSite, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
+    assertFalse(settingsService.keepsSettingName(otherSpace, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
     assertFalse(settingsService.keepsSettingName(duplicated,
                                                  "12",
                                                  WindowKind.SITE_LAYOUT,
                                                  PAGE_REFERENCE,
-                                                 0L,
                                                  () -> List.of(duplicated)));
-    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, 0L, List::of));
+    assertFalse(settingsService.keepsSettingName(forged, "12", WindowKind.SITE_LAYOUT, PAGE_REFERENCE, List::of));
   }
 
   private Collection<String> noScan() {
@@ -980,6 +1012,12 @@ class MyApplicationsSettingsServiceTest {
     when(userAcl.getUserIdentity(USERNAME)).thenReturn(identity);
     when(userAcl.isAdministrator(identity)).thenReturn(administrator);
     return identity;
+  }
+
+  private static Space space(long id) {
+    Space space = new Space();
+    space.setId(id);
+    return space;
   }
 
   private CMSSetting setting(String name, String pageReference, long spaceId) {

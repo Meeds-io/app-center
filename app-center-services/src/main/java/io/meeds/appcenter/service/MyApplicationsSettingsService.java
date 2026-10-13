@@ -36,13 +36,16 @@ import org.springframework.stereotype.Service;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.portal.config.UserACL;
+import org.exoplatform.portal.config.model.PortalConfig;
 import org.exoplatform.portal.mop.SiteKey;
 import org.exoplatform.portal.mop.SiteType;
 import org.exoplatform.portal.mop.page.PageKey;
+import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.security.IdentityConstants;
+import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 
@@ -155,6 +158,9 @@ public class MyApplicationsSettingsService {
 
   @Autowired
   private SpaceService        spaceService;
+
+  @Autowired
+  private LayoutService       layoutService;
 
   /**
    * Whether a window keeps a setting name generated for another storage id,
@@ -432,27 +438,18 @@ public class MyApplicationsSettingsService {
 
   /**
    * Decides the space a window's setting records: the space owning the site
-   * of the recorded page reference for a site-layout window, the site whose
-   * layout holds it, none for the generated name of a shared-layout window,
-   * which is rendered on every site, nor for a window of a site or space
-   * template, which belongs to no space even when previewed as one, and the
-   * space of the request otherwise.
+   * of the recorded page reference, for a page window as for a site-layout
+   * window, whose recorded page is on the site whose layout holds it, whatever
+   * site's navigation rendered the page; none for the generated name of a
+   * shared-layout window, which is rendered on every site.
    *
    * @param settingName the window's CMS setting name
    * @param pageReference the page reference the window's setting records,
    *          see {@link #getSettingPageReference(String, String, SiteKey)}
-   * @param spaceId the space of the request
-   *          (SpaceUtils.getSpaceByContext()), 0 for none
    * @return the space id to record, 0 for the platform context
    */
-  public long getContextSpaceId(String settingName, String pageReference, long spaceId) {
-    if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
-      return 0;
-    } else if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
-      return getSiteSpaceId(getSiteKey(pageReference));
-    } else {
-      return isTemplateSite(getSiteKey(pageReference)) ? 0 : spaceId;
-    }
+  public long getContextSpaceId(String settingName, String pageReference) {
+    return SHARED_LAYOUT_NAME.matcher(settingName).find() ? 0 : getSiteSpaceId(getSiteKey(pageReference));
   }
 
   /**
@@ -480,7 +477,7 @@ public class MyApplicationsSettingsService {
    * another window's setting. It keeps its name when the name was generated
    * for it: its storage id and the marker of its kind of window. Otherwise, a
    * page window keeps an unmarked name recorded on this page, with the space
-   * of its context ({@link #getContextSpaceId(String, String, long)}), that no
+   * of its context ({@link #getContextSpaceId(String, String)}), that no
    * other window of the page carries, as after a same-page publish, and a
    * site-layout window keeps a site-marked name recorded on this site, with
    * the space owning the site, that no other window of the site carries. Every
@@ -492,8 +489,6 @@ public class MyApplicationsSettingsService {
    * @param windowKind where the window is placed
    * @param pageReference the page reference the window's setting records,
    *          see {@link #getSettingPageReference(String, String, SiteKey)}
-   * @param spaceId the space of the request
-   *          (SpaceUtils.getSpaceByContext()), 0 for none
    * @param otherWindowNames reads the setting names of the other windows of
    *          the page, or of the site for a site-layout window
    * @return true when the window keeps its setting name
@@ -502,7 +497,6 @@ public class MyApplicationsSettingsService {
                                   String storageId,
                                   WindowKind windowKind,
                                   String pageReference,
-                                  long spaceId,
                                   Supplier<Collection<String>> otherWindowNames) {
     if (getWindowKind(settingName) != windowKind) {
       // A name marked for another kind of window, or an unmarked one on a
@@ -516,7 +510,7 @@ public class MyApplicationsSettingsService {
     String key = storageId + "/" + settingName;
     Boolean kept = keptSettingNames.get(key);
     if (kept == null) {
-      kept = isSettingOfWindow(settingName, windowKind, pageReference, spaceId, otherWindowNames);
+      kept = isSettingOfWindow(settingName, windowKind, pageReference, otherWindowNames);
       if (keptSettingNames.size() >= MAX_KEPT_SETTING_NAMES) {
         keptSettingNames.clear();
       }
@@ -545,7 +539,6 @@ public class MyApplicationsSettingsService {
   private boolean isSettingOfWindow(String settingName,
                                     WindowKind windowKind,
                                     String pageReference,
-                                    long spaceId,
                                     Supplier<Collection<String>> otherWindowNames) {
     CMSSetting setting = getSetting(settingName);
     if (setting == null) {
@@ -558,7 +551,7 @@ public class MyApplicationsSettingsService {
         return false;
       }
     } else if (!StringUtils.equals(setting.getPageReference(), pageReference)
-               || setting.getSpaceId() != getContextSpaceId(settingName, pageReference, spaceId)) {
+               || setting.getSpaceId() != getContextSpaceId(settingName, pageReference)) {
       return false;
     }
     return !otherWindowNames.get().contains(settingName);
@@ -581,18 +574,22 @@ public class MyApplicationsSettingsService {
   }
 
   /**
-   * @return the space whose group owns a group site, 0 for any other site
+   * @return the space owning a site: a space's own group site, or its public
+   *         site, a portal site carrying the space's id; 0 for any other site,
+   *         a site or space template included
    */
   private long getSiteSpaceId(SiteKey site) {
-    if (site == null || site.getType() != SiteType.GROUP) {
+    Space space = null;
+    if (site == null) {
       return 0;
+    } else if (site.getType() == SiteType.GROUP) {
+      space = spaceService.getSpaceByGroupId(site.getName());
+    } else if (site.getType() == SiteType.PORTAL) {
+      PortalConfig portalConfig = layoutService.getPortalConfig(site);
+      String spaceId = portalConfig == null ? null : portalConfig.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID);
+      space = StringUtils.isBlank(spaceId) ? null : spaceService.getSpaceById(spaceId);
     }
-    Space space = spaceService.getSpaceByGroupId(site.getName());
     return space == null ? 0 : space.getSpaceId();
-  }
-
-  private boolean isTemplateSite(SiteKey site) {
-    return site != null && (site.getType() == SiteType.GROUP_TEMPLATE || site.getType() == SiteType.PORTAL_TEMPLATE);
   }
 
   private SiteKey getSiteKey(String pageReference) {

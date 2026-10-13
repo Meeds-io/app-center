@@ -1374,6 +1374,26 @@ public class ApplicationCenterServiceTest {
     assertEquals(SPACE_ID, created.getContextSpaceId());
   }
 
+  /**
+   * A window rendered before its space was keyed on its page's site recorded
+   * the space of the request: fails the mutant reading that recorded space,
+   * where a space's page first reached through a portal site's navigation
+   * gives its apps the platform audience, and they outlive the space
+   */
+  @Test
+  void createContextApplicationTakesTheSpaceOfTheRecordedPageNotTheRecordedSpace() throws Exception {
+    mockContext(0L);
+    when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenReturn(SPACE_ID);
+
+    Application created = applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER);
+
+    verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:" + SPACE_GROUP)
+                                                                                 .equals(application.getPermissions())),
+                                                      eq(SETTING_NAME),
+                                                      eq(SPACE_ID));
+    assertEquals(SPACE_ID, created.getContextSpaceId());
+  }
+
   @Test
   void createContextApplicationGivesEveryPlatformUserAudienceInThePlatformContext() throws Exception {
     mockContext(0L);
@@ -1391,6 +1411,22 @@ public class ApplicationCenterServiceTest {
   @Test
   void createContextApplicationRefusesTheContextOfADeletedSpace() throws Exception {
     mockContext(SPACE_ID);
+    when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER));
+    verifyNoContextApplicationCreated();
+  }
+
+  /**
+   * A deleted space's site no longer resolves to a space: fails the mutant
+   * ignoring the recorded space, where a window of a deleted space would
+   * create an application for every platform user
+   */
+  @Test
+  void createContextApplicationRefusesAWindowRecordedInADeletedSpace() throws Exception {
+    mockContext(SPACE_ID);
+    when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenReturn(0L);
     when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
 
     assertThrows(ObjectNotFoundException.class,
@@ -1988,6 +2024,7 @@ public class ApplicationCenterServiceTest {
     lenient().when(myApplicationsSettingsService.getSetting(SETTING_NAME))
              .thenReturn(new CMSSetting(MyApplicationsSettingsService.SETTING_TYPE, SETTING_NAME, PAGE_REFERENCE, spaceId));
     lenient().when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    lenient().when(myApplicationsSettingsService.getContextSpaceId(SETTING_NAME, PAGE_REFERENCE)).thenReturn(spaceId);
     Space space = new Space();
     space.setGroupId(SPACE_GROUP);
     lenient().when(spaceService.getSpaceById(SPACE_ID)).thenReturn(space);

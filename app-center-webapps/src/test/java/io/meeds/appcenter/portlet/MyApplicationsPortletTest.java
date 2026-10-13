@@ -207,8 +207,7 @@ class MyApplicationsPortletTest {
     lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);
     lenient().when(applicationModel.getState()).thenReturn(applicationState);
     lenient().when(layoutService.load(applicationState)).thenReturn(storedPreferences);
-    lenient().when(settingsService.getContextSpaceId(anyString(), anyString(), anyLong()))
-             .thenAnswer(invocation -> invocation.getArgument(2));
+    lenient().when(settingsService.getContextSpaceId(anyString(), anyString())).thenReturn(SPACE_ID);
     lenient().when(settingsService.getSettingPageReference(anyString(), anyString(), any()))
              .thenAnswer(invocation -> invocation.getArgument(1));
     lenient().when(portalRequestContext.getSiteKey()).thenReturn(REQUESTED_SITE);
@@ -263,7 +262,6 @@ class MyApplicationsPortletTest {
                                           eq(STORAGE_ID),
                                           eq(WindowKind.PAGE),
                                           eq(PAGE_REFERENCE),
-                                          eq(SPACE_ID),
                                           any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
@@ -278,7 +276,7 @@ class MyApplicationsPortletTest {
   void doViewChecksTheNameOfAWindowByItsKind() throws Exception {
     String name = givenTheWindowCarries("Untitled-99-" + UUID.randomUUID());
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
-    when(settingsService.keepsSettingName(eq(name), eq(STORAGE_ID), any(), eq(PAGE_REFERENCE), eq(SPACE_ID), any()))
+    when(settingsService.keepsSettingName(eq(name), eq(STORAGE_ID), any(), eq(PAGE_REFERENCE), any()))
                                                                                                                   .thenReturn(true);
 
     givenAPageWindow();
@@ -289,9 +287,9 @@ class MyApplicationsPortletTest {
     portlet.doView(renderRequest, renderResponse);
 
     InOrder inOrder = inOrder(settingsService);
-    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.PAGE), any(), anyLong(), any());
-    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.SITE_LAYOUT), any(), anyLong(), any());
-    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.SHARED_LAYOUT), any(), anyLong(), any());
+    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.PAGE), any(), any());
+    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.SITE_LAYOUT), any(), any());
+    inOrder.verify(settingsService).keepsSettingName(eq(name), any(), eq(WindowKind.SHARED_LAYOUT), any(), any());
   }
 
   /**
@@ -303,7 +301,7 @@ class MyApplicationsPortletTest {
     givenASiteLayoutWindow();
     String name = givenTheWindowCarries("Untitled-99-site-" + UUID.randomUUID());
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
-    when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
     givenTheWindows(uiPortal, window(STORAGE_ID, name), window("13", "site-window"), window("14", null));
     givenTheWindows(uiPage, window("15", "page-window"));
 
@@ -317,7 +315,7 @@ class MyApplicationsPortletTest {
     givenAPageWindow();
     String name = givenTheWindowCarries("Untitled-99-" + UUID.randomUUID());
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
-    when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
     lenient().doAnswer(invocation -> {
       invocation.<List<UIPortlet>> getArgument(0).add(window("13", "site-window"));
       return null;
@@ -336,11 +334,11 @@ class MyApplicationsPortletTest {
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
     when(portalRequestContext.isDraftSite()).thenReturn(true);
     // Were the name checked, it would be kept: the verification below is what fails
-    lenient().when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    lenient().when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
 
-    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), anyLong(), any());
+    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), any());
     verify(preferences, never()).setValue(anyString(), anyString());
     verify(renderRequest).setAttribute("settingName", name);
   }
@@ -354,7 +352,7 @@ class MyApplicationsPortletTest {
 
     portlet.doView(renderRequest, renderResponse);
 
-    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), anyLong(), any());
+    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), any());
     verify(renderRequest).setAttribute("settingName", name);
   }
 
@@ -370,11 +368,11 @@ class MyApplicationsPortletTest {
     String name = givenTheWindowCarries("shared-shortcuts");
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
     // Were the name checked, it would be kept: the verification below is what fails
-    lenient().when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    lenient().when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
 
-    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), anyLong(), any());
+    verify(settingsService, never()).keepsSettingName(any(), any(), any(), any(), any());
     verify(preferences, never()).setValue(anyString(), anyString());
     verify(renderRequest).setAttribute("settingName", name);
   }
@@ -401,11 +399,11 @@ class MyApplicationsPortletTest {
     String name = givenTheWindowCarries("Untitled-99-" + UUID.randomUUID());
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
     when(uiPage.getPageId()).thenReturn(PAGE_REFERENCE + "_draft_john");
-    when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
 
-    verify(settingsService).keepsSettingName(eq(name), eq(STORAGE_ID), eq(WindowKind.PAGE), eq(PAGE_REFERENCE), eq(SPACE_ID), any());
+    verify(settingsService).keepsSettingName(eq(name), eq(STORAGE_ID), eq(WindowKind.PAGE), eq(PAGE_REFERENCE), any());
   }
 
   @Test
@@ -435,7 +433,7 @@ class MyApplicationsPortletTest {
   void saveSettingNameRecordsTheReferenceAndTheSpaceOfTheWindowContext() throws Exception {
     String name = "Untitled-12-site-" + UUID.randomUUID();
     when(settingsService.getSettingPageReference(name, "portal::global::profile", REQUESTED_SITE)).thenReturn("portal::meeds::profile");
-    when(settingsService.getContextSpaceId(name, "portal::meeds::profile", SPACE_ID)).thenReturn(0L);
+    when(settingsService.getContextSpaceId(name, "portal::meeds::profile")).thenReturn(0L);
 
     portlet.saveSettingName(name, "portal::global::profile", SPACE_ID);
 
@@ -454,7 +452,7 @@ class MyApplicationsPortletTest {
     PortalConfig displayedSite = new PortalConfig();
     displayedSite.setDisplayed(true);
     when(portalRequestContext.getPortalConfig()).thenReturn(displayedSite);
-    when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
 
@@ -473,7 +471,7 @@ class MyApplicationsPortletTest {
     when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
     when(uiPage.getPageId()).thenReturn("portal::global::activity");
     when(settingsService.getSettingPageReference(name, "portal::global::activity", REQUESTED_SITE)).thenReturn("portal::meeds::activity");
-    when(settingsService.keepsSettingName(any(), any(), any(), any(), anyLong(), any())).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
 
     portlet.doView(renderRequest, renderResponse);
 
@@ -481,7 +479,6 @@ class MyApplicationsPortletTest {
                                              eq(STORAGE_ID),
                                              eq(WindowKind.SITE_LAYOUT),
                                              eq("portal::meeds::activity"),
-                                             eq(SPACE_ID),
                                              any());
   }
 
@@ -597,7 +594,6 @@ class MyApplicationsPortletTest {
                                              eq(STORAGE_ID),
                                              eq(windowKind),
                                              any(),
-                                             anyLong(),
                                              otherWindowNames.capture());
     return otherWindowNames.getValue().get();
   }

@@ -51,8 +51,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
-import org.exoplatform.social.core.space.SpaceUtils;
-import org.exoplatform.social.core.space.model.Space;
 
 import io.meeds.appcenter.constant.WindowKind;
 import io.meeds.appcenter.service.MyApplicationsSettingsService;
@@ -131,9 +129,7 @@ public class MyApplicationsPortlet extends CMSPortlet {
   @Override
   protected void saveSettingName(String name, String pageReference, long spaceId) {
     String settingPageReference = getSettingsService().getSettingPageReference(name, pageReference, getLayoutSiteKey());
-    super.saveSettingName(name,
-                          settingPageReference,
-                          getSettingsService().getContextSpaceId(name, settingPageReference, spaceId));
+    super.saveSettingName(name, settingPageReference, getSettingsService().getContextSpaceId(name, settingPageReference));
   }
 
   @Override
@@ -172,7 +168,6 @@ public class MyApplicationsPortlet extends CMSPortlet {
                                                getSettingsService().getSettingPageReference(name,
                                                                                             getPageReference(uiPage),
                                                                                             getLayoutSiteKey()),
-                                               getSpaceId(),
                                                () -> getOtherWindowNames(uiPortlet, uiPage, windowKind))) {
       String newName = generateRandomId();
       savePreference(NAME, newName);
@@ -235,11 +230,6 @@ public class MyApplicationsPortlet extends CMSPortlet {
   private String getPageReference(UIPage uiPage) {
     String pageReference = uiPage.getPageId();
     return StringUtils.contains(pageReference, DRAFT_SUFFIX) ? pageReference.split(DRAFT_SUFFIX)[0] : pageReference;
-  }
-
-  private long getSpaceId() {
-    Space space = SpaceUtils.getSpaceByContext();
-    return space == null ? 0 : space.getSpaceId();
   }
 
   /**

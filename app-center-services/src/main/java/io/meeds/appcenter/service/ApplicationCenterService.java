@@ -1301,7 +1301,13 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
-    long spaceId = Math.max(setting.getSpaceId(), 0);
+    // The space owning the recorded page's site, which a window rendered
+    // before that rule may not have recorded; else the recorded space, so
+    // that the window of a deleted space is still refused
+    long spaceId = myApplicationsSettingsService.getContextSpaceId(settingName, setting.getPageReference());
+    if (spaceId <= 0) {
+      spaceId = Math.max(setting.getSpaceId(), 0);
+    }
     Application contextApplication = toContextApplication(application, getContextAudience(spaceId), username);
     String uploadId = application.getImageUploadId();
     byte[] illustration = null;
