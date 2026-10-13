@@ -34,9 +34,12 @@ public enum WindowKind {
   SITE_LAYOUT,
 
   /**
-   * A window of a shared layout, rendered on every site. A configured shared
+   * A window of a shared layout, rendered on every page of the sites it
+   * serves: a site's own sharedlayout-&lt;site&gt;.xml, else the default
+   * sharedlayout.xml. A configured shared
    * layout gives its windows no storage id: the name of such a window must be
-   * configured, and is kept.
+   * configured, and is kept, and its setting records the shared-layout
+   * reference in place of a page.
    */
   SHARED_LAYOUT;
 

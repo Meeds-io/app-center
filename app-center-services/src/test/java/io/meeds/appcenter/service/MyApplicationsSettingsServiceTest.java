@@ -28,6 +28,7 @@ import static io.meeds.appcenter.service.MyApplicationsSettingsService.MAX_APPS_
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE_CATEGORY;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SELECTION_MODE_MANUAL;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SETTING_TYPE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_HEADER;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -212,6 +213,24 @@ class MyApplicationsSettingsServiceTest {
    * window that has a storage id with -shared- (spec mechanism M2), which a
    * configured shared layout never gives: this pins that name's right.
    */
+  /**
+   * A window of a configured shared layout has no storage id, so no generated
+   * name: fails the mutant telling a shared-layout window by its name only,
+   * where the content managers, platform publishers included, would edit a
+   * window every site renders
+   */
+  @Test
+  void canEditSettingsOfAConfiguredSharedLayoutWindowIsAdministratorOnly() {
+    String configuredName = "shared-shortcuts";
+    Identity identity = mockUser(false);
+    when(cmsService.getSetting(SETTING_TYPE, configuredName)).thenReturn(setting(configuredName, SHARED_LAYOUT_REFERENCE, 0));
+    lenient().when(cmsService.hasEditPermission(any(Identity.class), anyString(), anyLong())).thenReturn(true);
+
+    assertFalse(settingsService.canEditSettings(configuredName, USERNAME));
+    when(userAcl.isAdministrator(identity)).thenReturn(true);
+    assertTrue(settingsService.canEditSettings(configuredName, USERNAME));
+  }
+
   @Test
   void canEditSettingsOfSharedLayoutWindowIsAdministratorOnly() {
     Identity identity = mockUser(false);
@@ -823,6 +842,25 @@ class MyApplicationsSettingsServiceTest {
    * as a space site or a public site, where the template's apps would take
    * that space's audience and be deleted with it
    */
+  /**
+   * The shared-layout reference is never read as a site: fails the mutants
+   * telling a shared-layout window by its name only, where the applications of
+   * a window of a configured shared layout would take the audience of a space
+   * the global site resolved to, or be refused where it resolved to none
+   */
+  @Test
+  void aConfiguredSharedLayoutWindowHasThePlatformContext() {
+    String configuredName = "shared-shortcuts";
+    PortalConfig site = mock(PortalConfig.class);
+    lenient().when(site.getProperty(SpaceUtils.PUBLIC_SITE_SPACE_ID)).thenReturn("7");
+    lenient().when(layoutService.getPortalConfig(SiteKey.portal("global"))).thenReturn(site);
+    lenient().when(spaceService.getSpaceById("7")).thenReturn(space(7L));
+
+    assertEquals(0L, settingsService.getContextSpaceId(configuredName, SHARED_LAYOUT_REFERENCE));
+    when(layoutService.getPortalConfig(SiteKey.portal("global"))).thenReturn(null);
+    assertFalse(settingsService.isContextDeleted(configuredName, SHARED_LAYOUT_REFERENCE));
+  }
+
   @Test
   void getContextSpaceIdRecordsThePlatformContextForATemplateWindow() {
     lenient().when(spaceService.getSpaceByGroupId(anyString())).thenReturn(space(7L));

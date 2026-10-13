@@ -128,7 +128,10 @@ public class MyApplicationsPortlet extends CMSPortlet {
 
   @Override
   protected void saveSettingName(String name, String pageReference, long spaceId) {
-    String settingPageReference = getSettingsService().getSettingPageReference(name, pageReference, getLayoutSiteKey());
+    String settingPageReference = isSharedLayoutWindow() ? MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE :
+                                                         getSettingsService().getSettingPageReference(name,
+                                                                                                      pageReference,
+                                                                                                      getLayoutSiteKey());
     super.saveSettingName(name, settingPageReference, getSettingsService().getContextSpaceId(name, settingPageReference));
   }
 
@@ -178,6 +181,16 @@ public class MyApplicationsPortlet extends CMSPortlet {
       }
       getSettingsService().copyHeaderTitle(name, newName);
     }
+  }
+
+  /**
+   * @return whether the window rendered is in a shared layout, read from the
+   *         request: a window of a configured shared layout has no storage
+   *         id, so no generated name to tell it
+   */
+  private boolean isSharedLayoutWindow() {
+    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
+    return uiPortlet != null && getWindowKind(uiPortlet) == WindowKind.SHARED_LAYOUT;
   }
 
   /**

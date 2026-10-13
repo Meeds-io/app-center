@@ -102,11 +102,19 @@ public class MyApplicationsSettingsService {
 
   public static final int     MAX_APPS_TO_LIST_LIMIT    = 100;
 
+  /**
+   * Reference a shared-layout window's setting records in place of a page: a
+   * window of a configured shared layout has no storage id, so no generated
+   * name to carry its kind. It names no page.
+   */
+  public static final String  SHARED_LAYOUT_REFERENCE   = "portal::global::sharedlayout";
+
   private static final Log    LOG                       = ExoLogger.getLogger(MyApplicationsSettingsService.class);
 
   /**
    * Name generated for a shared-layout window that has a storage id, which a
-   * configured shared layout never gives: edited by administrators only.
+   * configured shared layout never gives: edited by administrators only, as a
+   * setting recording {@link #SHARED_LAYOUT_REFERENCE}.
    */
   private static final Pattern SHARED_LAYOUT_NAME       = Pattern.compile("^Untitled-\\d+-shared-");
 
@@ -174,12 +182,14 @@ public class MyApplicationsSettingsService {
    * Whether a user may change the settings of a Shortcuts portlet window,
    * header title included: the page-content right of the window's page, in the
    * space owning that page's site, whatever space its setting recorded, the
-   * site edit right for a site-layout window, administrators only for the
-   * generated name of a shared-layout window, whose context is the platform's
-   * whatever space its setting recorded, and for a window whose setting
-   * was recorded on a section-template draft page, whatever its name. A window
-   * of a configured shared layout has no storage id, so no generated name: its
-   * name must be configured, and it takes the right of the page that first
+   * site edit right for a site-layout window, administrators only for a
+   * shared-layout window, whose context is the platform's whatever space its
+   * setting recorded, and for a window whose setting was recorded on a
+   * section-template draft page, whatever its name. A shared-layout window is
+   * told by its generated name, or, for a window of a configured shared
+   * layout, which has no storage id, so no generated name, by the
+   * {@link #SHARED_LAYOUT_REFERENCE} its setting records; such a window whose
+   * setting was recorded before keeps the right of the page that first
    * rendered it.
    *
    * @param settingName the window's CMS setting name
@@ -200,7 +210,7 @@ public class MyApplicationsSettingsService {
     if (identity == null) {
       return false;
     }
-    if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
+    if (isSharedLayoutWindow(settingName, setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
     } else if (isSectionTemplateDraft(setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
@@ -446,8 +456,8 @@ public class MyApplicationsSettingsService {
    * Decides the space a window's setting records: the space owning the site
    * of the recorded page reference, for a page window as for a site-layout
    * window, whose recorded page is on the site whose layout holds it, whatever
-   * site's navigation rendered the page; none for the generated name of a
-   * shared-layout window, which is rendered on every site.
+   * site's navigation rendered the page; none for a shared-layout window,
+   * which a configured layout renders on every page of the sites it serves.
    *
    * @param settingName the window's CMS setting name
    * @param pageReference the page reference the window's setting records,
@@ -455,7 +465,7 @@ public class MyApplicationsSettingsService {
    * @return the space id to record, 0 for the platform context
    */
   public long getContextSpaceId(String settingName, String pageReference) {
-    return SHARED_LAYOUT_NAME.matcher(settingName).find() ? 0 : getSiteSpaceId(getSiteKey(pageReference));
+    return isSharedLayoutWindow(settingName, pageReference) ? 0 : getSiteSpaceId(getSiteKey(pageReference));
   }
 
   /**
@@ -471,7 +481,7 @@ public class MyApplicationsSettingsService {
    */
   public boolean isContextDeleted(String settingName, String pageReference) {
     SiteKey site = getSiteKey(pageReference);
-    if (site == null || SHARED_LAYOUT_NAME.matcher(settingName).find()) {
+    if (site == null || isSharedLayoutWindow(settingName, pageReference)) {
       return false;
     } else if (site.getType() == SiteType.GROUP) {
       return StringUtils.startsWith(site.getName(), SpaceUtils.SPACE_GROUP_PREFIX)
@@ -586,6 +596,14 @@ public class MyApplicationsSettingsService {
       return false;
     }
     return !otherWindowNames.get().contains(settingName);
+  }
+
+  /**
+   * @return whether a setting is a shared-layout window's: its generated name,
+   *         or the reference a window of a configured shared layout records
+   */
+  private boolean isSharedLayoutWindow(String settingName, String pageReference) {
+    return SHARED_LAYOUT_NAME.matcher(settingName).find() || StringUtils.equals(pageReference, SHARED_LAYOUT_REFERENCE);
   }
 
   /**

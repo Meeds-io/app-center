@@ -427,10 +427,12 @@ class MyApplicationsPortletTest {
 
   /**
    * Fails the mutants recording, or taking the space of, the page CMSPortlet
-   * hands over instead of the reference of the window's setting
+   * hands over instead of the reference of the window's setting, and the
+   * mutant taking a site-layout window for a shared-layout one
    */
   @Test
   void saveSettingNameRecordsTheReferenceAndTheSpaceOfTheWindowContext() throws Exception {
+    givenASiteLayoutWindow();
     String name = "Untitled-12-site-" + UUID.randomUUID();
     when(settingsService.getSettingPageReference(name, "portal::global::profile", REQUESTED_SITE)).thenReturn("portal::meeds::profile");
     when(settingsService.getContextSpaceId(name, "portal::meeds::profile")).thenReturn(0L);
@@ -438,6 +440,26 @@ class MyApplicationsPortletTest {
     portlet.saveSettingName(name, "portal::global::profile", SPACE_ID);
 
     verify(cmsService).saveSettingName(SETTING_TYPE, name, "portal::meeds::profile", 0L, Long.parseLong(VIEWER_IDENTITY_ID));
+  }
+
+  /**
+   * A window of a configured shared layout has no storage id, so no generated
+   * name to tell its kind: fails the mutant recording the page of its first
+   * render, whose right and space its settings and applications would take
+   */
+  @Test
+  void saveSettingNameRecordsTheSharedLayoutReferenceForAWindowOfASharedLayout() throws Exception {
+    givenASharedLayoutWindow();
+    String name = "shared-shortcuts";
+    when(settingsService.getContextSpaceId(name, MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE)).thenReturn(0L);
+
+    portlet.saveSettingName(name, PAGE_REFERENCE, SPACE_ID);
+
+    verify(cmsService).saveSettingName(SETTING_TYPE,
+                                       name,
+                                       MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE,
+                                       0L,
+                                       Long.parseLong(VIEWER_IDENTITY_ID));
   }
 
   /**
