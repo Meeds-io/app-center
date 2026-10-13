@@ -32,39 +32,12 @@ export function init() {
       template: `<app-center-admin-setup id="${appId}" />`,
       data: () => ({
         applications: [],
-        portletInstances: [],
-        quickActionExtensions: [],
         mobilePreview: false,
         collator: new Intl.Collator(eXo.env.portal.language, {numeric: true, sensitivity: 'base'}),
       }),
       computed: {
         isMobile() {
           return this.$vuetify.breakpoint.smAndDown;
-        },
-        quickActions() {
-          return this.quickActionExtensions
-            .filter(ext => ext.id)
-            .map(ext => ({
-              id: ext.id,
-              icon: ext.icon,
-              name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
-              description: this.$te(ext.description) ? this.$t(ext.description) : ext.description,
-            }));
-        },
-      },
-      created() {
-        Vue.prototype.$utils.includeExtensions('QuickActionExtension');
-        document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
-        this.refreshQuickActions();
-      },
-      beforeDestroy() {
-        document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
-      },
-      methods: {
-        refreshQuickActions() {
-          const quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension');
-          quickActionExtensions.sort((a, b) => this.collator.compare(this.$t(a.name).toLowerCase(), this.$t(b.name).toLowerCase()));
-          this.quickActionExtensions = quickActionExtensions;
         },
       },
       vuetify: Vue.prototype.vuetifyOptions,

@@ -23,6 +23,8 @@ import AppShortcut from './components/AppShortcut.vue';
 import ApplicationFormDrawer from '../application-setup/components/drawer/ApplicationFormDrawer.vue';
 import ApplicationIcon from '../application-setup/components/view/ApplicationIcon.vue';
 import ApplicationImageInput from '../application-setup/components/form/ApplicationImageInput.vue';
+import QuickActionSuggester from '../application-setup/components/form/QuickActionSuggester.vue';
+import PortletInstanceSuggester from '../application-setup/components/form/PortletInstanceSuggester.vue';
 
 const components = {
   'app-center-item': AppItem,
@@ -34,6 +36,8 @@ const components = {
   'app-center-form-drawer': ApplicationFormDrawer,
   'app-center-icon': ApplicationIcon,
   'app-center-image-input': ApplicationImageInput,
+  'quick-action-suggester': QuickActionSuggester,
+  'portlet-instance-suggester': PortletInstanceSuggester,
 };
 
 for (const key in components) {

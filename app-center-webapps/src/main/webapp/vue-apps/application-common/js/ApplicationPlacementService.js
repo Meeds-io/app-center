@@ -21,6 +21,12 @@ import * as applicationService from './ApplicationService.js';
 
 const DEFAULT_APPLICATION_IMAGE = '/app-center/skin/images/defaultApp.png';
 
+// The applications created from a Shortcuts portlet, which the users'
+// Application Center never lists: each Shortcuts portlet of the page registers
+// those it displays, with its setting name, so that a drawer opened from one
+// finds its placement options and its detached page can read it
+const contextApplications = new Map();
+
 export function getPlacements() {
   return window.eXo?.env?.portal?.appPlacements || null;
 }
@@ -118,7 +124,33 @@ export function alertWhenStuck(appType, appUrl, message) {
 }
 
 export function getDetachUrl(applicationId) {
-  return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName || eXo.env.portal.portalName}/app-viewer?applicationId=${applicationId}`;
+  const params = new URLSearchParams({applicationId});
+  const settingName = contextApplications.get(`${applicationId}`)?.settingName;
+  if (settingName) {
+    params.append('settingName', settingName);
+  }
+  return `${eXo.env.portal.context}/${eXo.env.portal.metaPortalName || eXo.env.portal.portalName}/app-viewer?${params}`;
+}
+
+export function registerContextApplications(settingName, applications) {
+  applications?.filter?.(application => application?.contextual)
+    .forEach(application => contextApplications.set(`${application.id}`, {settingName, application}));
+}
+
+// An application of the list of a Shortcuts portlet, read as that portlet reads it
+export function findListedApplication(settingName, applicationId) {
+  return fetch(`/app-center/rest/applications/list?${new URLSearchParams({settingName, ids: applicationId})}`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (resp?.ok) {
+        return resp.json();
+      } else {
+        throw new Error('Error when getting the listed application');
+      }
+    })
+    .then(applications => applications?.find?.(application => `${application.id}` === `${applicationId}`) || null);
 }
 
 export function openDetached(applicationId) {
@@ -174,5 +206,7 @@ async function renderIconAsDataUrl(icon) {
 
 function findApplication(predicate) {
   return applicationService.getApplications(false, true)
-    .then(data => (data?.applications || []).find(predicate) || null);
+    .then(data => (data?.applications || []).find(predicate)
+      || [...contextApplications.values()].map(entry => entry.application).find(predicate)
+      || null);
 }

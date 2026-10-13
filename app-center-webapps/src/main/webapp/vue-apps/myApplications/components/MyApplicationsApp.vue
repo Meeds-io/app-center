@@ -63,7 +63,14 @@
       v-if="canEdit"
       :settings="$root.settings"
       ref="settingsDrawer"
-      @settings-updated="settingsUpdated" />
+      @settings-updated="settingsUpdated"
+      @create-application="$refs.applicationFormDrawer.open()" />
+    <app-center-form-drawer
+      v-if="canEdit"
+      ref="applicationFormDrawer"
+      :setting-name="settingName"
+      contextual
+      @saved="$refs.settingsDrawer.applicationCreated($event)" />
     <app-center-portlet-instance-drawer
       ref="portletInstanceDrawer" />
   </v-app>
@@ -176,6 +183,7 @@ export default {
       return this.$myApplicationsService.getListedApplications(this.settingName, applicationIds, categoryIds)
         .catch(() => [])
         .then(applications => {
+          this.$appPlacementService.registerContextApplications(this.settingName, applications);
           this.favoriteApplications = applications
             .map(app => this.mapApplication(app))
             .filter(Boolean);
