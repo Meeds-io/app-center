@@ -134,4 +134,26 @@ public class ApplicationCategoryPluginTest {
     assertTrue(categoryPlugin.canEdit(APP_ID, TEST_USER));
   }
 
+  @Test
+  void canEditAnApplicationCreatedFromAShortcutsPortletForWhoeverManagesItsWindow() {
+    Application owned = new Application();
+    owned.setContextSettingName("Untitled-12-1b4e28ba");
+    when(applicationCenterService.getApplication(Long.parseLong(APP_ID))).thenReturn(owned);
+    assertFalse(categoryPlugin.canEdit(APP_ID, TEST_USER));
+
+    when(applicationCenterService.canEditContextApplication(owned, TEST_USER)).thenReturn(true);
+    assertTrue(categoryPlugin.canEdit(APP_ID, TEST_USER));
+  }
+
+  @Test
+  void canEditAnApplicationOfTheApplicationCenterForAdministratorsOnly() {
+    Application catalog = new Application();
+    when(applicationCenterService.getApplication(Long.parseLong(APP_ID))).thenReturn(catalog);
+    lenient().when(applicationCenterService.canEditContextApplication(catalog, TEST_USER)).thenReturn(true);
+
+    assertFalse(categoryPlugin.canEdit(APP_ID, TEST_USER));
+    assertFalse(categoryPlugin.canEdit("abc", TEST_USER));
+    assertFalse(categoryPlugin.canAccess("abc", TEST_USER));
+  }
+
 }
