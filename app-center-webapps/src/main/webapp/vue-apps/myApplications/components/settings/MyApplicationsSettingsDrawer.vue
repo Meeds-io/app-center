@@ -57,6 +57,7 @@
                 :loading="!applicationsLoaded || !categoriesLoaded || isSaving"
                 :hidden-count="hiddenApplicationIds.length"
                 :hidden-category-count="hiddenCategoryIds.length"
+                :max-applications="maxApplications"
                 @add-category="addCategory"
                 @create-application="$emit('create-application')" />
             </div>
@@ -125,6 +126,8 @@ export default {
       hiddenApplicationIds: [],
       // Created from these settings since their last save: listed nowhere until saved
       createdApplications: [],
+      // The server's MAX_LISTED_APPLICATIONS, hidden apps included
+      maxApplications: 100,
       closedWhileSaving: false,
       categories: [],
       savedCategories: [],
@@ -294,8 +297,11 @@ export default {
     },
     applicationCreated(application) {
       this.createdApplications = [...this.createdApplications, {id: application.id, title: application.title}];
-      if (this.applications.length + this.hiddenApplicationIds.length < 100) {
+      // The list can reach the cap while the creation runs: the form closed, an app picked meanwhile
+      if (this.applications.length + this.hiddenApplicationIds.length < this.maxApplications) {
         this.applications = [...this.applications, application];
+      } else {
+        this.$root.$emit('alert-message', this.$t('myApplications.createdApps.capReached', {0: application.title, 1: this.maxApplications}), 'warning');
       }
     },
     deleteCreatedApplications() {

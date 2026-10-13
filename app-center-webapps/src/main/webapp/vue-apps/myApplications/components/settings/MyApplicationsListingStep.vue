@@ -176,10 +176,11 @@ export default {
       type: Number,
       default: 0,
     },
+    maxApplications: {
+      type: Number,
+      required: true,
+    },
   },
-  data: () => ({
-    maxApplications: 100,
-  }),
   computed: {
     applicationIds() {
       return this.applications.map(application => application.id);
