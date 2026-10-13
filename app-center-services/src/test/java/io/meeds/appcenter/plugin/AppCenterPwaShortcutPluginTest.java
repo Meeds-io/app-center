@@ -126,7 +126,9 @@ public class AppCenterPwaShortcutPluginTest {
                                               false,
                                               null,
                                               false,
-                                              false);
+                                              false,
+                                              null,
+                                              null);
     applicationList.setApplications(Collections.singletonList(application));
     shortcuts = pwaShortcutPlugin.getShortcuts(TEST_USER);
     assertNotNull(shortcuts);

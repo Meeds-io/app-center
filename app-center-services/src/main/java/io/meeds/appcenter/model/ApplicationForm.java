@@ -61,7 +61,9 @@ public class ApplicationForm extends Application {
           application.isPersonal(),
           application.getBadgeName(),
           application.isAllowStick(),
-          application.isAllowDetach());
+          application.isAllowDetach(),
+          application.getContextSettingName(),
+          application.getContextSpaceId());
   }
 
 }

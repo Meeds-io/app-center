@@ -22,6 +22,8 @@ package io.meeds.appcenter.plugin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -65,14 +68,41 @@ public class ApplicationTranslationPluginTest {
 
   @Test
   void hasEditPermission() {
+    Application application = new Application();
+    when(applicationCenterService.getApplication(15L)).thenReturn(application);
     assertFalse(translationPlugin.hasEditPermission(APP_ID, TEST_USER));
-    when(applicationCenterService.canEdit(TEST_USER)).thenReturn(true);
+
+    when(applicationCenterService.canEditContextApplication(application, TEST_USER)).thenReturn(true);
     assertTrue(translationPlugin.hasEditPermission(APP_ID, TEST_USER));
   }
 
   @Test
+  void hasEditPermissionRefusesAnUnknownApplication() {
+    lenient().when(applicationCenterService.canEditContextApplication(any(), any())).thenReturn(true);
+    assertFalse(translationPlugin.hasEditPermission(APP_ID, TEST_USER));
+    assertFalse(translationPlugin.hasEditPermission("abc", TEST_USER));
+    assertFalse(translationPlugin.hasEditPermission(null, TEST_USER));
+  }
+
+  @Test
   void hasAccessPermission() {
+    Application application = new Application();
+    when(applicationCenterService.getApplication(15L)).thenReturn(application);
+    assertFalse(translationPlugin.hasAccessPermission(APP_ID, TEST_USER));
+
+    when(applicationCenterService.canAccess(application, TEST_USER)).thenReturn(true);
     assertTrue(translationPlugin.hasAccessPermission(APP_ID, TEST_USER));
+
+    when(applicationCenterService.canAccess(application, TEST_USER)).thenReturn(false);
+    when(applicationCenterService.canEditContextApplication(application, TEST_USER)).thenReturn(true);
+    assertTrue(translationPlugin.hasAccessPermission(APP_ID, TEST_USER));
+  }
+
+  @Test
+  void hasAccessPermissionRefusesAnUnknownApplication() {
+    lenient().when(applicationCenterService.canAccess(any(), any())).thenReturn(true);
+    assertFalse(translationPlugin.hasAccessPermission(APP_ID, TEST_USER));
+    assertFalse(translationPlugin.hasAccessPermission("abc", TEST_USER));
   }
 
   @Test
