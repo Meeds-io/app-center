@@ -206,7 +206,7 @@ async function renderIconAsDataUrl(icon) {
 
 function findApplication(predicate) {
   return applicationService.getApplications(false, true)
-    .then(data => (data?.applications || []).find(predicate)
-      || [...contextApplications.values()].map(entry => entry.application).find(predicate)
+    .then(data => (data?.applications || []).find(application => predicate(application))
+      || [...contextApplications.values()].map(entry => entry.application).find(application => predicate(application))
       || null);
 }

@@ -1014,7 +1014,7 @@ export default {
         await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles);
         await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions);
         this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
-      } catch (e) {
+      } catch {
         this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSaved'), 'warning');
       }
     },
