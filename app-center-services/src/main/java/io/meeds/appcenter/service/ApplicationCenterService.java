@@ -884,10 +884,11 @@ public class ApplicationCenterService {
    *             since 7.3.0, for removal
    */
   @Deprecated(since = "7.3.0", forRemoval = true)
+  @Transactional(rollbackFor = Exception.class)
   public void updateFavoriteApplicationOrder(ApplicationOrder applicationOrder,
                                              String userName) throws ApplicationNotFoundException,
                                                               IllegalAccessException {
-    updateFavoriteApplicationsOrder(Collections.singletonList(applicationOrder), userName);
+    writeFavoriteApplicationsOrder(Collections.singletonList(applicationOrder), userName);
   }
 
   /**
@@ -909,6 +910,18 @@ public class ApplicationCenterService {
    */
   @Transactional(rollbackFor = Exception.class)
   public void updateFavoriteApplicationsOrder(List<ApplicationOrder> applicationOrders,
+                                              String userName) throws ApplicationNotFoundException,
+                                                               IllegalAccessException {
+    writeFavoriteApplicationsOrder(applicationOrders, userName);
+  }
+
+  /**
+   * Checks every application of the batch, then writes the orders: run inside
+   * the transaction of the public method calling it, never through a call on
+   * this instance to another transactional method, which the proxy would not
+   * see
+   */
+  private void writeFavoriteApplicationsOrder(List<ApplicationOrder> applicationOrders,
                                               String userName) throws ApplicationNotFoundException,
                                                                IllegalAccessException {
     if (StringUtils.isBlank(userName)) {

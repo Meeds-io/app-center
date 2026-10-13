@@ -199,6 +199,25 @@ class ApplicationCenterServiceTransactionTest {
   }
 
   /**
+   * Fails the mutant leaving the deprecated single-order method without its
+   * own transaction: a call on this instance to the transactional batch
+   * method bypasses the proxy, and the favorite added before the failing
+   * order write would stay
+   */
+  @Test
+  @SuppressWarnings("removal")
+  void updateFavoriteApplicationOrderWritesNothingWhenItsOrderWriteFails() throws Exception {
+    long application = saveApplication("Wiki");
+    doThrow(new IllegalStateException("Database unreachable")).when(appCenterStorage)
+                                                              .updateFavoriteApplicationOrder(eq(application), eq(USERNAME), any());
+    ApplicationOrder order = new ApplicationOrder(application, 0L);
+
+    assertThrows(IllegalStateException.class, () -> applicationCenterService.updateFavoriteApplicationOrder(order, USERNAME));
+
+    assertEquals(0, favoriteApplicationDAO.count());
+  }
+
+  /**
    * Has the real database refuse the insert: fails the mutant enclosing it in
    * a transaction of the storage method, where the refusal surfaces at the
    * commit, after the compensation, which a mocked repository cannot show
