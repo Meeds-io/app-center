@@ -793,8 +793,9 @@ export default {
   watch: {
     uploadedImage: {
       handler() {
-        this.$set(this.application, 'imageUploadId', this.uploadedImage.uploadId);
-        this.$set(this.application, 'illustrationMimeType', this.uploadedImage.mimeType);
+        // Null once the image input is reset: a discarded upload is not sent
+        this.$set(this.application, 'imageUploadId', this.uploadedImage?.uploadId);
+        this.$set(this.application, 'illustrationMimeType', this.uploadedImage?.mimeType);
       },
       deep: true,
     },
