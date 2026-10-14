@@ -1878,11 +1878,42 @@ public class ApplicationCenterServiceTest {
     when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
     assertNull(updatedContextApplication(form -> form.setBadgeName("agenda")).getBadgeName());
 
+    // A new type drops the binding, which follows the url
+    Application boundLink = contextApplication(ID, SETTING_NAME);
+    boundLink.setBadgeName("agenda");
+    when(appCenterStorage.getApplication(ID)).thenReturn(boundLink);
+    assertEquals("agenda", updatedContextApplication(form -> form.setBadgeName(null)).getBadgeName());
+    assertNull(updatedContextApplication(form -> {
+      form.setType(ApplicationType.DRAWER);
+      form.setUrl("agendaDrawer");
+      form.setBadgeName(null);
+    }).getBadgeName());
+
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, ADMIN_USERNAME)).thenReturn(true);
     ApplicationForm form = contextForm();
     form.setBadgeName("agenda");
     applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, ADMIN_USERNAME);
     assertEquals("agenda", lastUpdatedContextApplication().getBadgeName());
+  }
+
+  /**
+   * Fails the mutant keeping, while the form reads a turned off or url-derived
+   * badge as the resolved one the listing gives, the stored binding in the
+   * created or updated application the form edits next
+   */
+  @Test
+  void createAndUpdateContextApplicationReturnTheResolvedBadge() throws Exception {
+    mockContext(SPACE_ID);
+    when(badgePluginRegistry.resolveBadgeName(any())).thenReturn("resolved");
+    Application stored = contextApplication(ID, SETTING_NAME);
+    stored.setBadgeName(ApplicationBadgePluginRegistry.BADGE_DISABLED);
+    when(appCenterStorage.getApplication(ID)).thenReturn(stored);
+
+    assertEquals("resolved", applicationCenterService.createContextApplication(contextForm(), SETTING_NAME, TEST_USER).getBadgeName());
+    assertEquals("resolved",
+                 applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER).getBadgeName());
+    assertEquals(ApplicationBadgePluginRegistry.BADGE_DISABLED, stored.getBadgeName());
   }
 
   /**

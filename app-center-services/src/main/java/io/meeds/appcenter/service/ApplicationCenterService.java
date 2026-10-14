@@ -1288,7 +1288,7 @@ public class ApplicationCenterService {
    * @param application the form's fields
    * @param settingName the window's CMS setting name
    * @param username the user creating the application
-   * @return the created application
+   * @return the created application, its badge resolved
    * @throws ObjectNotFoundException when the window's setting, or the space of
    *           its context, does not exist
    * @throws IllegalAccessException when the user may not manage the window's
@@ -1329,6 +1329,8 @@ public class ApplicationCenterService {
       appCenterStorage.removeUpload(uploadId);
     }
     createdApplication.setCategoryIds(linkCategories(createdApplication.getId(), application.getCategoryIds(), username));
+    // Resolved, as the portlet's listing gives it, for the form that edits it next
+    createdApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(createdApplication));
     return createdApplication;
   }
 
@@ -1376,8 +1378,8 @@ public class ApplicationCenterService {
    * @param application the form's fields
    * @param settingName the window's CMS setting name
    * @param username the user updating the application
-   * @return the updated application, with its categories, null when they
-   *         could not be read
+   * @return the updated application, its badge resolved, with its
+   *         categories, null when they could not be read
    * @throws ObjectNotFoundException when the window's setting does not exist,
    *           or when the application does not exist or the user may not
    *           access it
@@ -1408,8 +1410,10 @@ public class ApplicationCenterService {
     if (!isAdministrator(username)) {
       // The badge binding is offered to administrators only, who read the
       // badge providers: any other editor's form sends back the resolved
-      // badge, which would replace a stored 'none' or an url-derived binding
-      contextApplication.setBadgeName(storedApplication.getBadgeName());
+      // badge, which would replace a stored 'none' or an url-derived binding.
+      // A new type drops it, as the form does: the binding follows the url
+      contextApplication.setBadgeName(contextApplication.getType() == storedApplication.getType() ? storedApplication.getBadgeName()
+                                                                                                   : null);
     }
     String uploadId = application.getImageUploadId();
     if (StringUtils.isNotBlank(uploadId)) {
@@ -1425,6 +1429,8 @@ public class ApplicationCenterService {
     }
     Application updatedApplication = new Application(appCenterStorage.getApplication(applicationId));
     updatedApplication.setCategoryIds(updateCategories(applicationId, application.getCategoryIds(), username));
+    // Resolved, as the portlet's listing gives it, for the form that edits it next
+    updatedApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(updatedApplication));
     return updatedApplication;
   }
 
