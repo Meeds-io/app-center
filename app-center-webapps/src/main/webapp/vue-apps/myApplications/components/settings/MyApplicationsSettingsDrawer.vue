@@ -276,6 +276,13 @@ export default {
         this.savedCategoryIds = [...postedCategoryIds];
         const headerSaved = await this.saveHeaderTranslations(settings.showHeader, translations).then(() => true, () => false);
         const notDeleted = await this.deleteApplications(createdApplications.filter(application => !postedApplicationIds.includes(application.id)));
+        // Closed while saving: the apps created meanwhile, which the save did not post, go as on a Cancel.
+        // Read after the last wait but this one, and reported with the others
+        if (this.closedWhileSaving) {
+          const createdMeanwhile = this.createdApplications;
+          this.createdApplications = [];
+          notDeleted.push(...await this.deleteApplications(createdMeanwhile));
+        }
         this.$emit('settings-updated', settings, headerSaved ? headerTitle : this.settings.headerTitle);
         // One message, as a message replaces the previous one
         if (notDeleted.length) {
