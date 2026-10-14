@@ -136,6 +136,7 @@
               ref="applicationUrl"
               id="applicationUrl"
               v-model="application.url"
+              :quick-actions="quickActions"
               name="applicationUrl"
               class="mb-4" />
             <v-radio value="PORTLET">
@@ -148,6 +149,7 @@
               ref="applicationUrl"
               id="applicationUrl"
               v-model="application.url"
+              :portlet-instances.sync="portletInstances"
               name="applicationUrl"
               class="mb-4" />
           </v-radio-group>
@@ -229,6 +231,7 @@
         <app-center-image-input
           v-model="uploadedImage"
           :application="application"
+          :accept="imageTypes"
           class="mb-4"
           @icon="application.icon = $event"
           @reset="resetImage" />
@@ -237,28 +240,38 @@
             {{ $t('appCenter.adminSetupForm.advancedOptions') }}
           </div>
           <div class="mb-2">
-            <div class="d-flex full-width align-center mb-2">
+            <div
+              v-if="!contextual"
+              :title="forcedFieldTitle"
+              class="d-flex full-width align-center mb-2">
               <v-card
-                class="text-start flex-grow-1 clickable transparent"
+                :class="forcedFieldsEditable && 'clickable'"
+                class="text-start flex-grow-1 transparent"
                 flat
-                @click="application.mandatory = !application.mandatory">
+                v-on="forcedFieldsEditable && {click: () => application.mandatory = !application.mandatory}">
                 {{ $t('appCenter.adminSetupForm.mandatory') }}
               </v-card>
               <v-switch
                 v-model="application.mandatory"
+                :disabled="!forcedFieldsEditable"
                 class="ma-0 pa-0"
                 name="applicationMandatory"
                 hide-details />
             </div>
-            <div class="d-flex full-width justify-space-between align-center mb-2">
+            <div
+              v-if="!contextual"
+              :title="forcedFieldTitle"
+              class="d-flex full-width justify-space-between align-center mb-2">
               <v-card
-                class="text-start flex-grow-1 clickable transparent"
+                :class="forcedFieldsEditable && 'clickable'"
+                class="text-start flex-grow-1 transparent"
                 flat
-                @click="application.default = !application.default">
+                v-on="forcedFieldsEditable && {click: () => application.default = !application.default}">
                 {{ $t('appCenter.adminSetupForm.default') }}
               </v-card>
               <v-switch
                 v-model="application.default"
+                :disabled="!forcedFieldsEditable"
                 class="ma-0 pa-0"
                 name="applicationDefault"
                 hide-details />
@@ -277,23 +290,25 @@
                 hide-details />
             </div>
           </div>
-          <div class="d-flex full-width justify-space-between align-center mb-2">
-            <v-card
-              class="text-start flex-grow-1 clickable transparent"
-              flat
-              @click="hasPermissions = !hasPermissions">
-              {{ $t('appCenter.adminSetupForm.permissions') }}
-            </v-card>
-            <v-switch
-              v-model="hasPermissions"
-              class="ma-0 pa-0"
-              name="applicationPermissionsSwitch"
-              hide-details />
-          </div>
-          <app-center-permissions
-            v-if="hasPermissions"
-            v-model="application.permissions"
-            class="mb-4" />
+          <template v-if="!contextual">
+            <div class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                class="text-start flex-grow-1 clickable transparent"
+                flat
+                @click="hasPermissions = !hasPermissions">
+                {{ $t('appCenter.adminSetupForm.permissions') }}
+              </v-card>
+              <v-switch
+                v-model="hasPermissions"
+                class="ma-0 pa-0"
+                name="applicationPermissionsSwitch"
+                hide-details />
+            </div>
+            <app-center-permissions
+              v-if="hasPermissions"
+              v-model="application.permissions"
+              class="mb-4" />
+          </template>
           <div class="d-flex full-width justify-space-between align-center mb-2">
             <v-card
               class="text-start flex-grow-1 clickable transparent"
@@ -319,81 +334,90 @@
             type="text"
             outlined
             dense />
-          <div class="d-flex full-width justify-space-between align-center mb-2">
-            <v-card
-              :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')"
-              class="text-start flex-grow-1 clickable transparent"
-              flat
-              v-on="shortcutEditable && {
-                click: () => hasShortcut = !hasShortcut
-              }">
-              {{ $t('appCenter.adminSetupForm.shortcut') }}
-            </v-card>
-            <div :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
-              <v-switch
-                v-model="hasShortcut"
-                :disabled="!shortcutEditable"
-                class="ma-0 pa-0"
-                name="applicationShortcutSwitch"
-                hide-details />
-            </div>
-          </div>
-          <div :title="!shortcutEditable && $t('appCenter.userSettings.shortcuts.productShortcutNotEditable')">
-            <v-text-field
-              v-if="hasShortcut"
-              ref="applicationShortcut"
-              id="applicationShortcut"
-              v-model="application.shortcut"
-              :disabled="!shortcutEditable"
-              :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
-              :rules="rules.shortcut"
-              name="applicationShortcut"
-              class="border-box-sizing width-auto pt-0 mt-2 mb-3"
-              type="text"
-              maxlength="1"
-              outlined
-              dense>
-              <template #prepend-inner>
-                <div class="d-flex align-center mt-n1 ms-n1">
-                  <v-card
-                    class="fill-height grey-lighten1-background white--text px-5 py-2"
-                    flat>
-                    {{ $t('appCenter.adminSetupForm.ctrl') }}
-                  </v-card>
-                  <v-icon class="mx-2" size="24">fa-plus</v-icon>
-                  <v-card
-                    class="fill-height grey-lighten1-background white--text px-5 py-2"
-                    flat>
-                    {{ $t('appCenter.adminSetupForm.shift') }}
-                  </v-card>
-                  <v-icon class="mx-2" size="24">fa-plus</v-icon>
-                </div>
-              </template>
-            </v-text-field>
-          </div>
-          <div class="d-flex full-width align-center mb-2">
-            <v-card
-              class="text-start flex-grow-1 clickable transparent"
-              flat
-              @click="application.mandatory = !application.mandatory">
-              {{ $t('appCenter.adminSetupForm.pwa') }}
-            </v-card>
-            <v-switch
-              v-model="application.pwa"
-              class="ma-0 pa-0"
-              name="applicationPwa"
-              hide-details />
-          </div>
-          <template v-if="displayPlacementFields">
+          <template v-if="!contextual">
             <div class="d-flex full-width justify-space-between align-center mb-2">
               <v-card
+                :title="shortcutTitle"
                 class="text-start flex-grow-1 clickable transparent"
                 flat
-                @click="application.allowStick = !application.allowStick">
+                v-on="shortcutEditable && {
+                  click: () => hasShortcut = !hasShortcut
+                }">
+                {{ $t('appCenter.adminSetupForm.shortcut') }}
+              </v-card>
+              <div :title="shortcutTitle">
+                <v-switch
+                  v-model="hasShortcut"
+                  :disabled="!shortcutEditable"
+                  class="ma-0 pa-0"
+                  name="applicationShortcutSwitch"
+                  hide-details />
+              </div>
+            </div>
+            <div :title="shortcutTitle">
+              <v-text-field
+                v-if="hasShortcut"
+                ref="applicationShortcut"
+                id="applicationShortcut"
+                v-model="application.shortcut"
+                :disabled="!shortcutEditable"
+                :placeholder="$t('appCenter.adminSetupForm.shortcutPlaceholder')"
+                :rules="rules.shortcut"
+                name="applicationShortcut"
+                class="border-box-sizing width-auto pt-0 mt-2 mb-3"
+                type="text"
+                maxlength="1"
+                outlined
+                dense>
+                <template #prepend-inner>
+                  <div class="d-flex align-center mt-n1 ms-n1">
+                    <v-card
+                      class="fill-height grey-lighten1-background white--text px-5 py-2"
+                      flat>
+                      {{ $t('appCenter.adminSetupForm.ctrl') }}
+                    </v-card>
+                    <v-icon class="mx-2" size="24">fa-plus</v-icon>
+                    <v-card
+                      class="fill-height grey-lighten1-background white--text px-5 py-2"
+                      flat>
+                      {{ $t('appCenter.adminSetupForm.shift') }}
+                    </v-card>
+                    <v-icon class="mx-2" size="24">fa-plus</v-icon>
+                  </div>
+                </template>
+              </v-text-field>
+            </div>
+            <div :title="forcedFieldTitle" class="d-flex full-width align-center mb-2">
+              <v-card
+                :class="forcedFieldsEditable && 'clickable'"
+                class="text-start flex-grow-1 transparent"
+                flat
+                v-on="forcedFieldsEditable && {click: () => application.pwa = !application.pwa}">
+                {{ $t('appCenter.adminSetupForm.pwa') }}
+              </v-card>
+              <v-switch
+                v-model="application.pwa"
+                :disabled="!forcedFieldsEditable"
+                class="ma-0 pa-0"
+                name="applicationPwa"
+                hide-details />
+            </div>
+          </template>
+          <template v-if="displayPlacementFields">
+            <div
+              v-if="!contextual"
+              :title="forcedFieldTitle"
+              class="d-flex full-width justify-space-between align-center mb-2">
+              <v-card
+                :class="forcedFieldsEditable && 'clickable'"
+                class="text-start flex-grow-1 transparent"
+                flat
+                v-on="forcedFieldsEditable && {click: () => application.allowStick = !application.allowStick}">
                 {{ $t('appCenter.adminSetupForm.allowStick') }}
               </v-card>
               <v-switch
                 v-model="application.allowStick"
+                :disabled="!forcedFieldsEditable"
                 class="ma-0 pa-0"
                 name="applicationAllowStick"
                 hide-details />
@@ -457,10 +481,25 @@ export default {
       type: Boolean,
       default: false,
     },
+    // Creates an application only the Shortcuts portlet of settingName lists:
+    // the options the server forces on such an application are not offered
+    contextual: {
+      type: Boolean,
+      default: false,
+    },
+    settingName: {
+      type: String,
+      default: null,
+    },
   },
   data: () => ({
     maxDescriptionLength: 500,
     maxNameLength: 200,
+    contextualMaxUrlLength: 500,
+    // The illustration types the server accepts for a Shortcuts portlet's application
+    contextualImageTypes: 'image/png,image/jpeg,image/gif,image/webp',
+    // Numbers the creations, which can overlap: the form can be closed and opened again while one runs
+    contextCreations: 0,
     drawer: false,
     titles: {},
     descriptions: {},
@@ -479,6 +518,9 @@ export default {
     // Null until the administrator touches the switch, so that the displayed
     // state follows what is stored; true/false once they decided.
     badgeDisabledByAdmin: null,
+    badgeProvidersRequested: false,
+    quickActionExtensions: [],
+    portletInstances: [],
     loading: false
   }),
   computed: {
@@ -488,7 +530,7 @@ export default {
           ? this.$t('appCenter.personalApp.drawer.edit.title')
           : this.$t('appCenter.personalApp.drawer.title');
       }
-      return this.application?.id ? this.$t('appCenter.adminSetupForm.createNewApp') : this.$t('appCenter.adminSetupForm.editApp');
+      return this.application?.id ? this.$t('appCenter.adminSetupForm.editApp') : this.$t('appCenter.adminSetupForm.createNewApp');
     },
     editingPersonalApp() {
       return this.personal && !!this.application?.id;
@@ -499,6 +541,9 @@ export default {
         : this.$t('appCenter.adminSetupForm.save');
     },
     validUrl() {
+      if (this.contextual && this.application?.type === 'LINK') {
+        return this.isValidContextLink(this.application?.url);
+      }
       return (
         this.application?.type === 'LINK'
         && this.$utils.toLinkUrl(this.application?.url, {
@@ -515,6 +560,9 @@ export default {
       return this.$applicationUrlService.normalizePersonalUrl(this.application?.url);
     },
     validHelpPageUrl() {
+      if (this.contextual && this.application?.helpPageURL) {
+        return this.isValidContextLink(this.application.helpPageURL);
+      }
       return !this.application?.helpPageURL
         || this.$utils.toLinkUrl(this.application?.helpPageURL, {
           urls: true,
@@ -543,6 +591,7 @@ export default {
         ],
         url: [
           () => !!this.application?.url?.length || ' ',
+          () => !this.isContextLinkTooLong(this.application?.url) || this.$t('appCenter.contextual.urlTooLong'),
           () => !!this.validUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         personalUrl: [
@@ -550,6 +599,7 @@ export default {
           () => !!this.normalizedPersonalUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         helpUrl: [
+          () => !this.isContextLinkTooLong(this.application?.helpPageURL) || this.$t('appCenter.contextual.helpPageURLTooLong'),
           () => !!this.validHelpPageUrl || this.$t('appCenter.form.url.invalidLink'),
         ],
         shortcut: [
@@ -581,8 +631,8 @@ export default {
       }));
     },
     selectedPortletInstance() {
-      if (this.type === 'PORTLET' && this.application?.url && this.$root.portletInstances?.length) {
-        return this.$root.portletInstances.find(p => `${p.id}` === `${this.application?.url}`);
+      if (this.type === 'PORTLET' && this.application?.url && this.portletInstances?.length) {
+        return this.portletInstances.find(p => `${p.id}` === `${this.application?.url}`);
       } else {
         return null;
       }
@@ -685,7 +735,35 @@ export default {
     shortcutEditable() {
       // the shortcut of a default product application is defined by the product
       // itself, so the whole option stays read only for a system application
-      return !this.application?.system;
+      return !this.application?.system && this.forcedFieldsEditable;
+    },
+    shortcutTitle() {
+      if (!this.forcedFieldsEditable) {
+        return this.forcedFieldTitle;
+      }
+      return !this.shortcutEditable && this.$t('appCenter.userSettings.shortcuts.productShortcutNotEditable') || null;
+    },
+    // The server forces mandatory, default, PWA, stick and shortcut off on an
+    // application created from a Shortcuts portlet, on every write: not offered
+    // in that portlet's form, read only in the administration's
+    forcedFieldsEditable() {
+      return !this.contextual && !this.application?.contextual;
+    },
+    forcedFieldTitle() {
+      return !this.forcedFieldsEditable && this.$t('appCenter.adminSetupForm.contextualOptionNotEditable') || null;
+    },
+    imageTypes() {
+      return this.contextual ? this.contextualImageTypes : 'image/*';
+    },
+    quickActions() {
+      return this.quickActionExtensions
+        .filter(ext => ext.id)
+        .map(ext => ({
+          id: ext.id,
+          icon: ext.icon,
+          name: this.$te(ext.name) ? this.$t(ext.name) : ext.name,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, eXo.env.portal.language, {numeric: true, sensitivity: 'base'}));
     },
     disabled() {
       if (this.personal) {
@@ -719,7 +797,7 @@ export default {
         // provider bound after switching Portlet -> Link
         this.application.badgeName = null;
         this.badgeDisabledByAdmin = null;
-        this.application.allowStick = newVal === 'DRAWER';
+        this.application.allowStick = newVal === 'DRAWER' && this.forcedFieldsEditable;
         this.application.allowDetach = newVal === 'DRAWER';
       }
     },
@@ -752,12 +830,14 @@ export default {
   created() {
     this.$root.$on('app-center-drawer-open', this.open);
     if (!this.personal) {
-      this.$applicationBadgeService.getBadgeProviders()
-        .then(providers => this.badgeProviderList = providers || []);
+      document.addEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
+      this.refreshQuickActions();
+      this.$utils.includeExtensions('QuickActionExtension');
     }
   },
   beforeDestroy() {
     this.$root.$off('app-center-drawer-open', this.open);
+    document.removeEventListener('extension-QuickAction-Extension-updated', this.refreshQuickActions);
   },
   methods: {
     async open(app) {
@@ -775,7 +855,14 @@ export default {
         };
         this.originalApplication = { ...this.application };
       } else {
-        if (app?.id) {
+        if (!this.badgeProvidersRequested) {
+          // Once, when the form is first opened: the form is created on pages
+          // where it may never be, and only administrators may read the providers
+          this.badgeProvidersRequested = true;
+          this.$applicationBadgeService.getBadgeProviders()
+            .then(providers => this.badgeProviderList = providers || []);
+        }
+        if (app?.id && !this.contextual) {
           const data = await this.$applicationService.getApplications(true);
           this.application = data?.applications?.find?.(a => a.id === app.id);
           if (this.application) {
@@ -850,8 +937,20 @@ export default {
     close() {
       this.$refs.formDrawer.close();
     },
+    // The server's rule for a Shortcuts portlet's application: an http(s) or
+    // portal-relative link, of at most 500 characters once normalized
+    isValidContextLink(url) {
+      const normalizedUrl = this.$applicationUrlService.normalizePersonalUrl(url);
+      return !!normalizedUrl && normalizedUrl.length <= this.contextualMaxUrlLength;
+    },
+    isContextLinkTooLong(url) {
+      return this.contextual && this.$applicationUrlService.normalizePersonalUrl(url)?.length > this.contextualMaxUrlLength;
+    },
     shortcutExists(c) {
-      return !!this.$root.applications.find(a => a.shortcut === c && a.id !== this.application?.id);
+      return !!this.$root.applications?.find?.(a => a.shortcut === c && a.id !== this.application?.id);
+    },
+    refreshQuickActions() {
+      this.quickActionExtensions = extensionRegistry.loadExtensions('QuickAction', 'Extension') || [];
     },
     async save() {
       if (this.loading) {
@@ -860,7 +959,9 @@ export default {
       const isNew = !this.application.id;
       this.loading = true;
       try {
-        if (this.personal) {
+        if (this.contextual) {
+          await this.saveContextApplication();
+        } else if (this.personal) {
           this.application.url = this.normalizedPersonalUrl;
           let app;
           if (isNew) {
@@ -894,12 +995,37 @@ export default {
         }
       } catch (e) {
         // the drawer stays open so that the user doesn't lose what was entered
-        this.$root.$emit('alert-message', this.$t(this.saveErrorMessageKey(isNew)), 'error');
+        this.$root.$emit('alert-message', this.$t(this.saveErrorMessageKey(isNew, e)), 'error');
       } finally {
         this.loading = false;
       }
     },
-    saveErrorMessageKey(isNew) {
+    async saveContextApplication() {
+      // Read before any wait: the form can be opened again, and emptied, meanwhile
+      const {titles, descriptions} = this;
+      // Announced before the request: the host knows what happened since the creation started
+      const creationId = ++this.contextCreations;
+      this.$emit('creation-started', creationId);
+      const app = await this.$applicationService.createContextApplication(this.settingName, {
+        ...this.application,
+        badgeName: this.badgeNameToSave,
+        categoryIds: this.newCategoryIds,
+      });
+      // Listed at once and the drawer closed: the application exists, so
+      // nothing that follows may let a second save create it again
+      this.$emit('saved', app, true, creationId);
+      this.close();
+      const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
+        .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
+        .then(() => true, () => false);
+      // Reported by the host, which knows whether it listed the app: one message, as a message replaces the previous one
+      this.$emit('creation-completed', {application: app, translationsSaved, creationId});
+    },
+    saveErrorMessageKey(isNew, error) {
+      // A refusal of the Shortcuts portlet's endpoint names its cause with a label code
+      if (this.contextual && error?.message && this.$te(error.message)) {
+        return error.message;
+      }
       if (!this.personal) {
         return 'appCenter.adminSetupForm.errorSavingApplication';
       }

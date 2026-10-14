@@ -67,7 +67,7 @@ export default {
     },
     maxApplications: {
       type: Number,
-      default: 100,
+      required: true,
     },
   },
   data: () => ({
