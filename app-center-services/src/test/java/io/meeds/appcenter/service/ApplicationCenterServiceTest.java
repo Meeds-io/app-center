@@ -2123,6 +2123,7 @@ public class ApplicationCenterServiceTest {
     assertThrows(IllegalStateException.class,
                  () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
     verify(appCenterStorage, never()).removeUpload(any());
+    verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID + 1);
     verify(categoryLinkService, never()).link(anyLong(), any(), any());
     verify(categoryLinkService, never()).unlink(anyLong(), any(), any());
   }
@@ -2147,11 +2148,31 @@ public class ApplicationCenterServiceTest {
     assertThrows(ObjectNotFoundException.class,
                  () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
     verify(appCenterStorage, never()).removeUpload(any());
+    verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID + 1);
 
     doNothing().when(appCenterStorage).updateContextApplication(any());
     when(appCenterStorage.getApplication(ID)).thenReturn(stored, (Application) null);
     assertThrows(ObjectNotFoundException.class,
                  () -> applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER));
+  }
+
+  /**
+   * Fails the mutant deleting, when the update fails, the illustration the
+   * application keeps: it would leave the application, which still exists,
+   * without it
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredIllustrationWhenTheUpdateFails() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    doThrow(new IllegalStateException("read refused")).when(appCenterStorage).updateContextApplication(any());
+    assertThrows(IllegalStateException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER));
+
+    doThrow(new ApplicationNotFoundException("deleted")).when(appCenterStorage).updateContextApplication(any());
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).deleteIllustration(anyLong());
   }
 
   /**

@@ -230,7 +230,7 @@ public class ApplicationRest {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "Invalid field or illustration, or application not created by a Shortcuts portlet, or by another one, the response's message naming which"),
     @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
-    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
   public Application updateContextApplication(
                                               HttpServletRequest request,
                                               @Parameter(description = "Application technical id to update", required = true)
@@ -258,7 +258,7 @@ public class ApplicationRest {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "Application not created by a Shortcuts portlet, or by another one, the response's message telling which"),
     @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
-    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
   public void deleteContextApplication(
                                        HttpServletRequest request,
                                        @Parameter(description = "Application technical id to delete", required = true)

@@ -1347,8 +1347,8 @@ public class ApplicationCenterService {
    * @param settingName the window's CMS setting name
    * @param username the user deleting the application
    * @throws ObjectNotFoundException when the window's setting does not exist,
-   *           or when the application does not exist or the user may not
-   *           access it
+   *           or when the application does not exist, or the window does
+   *           not manage it and the user may not access it
    * @throws IllegalAccessException when the user may not manage the window's
    *           applications
    * @throws IllegalArgumentException with the message
@@ -1389,8 +1389,10 @@ public class ApplicationCenterService {
    *         permissions, its badge resolved, with its categories, null when
    *         they could not be read
    * @throws ObjectNotFoundException when the window's setting does not exist,
-   *           or when the application does not exist, is deleted before the
-   *           update reads it, or the user may not access it
+   *           when the application does not exist, or the window does not
+   *           manage it and the user may not access it, or when the update's
+   *           own read of the application, or its read back once saved, finds
+   *           none
    * @throws IllegalAccessException when the user may not manage the window's
    *           applications
    * @throws IllegalArgumentException with the message
@@ -1422,18 +1424,25 @@ public class ApplicationCenterService {
       contextApplication.setBadgeName(getKeptBadgeName(storedApplication, contextApplication));
     }
     String uploadId = application.getImageUploadId();
+    Long newImageFileId = null;
     if (StringUtils.isNotBlank(uploadId)) {
       byte[] illustration = appCenterStorage.readUpload(uploadId, MAX_ILLUSTRATION_SIZE);
       String illustrationMimeType = getIllustrationMimeType(illustration);
-      contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
+      newImageFileId = appCenterStorage.saveIllustration(illustration, illustrationMimeType);
+      contextApplication.setImageFileId(newImageFileId);
     } else if (!application.isIllustrationRemoved()) {
       contextApplication.setImageFileId(storedApplication.getImageFileId());
     }
+    // The new illustration only, never the kept one, is deleted when the update fails
     try {
       appCenterStorage.updateContextApplication(contextApplication);
     } catch (ApplicationNotFoundException e) {
       // Deleted since it was checked
+      deleteNewIllustration(newImageFileId);
       throw new ObjectNotFoundException(e.getMessage());
+    } catch (RuntimeException e) {
+      deleteNewIllustration(newImageFileId);
+      throw e;
     }
     if (StringUtils.isNotBlank(uploadId)) {
       appCenterStorage.removeUpload(uploadId);
@@ -1533,6 +1542,12 @@ public class ApplicationCenterService {
       throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
     }
     return setting;
+  }
+
+  private void deleteNewIllustration(Long imageFileId) {
+    if (imageFileId != null) {
+      appCenterStorage.deleteIllustration(imageFileId);
+    }
   }
 
   /**

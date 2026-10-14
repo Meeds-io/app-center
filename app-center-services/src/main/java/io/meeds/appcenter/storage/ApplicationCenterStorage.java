@@ -171,9 +171,8 @@ public class ApplicationCenterStorage {
    * application is stored as given, its illustration file id included: the
    * caller decides every field, no upload is read here. Its owner and system
    * flag stay the stored ones. The illustration it replaces or removes is
-   * deleted once the application is saved; when the application no longer
-   * exists as the update reads it, or the database refuses it, the new
-   * illustration is deleted instead.
+   * deleted once the application is saved. A new illustration is the
+   * caller's: it deletes it when the update fails.
    *
    * @param application the application to update
    * @throws ApplicationNotFoundException when the application no longer
@@ -181,26 +180,17 @@ public class ApplicationCenterStorage {
    */
   @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
   public void updateContextApplication(Application application) throws ApplicationNotFoundException {
-    Long imageFileId = application.getImageFileId();
-    Long oldImageFileId = null;
-    try {
-      ApplicationEntity storedApplicationEntity =
-                                                applicationDAO.findById(application.getId())
-                                                              .orElseThrow(() -> new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE,
-                                                                                                                                application.getId())));
-      oldImageFileId = storedApplicationEntity.getImageFileId();
-      ApplicationEntity applicationEntity = toEntity(application);
-      applicationEntity.setSystem(storedApplicationEntity.isSystem());
-      applicationEntity.setContextSettingName(storedApplicationEntity.getContextSettingName());
-      applicationEntity.setContextSpaceId(storedApplicationEntity.getContextSpaceId());
-      applicationDAO.save(applicationEntity);
-    } catch (ApplicationNotFoundException | RuntimeException e) {
-      if (imageFileId != null && !imageFileId.equals(oldImageFileId)) {
-        fileService.deleteFile(imageFileId);
-      }
-      throw e;
-    }
-    if (oldImageFileId != null && !oldImageFileId.equals(imageFileId)) {
+    ApplicationEntity storedApplicationEntity =
+                                              applicationDAO.findById(application.getId())
+                                                            .orElseThrow(() -> new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE,
+                                                                                                                              application.getId())));
+    Long oldImageFileId = storedApplicationEntity.getImageFileId();
+    ApplicationEntity applicationEntity = toEntity(application);
+    applicationEntity.setSystem(storedApplicationEntity.isSystem());
+    applicationEntity.setContextSettingName(storedApplicationEntity.getContextSettingName());
+    applicationEntity.setContextSpaceId(storedApplicationEntity.getContextSpaceId());
+    applicationDAO.save(applicationEntity);
+    if (oldImageFileId != null && !oldImageFileId.equals(application.getImageFileId())) {
       try {
         fileService.deleteFile(oldImageFileId);
       } catch (RuntimeException e) {

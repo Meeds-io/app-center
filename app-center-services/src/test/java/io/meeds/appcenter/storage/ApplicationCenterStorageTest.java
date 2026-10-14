@@ -555,20 +555,20 @@ public class ApplicationCenterStorageTest {
   }
 
   /**
-   * Fails the mutants deleting the stored illustration of an application the
-   * database refuses, leaving the new one behind, and failing an update done
-   * because its former illustration is not deleted
+   * A new illustration is the caller's: fails the mutants deleting the
+   * illustration of an application the database refuses, the stored one
+   * included when the update keeps it, and failing an update done because its
+   * former illustration is not deleted
    */
   @Test
-  void updateContextApplicationKeepsTheStoredIllustrationOfAnApplicationTheDatabaseRefuses() {
+  void updateContextApplicationDeletesNoIllustrationOfAnApplicationTheDatabaseRefuses() {
     when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
     doThrow(new IllegalStateException("update refused")).when(applicationDAO).save(any());
     Application application = application(ID);
     application.setImageFileId(IMAGE_FILE_ID + 1);
 
     assertThrows(IllegalStateException.class, () -> applicationCenterStorage.updateContextApplication(application));
-    verify(fileService).deleteFile(IMAGE_FILE_ID + 1);
-    verify(fileService, never()).deleteFile(IMAGE_FILE_ID);
+    verify(fileService, never()).deleteFile(anyLong());
 
     doAnswer(invocation -> invocation.getArgument(0)).when(applicationDAO).save(any());
     doThrow(new IllegalStateException("delete refused")).when(fileService).deleteFile(IMAGE_FILE_ID);
@@ -576,18 +576,20 @@ public class ApplicationCenterStorageTest {
   }
 
   /**
-   * Fails the mutants reading the application outside the block that deletes
-   * the new illustration, which leaves it behind an application deleted since
-   * the service checked it, and answering that deletion as an unexpected error
+   * Fails the mutants deleting the illustration the application gives when
+   * the application cannot be read: it is the stored one when the update keeps
+   * it, and a read refused while the application exists would delete it
    */
   @Test
-  void updateContextApplicationDeletesTheNewIllustrationOfAnApplicationDeletedMeanwhile() {
-    when(applicationDAO.findById(ID)).thenReturn(Optional.empty());
+  void updateContextApplicationDeletesNoIllustrationOfAnApplicationItCannotRead() {
     Application application = application(ID);
-    application.setImageFileId(IMAGE_FILE_ID + 1);
-
+    application.setImageFileId(IMAGE_FILE_ID);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.empty());
     assertThrows(ApplicationNotFoundException.class, () -> applicationCenterStorage.updateContextApplication(application));
-    verify(fileService).deleteFile(IMAGE_FILE_ID + 1);
+
+    when(applicationDAO.findById(ID)).thenThrow(new IllegalStateException("read refused"));
+    assertThrows(IllegalStateException.class, () -> applicationCenterStorage.updateContextApplication(application));
+    verify(fileService, never()).deleteFile(anyLong());
     verify(applicationDAO, never()).save(any());
   }
 
