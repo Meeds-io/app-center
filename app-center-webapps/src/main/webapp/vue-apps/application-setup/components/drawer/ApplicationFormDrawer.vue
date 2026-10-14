@@ -1045,8 +1045,11 @@ export default {
       // Read before any wait: the form can be opened again, and emptied, meanwhile
       const {titles, descriptions} = this;
       const categoryIds = this.contextCategoryIdsToSave;
+      // The listing gives the labels of the editor's language: the stored ones are the default language's
       const app = await this.$applicationService.updateContextApplication(this.settingName, {
         ...this.application,
+        title: titles[eXo.env.portal.defaultLanguage],
+        description: descriptions[eXo.env.portal.defaultLanguage],
         badgeName: this.badgeNameToSave,
         categoryIds,
       });
@@ -1058,7 +1061,11 @@ export default {
       // one it could not link or unlink differs
       const idsKey = ids => (ids ? [...new Set(ids)].sort().join(',') : null);
       const categoriesSaved = !categoryIds || idsKey(categoryIds) === idsKey(app.categoryIds);
-      this.$emit('updated', app);
+      // Listed with its label in the editor's language, as the listing gives it
+      this.$emit('updated', {
+        ...app,
+        title: titles[eXo.env.portal.language] || titles[eXo.env.portal.defaultLanguage] || app.title,
+      });
       // One message, as a message replaces the previous one: the labels' failure first
       if (!translationsSaved) {
         this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSavedOnUpdate'), 'warning');
