@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -1210,7 +1211,9 @@ public class ApplicationCenterService {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return listApplications(filter, locale, username, true);
+    List<Application> applications = listApplications(filter, locale, username, true);
+    setContextApplicationCategories(applications);
+    return applications;
   }
 
   /**
@@ -1349,23 +1352,73 @@ public class ApplicationCenterService {
   public void deleteContextApplication(long applicationId,
                                        String settingName,
                                        String username) throws ObjectNotFoundException, IllegalAccessException {
-    getContextSetting(settingName);
-    checkCanManageContextApplications(settingName, username);
-    Application application = appCenterStorage.getApplication(applicationId);
-    if (application == null || !isManagedBy(application, settingName) && !canAccess(application, username)) {
-      // The window's right covers the applications it created, whatever
-      // their audience
-      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    } else if (!application.isContextual()) {
-      throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
-    } else if (!StringUtils.equals(application.getContextSettingName(), settingName)) {
-      throw new IllegalArgumentException(NOT_OWNED_MESSAGE);
-    }
+    getOwnedContextApplication(applicationId, settingName, username);
     try {
       deleteApplication(applicationId);
     } catch (ApplicationNotFoundException e) {
       throw new ObjectNotFoundException(e.getMessage());
     }
+  }
+
+  /**
+   * Updates an application created from the settings of a Shortcuts portlet
+   * window, from that window's settings, with the fields its form offers, each
+   * one validated as on creation. Its owner, audience, order and every field
+   * the form does not offer keep their stored or forced value. Its
+   * illustration is replaced from an upload only, removed only on the form's
+   * explicit request, and kept otherwise. Its categories become the form's
+   * ones as far as they can: a category the user may not link or unlink, or
+   * that fails to, keeps its state, and none changes when the form sends no
+   * list of them or when the stored ones cannot be read.
+   *
+   * @param applicationId the application id
+   * @param application the form's fields
+   * @param settingName the window's CMS setting name
+   * @param username the user updating the application
+   * @return the updated application, with its categories, null when they
+   *         could not be read
+   * @throws ObjectNotFoundException when the window's setting does not exist,
+   *           or when the application does not exist or the user may not
+   *           access it
+   * @throws IllegalAccessException when the user may not manage the window's
+   *           applications
+   * @throws IllegalArgumentException with the message
+   *           {@value #NOT_CONTEXTUAL_MESSAGE} for an application of the
+   *           Application Center, {@value #NOT_OWNED_MESSAGE} for one another
+   *           window created, or a message naming the invalid field or
+   *           illustration
+   */
+  public Application updateContextApplication(long applicationId,
+                                              ApplicationForm application,
+                                              String settingName,
+                                              String username) throws ObjectNotFoundException, IllegalAccessException {
+    Application storedApplication = getOwnedContextApplication(applicationId, settingName, username);
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    Application contextApplication = toContextApplication(application, List.of(), username);
+    contextApplication.setId(applicationId);
+    contextApplication.setPermissions(storedApplication.getPermissions() == null ? null
+                                                                                 : new ArrayList<>(storedApplication.getPermissions()));
+    contextApplication.setOrder(storedApplication.getOrder());
+    contextApplication.setChangedManually(storedApplication.isChangedManually());
+    contextApplication.setContextSettingName(storedApplication.getContextSettingName());
+    contextApplication.setContextSpaceId(storedApplication.getContextSpaceId());
+    String uploadId = application.getImageUploadId();
+    if (StringUtils.isNotBlank(uploadId)) {
+      byte[] illustration = appCenterStorage.readUpload(uploadId, MAX_ILLUSTRATION_SIZE);
+      String illustrationMimeType = getIllustrationMimeType(illustration);
+      contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
+    } else if (!application.isIllustrationRemoved()) {
+      contextApplication.setImageFileId(storedApplication.getImageFileId());
+    }
+    appCenterStorage.updateContextApplication(contextApplication);
+    if (StringUtils.isNotBlank(uploadId)) {
+      appCenterStorage.removeUpload(uploadId);
+    }
+    Application updatedApplication = new Application(appCenterStorage.getApplication(applicationId));
+    updatedApplication.setCategoryIds(updateCategories(applicationId, application.getCategoryIds(), username));
+    return updatedApplication;
   }
 
   /**
@@ -1452,6 +1505,30 @@ public class ApplicationCenterService {
       throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
     }
     return setting;
+  }
+
+  /**
+   * Checks, in this order, the window's setting, the user's right to manage
+   * the window's applications, the application, its access and its owner.
+   *
+   * @return the stored application, the cache's shared instance
+   */
+  private Application getOwnedContextApplication(long applicationId,
+                                                 String settingName,
+                                                 String username) throws ObjectNotFoundException, IllegalAccessException {
+    getContextSetting(settingName);
+    checkCanManageContextApplications(settingName, username);
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null || !isManagedBy(application, settingName) && !canAccess(application, username)) {
+      // The window's right covers the applications it created, whatever
+      // their audience
+      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    } else if (!application.isContextual()) {
+      throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
+    } else if (!StringUtils.equals(application.getContextSettingName(), settingName)) {
+      throw new IllegalArgumentException(NOT_OWNED_MESSAGE);
+    }
+    return application;
   }
 
   private void checkCanManageContextApplications(String settingName, String username) throws IllegalAccessException {
@@ -1635,6 +1712,75 @@ public class ApplicationCenterService {
         LOG.warn("Unable to link application {} to category {}", applicationId, categoryId, e);
       }
     }
+    return linkedCategoryIds;
+  }
+
+  /**
+   * Gives the applications a window created, among the listed copies, their
+   * categories, which the window's form edits, in one read. When the read
+   * fails, they stay unknown (null).
+   */
+  private void setContextApplicationCategories(List<Application> applications) {
+    List<String> contextApplicationIds = applications.stream()
+                                                     .filter(Application::isContextual)
+                                                     .map(application -> String.valueOf(application.getId()))
+                                                     .toList();
+    if (contextApplicationIds.isEmpty()) {
+      return;
+    }
+    Map<String, List<Long>> linkedIds;
+    try {
+      linkedIds = getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, contextApplicationIds);
+    } catch (RuntimeException e) {
+      LOG.warn("Unable to read the categories of the applications {}", contextApplicationIds, e);
+      return;
+    }
+    // An application with no category is absent from the map
+    Map<String, List<Long>> categoryIds = linkedIds == null ? Map.of() : linkedIds;
+    applications.stream()
+                .filter(Application::isContextual)
+                .forEach(application -> application.setCategoryIds(new ArrayList<>(CollectionUtils.emptyIfNull(categoryIds.get(String.valueOf(application.getId()))))));
+  }
+
+  /**
+   * Makes the categories of an updated application created from a Shortcuts
+   * portlet the ones of its form: links the new ones, unlinks the others, as
+   * the user may. A category that fails to link or unlink keeps its state: the
+   * application is updated already, and is returned with the categories it
+   * has.
+   *
+   * @return the ids of the linked categories
+   */
+  private List<Long> updateCategories(long applicationId, List<Long> categoryIds, String username) {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                       String.valueOf(applicationId),
+                                                       0L);
+    List<Long> storedCategoryIds;
+    try {
+      storedCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    } catch (RuntimeException e) {
+      // Unknown, so left as they are and returned as unknown
+      LOG.warn("Unable to read the categories of updated application {}", applicationId, e);
+      return null; // NOSONAR
+    }
+    List<Long> linkedCategoryIds = new ArrayList<>(CollectionUtils.emptyIfNull(storedCategoryIds));
+    if (categoryIds == null) {
+      return linkedCategoryIds;
+    }
+    List<Long> newCategoryIds = categoryIds.stream().filter(Objects::nonNull).distinct().toList();
+    for (Long categoryId : linkedCategoryIds.stream().filter(id -> !newCategoryIds.contains(id)).toList()) {
+      try {
+        getCategoryLinkService().unlink(categoryId, categoryObject, username);
+        linkedCategoryIds.remove(categoryId);
+      } catch (ObjectNotFoundException | IllegalAccessException e) {
+        LOG.debug("Application {} not unlinked from category {} by {}", applicationId, categoryId, username, e);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to unlink application {} from category {}", applicationId, categoryId, e);
+      }
+    }
+    linkedCategoryIds.addAll(linkCategories(applicationId,
+                                            newCategoryIds.stream().filter(id -> !linkedCategoryIds.contains(id)).toList(),
+                                            username));
     return linkedCategoryIds;
   }
 

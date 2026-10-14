@@ -166,6 +166,43 @@ public class ApplicationCenterStorage {
     return getApplication(applicationEntity.getId());
   }
 
+  /**
+   * Updates an application owned by a Shortcuts portlet window. The
+   * application is stored as given, its illustration file id included: the
+   * caller decides every field, no upload is read here. Its owner and system
+   * flag stay the stored ones. The illustration it replaces or removes is
+   * deleted once the application is saved; when the database refuses the
+   * application, the new illustration is deleted instead.
+   *
+   * @param application the application to update
+   */
+  @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
+  public void updateContextApplication(Application application) {
+    ApplicationEntity storedApplicationEntity = applicationDAO.findById(application.getId()).orElseThrow();
+    Long oldImageFileId = storedApplicationEntity.getImageFileId();
+    Long imageFileId = application.getImageFileId();
+    ApplicationEntity applicationEntity = toEntity(application);
+    applicationEntity.setSystem(storedApplicationEntity.isSystem());
+    applicationEntity.setContextSettingName(storedApplicationEntity.getContextSettingName());
+    applicationEntity.setContextSpaceId(storedApplicationEntity.getContextSpaceId());
+    try {
+      applicationDAO.save(applicationEntity);
+    } catch (RuntimeException e) {
+      if (imageFileId != null && !imageFileId.equals(oldImageFileId)) {
+        fileService.deleteFile(imageFileId);
+      }
+      throw e;
+    }
+    if (oldImageFileId != null && !oldImageFileId.equals(imageFileId)) {
+      try {
+        fileService.deleteFile(oldImageFileId);
+      } catch (RuntimeException e) {
+        // The application is updated: its former illustration is only left behind
+        LOG.warn("Unable to delete the former illustration {} of application {}", oldImageFileId, application.getId(), e);
+      }
+    }
+  }
+
   @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
   public void updateApplication(Application application) {
     Long applicationId = application.getId();

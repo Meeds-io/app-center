@@ -19,6 +19,7 @@
 package io.meeds.appcenter.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -53,6 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -507,6 +510,71 @@ public class ApplicationCenterStorageTest {
     verify(applicationDAO).save(argThat(entity -> entity.getContextSettingName() == null && entity.getContextSpaceId() == null));
   }
 
+  /**
+   * Fails the mutants taking the owner or the system flag from the
+   * application, keeping the replaced illustration, deleting it before the
+   * save, and deleting the new one
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredOwnerAndDeletesTheReplacedIllustrationOnceSaved() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    Application application = application(ID);
+    application.setContextSettingName("Untitled-13-forged");
+    application.setContextSpaceId(SPACE_ID + 1);
+    application.setSystem(true);
+    application.setImageFileId(IMAGE_FILE_ID + 1);
+
+    applicationCenterStorage.updateContextApplication(application);
+
+    InOrder inOrder = inOrder(applicationDAO, fileService);
+    inOrder.verify(applicationDAO).save(argThat(entity -> SETTING_NAME.equals(entity.getContextSettingName())
+                                                          && SPACE_ID.equals(entity.getContextSpaceId())
+                                                          && !entity.isSystem()
+                                                          && Long.valueOf(IMAGE_FILE_ID + 1).equals(entity.getImageFileId())));
+    inOrder.verify(fileService).deleteFile(IMAGE_FILE_ID);
+    verify(fileService, never()).deleteFile(IMAGE_FILE_ID + 1);
+  }
+
+  /**
+   * Fails the mutants deleting the illustration the application keeps, and
+   * keeping the one it removes
+   */
+  @Test
+  void updateContextApplicationDeletesTheIllustrationItRemovesOnly() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID);
+    applicationCenterStorage.updateContextApplication(application);
+    verify(fileService, never()).deleteFile(anyLong());
+
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    application.setImageFileId(null);
+    applicationCenterStorage.updateContextApplication(application);
+    verify(applicationDAO).save(argThat(entity -> entity.getImageFileId() == null));
+    verify(fileService).deleteFile(IMAGE_FILE_ID);
+  }
+
+  /**
+   * Fails the mutants deleting the stored illustration of an application the
+   * database refuses, leaving the new one behind, and failing an update done
+   * because its former illustration is not deleted
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredIllustrationOfAnApplicationTheDatabaseRefuses() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    doThrow(new IllegalStateException("update refused")).when(applicationDAO).save(any());
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID + 1);
+
+    assertThrows(IllegalStateException.class, () -> applicationCenterStorage.updateContextApplication(application));
+    verify(fileService).deleteFile(IMAGE_FILE_ID + 1);
+    verify(fileService, never()).deleteFile(IMAGE_FILE_ID);
+
+    doAnswer(invocation -> invocation.getArgument(0)).when(applicationDAO).save(any());
+    doThrow(new IllegalStateException("delete refused")).when(fileService).deleteFile(IMAGE_FILE_ID);
+    assertDoesNotThrow(() -> applicationCenterStorage.updateContextApplication(application));
+  }
+
   @Test
   void getContextApplicationIds() {
     when(applicationDAO.findIdsByContextSpaceId(SPACE_ID)).thenReturn(List.of(ID));
@@ -632,6 +700,14 @@ public class ApplicationCenterStorageTest {
                                  null,
                                  null,
                                  null);
+  }
+
+  private ApplicationEntity contextApplicationEntity() {
+    ApplicationEntity applicationEntity = applicationEntity(ID);
+    applicationEntity.setContextSettingName(SETTING_NAME);
+    applicationEntity.setContextSpaceId(SPACE_ID);
+    applicationEntity.setImageFileId(IMAGE_FILE_ID);
+    return applicationEntity;
   }
 
   private Application application(Long id) {

@@ -1748,6 +1748,297 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
+   * Fails the mutants dropping or reordering a check: an editor of another
+   * window, or of none, would rewrite an application of the Application Center
+   * or of another window
+   */
+  @Test
+  void updateContextApplicationChecksTheSettingTheRightTheApplicationAndItsOwner() throws Exception {
+    ApplicationForm form = contextForm();
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    mockContext(SPACE_ID);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(false);
+    assertThrows(IllegalAccessException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).getApplication(ID);
+
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    Application inaccessible = contextApplication(ID, OTHER_SETTING_NAME);
+    inaccessible.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(inaccessible);
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    assertEquals(ApplicationCenterService.NOT_CONTEXTUAL_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER))
+                                                                                                                         .getMessage());
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, OTHER_SETTING_NAME));
+    assertEquals(ApplicationCenterService.NOT_OWNED_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER))
+                                                                                                                         .getMessage());
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, null, SETTING_NAME, TEST_USER));
+    verifyNoContextApplicationUpdated();
+
+    assertEquals(ID, applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER).getId());
+    verify(appCenterStorage).updateContextApplication(any());
+  }
+
+  /**
+   * Fails the mutant also requiring the editor to access the application: the
+   * window's right authorizes the update of what the window created
+   */
+  @Test
+  void updateContextApplicationUpdatesTheWindowsOwnApplicationOutsideTheEditorsAudience() throws Exception {
+    mockContext(SPACE_ID);
+    Application outsideAudience = contextApplication(ID, SETTING_NAME);
+    outsideAudience.setPermissions(List.of(PERMISSIONS_1));
+    when(appCenterStorage.getApplication(ID)).thenReturn(outsideAudience);
+
+    applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER);
+
+    assertEquals(List.of(PERMISSIONS_1), lastUpdatedContextApplication().getPermissions());
+  }
+
+  /**
+   * Fails the mutants taking from the body the owner, the audience, the order,
+   * the illustration file id, the id or a field the form does not offer
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredFieldsAndForcesTheOnesTheFormDoesNotOffer() throws Exception {
+    mockContext(SPACE_ID);
+    Application stored = contextApplication(ID, SETTING_NAME);
+    stored.setOrder(7L);
+    stored.setChangedManually(true);
+    when(appCenterStorage.getApplication(ID)).thenReturn(stored);
+    ApplicationForm form = contextForm();
+    form.setId(ID + 1);
+    form.setMandatory(true);
+    form.setDefault(true);
+    form.setPwa(true);
+    form.setSystem(true);
+    form.setPersonal(true);
+    form.setAllowStick(true);
+    form.setShortcut(SHORTCUT);
+    form.setActive(false);
+    form.setImageFileId(IMAGE_FILE_ID + 1);
+    form.setOrder(3L);
+    form.setChangedManually(false);
+    form.setContextSettingName(OTHER_SETTING_NAME);
+    form.setContextSpaceId(SPACE_ID + 1);
+    form.setPermissions(List.of("*:/platform/users"));
+
+    applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER);
+
+    Application updated = lastUpdatedContextApplication();
+    assertEquals(ID, updated.getId());
+    assertFalse(updated.isMandatory());
+    assertFalse(updated.isDefault());
+    assertFalse(updated.isPwa());
+    assertFalse(updated.isSystem());
+    assertFalse(updated.isPersonal());
+    assertFalse(updated.isAllowStick());
+    assertNull(updated.getShortcut());
+    assertTrue(updated.isActive());
+    assertEquals(IMAGE_FILE_ID, updated.getImageFileId());
+    assertEquals(7L, updated.getOrder());
+    assertTrue(updated.isChangedManually());
+    assertEquals(SETTING_NAME, updated.getContextSettingName());
+    assertEquals(SPACE_ID, updated.getContextSpaceId());
+    assertEquals(List.of(PERMISSIONS_2), updated.getPermissions());
+    assertEquals(TITLE, updated.getTitle());
+    assertEquals(DESCRIPTION, updated.getDescription());
+    assertEquals("https://meeds.io", updated.getUrl());
+    assertEquals("fa-star", updated.getIcon());
+  }
+
+  /**
+   * Fails the mutant storing the body as sent: the update is a write path of
+   * an application url, refused unless normalized as on creation
+   */
+  @Test
+  void updateContextApplicationValidatesTheFieldsAsOnCreation() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl("javascript:alert(1)"));
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl("//evil.example"));
+    assertContextUpdateRefused(ApplicationCenterService.TITLE_MANDATORY_MESSAGE, form -> form.setTitle(" "));
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_ICON_MESSAGE, form -> form.setIcon("fa-star\"><script>"));
+    assertContextUpdateRefused(ApplicationCenterService.TOO_MANY_CATEGORIES_MESSAGE,
+                               form -> form.setCategoryIds(LongStream.rangeClosed(1, 101).boxed().toList()));
+    verifyNoContextApplicationUpdated();
+  }
+
+  @Test
+  void updateContextApplicationReplacesTheIllustrationWithAnUploadOfTheTypeOfItsContent() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    byte[] png = png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE);
+    when(appCenterStorage.readUpload(UPLOAD_ID, ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID + 1);
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(UPLOAD_ID);
+    form.setIllustrationMimeType("image/svg+xml");
+    form.setIllustrationRemoved(true);
+
+    applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER);
+
+    assertEquals(IMAGE_FILE_ID + 1, lastUpdatedContextApplication().getImageFileId());
+    InOrder inOrder = inOrder(appCenterStorage);
+    inOrder.verify(appCenterStorage).saveIllustration(png, "image/png");
+    inOrder.verify(appCenterStorage).updateContextApplication(any());
+    inOrder.verify(appCenterStorage).removeUpload(UPLOAD_ID);
+  }
+
+  @Test
+  void updateContextApplicationRefusesAnInvalidIllustration() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    when(appCenterStorage.readUpload("unknown", ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(null);
+    when(appCenterStorage.readUpload("tooLarge", ApplicationCenterService.MAX_ILLUSTRATION_SIZE))
+                                                                                                  .thenReturn(png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE
+                                                                                                      + 1));
+    when(appCenterStorage.readUpload("svg", ApplicationCenterService.MAX_ILLUSTRATION_SIZE))
+                                                                                             .thenReturn("<svg xmlns=\"http://www.w3.org/2000/svg\"/>".getBytes(StandardCharsets.UTF_8));
+
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_UPLOAD_MESSAGE, form -> form.setImageUploadId("unknown"));
+    assertContextUpdateRefused(ApplicationCenterService.TOO_LARGE_MESSAGE, form -> form.setImageUploadId("tooLarge"));
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_TYPE_MESSAGE, form -> {
+      form.setImageUploadId("svg");
+      form.setIllustrationMimeType("image/png");
+    });
+    verifyNoContextApplicationUpdated();
+    verify(appCenterStorage, never()).removeUpload(any());
+  }
+
+  /**
+   * Fails the mutants removing the stored illustration of a body that does
+   * not state it, as one built from scratch, and keeping it on request
+   */
+  @Test
+  void updateContextApplicationRemovesTheIllustrationOnTheFormsRequestOnly() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertEquals(IMAGE_FILE_ID, updatedContextApplication(form -> form.setImageFileId(null)).getImageFileId());
+    assertNull(updatedContextApplication(form -> form.setIllustrationRemoved(true)).getImageFileId());
+    verify(appCenterStorage, never()).saveIllustration(any(), any());
+  }
+
+  /**
+   * Fails the mutants linking or unlinking without the user, keeping a
+   * category the form removed, unlinking one it keeps, and changing the
+   * categories of a body that does not state them
+   */
+  @Test
+  void updateContextApplicationMakesTheCategoriesTheFormsOnes() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    CategoryObject object = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    when(categoryLinkService.getLinkedIds(object)).thenReturn(List.of(10L, 20L));
+
+    Application updated = applicationCenterService.updateContextApplication(ID,
+                                                                            contextFormWith(Arrays.asList(20L, 30L, null, 30L)),
+                                                                            SETTING_NAME,
+                                                                            TEST_USER);
+
+    assertEquals(List.of(20L, 30L), updated.getCategoryIds());
+    verify(categoryLinkService).unlink(10L, object, TEST_USER);
+    verify(categoryLinkService).link(30L, object, TEST_USER);
+    verify(categoryLinkService, times(1)).unlink(anyLong(), any(), any());
+    verify(categoryLinkService, times(1)).link(anyLong(), any(), any());
+    verify(categoryLinkService, never()).unlink(anyLong(), any());
+
+    assertEquals(List.of(10L, 20L),
+                 applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER).getCategoryIds());
+    verify(categoryLinkService, times(1)).unlink(anyLong(), any(), any());
+    verify(categoryLinkService, times(1)).link(anyLong(), any(), any());
+  }
+
+  /**
+   * Fails the mutants returning the form's categories when one fails to link
+   * or unlink, and failing an update done because of a category
+   */
+  @Test
+  void updateContextApplicationReturnsTheCategoriesTheApplicationHas() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    CategoryObject object = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(ID), 0L);
+    when(categoryLinkService.getLinkedIds(object)).thenReturn(List.of(10L, 20L));
+    doThrow(new IllegalAccessException("denied")).when(categoryLinkService).unlink(10L, object, TEST_USER);
+    doThrow(new IllegalStateException("database unreachable")).when(categoryLinkService).link(30L, object, TEST_USER);
+
+    assertEquals(List.of(10L, 40L),
+                 applicationCenterService.updateContextApplication(ID, contextFormWith(List.of(30L, 40L)), SETTING_NAME, TEST_USER)
+                                         .getCategoryIds());
+    verify(categoryLinkService).unlink(20L, object, TEST_USER);
+
+    when(categoryLinkService.getLinkedIds(object)).thenThrow(new IllegalStateException("database unreachable"));
+    assertNull(applicationCenterService.updateContextApplication(ID, contextFormWith(List.of(50L)), SETTING_NAME, TEST_USER)
+                                       .getCategoryIds());
+    verify(categoryLinkService, never()).link(eq(50L), any(), any());
+  }
+
+  /**
+   * Fails the mutants changing the categories, or consuming the upload, of an
+   * application the storage refuses to update
+   */
+  @Test
+  void updateContextApplicationKeepsTheCategoriesAndUploadWhenTheApplicationIsNotUpdated() throws Exception {
+    mockContext(SPACE_ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    byte[] png = png(100);
+    when(appCenterStorage.readUpload(UPLOAD_ID, ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID + 1);
+    doThrow(new IllegalStateException("update refused")).when(appCenterStorage).updateContextApplication(any());
+    ApplicationForm form = contextFormWith(List.of(30L));
+    form.setImageUploadId(UPLOAD_ID);
+
+    assertThrows(IllegalStateException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).removeUpload(any());
+    verify(categoryLinkService, never()).link(anyLong(), any(), any());
+    verify(categoryLinkService, never()).unlink(anyLong(), any(), any());
+  }
+
+  /**
+   * The window's form edits the categories of what the window created: fails
+   * the mutants reading them per application, reading those of the
+   * Application Center's applications, and failing the listing when the read
+   * fails
+   */
+  @Test
+  void getContextApplicationsGivesTheWindowsOwnApplicationsTheirCategories() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(appCenterStorage.getApplication(3L)).thenReturn(contextApplication(3L, SETTING_NAME));
+    when(categoryLinkService.getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, List.of("2", "3"))).thenReturn(Map.of("2", List.of(10L)));
+    ApplicationListFilter filter = new ApplicationListFilter(SETTING_NAME, List.of(1L, 2L, 3L));
+
+    List<Application> applications = applicationCenterService.getContextApplications(filter, null, TEST_USER);
+
+    assertNull(applications.get(0).getCategoryIds());
+    assertEquals(List.of(10L), applications.get(1).getCategoryIds());
+    assertEquals(List.of(), applications.get(2).getCategoryIds());
+    verify(categoryLinkService, never()).getLinkedIds(any(CategoryObject.class));
+    assertNull(appCenterStorage.getApplication(2L).getCategoryIds());
+
+    when(categoryLinkService.getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                          List.of("2", "3"))).thenThrow(new IllegalStateException("database unreachable"));
+    applications = applicationCenterService.getContextApplications(filter, null, TEST_USER);
+    assertEquals(List.of(1L, 2L, 3L), ids(applications));
+    assertNull(applications.get(1).getCategoryIds());
+  }
+
+  /**
    * The storage returns an application without its categories, as its DTO
    * mapping does: fails the mutant unlinking the categories the application
    * carries instead of the ones linked to it
@@ -2117,6 +2408,41 @@ public class ApplicationCenterServiceTest {
     ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
     verify(appCenterStorage, atLeastOnce()).createContextApplication(captor.capture(), eq(SETTING_NAME), anyLong());
     return captor.getValue();
+  }
+
+  private ApplicationForm contextFormWith(List<Long> categoryIds) {
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(categoryIds);
+    return form;
+  }
+
+  private Application updatedContextApplication(Consumer<ApplicationForm> formChange) throws Exception {
+    ApplicationForm form = contextForm();
+    formChange.accept(form);
+    applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER);
+    return lastUpdatedContextApplication();
+  }
+
+  private void assertContextUpdateRefused(String messageCode, Consumer<ApplicationForm> formChange) {
+    ApplicationForm form = contextForm();
+    formChange.accept(form);
+    assertEquals(messageCode,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER))
+                                                                                                                         .getMessage());
+  }
+
+  private Application lastUpdatedContextApplication() {
+    ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
+    verify(appCenterStorage, atLeastOnce()).updateContextApplication(captor.capture());
+    return captor.getValue();
+  }
+
+  private void verifyNoContextApplicationUpdated() throws Exception {
+    verify(appCenterStorage, never()).updateContextApplication(any());
+    verify(appCenterStorage, never()).saveIllustration(any(), any());
+    verify(categoryLinkService, never()).link(anyLong(), any(), any());
+    verify(categoryLinkService, never()).unlink(anyLong(), any(), any());
   }
 
   private void verifyNoContextApplicationCreated() throws Exception {

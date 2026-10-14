@@ -224,6 +224,34 @@ public class ApplicationRest {
     }
   }
 
+  @PutMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Updates an application a Shortcuts portlet created", method = "PUT", description = "Updates, from the settings of the Shortcuts portlet that created it, an application only that portlet lists, with the fields its form offers, and returns it with its categories")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, or application not created by a Shortcuts portlet, or by another one, the response's message naming which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+  public Application updateContextApplication(
+                                              HttpServletRequest request,
+                                              @Parameter(description = "Application technical id to update", required = true)
+                                              @PathVariable("applicationId")
+                                              long applicationId,
+                                              @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                              @RequestParam("settingName")
+                                              String settingName,
+                                              @RequestBody
+                                              ApplicationForm application) {
+    try {
+      return appCenterService.updateContextApplication(applicationId, application, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
   @DeleteMapping(path = "contextual/{applicationId}")
   @Secured("users")
   @Operation(summary = "Deletes an application a Shortcuts portlet created", method = "DELETE", description = "Deletes, from the settings of the Shortcuts portlet that created it, an application only that portlet lists")
