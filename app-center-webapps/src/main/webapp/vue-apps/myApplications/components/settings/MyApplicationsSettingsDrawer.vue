@@ -126,8 +126,10 @@ export default {
       hiddenApplicationIds: [],
       // Created from these settings since their last save: listed nowhere until saved
       createdApplications: [],
-      // Created while the list was at its cap, until the form reports the creation: Save and Cancel leave it
-      unlistedApplicationIds: [],
+      // Created apps the form has not reported yet: whether listed, and the settings action count then
+      pendingCreations: [],
+      // Counts the starts and ends of a Save, and the Cancels: a report made since one of them stays silent
+      settingsActions: 0,
       // The server's MAX_LISTED_APPLICATIONS, hidden apps included
       maxApplications: 100,
       closedWhileSaving: false,
@@ -243,6 +245,7 @@ export default {
         showHeader: this.showHeader
       };
       this.isSaving = true;
+      this.settingsActions++;
       try {
         await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName, {
           applicationIds: this.hiddenApplicationIds,
@@ -250,6 +253,7 @@ export default {
         });
       } catch (e) {
         this.isSaving = false;
+        this.settingsActions++;
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.error.message'), 'error');
         if (this.closedWhileSaving) {
           // Nothing saved and the drawer closed meanwhile: a Cancel
@@ -279,6 +283,7 @@ export default {
       } finally {
         this.isSaving = false;
         this.closedWhileSaving = false;
+        this.settingsActions++;
       }
     },
     async saveHeaderTranslations(showHeader, translations) {
@@ -288,6 +293,7 @@ export default {
       }
     },
     reset() {
+      this.settingsActions++;
       if (this.isSaving) {
         // The save in progress decides what becomes of the created apps
         this.closedWhileSaving = true;
@@ -299,20 +305,24 @@ export default {
     },
     applicationCreated(application) {
       // The list can reach the cap while the creation runs: the form closed, an app picked meanwhile
+      const listed = this.applications.length + this.hiddenApplicationIds.length < this.maxApplications;
       this.createdApplications = [...this.createdApplications, {id: application.id, title: application.title}];
-      if (this.applications.length + this.hiddenApplicationIds.length < this.maxApplications) {
+      this.pendingCreations = [...this.pendingCreations, {id: application.id, listed, settingsActions: this.settingsActions}];
+      if (listed) {
         this.applications = [...this.applications, application];
-      } else {
-        this.unlistedApplicationIds = [...this.unlistedApplicationIds, application.id];
       }
     },
     creationCompleted({application, translationsSaved}) {
-      const unlisted = this.unlistedApplicationIds.includes(application.id);
-      this.unlistedApplicationIds = this.unlistedApplicationIds.filter(id => id !== application.id);
+      const creation = this.pendingCreations.find(pending => pending.id === application.id);
+      this.pendingCreations = this.pendingCreations.filter(pending => pending !== creation);
+      // A Save or a Cancel ran since the creation: its own message stands
+      if (creation?.settingsActions !== this.settingsActions) {
+        return;
+      }
       // One message: the labels' failure first, as an app left out can still be listed
       if (!translationsSaved) {
         this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSaved'), 'warning');
-      } else if (unlisted) {
+      } else if (!creation.listed) {
         this.$root.$emit('alert-message', this.$t('myApplications.createdApps.capReached', {0: application.title, 1: this.maxApplications}), 'warning');
       } else {
         this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
