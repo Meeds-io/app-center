@@ -54,10 +54,12 @@
                 :applications.sync="applications"
                 :categories.sync="categories"
                 :setting-name="settingName"
-                :loading="!applicationsLoaded || !categoriesLoaded"
+                :loading="!applicationsLoaded || !categoriesLoaded || isSaving"
                 :hidden-count="hiddenApplicationIds.length"
                 :hidden-category-count="hiddenCategoryIds.length"
-                @add-category="addCategory" />
+                :max-applications="maxApplications"
+                @add-category="addCategory"
+                @create-application="$emit('create-application')" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -89,6 +91,7 @@
     <template #footer>
       <div class="d-flex align-center">
         <v-btn
+          :disabled="isSaving"
           class="btn ms-auto me-2"
           @click="reset">
           {{ $t('myApplications.settings.cancel.label') }}
@@ -121,6 +124,20 @@ export default {
       applicationsLoad: 0,
       savedApplicationIds: [],
       hiddenApplicationIds: [],
+      // Created from these settings since their last save: listed nowhere until saved
+      createdApplications: [],
+      // The creations the form has not reported yet, by number: the settings action count when each started.
+      // A refused creation is never reported, and its start never matched
+      creationStarts: [],
+      // Created while the list was at its cap, until the form reports the creation
+      unlistedApplicationIds: [],
+      // Counts the starts and ends of a Save, and the Cancels: a report made since one of them stays silent
+      settingsActions: 0,
+      // Counts the Cancels, the close after a Save included: an app whose creation started before one is not this session's
+      settingsResets: 0,
+      // The server's MAX_LISTED_APPLICATIONS, hidden apps included
+      maxApplications: 100,
+      closedWhileSaving: false,
       categories: [],
       savedCategories: [],
       categoriesLoaded: false,
@@ -216,42 +233,153 @@ export default {
       this.$refs.myApplicationsSettingsDrawer.close();
     },
     async save() {
+      // Read before the save's waits: what is posted is what becomes saved
+      const applications = [...this.applications];
+      const categories = [...this.categories];
+      const postedApplicationIds = this.postedApplicationIds;
+      const postedCategoryIds = this.postedCategoryIds;
+      const createdApplications = this.createdApplications;
+      const translations = this.translations;
+      const headerTitle = this.displayedValue;
       const settings = {
         listingMode: this.listingMode,
         selectionMode: this.selectionMode,
-        applicationIds: this.postedApplicationIds.join(','),
-        categoryIds: this.postedCategoryIds.join(','),
+        applicationIds: postedApplicationIds.join(','),
+        categoryIds: postedCategoryIds.join(','),
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader
       };
       this.isSaving = true;
+      this.settingsActions++;
       try {
         await this.$myApplicationsService.saveSettings(this.saveSettingsUrl, settings, this.settingName, {
           applicationIds: this.hiddenApplicationIds,
           categoryIds: this.hiddenCategoryIds,
         });
-        await this.saveHeaderTranslations();
-        this.savedApplications = [...this.applications];
-        this.savedApplicationIds = [...this.postedApplicationIds];
-        this.savedCategories = [...this.categories];
-        this.savedCategoryIds = [...this.postedCategoryIds];
-        this.$emit('settings-updated', settings, this.displayedValue);
-        this.$root.$emit('alert-message', this.$t('myApplications.settings.save.success.message'), 'success');
       } catch (e) {
+        this.isSaving = false;
+        this.settingsActions++;
         this.$root.$emit('alert-message', this.$t('myApplications.settings.save.error.message'), 'error');
+        if (this.closedWhileSaving) {
+          // Nothing saved and the drawer closed meanwhile: a Cancel
+          this.closedWhileSaving = false;
+          this.deleteCreatedApplications();
+        }
+        return;
+      }
+      try {
+        // Stored, whatever follows: the created apps now listed stay, those removed before saving are deleted
+        this.createdApplications = this.createdApplications.filter(application => !createdApplications.includes(application));
+        this.savedApplications = applications;
+        this.savedApplicationIds = [...postedApplicationIds];
+        this.savedCategories = categories;
+        this.savedCategoryIds = [...postedCategoryIds];
+        const headerSaved = await this.saveHeaderTranslations(settings.showHeader, translations).then(() => true, () => false);
+        const notDeleted = await this.deleteApplications(createdApplications.filter(application => !postedApplicationIds.includes(application.id)));
+        // Closed while saving: the apps created meanwhile, which the save did not post, go as on a Cancel.
+        // Read after the last wait but this one, and reported with the others
+        if (this.closedWhileSaving) {
+          const createdMeanwhile = this.createdApplications;
+          this.createdApplications = [];
+          notDeleted.push(...await this.deleteApplications(createdMeanwhile));
+        }
+        this.$emit('settings-updated', settings, headerSaved ? headerTitle : this.settings.headerTitle);
+        // One message, as a message replaces the previous one
+        if (notDeleted.length) {
+          this.reportNotDeleted(notDeleted);
+        } else if (!headerSaved) {
+          this.$root.$emit('alert-message', this.$t('myApplications.settings.save.error.message'), 'error');
+        } else {
+          this.$root.$emit('alert-message', this.$t('myApplications.settings.save.success.message'), 'success');
+        }
       } finally {
         this.isSaving = false;
+        this.closedWhileSaving = false;
+        this.settingsActions++;
       }
     },
-    async saveHeaderTranslations() {
-      if (this.showHeader) {
-        await this.$translationService.saveTranslations(this.objectType, this.settingName, this.fieldName, this.translations);
-        this.currentTranslations = structuredClone(this.translations);
+    async saveHeaderTranslations(showHeader, translations) {
+      if (showHeader) {
+        await this.$translationService.saveTranslations(this.objectType, this.settingName, this.fieldName, translations);
+        this.currentTranslations = structuredClone(translations);
       }
     },
     reset() {
+      this.settingsActions++;
+      this.settingsResets++;
+      if (this.isSaving) {
+        // The save in progress decides what becomes of the created apps
+        this.closedWhileSaving = true;
+      } else {
+        this.deleteCreatedApplications();
+      }
       this.restoreSavedSettings();
       this.close();
+    },
+    creationStarted(creationId) {
+      this.creationStarts = [...this.creationStarts, {creationId, settingsActions: this.settingsActions, settingsResets: this.settingsResets}];
+    },
+    applicationCreated(application, creationId) {
+      const start = this.creationStarts.find(started => started.creationId === creationId);
+      if (start && start.settingsResets !== this.settingsResets) {
+        // Cancelled, or closed, while the request ran: deleted as the session's other created apps were
+        this.deleteApplications([{id: application.id, title: application.title}]).then(this.reportNotDeleted);
+        return;
+      }
+      this.createdApplications = [...this.createdApplications, {id: application.id, title: application.title}];
+      // The list can reach the cap while the creation runs: the form closed, an app picked meanwhile
+      if (this.applications.length + this.hiddenApplicationIds.length < this.maxApplications) {
+        this.applications = [...this.applications, application];
+      } else {
+        this.unlistedApplicationIds = [...this.unlistedApplicationIds, application.id];
+      }
+    },
+    creationCompleted({application, translationsSaved, creationId}) {
+      const start = this.creationStarts.find(started => started.creationId === creationId);
+      this.creationStarts = this.creationStarts.filter(started => started !== start);
+      const listed = !this.unlistedApplicationIds.includes(application.id);
+      this.unlistedApplicationIds = this.unlistedApplicationIds.filter(id => id !== application.id);
+      // A Save or a Cancel ran since the creation started, the request included: its own message stands
+      if (start?.settingsActions !== this.settingsActions) {
+        return;
+      }
+      // One message: the labels' failure first, as an app left out can still be listed
+      if (!translationsSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSaved'), 'warning');
+      } else if (!listed) {
+        this.$root.$emit('alert-message', this.$t('myApplications.createdApps.capReached', {0: application.title, 1: this.maxApplications}), 'warning');
+      } else {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
+      }
+    },
+    deleteCreatedApplications() {
+      // Cleared first: Cancel runs this again when the drawer closes
+      const createdApplications = this.createdApplications;
+      this.createdApplications = [];
+      this.deleteApplications(createdApplications).then(this.reportNotDeleted);
+    },
+    // Best effort: an app left behind is listed nowhere, the administration aside.
+    // Resolves with each app not deleted and why
+    deleteApplications(applications) {
+      return Promise.all(applications.map(application => this.$applicationService.deleteContextApplication(this.settingName, application.id)
+        .then(() => null)
+        .catch(e => `${application.title} (${this.getDeleteErrorReason(e)})`)))
+        .then(failures => failures.filter(Boolean));
+    },
+    getDeleteErrorReason(error) {
+      if (error?.message && this.$te(error.message)) {
+        return this.$t(error.message);
+      } else if (error?.status === 403) {
+        return this.$t('myApplications.createdApps.deleteError.forbidden');
+      } else if (error?.status === 404) {
+        return this.$t('myApplications.createdApps.deleteError.notFound');
+      }
+      return this.$t('myApplications.createdApps.deleteError.unknownReason');
+    },
+    reportNotDeleted(notDeleted) {
+      if (notDeleted.length) {
+        this.$root.$emit('alert-message', this.$t('myApplications.createdApps.deleteError.message', {0: notDeleted.join(', ')}), 'error');
+      }
     },
     async loadApplications() {
       const load = ++this.applicationsLoad;
