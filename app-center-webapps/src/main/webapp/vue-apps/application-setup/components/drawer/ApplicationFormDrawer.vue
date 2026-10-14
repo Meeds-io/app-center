@@ -498,6 +498,8 @@ export default {
     contextualMaxUrlLength: 500,
     // The illustration types the server accepts for a Shortcuts portlet's application
     contextualImageTypes: 'image/png,image/jpeg,image/gif,image/webp',
+    // Numbers the creations, which can overlap: the form can be closed and opened again while one runs
+    contextCreations: 0,
     drawer: false,
     titles: {},
     descriptions: {},
@@ -1001,6 +1003,9 @@ export default {
     async saveContextApplication() {
       // Read before any wait: the form can be opened again, and emptied, meanwhile
       const {titles, descriptions} = this;
+      // Announced before the request: the host knows what happened since the creation started
+      const creationId = ++this.contextCreations;
+      this.$emit('creation-started', creationId);
       const app = await this.$applicationService.createContextApplication(this.settingName, {
         ...this.application,
         badgeName: this.badgeNameToSave,
@@ -1008,13 +1013,13 @@ export default {
       });
       // Listed at once and the drawer closed: the application exists, so
       // nothing that follows may let a second save create it again
-      this.$emit('saved', app, true);
+      this.$emit('saved', app, true, creationId);
       this.close();
       const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
         .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
         .then(() => true, () => false);
       // Reported by the host, which knows whether it listed the app: one message, as a message replaces the previous one
-      this.$emit('creation-completed', {application: app, translationsSaved});
+      this.$emit('creation-completed', {application: app, translationsSaved, creationId});
     },
     saveErrorMessageKey(isNew, error) {
       // A refusal of the Shortcuts portlet's endpoint names its cause with a label code
