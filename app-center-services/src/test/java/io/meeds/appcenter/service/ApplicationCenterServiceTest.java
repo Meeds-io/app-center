@@ -1888,6 +1888,13 @@ public class ApplicationCenterServiceTest {
       form.setUrl("agendaDrawer");
       form.setBadgeName(null);
     }).getBadgeName());
+    // A turned off badge included
+    boundLink.setBadgeName(ApplicationBadgePluginRegistry.BADGE_DISABLED);
+    assertNull(updatedContextApplication(form -> {
+      form.setType(ApplicationType.DRAWER);
+      form.setUrl("agendaDrawer");
+      form.setBadgeName(null);
+    }).getBadgeName());
 
     when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, ADMIN_USERNAME)).thenReturn(true);
@@ -1895,6 +1902,55 @@ public class ApplicationCenterServiceTest {
     form.setBadgeName("agenda");
     applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, ADMIN_USERNAME);
     assertEquals("agenda", lastUpdatedContextApplication().getBadgeName());
+  }
+
+  /**
+   * The form of an editor who may not choose the badge sends back the resolved
+   * one, an explicit binding winning: fails the mutants keeping that binding
+   * on a new url a provider declares, which shows another application's
+   * counter there, dropping it on an unchanged url or a new one no provider
+   * declares, resolving the binding the form sends, and turning on again a
+   * badge turned off
+   */
+  @Test
+  void updateContextApplicationLetsANewUrlAProviderDeclaresResolveTheBadge() throws Exception {
+    mockContext(SPACE_ID);
+    when(badgePluginRegistry.getPlugin("agenda")).thenReturn(mock(ApplicationBadgePlugin.class));
+    when(badgePluginRegistry.resolveBadgeName(any())).thenAnswer(invocation -> {
+      Application application = invocation.getArgument(0);
+      if (application == null) {
+        return null;
+      } else if (application.getBadgeName() != null) {
+        return ApplicationBadgePluginRegistry.BADGE_DISABLED.equals(application.getBadgeName()) ? null : application.getBadgeName();
+      }
+      return switch (application.getUrl()) {
+      case "tasksDrawer" -> "tasks";
+      case "calendarDrawer" -> "agenda";
+      default -> null;
+      };
+    });
+    Application bound = contextApplication(ID, SETTING_NAME);
+    bound.setType(ApplicationType.DRAWER);
+    bound.setUrl("calendarDrawer");
+    bound.setBadgeName("agenda");
+    when(appCenterStorage.getApplication(ID)).thenReturn(bound);
+    // What the listing resolved, sent back by the form
+    Consumer<ApplicationForm> drawer = form -> {
+      form.setType(ApplicationType.DRAWER);
+      form.setUrl("calendarDrawer");
+      form.setBadgeName("agenda");
+    };
+
+    assertEquals("agenda", updatedContextApplication(drawer).getBadgeName());
+    assertNull(updatedContextApplication(drawer.andThen(form -> form.setUrl("tasksDrawer"))).getBadgeName());
+    assertEquals("agenda", updatedContextApplication(drawer.andThen(form -> form.setUrl("notesDrawer"))).getBadgeName());
+
+    bound.setBadgeName(ApplicationBadgePluginRegistry.BADGE_DISABLED);
+    assertEquals(ApplicationBadgePluginRegistry.BADGE_DISABLED,
+                 updatedContextApplication(drawer.andThen(form -> {
+                   form.setUrl("tasksDrawer");
+                   form.setBadgeName(null);
+                 })).getBadgeName());
   }
 
   /**

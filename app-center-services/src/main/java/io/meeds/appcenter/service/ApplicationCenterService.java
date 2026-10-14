@@ -1366,8 +1366,10 @@ public class ApplicationCenterService {
    * Updates an application created from the settings of a Shortcuts portlet
    * window, from that window's settings, with the fields its form offers, each
    * one validated as on creation. Its owner, audience, order and every field
-   * the form does not offer keep their stored or forced value, the badge
-   * binding too unless an administrator updates it. Its
+   * the form does not offer keep their stored or forced value. Its badge
+   * binding is the administrators' to change: for another editor, a new type
+   * drops it, and so does, unless the badge is turned off, a new url a badge
+   * provider declares. Its
    * illustration is replaced from an upload only, removed only on the form's
    * explicit request, and kept otherwise. Its categories become the form's
    * ones as far as they can: a category the user may not link or unlink, or
@@ -1410,10 +1412,8 @@ public class ApplicationCenterService {
     if (!isAdministrator(username)) {
       // The badge binding is offered to administrators only, who read the
       // badge providers: any other editor's form sends back the resolved
-      // badge, which would replace a stored 'none' or an url-derived binding.
-      // A new type drops it, as the form does: the binding follows the url
-      contextApplication.setBadgeName(contextApplication.getType() == storedApplication.getType() ? storedApplication.getBadgeName()
-                                                                                                   : null);
+      // badge, which would replace a stored 'none' or an url-derived binding
+      contextApplication.setBadgeName(getKeptBadgeName(storedApplication, contextApplication));
     }
     String uploadId = application.getImageUploadId();
     if (StringUtils.isNotBlank(uploadId)) {
@@ -1518,6 +1518,28 @@ public class ApplicationCenterService {
       throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
     }
     return setting;
+  }
+
+  /**
+   * The badge binding an update keeps for an editor who may not choose it,
+   * whatever the form sends, as the binding follows the url: a new type drops
+   * it, a turned off badge included; on the same type, a new url a badge
+   * provider declares drops it unless the badge is turned off; an unchanged
+   * url, or a new one no provider declares, keeps it.
+   *
+   * @return the stored binding, or null to let the new url resolve it
+   */
+  private String getKeptBadgeName(Application storedApplication, Application updatedApplication) {
+    String badgeName = storedApplication.getBadgeName();
+    if (updatedApplication.getType() != storedApplication.getType()) {
+      return null;
+    } else if (StringUtils.equals(updatedApplication.getUrl(), storedApplication.getUrl())
+               || ApplicationBadgePluginRegistry.BADGE_DISABLED.equals(badgeName)) {
+      return badgeName;
+    }
+    Application unbound = new Application(updatedApplication);
+    unbound.setBadgeName(null);
+    return badgePluginRegistry.resolveBadgeName(unbound) == null ? badgeName : null;
   }
 
   /**
