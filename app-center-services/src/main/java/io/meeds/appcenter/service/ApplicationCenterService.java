@@ -1364,7 +1364,8 @@ public class ApplicationCenterService {
    * Updates an application created from the settings of a Shortcuts portlet
    * window, from that window's settings, with the fields its form offers, each
    * one validated as on creation. Its owner, audience, order and every field
-   * the form does not offer keep their stored or forced value. Its
+   * the form does not offer keep their stored or forced value, the badge
+   * binding too unless an administrator updates it. Its
    * illustration is replaced from an upload only, removed only on the form's
    * explicit request, and kept otherwise. Its categories become the form's
    * ones as far as they can: a category the user may not link or unlink, or
@@ -1404,6 +1405,12 @@ public class ApplicationCenterService {
     contextApplication.setChangedManually(storedApplication.isChangedManually());
     contextApplication.setContextSettingName(storedApplication.getContextSettingName());
     contextApplication.setContextSpaceId(storedApplication.getContextSpaceId());
+    if (!isAdministrator(username)) {
+      // The badge binding is offered to administrators only, who read the
+      // badge providers: any other editor's form sends back the resolved
+      // badge, which would replace a stored 'none' or an url-derived binding
+      contextApplication.setBadgeName(storedApplication.getBadgeName());
+    }
     String uploadId = application.getImageUploadId();
     if (StringUtils.isNotBlank(uploadId)) {
       byte[] illustration = appCenterStorage.readUpload(uploadId, MAX_ILLUSTRATION_SIZE);

@@ -192,6 +192,7 @@
             </div>
           </template>
           <category-input
+            v-if="contextCategoriesKnown"
             v-model="newCategoryIds"
             label="appCenter.adminSetupForm.categories"
             label-class="" />
@@ -751,10 +752,10 @@ export default {
     forcedFieldsEditable() {
       return !this.contextual && !this.application?.contextual;
     },
-    // The endpoint makes the categories the ones sent, and keeps them when none are:
-    // unknown ones are sent only once changed here
+    // The endpoint makes the categories the ones sent, and keeps them when no list is sent:
+    // unknown ones are neither shown nor sent
     contextCategoryIdsToSave() {
-      return this.contextCategoriesKnown || this.newCategoryIds.join(',') !== this.oldCategoryIds.join(',') ? this.newCategoryIds : null;
+      return this.contextCategoriesKnown ? this.newCategoryIds : null;
     },
     forcedFieldTitle() {
       return !this.forcedFieldsEditable && this.$t('appCenter.adminSetupForm.contextualOptionNotEditable') || null;
@@ -1042,20 +1043,28 @@ export default {
     async updateContextApplication() {
       // Read before any wait: the form can be opened again, and emptied, meanwhile
       const {titles, descriptions} = this;
+      const categoryIds = this.contextCategoryIdsToSave;
       const app = await this.$applicationService.updateContextApplication(this.settingName, {
         ...this.application,
         badgeName: this.badgeNameToSave,
-        categoryIds: this.contextCategoryIdsToSave,
+        categoryIds,
       });
       this.close();
       const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
         .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
         .then(() => true, () => false);
+      // The endpoint returns the categories the app has, none when it could not read them:
+      // one it could not link or unlink differs
+      const idsKey = ids => (ids ? [...new Set(ids)].sort().join(',') : null);
+      const categoriesSaved = !categoryIds || idsKey(categoryIds) === idsKey(app.categoryIds);
       this.$emit('updated', app);
-      if (translationsSaved) {
-        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
-      } else {
+      // One message, as a message replaces the previous one: the labels' failure first
+      if (!translationsSaved) {
         this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSavedOnUpdate'), 'warning');
+      } else if (!categoriesSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.categoriesNotSavedOnUpdate'), 'warning');
+      } else {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
       }
     },
     saveErrorMessageKey(isNew, error) {

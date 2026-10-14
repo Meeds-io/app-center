@@ -1859,6 +1859,33 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
+   * The listing gives the form a resolved badge, which the form of an editor
+   * who may not read the badge providers sends back: fails the mutant storing
+   * it, which turns on again a badge an administrator turned off, or freezes
+   * an url-derived binding on its drawer; and the mutant ignoring the badge an
+   * administrator sets
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredBadgeUnlessAnAdministratorUpdatesIt() throws Exception {
+    mockContext(SPACE_ID);
+    when(badgePluginRegistry.getPlugin("agenda")).thenReturn(mock(ApplicationBadgePlugin.class));
+    Application turnedOff = contextApplication(ID, SETTING_NAME);
+    turnedOff.setBadgeName(ApplicationBadgePluginRegistry.BADGE_DISABLED);
+    when(appCenterStorage.getApplication(ID)).thenReturn(turnedOff);
+    assertEquals(ApplicationBadgePluginRegistry.BADGE_DISABLED,
+                 updatedContextApplication(form -> form.setBadgeName(null)).getBadgeName());
+
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    assertNull(updatedContextApplication(form -> form.setBadgeName("agenda")).getBadgeName());
+
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, ADMIN_USERNAME)).thenReturn(true);
+    ApplicationForm form = contextForm();
+    form.setBadgeName("agenda");
+    applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, ADMIN_USERNAME);
+    assertEquals("agenda", lastUpdatedContextApplication().getBadgeName());
+  }
+
+  /**
    * Fails the mutant storing the body as sent: the update is a write path of
    * an application url, refused unless normalized as on creation
    */
