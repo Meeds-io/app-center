@@ -70,7 +70,8 @@
       ref="applicationFormDrawer"
       :setting-name="settingName"
       contextual
-      @saved="$refs.settingsDrawer.applicationCreated($event)" />
+      @saved="$refs.settingsDrawer.applicationCreated($event)"
+      @creation-completed="$refs.settingsDrawer.creationCompleted($event)" />
     <app-center-portlet-instance-drawer
       ref="portletInstanceDrawer" />
   </v-app>

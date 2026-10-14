@@ -126,6 +126,8 @@ export default {
       hiddenApplicationIds: [],
       // Created from these settings since their last save: listed nowhere until saved
       createdApplications: [],
+      // Created while the list was at its cap, until the form reports the creation: Save and Cancel leave it
+      unlistedApplicationIds: [],
       // The server's MAX_LISTED_APPLICATIONS, hidden apps included
       maxApplications: 100,
       closedWhileSaving: false,
@@ -296,12 +298,24 @@ export default {
       this.close();
     },
     applicationCreated(application) {
-      this.createdApplications = [...this.createdApplications, {id: application.id, title: application.title}];
       // The list can reach the cap while the creation runs: the form closed, an app picked meanwhile
+      this.createdApplications = [...this.createdApplications, {id: application.id, title: application.title}];
       if (this.applications.length + this.hiddenApplicationIds.length < this.maxApplications) {
         this.applications = [...this.applications, application];
       } else {
+        this.unlistedApplicationIds = [...this.unlistedApplicationIds, application.id];
+      }
+    },
+    creationCompleted({application, translationsSaved}) {
+      const unlisted = this.unlistedApplicationIds.includes(application.id);
+      this.unlistedApplicationIds = this.unlistedApplicationIds.filter(id => id !== application.id);
+      // One message: the labels' failure first, as an app left out can still be listed
+      if (!translationsSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSaved'), 'warning');
+      } else if (unlisted) {
         this.$root.$emit('alert-message', this.$t('myApplications.createdApps.capReached', {0: application.title, 1: this.maxApplications}), 'warning');
+      } else {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
       }
     },
     deleteCreatedApplications() {

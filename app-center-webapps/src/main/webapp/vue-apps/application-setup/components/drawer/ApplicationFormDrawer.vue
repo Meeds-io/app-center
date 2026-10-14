@@ -1010,13 +1010,11 @@ export default {
       // nothing that follows may let a second save create it again
       this.$emit('saved', app, true);
       this.close();
-      try {
-        await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles);
-        await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions);
-        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
-      } catch {
-        this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSaved'), 'warning');
-      }
+      const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
+        .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
+        .then(() => true, () => false);
+      // Reported by the host, which knows whether it listed the app: one message, as a message replaces the previous one
+      this.$emit('creation-completed', {application: app, translationsSaved});
     },
     saveErrorMessageKey(isNew, error) {
       // A refusal of the Shortcuts portlet's endpoint names its cause with a label code
