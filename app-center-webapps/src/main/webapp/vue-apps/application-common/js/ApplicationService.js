@@ -179,3 +179,41 @@ export function deletePersonalApp(id) {
     clearApplicationsCache();
   });
 }
+
+export function createContextApplication(settingName, application) {
+  return fetch(`/app-center/rest/applications/contextual?${new URLSearchParams({settingName})}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(application),
+  }).then(resp => {
+    if (resp?.ok) {
+      return resp.json();
+    }
+    return throwRefusal(resp, 'Error when creating application');
+  });
+}
+
+export function deleteContextApplication(settingName, id) {
+  return fetch(`/app-center/rest/applications/contextual/${id}?${new URLSearchParams({settingName})}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  }).then(resp => {
+    if (!resp?.ok) {
+      return throwRefusal(resp, 'Error when deleting application');
+    }
+  });
+}
+
+// A 4xx refusal carries its cause in the body's message, a label code for
+// the refusals of a Shortcuts portlet's application; the error keeps the status
+function throwRefusal(resp, defaultMessage) {
+  return resp.json()
+    .then(error => error?.message || defaultMessage)
+    .catch(() => defaultMessage)
+    .then(message => {
+      const error = new Error(message);
+      error.status = resp.status;
+      throw error;
+    });
+}

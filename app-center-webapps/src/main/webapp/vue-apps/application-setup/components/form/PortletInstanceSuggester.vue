@@ -45,6 +45,12 @@ export default {
       type: String,
       default: null,
     },
+    // Owned by the caller, which reads the selected instance from it: fetched
+    // here, once, while it is empty
+    portletInstances: {
+      type: Array,
+      default: () => [],
+    },
   },
   data: () => ({
     loading: false,
@@ -52,7 +58,7 @@ export default {
   }),
   computed: {
     items() {
-      return this.$root.portletInstances.map(item => ({
+      return this.portletInstances.map(item => ({
         id: item.id,
         label: this.$t(item.name),
       }));
@@ -65,10 +71,10 @@ export default {
   },
   async created() {
     this.portletInstanceId = this.value && Number(this.value) || null;
-    if (!this.$root.portletInstances?.length) {
+    if (!this.portletInstances?.length) {
       this.loading = true;
       try {
-        this.$root.portletInstances = await this.getPortletInstances();
+        this.$emit('update:portlet-instances', await this.getPortletInstances());
       } finally {
         this.loading = false;
       }

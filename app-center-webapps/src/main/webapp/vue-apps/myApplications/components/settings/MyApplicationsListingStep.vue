@@ -62,6 +62,19 @@
         </template>
       </v-radio>
       <template v-if="selectionMode === 'MANUAL'">
+        <!-- A disabled button has no pointer events: the wrapper carries the cap's tooltip -->
+        <div
+          :title="capReached && $t('myApplications.searchApp.capReached', {0: maxApplications}) || null"
+          class="d-flex justify-end">
+          <v-btn
+            :disabled="loading || capReached"
+            color="primary"
+            text
+            @click="$emit('create-application')">
+            <v-icon size="12" class="me-1">fas fa-plus</v-icon>
+            {{ $t('myApplications.createApp.label') }}
+          </v-btn>
+        </div>
         <my-applications-application-suggester
           :setting-name="settingName"
           :selected-ids="applicationIds"
@@ -163,10 +176,11 @@ export default {
       type: Number,
       default: 0,
     },
+    maxApplications: {
+      type: Number,
+      required: true,
+    },
   },
-  data: () => ({
-    maxApplications: 100,
-  }),
   computed: {
     applicationIds() {
       return this.applications.map(application => application.id);

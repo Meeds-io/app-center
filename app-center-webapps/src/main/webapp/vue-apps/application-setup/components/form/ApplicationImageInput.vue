@@ -37,7 +37,7 @@
         v-if="!resetInput"
         id="iconFileInput"
         ref="iconFileInput"
-        accept="image/*"
+        :accept="accept"
         class="position-absolute t-0 l-0 full-width pa-0 ma-0"
         prepend-icon=""
         hide-details
@@ -68,6 +68,10 @@ export default {
     application: {
       type: Object,
       default: null,
+    },
+    accept: {
+      type: String,
+      default: 'image/*',
     },
   },
   data: () => ({
