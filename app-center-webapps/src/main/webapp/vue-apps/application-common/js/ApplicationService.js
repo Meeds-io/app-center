@@ -194,6 +194,20 @@ export function createContextApplication(settingName, application) {
   });
 }
 
+export function updateContextApplication(settingName, application) {
+  return fetch(`/app-center/rest/applications/contextual/${application.id}?${new URLSearchParams({settingName})}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(application),
+  }).then(resp => {
+    if (resp?.ok) {
+      return resp.json();
+    }
+    return throwRefusal(resp, 'Error when updating application');
+  });
+}
+
 export function deleteContextApplication(settingName, id) {
   return fetch(`/app-center/rest/applications/contextual/${id}?${new URLSearchParams({settingName})}`, {
     method: 'DELETE',

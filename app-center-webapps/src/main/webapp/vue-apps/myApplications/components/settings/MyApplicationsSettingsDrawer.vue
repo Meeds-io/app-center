@@ -59,7 +59,8 @@
                 :hidden-category-count="hiddenCategoryIds.length"
                 :max-applications="maxApplications"
                 @add-category="addCategory"
-                @create-application="$emit('create-application')" />
+                @create-application="$emit('create-application')"
+                @edit-application="$emit('edit-application', $event)" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -239,6 +240,9 @@ export default {
       const postedApplicationIds = this.postedApplicationIds;
       const postedCategoryIds = this.postedCategoryIds;
       const createdApplications = this.createdApplications;
+      // The apps this portlet created that the last save listed and this one removes: deleted once it is stored
+      const removedApplications = this.savedApplications.filter(application => application.contextual
+                                                                               && !postedApplicationIds.includes(application.id));
       const translations = this.translations;
       const headerTitle = this.displayedValue;
       const settings = {
@@ -275,7 +279,10 @@ export default {
         this.savedCategories = categories;
         this.savedCategoryIds = [...postedCategoryIds];
         const headerSaved = await this.saveHeaderTranslations(settings.showHeader, translations).then(() => true, () => false);
-        const notDeleted = await this.deleteApplications(createdApplications.filter(application => !postedApplicationIds.includes(application.id)));
+        const notDeleted = await this.deleteApplications([
+          ...createdApplications.filter(application => !postedApplicationIds.includes(application.id)),
+          ...removedApplications,
+        ]);
         // Closed while saving: the apps created meanwhile, which the save did not post, go as on a Cancel.
         // Read after the last wait but this one, and reported with the others
         if (this.closedWhileSaving) {
@@ -351,6 +358,12 @@ export default {
       } else {
         this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
       }
+    },
+    // Updated by the form at once, as any form save: listed with its new values
+    applicationUpdated(application) {
+      const update = applications => applications.map(listed => (listed.id === application.id ? {...listed, ...application} : listed));
+      this.applications = update(this.applications);
+      this.savedApplications = update(this.savedApplications);
     },
     deleteCreatedApplications() {
       // Cleared first: Cancel runs this again when the drawer closes

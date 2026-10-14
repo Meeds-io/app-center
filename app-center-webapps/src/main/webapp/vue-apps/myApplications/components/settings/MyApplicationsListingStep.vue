@@ -109,6 +109,17 @@
               @click="move(index, 1)">
               <v-icon size="16" class="icon-default-color">fas fa-arrow-down</v-icon>
             </v-btn>
+            <!-- A disabled button has no pointer events: the wrapper carries the tooltip of an app this portlet did not create -->
+            <div :title="application.contextual ? $t('myApplications.editApp.tooltip') : $t('myApplications.editApp.notEditable')">
+              <v-btn
+                :disabled="loading || !application.contextual"
+                :aria-label="application.contextual ? $t('myApplications.editApp.tooltip') : $t('myApplications.editApp.notEditable')"
+                icon
+                small
+                @click="$emit('edit-application', application)">
+                <v-icon size="16" class="icon-default-color">fas fa-edit</v-icon>
+              </v-btn>
+            </div>
             <v-btn
               :title="$t('myApplications.removeApp.tooltip')"
               :disabled="loading"

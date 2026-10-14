@@ -500,6 +500,8 @@ export default {
     contextualImageTypes: 'image/png,image/jpeg,image/gif,image/webp',
     // Numbers the creations, which can overlap: the form can be closed and opened again while one runs
     contextCreations: 0,
+    // False when the Shortcuts portlet's listing could not read the edited application's categories
+    contextCategoriesKnown: true,
     drawer: false,
     titles: {},
     descriptions: {},
@@ -749,6 +751,11 @@ export default {
     forcedFieldsEditable() {
       return !this.contextual && !this.application?.contextual;
     },
+    // The endpoint makes the categories the ones sent, and keeps them when none are:
+    // unknown ones are sent only once changed here
+    contextCategoryIdsToSave() {
+      return this.contextCategoriesKnown || this.newCategoryIds.join(',') !== this.oldCategoryIds.join(',') ? this.newCategoryIds : null;
+    },
     forcedFieldTitle() {
       return !this.forcedFieldsEditable && this.$t('appCenter.adminSetupForm.contextualOptionNotEditable') || null;
     },
@@ -862,6 +869,7 @@ export default {
           this.$applicationBadgeService.getBadgeProviders()
             .then(providers => this.badgeProviderList = providers || []);
         }
+        this.contextCategoriesKnown = true;
         if (app?.id && !this.contextual) {
           const data = await this.$applicationService.getApplications(true);
           this.application = data?.applications?.find?.(a => a.id === app.id);
@@ -869,6 +877,10 @@ export default {
             // Clone to a different object
             this.application = {...this.application};
           }
+        } else if (app?.id) {
+          // The Shortcuts portlet's listing carries the application, and its categories once read
+          this.application = {...app};
+          this.contextCategoriesKnown = Array.isArray(app.categoryIds);
         }
         if (!this.application) {
           this.application = {
@@ -933,6 +945,10 @@ export default {
     resetImage() {
       this.application.imageUrl = null;
       this.application.imageFileId = null;
+      if (this.contextual && this.application.id) {
+        // The Shortcuts portlet's endpoint removes a stored illustration on this request only
+        this.$set(this.application, 'illustrationRemoved', true);
+      }
     },
     close() {
       this.$refs.formDrawer.close();
@@ -959,8 +975,10 @@ export default {
       const isNew = !this.application.id;
       this.loading = true;
       try {
-        if (this.contextual) {
+        if (this.contextual && isNew) {
           await this.saveContextApplication();
+        } else if (this.contextual) {
+          await this.updateContextApplication();
         } else if (this.personal) {
           this.application.url = this.normalizedPersonalUrl;
           let app;
@@ -1020,6 +1038,25 @@ export default {
         .then(() => true, () => false);
       // Reported by the host, which knows whether it listed the app: one message, as a message replaces the previous one
       this.$emit('creation-completed', {application: app, translationsSaved, creationId});
+    },
+    async updateContextApplication() {
+      // Read before any wait: the form can be opened again, and emptied, meanwhile
+      const {titles, descriptions} = this;
+      const app = await this.$applicationService.updateContextApplication(this.settingName, {
+        ...this.application,
+        badgeName: this.badgeNameToSave,
+        categoryIds: this.contextCategoryIdsToSave,
+      });
+      this.close();
+      const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
+        .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
+        .then(() => true, () => false);
+      this.$emit('updated', app);
+      if (translationsSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+      } else {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSavedOnUpdate'), 'warning');
+      }
     },
     saveErrorMessageKey(isNew, error) {
       // A refusal of the Shortcuts portlet's endpoint names its cause with a label code
