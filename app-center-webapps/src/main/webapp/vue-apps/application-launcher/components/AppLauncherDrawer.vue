@@ -43,12 +43,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     <template v-if="drawer" #content>
       <v-card
         :class="cardDisplay && 'pa-4'"
-        class="d-flex flex-column light-grey-background-color"
+        class="d-flex flex-column transparent"
         min-height="100%"
         flat>
         <v-card
           :class="cardDisplay && 'card-border-radius' || 'no-border-radius'"
-          class="singlePageApplication pa-0 flex-grow-1 d-flex flex-column fill-height white overflow-hidden"
+          class="singlePageApplication pa-0 flex-grow-1 d-flex flex-column fill-height transparent overflow-hidden"
           min-height="100%"
           flat>
           <div v-if="cardDisplay" class="d-flex justify-space-between">
@@ -74,7 +74,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                   selected: filter,
                   items: filters,
                 }"
-                class="border-box-sizing px-1 flex-grow-0"
+                class="border-box-sizing px-1 flex-grow-0 transparent"
                 hide-left
                 hide-center
                 @filter-text-input="keyword = $event"
