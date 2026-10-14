@@ -1978,6 +1978,44 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
+   * The note requires the portlet instance to pass the access check for the
+   * creator: fails the mutant checking a kept instance for the editor, which
+   * refuses every edit keeping it, a title change included, to a window's
+   * editor who may not access the instance, and the mutants skipping the check
+   * on a new instance or on a change of type
+   */
+  @Test
+  void updateContextApplicationChecksAPortletInstanceOnlyWhenItBindsIt() throws Exception {
+    mockContext(SPACE_ID);
+    Application portlet = contextApplication(ID, SETTING_NAME);
+    portlet.setType(ApplicationType.PORTLET);
+    portlet.setUrl("36");
+    when(appCenterStorage.getApplication(ID)).thenReturn(portlet);
+    when(portletInstanceService.getPortletInstance(36L, TEST_USER, null, false)).thenThrow(new IllegalAccessException());
+    when(portletInstanceService.getPortletInstance(37L, TEST_USER, null, false)).thenThrow(new IllegalAccessException());
+
+    Application renamed = updatedContextApplication(form -> {
+      form.setTitle("renamed");
+      form.setType(ApplicationType.PORTLET);
+      form.setUrl("36");
+    });
+    assertEquals("renamed", renamed.getTitle());
+    assertEquals("36", renamed.getUrl());
+    verify(portletInstanceService, never()).getPortletInstance(36L, TEST_USER, null, false);
+
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> {
+      form.setType(ApplicationType.PORTLET);
+      form.setUrl("37");
+    });
+    portlet.setType(ApplicationType.DRAWER);
+    assertContextUpdateRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> {
+      form.setType(ApplicationType.PORTLET);
+      form.setUrl("36");
+    });
+    verify(portletInstanceService).getPortletInstance(36L, TEST_USER, null, false);
+  }
+
+  /**
    * Fails the mutant storing the body as sent: the update is a write path of
    * an application url, refused unless normalized as on creation
    */

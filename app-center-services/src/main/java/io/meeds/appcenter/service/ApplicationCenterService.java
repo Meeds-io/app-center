@@ -1316,7 +1316,7 @@ public class ApplicationCenterService {
     if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
       throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
-    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), username);
+    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), null, username);
     String uploadId = application.getImageUploadId();
     byte[] illustration = null;
     String illustrationMimeType = null;
@@ -1370,7 +1370,8 @@ public class ApplicationCenterService {
   /**
    * Updates an application created from the settings of a Shortcuts portlet
    * window, from that window's settings, with the fields its form offers, each
-   * one validated as on creation. Its owner, audience, order and every field
+   * one validated as on creation, but a portlet instance it keeps, which it
+   * does not check again. Its owner, audience, order and every field
    * the form does not offer keep their stored or forced value. Its badge
    * binding is the administrators' to change: for another editor, a new type
    * drops it, and so does, unless the badge is turned off, a new url a badge
@@ -1409,7 +1410,7 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
-    Application contextApplication = toContextApplication(application, List.of(), username);
+    Application contextApplication = toContextApplication(application, List.of(), storedApplication, username);
     contextApplication.setId(applicationId);
     contextApplication.setPermissions(storedApplication.getPermissions() == null ? null
                                                                                  : new ArrayList<>(storedApplication.getPermissions()));
@@ -1623,8 +1624,14 @@ public class ApplicationCenterService {
   /**
    * Builds an application created from a Shortcuts portlet from the fields
    * its form offers, each one validated, every other one forced.
+   *
+   * @param storedApplication the application an update changes, null on
+   *          creation
    */
-  private Application toContextApplication(ApplicationForm form, List<String> audience, String username) {
+  private Application toContextApplication(ApplicationForm form,
+                                           List<String> audience,
+                                           Application storedApplication,
+                                           String username) {
     if (StringUtils.isBlank(form.getTitle())) {
       throw new IllegalArgumentException(TITLE_MANDATORY_MESSAGE);
     } else if (form.getCategoryIds() != null && form.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
@@ -1635,7 +1642,7 @@ public class ApplicationCenterService {
     application.setTitle(checkLength("title", StringUtils.trim(form.getTitle()), MAX_TITLE_LENGTH));
     application.setDescription(checkLength("description", form.getDescription(), MAX_DESCRIPTION_LENGTH));
     application.setType(type);
-    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), username)));
+    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), storedApplication, username)));
     application.setHelpPageURL(StringUtils.isBlank(form.getHelpPageURL()) ? null
                                                                           : checkUrl("helpPageURL",
                                                                                      getContextLink(form.getHelpPageURL(),
@@ -1655,12 +1662,12 @@ public class ApplicationCenterService {
    * @return the url of an application created from a Shortcuts portlet: an
    *         http(s) or portal-relative link, the name of a drawer, which the
    *         server cannot check is registered, or a portlet instance the user
-   *         may access
+   *         binding it may access
    */
-  private String getContextApplicationUrl(ApplicationType type, String url, String username) {
+  private String getContextApplicationUrl(ApplicationType type, String url, Application storedApplication, String username) {
     return switch (type) {
     case DRAWER -> getDrawerName(url);
-    case PORTLET -> getPortletInstanceId(url, username);
+    case PORTLET -> getPortletInstanceId(url, storedApplication, username);
     default -> getContextLink(url, INVALID_URL_MESSAGE);
     };
   }
@@ -1692,10 +1699,16 @@ public class ApplicationCenterService {
     return url;
   }
 
-  private String getPortletInstanceId(String url, String username) {
+  private String getPortletInstanceId(String url, Application storedApplication, String username) {
     long portletInstanceId = NumberUtils.toLong(url, 0);
     if (portletInstanceId <= 0) {
       throw new IllegalArgumentException(INVALID_URL_MESSAGE);
+    } else if (storedApplication != null
+               && storedApplication.getType() == ApplicationType.PORTLET
+               && StringUtils.equals(storedApplication.getUrl(), String.valueOf(portletInstanceId))) {
+      // A kept instance is not checked again: an editor who keeps it needs no
+      // access to it
+      return storedApplication.getUrl();
     }
     try {
       portletInstanceService.getPortletInstance(portletInstanceId, username, null, false);
