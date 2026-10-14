@@ -1191,7 +1191,9 @@ public class ApplicationCenterService {
    * Reads the applications a Shortcuts portlet window lists, for a user
    * editing its settings: as {@link #getListedApplications}, plus the
    * applications the window created whose audience excludes the user, unless
-   * an administrator emptied that audience.
+   * an administrator emptied that audience. The applications the window
+   * created carry their category ids, which its form edits: an empty list
+   * when they have none, null when they could not be read.
    *
    * @param filter the window's setting name and selected ids
    * @param locale the language of the labels, none when null
@@ -1223,7 +1225,8 @@ public class ApplicationCenterService {
    * application created from a Shortcuts portlet is suggested to its own
    * window only, whatever its audience unless an administrator emptied it, so
    * that one left out of the list, by a failed save or a closed drawer, can be
-   * selected again.
+   * selected again; it carries its category ids as on
+   * {@link #getContextApplications}.
    *
    * @param settingName the window's CMS setting name
    * @param keyword matched in title and url, all applications when blank
@@ -1273,6 +1276,8 @@ public class ApplicationCenterService {
                                                      .toList();
     setApplicationLabels(applications, locale);
     setApplicationBadges(applications);
+    // A suggestion of its own is edited from the window's form as a listed one
+    setContextApplicationCategories(applications);
     return applications;
   }
 
@@ -1380,11 +1385,12 @@ public class ApplicationCenterService {
    * @param application the form's fields
    * @param settingName the window's CMS setting name
    * @param username the user updating the application
-   * @return the updated application, its badge resolved, with its
-   *         categories, null when they could not be read
+   * @return the updated application, as a listing tile without its
+   *         permissions, its badge resolved, with its categories, null when
+   *         they could not be read
    * @throws ObjectNotFoundException when the window's setting does not exist,
-   *           or when the application does not exist or the user may not
-   *           access it
+   *           or when the application does not exist, is deleted before the
+   *           update reads it, or the user may not access it
    * @throws IllegalAccessException when the user may not manage the window's
    *           applications
    * @throws IllegalArgumentException with the message
@@ -1423,11 +1429,20 @@ public class ApplicationCenterService {
     } else if (!application.isIllustrationRemoved()) {
       contextApplication.setImageFileId(storedApplication.getImageFileId());
     }
-    appCenterStorage.updateContextApplication(contextApplication);
+    try {
+      appCenterStorage.updateContextApplication(contextApplication);
+    } catch (ApplicationNotFoundException e) {
+      // Deleted since it was checked
+      throw new ObjectNotFoundException(e.getMessage());
+    }
     if (StringUtils.isNotBlank(uploadId)) {
       appCenterStorage.removeUpload(uploadId);
     }
-    Application updatedApplication = new Application(appCenterStorage.getApplication(applicationId));
+    Application storedUpdatedApplication = appCenterStorage.getApplication(applicationId);
+    if (storedUpdatedApplication == null) {
+      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    Application updatedApplication = toTile(storedUpdatedApplication);
     updatedApplication.setCategoryIds(updateCategories(applicationId, application.getCategoryIds(), username));
     // Resolved, as the portlet's listing gives it, for the form that edits it next
     updatedApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(updatedApplication));

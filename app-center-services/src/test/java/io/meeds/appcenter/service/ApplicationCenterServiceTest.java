@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -1786,7 +1787,11 @@ public class ApplicationCenterServiceTest {
                  () -> applicationCenterService.updateContextApplication(ID, null, SETTING_NAME, TEST_USER));
     verifyNoContextApplicationUpdated();
 
-    assertEquals(ID, applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER).getId());
+    Application updated = applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER);
+    assertEquals(ID, updated.getId());
+    // A tile, as the listing gives it: the audience is the server's
+    assertNull(updated.getPermissions());
+    assertEquals(List.of(PERMISSIONS_2), appCenterStorage.getApplication(ID).getPermissions());
     verify(appCenterStorage).updateContextApplication(any());
   }
 
@@ -2120,6 +2125,52 @@ public class ApplicationCenterServiceTest {
     verify(appCenterStorage, never()).removeUpload(any());
     verify(categoryLinkService, never()).link(anyLong(), any(), any());
     verify(categoryLinkService, never()).unlink(anyLong(), any(), any());
+  }
+
+  /**
+   * Fails the mutants answering an application deleted since it was checked
+   * with an unexpected error, and consuming the upload of an update that did
+   * not happen
+   */
+  @Test
+  void updateContextApplicationAnswersAnApplicationDeletedMeanwhileAsNotFound() throws Exception {
+    mockContext(SPACE_ID);
+    Application stored = contextApplication(ID, SETTING_NAME);
+    when(appCenterStorage.getApplication(ID)).thenReturn(stored);
+    byte[] png = png(100);
+    when(appCenterStorage.readUpload(UPLOAD_ID, ApplicationCenterService.MAX_ILLUSTRATION_SIZE)).thenReturn(png);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID + 1);
+    doThrow(new ApplicationNotFoundException("deleted")).when(appCenterStorage).updateContextApplication(any());
+    ApplicationForm form = contextForm();
+    form.setImageUploadId(UPLOAD_ID);
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, form, SETTING_NAME, TEST_USER));
+    verify(appCenterStorage, never()).removeUpload(any());
+
+    doNothing().when(appCenterStorage).updateContextApplication(any());
+    when(appCenterStorage.getApplication(ID)).thenReturn(stored, (Application) null);
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.updateContextApplication(ID, contextForm(), SETTING_NAME, TEST_USER));
+  }
+
+  /**
+   * Fails the mutant suggesting the window's own applications without their
+   * categories: one picked again after its removal is edited from the
+   * window's form as a listed one
+   */
+  @Test
+  void getContextSuggestionsGivesTheWindowsOwnApplicationsTheirCategories() throws Exception {
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);
+    when(appCenterStorage.getApplicationIds(null)).thenReturn(List.of(1L, 2L));
+    when(appCenterStorage.getApplication(1L)).thenReturn(accessibleApplication(1L));
+    when(appCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    when(categoryLinkService.getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, List.of("2"))).thenReturn(Map.of("2", List.of(10L)));
+
+    List<Application> suggestions = applicationCenterService.getContextSuggestions(SETTING_NAME, null, null, 0, 10, null, TEST_USER);
+
+    assertNull(suggestions.get(0).getCategoryIds());
+    assertEquals(List.of(10L), suggestions.get(1).getCategoryIds());
   }
 
   /**
@@ -2546,7 +2597,7 @@ public class ApplicationCenterServiceTest {
                                                                                                                          .getMessage());
   }
 
-  private Application lastUpdatedContextApplication() {
+  private Application lastUpdatedContextApplication() throws Exception {
     ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
     verify(appCenterStorage, atLeastOnce()).updateContextApplication(captor.capture());
     return captor.getValue();

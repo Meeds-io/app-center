@@ -516,7 +516,7 @@ public class ApplicationCenterStorageTest {
    * save, and deleting the new one
    */
   @Test
-  void updateContextApplicationKeepsTheStoredOwnerAndDeletesTheReplacedIllustrationOnceSaved() {
+  void updateContextApplicationKeepsTheStoredOwnerAndDeletesTheReplacedIllustrationOnceSaved() throws Exception {
     when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
     Application application = application(ID);
     application.setContextSettingName("Untitled-13-forged");
@@ -540,7 +540,7 @@ public class ApplicationCenterStorageTest {
    * keeping the one it removes
    */
   @Test
-  void updateContextApplicationDeletesTheIllustrationItRemovesOnly() {
+  void updateContextApplicationDeletesTheIllustrationItRemovesOnly() throws Exception {
     when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
     Application application = application(ID);
     application.setImageFileId(IMAGE_FILE_ID);
@@ -573,6 +573,22 @@ public class ApplicationCenterStorageTest {
     doAnswer(invocation -> invocation.getArgument(0)).when(applicationDAO).save(any());
     doThrow(new IllegalStateException("delete refused")).when(fileService).deleteFile(IMAGE_FILE_ID);
     assertDoesNotThrow(() -> applicationCenterStorage.updateContextApplication(application));
+  }
+
+  /**
+   * Fails the mutants reading the application outside the block that deletes
+   * the new illustration, which leaves it behind an application deleted since
+   * the service checked it, and answering that deletion as an unexpected error
+   */
+  @Test
+  void updateContextApplicationDeletesTheNewIllustrationOfAnApplicationDeletedMeanwhile() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.empty());
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID + 1);
+
+    assertThrows(ApplicationNotFoundException.class, () -> applicationCenterStorage.updateContextApplication(application));
+    verify(fileService).deleteFile(IMAGE_FILE_ID + 1);
+    verify(applicationDAO, never()).save(any());
   }
 
   @Test
