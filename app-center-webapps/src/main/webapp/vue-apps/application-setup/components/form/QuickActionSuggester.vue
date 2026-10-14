@@ -51,6 +51,10 @@ export default {
       type: String,
       default: null,
     },
+    quickActions: {
+      type: Array,
+      default: () => [],
+    },
   },
   data() {
     return {
@@ -59,7 +63,7 @@ export default {
   },
   computed: {
     items() {
-      return this.$root.quickActions.map(item => ({
+      return this.quickActions.map(item => ({
         id: item.id,
         icon: item.icon,
         label: this.$t(item.name),

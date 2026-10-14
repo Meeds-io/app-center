@@ -44,6 +44,13 @@
     <additional-module>appCenter</additional-module>
   </portlet-skin>
 
+  <portlet-skin>
+    <application-name>app-center</application-name>
+    <portlet-name>AppCenterMyApplicationsPortlet</portlet-name>
+    <skin-name>Enterprise</skin-name>
+    <additional-module>appCenter</additional-module>
+  </portlet-skin>
+
   <portlet>
     <name>AppCenterAdminSetupPortlet</name>
     <module>

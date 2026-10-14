@@ -27,9 +27,14 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             :icon="item.icon"
             class="flex-grow-0 flex-shrink-0" />
         </v-card>
-        <span :title="item.title" class="tableAppTitle ms-2 text-truncate-2 d-flex align-center text-start">
-          {{ displayName }}
-        </span>
+        <div class="ms-2 d-flex flex-column justify-center text-start">
+          <span :title="item.title" class="tableAppTitle text-truncate-2">
+            {{ displayName }}
+          </span>
+          <span v-if="item.contextual" class="caption text-sub-title">
+            {{ $t('appCenter.adminSetupList.contextual') }}
+          </span>
+        </div>
       </div>
     </td>
     <td class="pa-0" width="88px">
