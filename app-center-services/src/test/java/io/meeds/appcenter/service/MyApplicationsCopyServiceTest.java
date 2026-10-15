@@ -69,6 +69,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.services.FileStorageException;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -325,6 +326,26 @@ class MyApplicationsCopyServiceTest {
 
     ApplicationListCopy listCopy = listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1", null), false, USERNAME));
 
+    assertNull(listCopy.getApplications().get(0).getIllustration());
+  }
+
+  /**
+   * The file storage's checked exception reaches the copy unchecked, the
+   * storage throwing it sneakily: the application is copied without its
+   * illustration, and the layout operation asking for the copy does not
+   * fail. Fails the mutant catching only the declared exceptions
+   */
+  @Test
+  void getCopyPreferencesCarriesAnApplicationWithoutTheIllustrationItCannotRead() throws Exception {
+    Application owned = contextApplication(1L, SETTING_NAME);
+    owned.setImageFileId(9L);
+    when(applicationCenterService.getApplicationImageInputStream(1L)).thenAnswer(invocation -> {
+      throw new FileStorageException("Binary of file 9 not found");
+    });
+
+    ApplicationListCopy listCopy = listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1", null), false, USERNAME));
+
+    assertEquals(1L, listCopy.getApplications().get(0).getId());
     assertNull(listCopy.getApplications().get(0).getIllustration());
   }
 

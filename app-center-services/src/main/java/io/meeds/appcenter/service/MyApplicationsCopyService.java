@@ -18,7 +18,6 @@
  */
 package io.meeds.appcenter.service;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -387,8 +386,11 @@ public class MyApplicationsCopyService {
 
   /**
    * @return the illustration's content, base64-encoded, null when the
-   *         application has none or when it is larger than an illustration
-   *         may be, which the copy could not store
+   *         application has none, when it is larger than an illustration may
+   *         be, which the copy could not store, or when it cannot be read: the
+   *         file storage's own exception is thrown unchecked, and a copy is
+   *         made without the illustration rather than failing the layout
+   *         operation that asks for it
    */
   private String getIllustration(Application application) {
     if (application.getImageFileId() == null) {
@@ -399,7 +401,7 @@ public class MyApplicationsCopyService {
       return content == null || content.length > ApplicationCenterService.MAX_ILLUSTRATION_SIZE ? null
                                                                                                 : Base64.getEncoder()
                                                                                                         .encodeToString(content);
-    } catch (ApplicationNotFoundException | IOException e) {
+    } catch (Exception e) {
       LOG.debug("Illustration of application {} not copied", application.getId(), e);
       return null;
     }
