@@ -102,6 +102,18 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       """)
   List<Long> findIdsByContextSpaceId(@Param("spaceId") long spaceId);
 
+  /**
+   * @param  ownerPattern a LIKE pattern over the owners' CMS setting names,
+   *                        compared as given
+   * @return              the ids of the applications Shortcuts portlet
+   *                      windows whose setting name matches created
+   */
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.contextSettingName LIKE :ownerPattern
+      """)
+  List<Long> findIdsByContextSettingNameLike(@Param("ownerPattern") String ownerPattern);
+
   @Query("""
       SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order, favoriteApp.favorite)
       FROM ApplicationEntity app

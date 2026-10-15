@@ -422,6 +422,16 @@ public class ApplicationCenterStorage {
   }
 
   /**
+   * @param ownerPattern a LIKE pattern over the CMS setting names of
+   *          Shortcuts portlet windows
+   * @return the ids of the applications created by the windows whose setting
+   *         name matches the pattern
+   */
+  public List<Long> getContextApplicationIdsByOwnerPattern(String ownerPattern) {
+    return applicationDAO.findIdsByContextSettingNameLike(ownerPattern);
+  }
+
+  /**
    * Reads the start of an upload, at most one byte more than the given bound,
    * so that a caller tells an upload above the bound without reading it whole.
    *

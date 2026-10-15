@@ -84,6 +84,8 @@ import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.webui.Utils;
 
 import io.meeds.appcenter.constant.WindowKind;
+import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.appcenter.service.MyApplicationsCopyService;
 import io.meeds.appcenter.service.MyApplicationsSettingsService;
 import io.meeds.social.cms.service.CMSService;
 
@@ -104,6 +106,10 @@ class MyApplicationsPortletTest {
 
   private static final String                 USERNAME           = "john";
 
+  private static final String                 SECTION_DRAFT_PAGE = "portal::global::section_draft_7_john";
+
+  private static final String                 PAYLOAD            = "{\"applications\":[{\"id\":1}]}";
+
   /** A site rendered with its own layout, as any site that is not displayed */
   private static final SiteKey                REQUESTED_SITE     = SiteKey.portal("public");
 
@@ -112,6 +118,12 @@ class MyApplicationsPortletTest {
 
   @Mock
   private CMSService                          cmsService;
+
+  @Mock
+  private MyApplicationsCopyService           copyService;
+
+  @Mock
+  private ApplicationCenterService            applicationCenterService;
 
   @Mock
   private LayoutService                       layoutService;
@@ -180,6 +192,10 @@ class MyApplicationsPortletTest {
     containerContext.when(() -> ExoContainerContext.getService(MyApplicationsSettingsService.class)).thenReturn(settingsService);
     containerContext.when(() -> ExoContainerContext.getService(CMSService.class)).thenReturn(cmsService);
     containerContext.when(() -> ExoContainerContext.getService(LayoutService.class)).thenReturn(layoutService);
+    containerContext.when(() -> ExoContainerContext.getService(MyApplicationsCopyService.class)).thenReturn(copyService);
+    containerContext.when(() -> ExoContainerContext.getService(ApplicationCenterService.class)).thenReturn(applicationCenterService);
+    lenient().when(copyService.getOrStoreSettingName(anyString(), any()))
+             .thenAnswer(invocation -> invocation.<Supplier<String>> getArgument(1).get());
     currentPortlet = mockStatic(UIPortlet.class);
     currentPortlet.when(UIPortlet::getCurrentUIPortlet).thenReturn(uiPortlet);
     portalUtil = mockStatic(Util.class);
@@ -243,8 +259,7 @@ class MyApplicationsPortletTest {
 
     portlet.doView(renderRequest, renderResponse);
 
-    assertEquals(newName, storedPreferences.getValue(NAME));
-    verify(layoutService).save(applicationState, storedPreferences);
+    verify(copyService).saveWindowPreference(STORAGE_ID, NAME, newName);
     verify(settingsService).copyHeaderTitle(copiedName, newName);
     verify(cmsService).saveSettingName(SETTING_TYPE, newName, PAGE_REFERENCE, SPACE_ID, Long.parseLong(VIEWER_IDENTITY_ID));
     InOrder inOrder = inOrder(preferences, renderRequest, requestDispatcher);
@@ -267,7 +282,7 @@ class MyApplicationsPortletTest {
     portlet.doView(renderRequest, renderResponse);
 
     verify(preferences, never()).setValue(anyString(), anyString());
-    verify(layoutService, never()).save(any(ApplicationState.class), any(Portlet.class));
+    verify(copyService, never()).saveWindowPreference(any(), any(), any());
     verify(settingsService, never()).generateSettingName(anyString(), any());
     verify(renderRequest).setAttribute("settingName", name);
   }
@@ -426,6 +441,180 @@ class MyApplicationsPortletTest {
   }
 
   /**
+   * CMSPortlet names a window it renders with no name: fails the mutant
+   * generating the name here, which two first renders of a copy would do
+   * twice, each with its own view of the window
+   */
+  @Test
+  void generateRandomIdNamesTheWindowFromItsCommittedPreferences() {
+    givenAPageWindow();
+    when(copyService.getOrStoreSettingName(eq(STORAGE_ID), any())).thenReturn("Untitled-12-other");
+
+    assertEquals("Untitled-12-other", portlet.generateRandomId());
+    verify(settingsService, never()).generateSettingName(any(), any());
+  }
+
+  @Test
+  void generateRandomIdOnASectionTemplateDraftPageMarksTheTemplate() {
+    givenASectionTemplateDraftWindow();
+    String name = "Untitled-12-sdraft-7-" + UUID.randomUUID();
+    when(settingsService.generateSectionTemplateDraftSettingName(STORAGE_ID, 7L)).thenReturn(name);
+
+    assertEquals(name, portlet.generateRandomId());
+    verify(settingsService, never()).generateSettingName(any(), any());
+  }
+
+  /**
+   * CMSPortlet's own write loads the window as the render first read it:
+   * fails the mutant writing through it, which restores what another render
+   * committed since
+   */
+  @Test
+  void savePreferenceWritesOverTheCommittedPreferences() {
+    givenAPageWindow();
+
+    portlet.savePreference(NAME, "Untitled-12-a");
+
+    verify(copyService).saveWindowPreference(STORAGE_ID, NAME, "Untitled-12-a");
+    verify(layoutService, never()).save(any(ApplicationState.class), any(Portlet.class));
+  }
+
+  /**
+   * Fails the mutant recording the page CMSPortlet hands over, cut at
+   * _draft_, which names neither the template nor the administrator whose
+   * earlier sessions the window cleans up
+   */
+  @Test
+  void saveSettingNameRecordsTheSectionTemplateDraftPageUncut() throws Exception {
+    givenASectionTemplateDraftWindow();
+    String name = "Untitled-12-sdraft-7-" + UUID.randomUUID();
+    when(settingsService.getContextSpaceId(name, SECTION_DRAFT_PAGE)).thenReturn(0L);
+
+    portlet.saveSettingName(name, "portal::global::section", SPACE_ID);
+
+    verify(cmsService).saveSettingName(SETTING_TYPE, name, SECTION_DRAFT_PAGE, 0L, Long.parseLong(VIEWER_IDENTITY_ID));
+  }
+
+  @Test
+  void setViewRequestAttributesConsumesTheCopyAndRendersTheListItGot() throws Exception {
+    givenAPageWindow();
+    String name = givenTheWindowCarries("Untitled-12-" + UUID.randomUUID());
+    preferenceValues.put("data.init", PAYLOAD);
+    when(copyService.consumeWindowCopy(STORAGE_ID, name)).thenReturn(Map.of(MyApplicationsSettingsService.APPLICATION_IDS,
+                                                                            "41,2",
+                                                                            "data.init",
+                                                                            ""));
+
+    portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
+
+    assertEquals("41,2", preferenceValues.get(MyApplicationsSettingsService.APPLICATION_IDS));
+    assertEquals("", preferenceValues.get("data.init"));
+  }
+
+  /**
+   * Consumption runs at each render until it succeeds, not at the name's
+   * initialization only: fails the mutant skipping a window already named,
+   * whose payload a failed first attempt would leave for good
+   */
+  @Test
+  void setViewRequestAttributesConsumesTheCopyOfAWindowNamedBefore() throws Exception {
+    givenAPageWindow();
+    String name = givenTheWindowCarries("Untitled-12-" + UUID.randomUUID());
+    preferenceValues.put("data.init", PAYLOAD);
+    when(cmsService.isSettingNameExists(SETTING_TYPE, name)).thenReturn(true);
+    when(settingsService.keepsSettingName(any(), any(), any(), any(), any())).thenReturn(true);
+
+    portlet.doView(renderRequest, renderResponse);
+
+    verify(copyService).consumeWindowCopy(STORAGE_ID, name);
+    verify(cmsService, never()).saveSettingName(any(), any(), any(), anyLong(), anyLong());
+  }
+
+  @Test
+  void setViewRequestAttributesOfAWindowCarryingNothingConsumesNothing() throws Exception {
+    givenAPageWindow();
+    String name = givenTheWindowCarries("Untitled-12-" + UUID.randomUUID());
+
+    portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
+
+    verify(copyService, never()).consumeWindowCopy(any(), any());
+  }
+
+  /**
+   * The site layout editor renders the draft site: fails the mutant dropping
+   * the draft site test, where a window would create applications in the
+   * draft
+   */
+  @Test
+  void setViewRequestAttributesConsumesNothingOnADraftSite() throws Exception {
+    givenAPageWindow();
+    String name = givenTheWindowCarries("Untitled-12-" + UUID.randomUUID());
+    preferenceValues.put("data.init", PAYLOAD);
+    when(portalRequestContext.isDraftSite()).thenReturn(true);
+
+    portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
+
+    verify(copyService, never()).consumeWindowCopy(any(), any());
+  }
+
+  /**
+   * Fails the mutant letting a failed consumption fail the render, and the
+   * mutant changing the list when another render is consuming the window
+   */
+  @Test
+  void setViewRequestAttributesRendersTheListAsItIsWhenNothingIsConsumed() throws Exception {
+    givenAPageWindow();
+    String name = givenTheWindowCarries("Untitled-12-" + UUID.randomUUID());
+    preferenceValues.put("data.init", PAYLOAD);
+    preferenceValues.put(MyApplicationsSettingsService.APPLICATION_IDS, "1,2");
+    when(copyService.consumeWindowCopy(STORAGE_ID, name)).thenReturn(null)
+                                                         .thenThrow(new IllegalStateException("database unreachable"));
+
+    portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
+    portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
+
+    assertEquals("1,2", preferenceValues.get(MyApplicationsSettingsService.APPLICATION_IDS));
+    assertEquals(PAYLOAD, preferenceValues.get("data.init"));
+  }
+
+  @Test
+  void postSettingInitOfASectionTemplateDraftWindowDeletesTheEarlierSessionsLeftovers() throws Exception {
+    givenASectionTemplateDraftWindow();
+    String name = "Untitled-12-sdraft-7-" + UUID.randomUUID();
+    givenTheWindows(uiPage, window(STORAGE_ID, name), window("13", null));
+
+    portlet.postSettingInit(preferences, name);
+
+    verify(applicationCenterService).deleteSectionTemplateDraftLeftovers(name, SECTION_DRAFT_PAGE, List.of(STORAGE_ID, "13"));
+  }
+
+  @Test
+  void postSettingInitOfAPageWindowDeletesNothing() {
+    givenAPageWindow();
+
+    portlet.postSettingInit(preferences, "Untitled-12-" + UUID.randomUUID());
+
+    verify(applicationCenterService, never()).deleteSectionTemplateDraftLeftovers(any(), any(), any());
+  }
+
+  /**
+   * Fails the mutant letting a failed cleanup fail the render, after which
+   * the window's name is initialized and the cleanup never runs again
+   */
+  @Test
+  void postSettingInitGoesOnWhenTheLeftoversCannotBeDeleted() throws Exception {
+    givenASectionTemplateDraftWindow();
+    String name = "Untitled-12-sdraft-7-" + UUID.randomUUID();
+    givenTheWindows(uiPage, window(STORAGE_ID, name));
+    doThrow(new IllegalStateException("database unreachable")).when(applicationCenterService)
+                                                               .deleteSectionTemplateDraftLeftovers(any(), any(), any());
+
+    portlet.postSettingInit(preferences, name);
+
+    verify(applicationCenterService).deleteSectionTemplateDraftLeftovers(any(), any(), any());
+  }
+
+  /**
    * Fails the mutants recording, or taking the space of, the page CMSPortlet
    * hands over instead of the reference of the window's setting, and the
    * mutant taking a site-layout window for a shared-layout one
@@ -527,7 +716,7 @@ class MyApplicationsPortletTest {
     portlet.setViewRequestAttributes(name, renderRequest, renderResponse);
 
     verify(settingsService).copyHeaderTitle("4242", name);
-    assertEquals("", storedPreferences.getValue("applicationId"));
+    verify(copyService).saveWindowPreference(STORAGE_ID, "applicationId", "");
   }
 
   @Test
@@ -542,6 +731,7 @@ class MyApplicationsPortletTest {
 
     InOrder inOrder = inOrder(actionPreferences);
     inOrder.verify(actionPreferences).setValue(MyApplicationsSettingsService.LISTING_MODE, "SELECTED");
+    inOrder.verify(actionPreferences).setValue("data.init", "");
     inOrder.verify(actionPreferences).store();
   }
 
@@ -569,6 +759,12 @@ class MyApplicationsPortletTest {
     assertThrows(PortletException.class, () -> portlet.processAction(request, mock(ActionResponse.class)));
     verify(settingsService, never()).getSettingsToStore(any(), any(), any());
     verify(actionPreferences, never()).store();
+  }
+
+  private void givenASectionTemplateDraftWindow() {
+    givenAPageWindow();
+    lenient().when(uiPage.getPageId()).thenReturn(SECTION_DRAFT_PAGE);
+    lenient().when(settingsService.getSectionTemplateId(SECTION_DRAFT_PAGE)).thenReturn(7L);
   }
 
   private void givenAPageWindow() {
