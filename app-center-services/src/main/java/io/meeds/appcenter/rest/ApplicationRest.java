@@ -132,7 +132,7 @@ public class ApplicationRest {
 
   @GetMapping(path = "contextual/list")
   @Secured("users")
-  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings, plus the applications the portlet created whose audience excludes the user, unless an administrator emptied that audience")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings, plus the applications the portlet created whose audience excludes the user, unless an administrator emptied that audience. The applications the portlet created carry their categoryIds: empty when they have none, null when they could not be read")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "More than 100 ids"),
     @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
@@ -160,7 +160,7 @@ public class ApplicationRest {
 
   @GetMapping(path = "contextual/suggest")
   @Secured("users")
-  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, and the applications the portlet created, matching the keyword")
+  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, and the applications the portlet created, matching the keyword. The applications the portlet created carry their categoryIds, as on contextual/list")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "More than 100 excluded ids"),
     @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
@@ -224,13 +224,41 @@ public class ApplicationRest {
     }
   }
 
+  @PutMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Updates an application a Shortcuts portlet created", method = "PUT", description = "Updates, from the settings of the Shortcuts portlet that created it, an application only that portlet lists, with the fields its form offers, and returns it without its permissions, its badge resolved, with its categoryIds (null when they could not be read)")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, or application not created by a Shortcuts portlet, or by another one, the response's message naming which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
+  public Application updateContextApplication(
+                                              HttpServletRequest request,
+                                              @Parameter(description = "Application technical id to update", required = true)
+                                              @PathVariable("applicationId")
+                                              long applicationId,
+                                              @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                              @RequestParam("settingName")
+                                              String settingName,
+                                              @RequestBody
+                                              ApplicationForm application) {
+    try {
+      return appCenterService.updateContextApplication(applicationId, application, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
   @DeleteMapping(path = "contextual/{applicationId}")
   @Secured("users")
   @Operation(summary = "Deletes an application a Shortcuts portlet created", method = "DELETE", description = "Deletes, from the settings of the Shortcuts portlet that created it, an application only that portlet lists")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "400", description = "Application not created by a Shortcuts portlet, or by another one, the response's message telling which"),
     @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
-    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown or inaccessible application") })
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
   public void deleteContextApplication(
                                        HttpServletRequest request,
                                        @Parameter(description = "Application technical id to delete", required = true)
