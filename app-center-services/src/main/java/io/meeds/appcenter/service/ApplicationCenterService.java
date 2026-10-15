@@ -1953,7 +1953,9 @@ public class ApplicationCenterService {
   /**
    * Links a copied application to its source's categories with no right
    * checked: a category that does not exist on this deployment, or that fails
-   * to link, is skipped, never created.
+   * to link, is skipped, never created. The link takes any metadata id: an id
+   * that the read of the application's categories does not return names no
+   * category, a tag or a favorite for instance, and its item is removed.
    *
    * @return the ids of the linked categories
    */
@@ -1971,7 +1973,20 @@ public class ApplicationCenterService {
         LOG.debug("Copied application {} not linked to category {}", applicationId, categoryId, e);
       }
     }
-    return linkedCategoryIds;
+    if (linkedCategoryIds.isEmpty()) {
+      return linkedCategoryIds;
+    }
+    List<Long> applicationCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    for (Long linkedId : linkedCategoryIds) {
+      if (!applicationCategoryIds.contains(linkedId)) {
+        try {
+          getCategoryLinkService().unlink(linkedId, categoryObject);
+        } catch (RuntimeException e) {
+          LOG.warn("Copied application {} left linked to metadata {}, which is no category", applicationId, linkedId, e);
+        }
+      }
+    }
+    return linkedCategoryIds.stream().filter(applicationCategoryIds::contains).toList();
   }
 
   /**

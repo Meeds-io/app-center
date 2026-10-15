@@ -2400,20 +2400,25 @@ public class ApplicationCenterServiceTest {
 
   /**
    * A copied app keeps its source's categories, linked with no right as the
-   * first viewer can be anyone: fails the mutant linking none, and the mutant
-   * letting a category unknown on this deployment refuse the application
+   * first viewer can be anyone: fails the mutant linking none, the mutant
+   * letting a category unknown on this deployment refuse the application,
+   * and the mutant keeping a link to a metadata id that names no category,
+   * which an imported template or a rewritten payload can carry
    */
   @Test
   void createCopiedContextApplicationLinksTheSourceCategoriesItCan() throws Exception {
     mockContext(0L);
     ApplicationForm form = contextForm();
-    form.setCategoryIds(List.of(3L, 4L));
+    form.setCategoryIds(List.of(3L, 4L, 5L));
     doThrow(new IllegalStateException("category 4 not found")).when(categoryLinkService).link(eq(4L), any(CategoryObject.class));
+    when(categoryLinkService.getLinkedIds(any(CategoryObject.class))).thenReturn(List.of(3L));
 
     Application created = applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false);
 
     assertEquals(List.of(3L), created.getCategoryIds());
     verify(categoryLinkService).link(eq(3L), argThat((CategoryObject object) -> String.valueOf(CREATED_ID).equals(object.getId())));
+    verify(categoryLinkService).unlink(eq(5L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).unlink(eq(3L), any(CategoryObject.class));
     verify(categoryLinkService, never()).link(anyLong(), any(), any());
   }
 
