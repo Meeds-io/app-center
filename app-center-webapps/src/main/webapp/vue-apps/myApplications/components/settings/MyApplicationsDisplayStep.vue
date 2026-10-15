@@ -20,9 +20,57 @@
 
 <template>
   <div>
-    <div class="d-flex align-center justify-space-between">
+    <select
+      v-model="template"
+      :disabled="disabled"
+      :aria-label="$t('myApplications.template.label')"
+      class="full-width ignore-vuetify-classes py-2 height-auto text-truncate">
+      <!-- A window saved before the templates keeps its legacy layout until one is picked -->
+      <option
+        v-if="!display"
+        value=""
+        disabled>
+        {{ $t('myApplications.template.placeholder') }}
+      </option>
+      <option
+        v-for="templateName in templates"
+        :key="templateName"
+        :value="templateName">
+        {{ $t(`myApplications.template.${templateName}`) }}
+      </option>
+    </select>
+    <v-card
+      v-if="display"
+      class="mt-4 pa-2 border-box-sizing overflow-hidden"
+      outlined
+      flat>
+      <!-- The header line as the portlet draws it: its title, then See more -->
+      <div
+        v-if="showHeader || display.showSeeMore"
+        class="d-flex align-center mb-2">
+        <span
+          v-if="showHeader"
+          class="text-header text-truncate">
+          {{ headerTitle }}
+        </span>
+        <span
+          v-if="display.showSeeMore"
+          class="ms-auto ps-2 primary--text text-font-size text-no-wrap">
+          {{ $t('myApplications.seeMore.label') }}
+        </span>
+      </div>
+      <my-applications-template-list
+        v-if="previewApplications.length"
+        :applications="previewApplications"
+        :display="display"
+        preview />
+      <div v-else class="text-sub-title text-center py-2">
+        {{ $t('myApplications.noApps.label') }}
+      </div>
+    </v-card>
+    <div class="d-flex align-center justify-space-between mt-4">
       <label class="v-label text-color align-start">
-        {{ $t('myApplications.addHeader.label') }}
+        {{ $t('myApplications.showHeader.label') }}
       </label>
       <div class="align-end">
         <v-switch
@@ -47,10 +95,18 @@
       required
       @update:field-value="$emit('update:header-title', $event)"
       @input="$emit('translations-updated', $event)" />
+    <my-applications-display-options
+      v-if="display"
+      :display="display"
+      :version="version"
+      :disabled="disabled"
+      @update:display="$emit('update:display', $event)" />
   </div>
 </template>
 
 <script>
+import {TEMPLATES} from '../../myApplicationsDisplay.js';
+
 export default {
   props: {
     showHeader: {
@@ -76,6 +132,34 @@ export default {
     disabled: {
       type: Boolean,
       default: false,
+    },
+    // The template and its settings being edited, null while the legacy layout is kept
+    display: {
+      type: Object,
+      default: null,
+    },
+    previewApplications: {
+      type: Array,
+      default: () => [],
+    },
+    // Changes whenever the display settings are replaced rather than edited
+    version: {
+      type: Number,
+      default: 0,
+    },
+  },
+  data: () => ({
+    templates: TEMPLATES,
+  }),
+  computed: {
+    template: {
+      get() {
+        return this.display ? this.display.template : '';
+      },
+      // A pick replaces every display setting by the template's own
+      set(template) {
+        this.$emit('select-template', template);
+      },
     },
   },
 };

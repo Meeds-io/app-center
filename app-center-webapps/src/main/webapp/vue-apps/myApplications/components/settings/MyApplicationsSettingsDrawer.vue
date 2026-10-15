@@ -77,13 +77,17 @@
             <div v-show="stepper === 2" class="mt-4">
               <my-applications-display-step
                 :show-header.sync="showHeader"
+                :display.sync="display"
+                :version="displayVersion"
+                :preview-applications="previewApplications"
                 :setting-name="settingName"
                 :object-type="objectType"
                 :field-name="fieldName"
                 :header-title="displayedValue"
                 :disabled="isSaving"
                 @update:header-title="updateFieldValue"
-                @translations-updated="translationUpdated" />
+                @translations-updated="translationUpdated"
+                @select-template="selectTemplate" />
             </div>
           </v-slide-y-transition>
         </div>
@@ -110,12 +114,18 @@
 </template>
 
 <script>
+import {getDisplaySettings, getTemplateDisplaySettings, getTemplateShowHeader, isSameDisplay} from '../../myApplicationsDisplay.js';
+
 export default {
   data() {
     return {
       stepper: 1,
       isSaving: false,
       showHeader: true,
+      // The template and its settings, null while the legacy layout is kept
+      display: null,
+      // Renewed whenever the display settings are replaced rather than edited
+      displayVersion: 0,
       maxAppsToList: 4,
       listingMode: 'FAVORITES',
       selectionMode: 'MANUAL',
@@ -159,7 +169,12 @@ export default {
     settings: {
       type: Object,
       default: null
-    }
+    },
+    // The apps the portlet displays, previewed in the display step
+    displayedApplications: {
+      type: Array,
+      default: () => []
+    },
   },
   computed: {
     saveEnabled() {
@@ -177,7 +192,16 @@ export default {
           || this.savedApplicationIds.join(',') !== this.postedApplicationIds.join(',')
           || this.savedCategoryIds.join(',') !== this.postedCategoryIds.join(',')
           || this.settings.showHeader !== this.showHeader || this.savedMaxAppsToList !== this.maxAppsToList
+          || !isSameDisplay(this.savedDisplay, this.display)
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
+    },
+    savedDisplay() {
+      return getDisplaySettings(this.settings);
+    },
+    previewApplications() {
+      // The apps picked in the first step are those the portlet will list
+      const applications = this.listingMode === 'SELECTED' && this.selectionMode === 'MANUAL' ? this.applications : this.displayedApplications;
+      return applications.slice(0, 5);
     },
     savedMaxAppsToList() {
       // A value stored before the 1–100 bounds is shown, and compared, clamped
@@ -219,6 +243,12 @@ export default {
         this.translationsInitialized = true;
       }
     },
+    // Each template comes with its own configuration, which every pick applies
+    selectTemplate(template) {
+      this.display = getTemplateDisplaySettings(template);
+      this.showHeader = getTemplateShowHeader(template);
+      this.displayVersion++;
+    },
     updateFieldValue(value) {
       this.defaultLangValue = value;
     },
@@ -251,7 +281,9 @@ export default {
         applicationIds: postedApplicationIds.join(','),
         categoryIds: postedCategoryIds.join(','),
         maxAppsToList: this.maxAppsToList,
-        showHeader: this.showHeader
+        showHeader: this.showHeader,
+        // No template picked: the legacy layout is kept
+        ...this.display,
       };
       this.isSaving = true;
       this.settingsActions++;
@@ -443,6 +475,8 @@ export default {
       this.categories = [...this.savedCategories];
       this.maxAppsToList = this.savedMaxAppsToList;
       this.showHeader = this.settings.showHeader;
+      this.display = this.savedDisplay && {...this.savedDisplay};
+      this.displayVersion++;
     }
   }
 };
