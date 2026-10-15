@@ -192,6 +192,7 @@
             </div>
           </template>
           <category-input
+            v-if="contextCategoriesKnown"
             v-model="newCategoryIds"
             label="appCenter.adminSetupForm.categories"
             label-class="" />
@@ -500,6 +501,8 @@ export default {
     contextualImageTypes: 'image/png,image/jpeg,image/gif,image/webp',
     // Numbers the creations, which can overlap: the form can be closed and opened again while one runs
     contextCreations: 0,
+    // False when the Shortcuts portlet's listing could not read the edited application's categories
+    contextCategoriesKnown: true,
     drawer: false,
     titles: {},
     descriptions: {},
@@ -749,6 +752,11 @@ export default {
     forcedFieldsEditable() {
       return !this.contextual && !this.application?.contextual;
     },
+    // The endpoint makes the categories the ones sent, and keeps them when no list is sent:
+    // unknown ones are neither shown nor sent
+    contextCategoryIdsToSave() {
+      return this.contextCategoriesKnown ? this.newCategoryIds : null;
+    },
     forcedFieldTitle() {
       return !this.forcedFieldsEditable && this.$t('appCenter.adminSetupForm.contextualOptionNotEditable') || null;
     },
@@ -785,8 +793,9 @@ export default {
   watch: {
     uploadedImage: {
       handler() {
-        this.$set(this.application, 'imageUploadId', this.uploadedImage.uploadId);
-        this.$set(this.application, 'illustrationMimeType', this.uploadedImage.mimeType);
+        // Null once the image input is reset: a discarded upload is not sent
+        this.$set(this.application, 'imageUploadId', this.uploadedImage?.uploadId);
+        this.$set(this.application, 'illustrationMimeType', this.uploadedImage?.mimeType);
       },
       deep: true,
     },
@@ -862,6 +871,7 @@ export default {
           this.$applicationBadgeService.getBadgeProviders()
             .then(providers => this.badgeProviderList = providers || []);
         }
+        this.contextCategoriesKnown = true;
         if (app?.id && !this.contextual) {
           const data = await this.$applicationService.getApplications(true);
           this.application = data?.applications?.find?.(a => a.id === app.id);
@@ -869,6 +879,10 @@ export default {
             // Clone to a different object
             this.application = {...this.application};
           }
+        } else if (app?.id) {
+          // The Shortcuts portlet's listing carries the application, and its categories once read
+          this.application = {...app};
+          this.contextCategoriesKnown = Array.isArray(app.categoryIds);
         }
         if (!this.application) {
           this.application = {
@@ -933,6 +947,10 @@ export default {
     resetImage() {
       this.application.imageUrl = null;
       this.application.imageFileId = null;
+      if (this.contextual && this.application.id) {
+        // The Shortcuts portlet's endpoint removes a stored illustration on this request only
+        this.$set(this.application, 'illustrationRemoved', true);
+      }
     },
     close() {
       this.$refs.formDrawer.close();
@@ -959,8 +977,10 @@ export default {
       const isNew = !this.application.id;
       this.loading = true;
       try {
-        if (this.contextual) {
+        if (this.contextual && isNew) {
           await this.saveContextApplication();
+        } else if (this.contextual) {
+          await this.updateContextApplication();
         } else if (this.personal) {
           this.application.url = this.normalizedPersonalUrl;
           let app;
@@ -1020,6 +1040,40 @@ export default {
         .then(() => true, () => false);
       // Reported by the host, which knows whether it listed the app: one message, as a message replaces the previous one
       this.$emit('creation-completed', {application: app, translationsSaved, creationId});
+    },
+    async updateContextApplication() {
+      // Read before any wait: the form can be opened again, and emptied, meanwhile
+      const {titles, descriptions} = this;
+      const categoryIds = this.contextCategoryIdsToSave;
+      // The listing gives the labels of the editor's language: the stored ones are the default language's
+      const app = await this.$applicationService.updateContextApplication(this.settingName, {
+        ...this.application,
+        title: titles[eXo.env.portal.defaultLanguage],
+        description: descriptions[eXo.env.portal.defaultLanguage],
+        badgeName: this.badgeNameToSave,
+        categoryIds,
+      });
+      this.close();
+      const translationsSaved = await this.$translationService.saveTranslations('appCenter', app.id, 'title', titles)
+        .then(() => this.$translationService.saveRichTranslations('appCenter', app.id, 'description', descriptions))
+        .then(() => true, () => false);
+      // The endpoint returns the categories the app has, none when it could not read them:
+      // one it could not link or unlink differs
+      const idsKey = ids => (ids ? [...new Set(ids)].sort().join(',') : null);
+      const categoriesSaved = !categoryIds || idsKey(categoryIds) === idsKey(app.categoryIds);
+      // Listed with its label in the editor's language, as the listing gives it
+      this.$emit('updated', {
+        ...app,
+        title: titles[eXo.env.portal.language] || titles[eXo.env.portal.defaultLanguage] || app.title,
+      });
+      // One message, as a message replaces the previous one: the labels' failure first
+      if (!translationsSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.translationsNotSavedOnUpdate'), 'warning');
+      } else if (!categoriesSaved) {
+        this.$root.$emit('alert-message', this.$t('appCenter.contextual.categoriesNotSavedOnUpdate'), 'warning');
+      } else {
+        this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationUpdatedSuccessfully'), 'success');
+      }
     },
     saveErrorMessageKey(isNew, error) {
       // A refusal of the Shortcuts portlet's endpoint names its cause with a label code
