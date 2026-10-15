@@ -19,11 +19,13 @@
   */
 import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
+import MyApplicationsTemplateList from './components/view/MyApplicationsTemplateList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
 import MyApplicationsSettingsDrawer from './components/settings/MyApplicationsSettingsDrawer.vue';
 import MyApplicationsListingStep from './components/settings/MyApplicationsListingStep.vue';
 import MyApplicationsDisplayStep from './components/settings/MyApplicationsDisplayStep.vue';
+import MyApplicationsDisplayOptions from './components/settings/MyApplicationsDisplayOptions.vue';
 import MyApplicationsApplicationSuggester from './components/settings/MyApplicationsApplicationSuggester.vue';
 import MyApplicationsCategoryList from './components/settings/MyApplicationsCategoryList.vue';
 
@@ -32,11 +34,13 @@ import * as myApplicationsService from './myApplicationsService.js';
 const components = {
   'my-applications-app': MyApplicationsApp,
   'my-applications-list': MyApplicationsList,
+  'my-applications-template-list': MyApplicationsTemplateList,
   'my-applications-toolbar': MyApplicationsToolbar,
   'my-application-item': MyApplicationItem,
   'my-applications-settings-drawer': MyApplicationsSettingsDrawer,
   'my-applications-listing-step': MyApplicationsListingStep,
   'my-applications-display-step': MyApplicationsDisplayStep,
+  'my-applications-display-options': MyApplicationsDisplayOptions,
   'my-applications-application-suggester': MyApplicationsApplicationSuggester,
   'my-applications-category-list': MyApplicationsCategoryList,
 };

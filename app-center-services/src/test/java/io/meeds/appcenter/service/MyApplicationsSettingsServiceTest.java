@@ -20,7 +20,17 @@ package io.meeds.appcenter.service;
 
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.APPLICATION_IDS;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.CATEGORY_IDS;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.COLOR;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.H_ALIGN;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.HEADER_TITLE_FIELD;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.ICON_SIZE;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.LIST_IN_ROW;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.OUTLINED;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_ICON;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_NAME;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.SHOW_SEE_MORE;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.TEMPLATE;
+import static io.meeds.appcenter.service.MyApplicationsSettingsService.V_ALIGN;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_FAVORITES;
 import static io.meeds.appcenter.service.MyApplicationsSettingsService.LISTING_MODE_SELECTED;
@@ -35,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -420,6 +431,117 @@ class MyApplicationsSettingsServiceTest {
     assertEquals(Map.of(SHOW_HEADER, "true"), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "true")));
     assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "yes")));
     assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(SHOW_HEADER, "<script>")));
+  }
+
+  @Test
+  void getWritableSettingsKeepsTheDisplaySettingsWithoutAListingMode() {
+    Map<String, String> parameters = new HashMap<>();
+    parameters.put(TEMPLATE, " CARDS ");
+    parameters.put(SHOW_SEE_MORE, "false");
+    parameters.put(LIST_IN_ROW, "true");
+    parameters.put(SHOW_ICON, "true");
+    parameters.put(ICON_SIZE, " 45 ");
+    parameters.put(SHOW_NAME, "true");
+    parameters.put(COLOR, "#E1E8EE");
+    parameters.put(OUTLINED, "false");
+    parameters.put(H_ALIGN, "CENTER");
+    parameters.put(V_ALIGN, "END");
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put(TEMPLATE, "CARDS");
+    expected.put(SHOW_SEE_MORE, "false");
+    expected.put(LIST_IN_ROW, "true");
+    expected.put(SHOW_ICON, "true");
+    expected.put(ICON_SIZE, "45");
+    expected.put(SHOW_NAME, "true");
+    expected.put(COLOR, "#E1E8EE");
+    expected.put(OUTLINED, "false");
+    expected.put(H_ALIGN, "CENTER");
+    expected.put(V_ALIGN, "END");
+    assertEquals(expected, settingsService.getWritableSettings(PAGE_NAME, parameters));
+  }
+
+  @Test
+  void getWritableSettingsValidatesTheTemplate() {
+    for (String template : List.of("ROW", "CARDS", "COLUMN")) {
+      assertEquals(Map.of(TEMPLATE, template), settingsService.getWritableSettings(PAGE_NAME, Map.of(TEMPLATE, template)));
+    }
+    for (String template : List.of("row", "LEGACY", "", "ROW,CARDS", "'ROW'")) {
+      assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(TEMPLATE, template)), template);
+    }
+  }
+
+  @Test
+  void getWritableSettingsValidatesTheDisplayFlags() {
+    for (String flag : List.of(SHOW_SEE_MORE, LIST_IN_ROW, SHOW_ICON, SHOW_NAME, OUTLINED)) {
+      assertEquals(Map.of(flag, "true"), settingsService.getWritableSettings(PAGE_NAME, Map.of(flag, " true ")), flag);
+      assertEquals(Map.of(flag, "false"), settingsService.getWritableSettings(PAGE_NAME, Map.of(flag, "false")), flag);
+      for (String value : List.of("TRUE", "yes", "1", "", "true,")) {
+        assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(flag, value)), flag + "=" + value);
+      }
+    }
+  }
+
+  @Test
+  void getWritableSettingsValidatesTheIconSizeRange() {
+    assertEquals(Map.of(ICON_SIZE, "12"), settingsService.getWritableSettings(PAGE_NAME, Map.of(ICON_SIZE, "12")));
+    assertEquals(Map.of(ICON_SIZE, "60"), settingsService.getWritableSettings(PAGE_NAME, Map.of(ICON_SIZE, "60")));
+    assertEquals(Map.of(ICON_SIZE, "32"), settingsService.getWritableSettings(PAGE_NAME, Map.of(ICON_SIZE, "032")));
+    for (String value : List.of("11", "61", "0", "-1", "1e1", "45px", "45.5", "", "4500")) {
+      assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(ICON_SIZE, value)), value);
+    }
+  }
+
+  @Test
+  void getWritableSettingsValidatesTheColor() {
+    assertEquals(Map.of(COLOR, "#e1e8ee"), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, "#e1e8ee")));
+    assertEquals(Map.of(COLOR, "#E1E8EE80"), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, " #E1E8EE80 ")));
+    // Empty: back to the skin's light grey
+    assertEquals(Map.of(COLOR, ""), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, "")));
+    for (String value : List.of("#FFF", "#FFFF", "#GGGGGG", "E1E8EE", "#E1E8EE8", "red", "#E1E8EE</script>", "#E1E8EE';alert(1)//")) {
+      assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, value)), value);
+    }
+  }
+
+  @Test
+  void getWritableSettingsValidatesTheAlignments() {
+    for (String key : List.of(H_ALIGN, V_ALIGN)) {
+      for (String alignment : List.of("START", "CENTER", "END")) {
+        assertEquals(Map.of(key, alignment), settingsService.getWritableSettings(PAGE_NAME, Map.of(key, alignment)), key);
+      }
+      for (String alignment : List.of("LEFT", "MIDDLE", "start", "")) {
+        assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(key, alignment)), key + "=" + alignment);
+      }
+    }
+  }
+
+  @Test
+  void readsStoredDisplaySettingsAsTheirTypeOrNull() {
+    assertEquals("COLUMN", MyApplicationsSettingsService.getTemplate("COLUMN"));
+    assertNull(MyApplicationsSettingsService.getTemplate(" COLUMN"));
+    assertNull(MyApplicationsSettingsService.getTemplate("'+alert(1)+'"));
+    assertNull(MyApplicationsSettingsService.getTemplate(null));
+
+    assertEquals(Boolean.TRUE, MyApplicationsSettingsService.getDisplayFlag("true"));
+    assertEquals(Boolean.FALSE, MyApplicationsSettingsService.getDisplayFlag("false"));
+    assertNull(MyApplicationsSettingsService.getDisplayFlag("alert(1)"));
+    assertNull(MyApplicationsSettingsService.getDisplayFlag(null));
+
+    assertEquals(Integer.valueOf(45), MyApplicationsSettingsService.getIconSize("45"));
+    assertEquals(Integer.valueOf(12), MyApplicationsSettingsService.getIconSize("12"));
+    assertEquals(Integer.valueOf(60), MyApplicationsSettingsService.getIconSize("60"));
+    assertNull(MyApplicationsSettingsService.getIconSize("11"));
+    assertNull(MyApplicationsSettingsService.getIconSize("61"));
+    assertNull(MyApplicationsSettingsService.getIconSize("45);alert(1"));
+    assertNull(MyApplicationsSettingsService.getIconSize(null));
+
+    assertEquals("#E1E8EE", MyApplicationsSettingsService.getColor("#E1E8EE"));
+    assertEquals("", MyApplicationsSettingsService.getColor("#E1E8EE'</script>"));
+    assertEquals("", MyApplicationsSettingsService.getColor(null));
+
+    assertEquals("END", MyApplicationsSettingsService.getAlignment("END"));
+    assertNull(MyApplicationsSettingsService.getAlignment("RIGHT"));
+    assertNull(MyApplicationsSettingsService.getAlignment(null));
   }
 
   @Test
