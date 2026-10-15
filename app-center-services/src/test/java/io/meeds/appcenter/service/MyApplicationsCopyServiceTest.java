@@ -699,7 +699,7 @@ class MyApplicationsCopyServiceTest {
   void copiesCarryTheSourceCategoriesAndAnEmptiedAudience() throws Exception {
     Application hidden = contextApplication(1L, SETTING_NAME);
     hidden.setPermissions(List.of());
-    when(applicationCenterService.getApplicationCategoryIds(1L)).thenReturn(List.of(3L, 4L));
+    when(applicationCenterService.getApplicationCategoryIds(List.of(1L))).thenReturn(Map.of(1L, List.of(3L, 4L)));
 
     ApplicationCopy copy = listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1", null), false, null)).getApplications()
                                                                                                                       .get(0);

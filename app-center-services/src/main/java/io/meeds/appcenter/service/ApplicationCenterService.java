@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1355,8 +1356,9 @@ public class ApplicationCenterService {
    * one exception being a portlet instance, which needs only to exist. The
    * illustration's type is decided from its content; an invalid or too large
    * one is dropped, the application being created without it. Its categories
-   * are linked with no right checked, as the source's were, a category that
-   * does not exist, or that fails to link, being skipped. An application whose
+   * are linked with no right checked, as the copy's first viewer can be
+   * anyone, a category that does not exist, or that fails to link, being
+   * skipped. An application whose
    * source's audience an administrator emptied keeps it empty, shown to
    * administrators only until one restores it.
    *
@@ -1400,13 +1402,20 @@ public class ApplicationCenterService {
   }
 
   /**
-   * @param applicationId an application id
-   * @return the ids of the application's categories
+   * @param applicationIds application ids
+   * @return the ids of each application's categories, read in one query, by
+   *         application id, none for an application without category
    */
-  public List<Long> getApplicationCategoryIds(long applicationId) {
-    return getCategoryLinkService().getLinkedIds(new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
-                                                                    String.valueOf(applicationId),
-                                                                    0));
+  public Map<Long, List<Long>> getApplicationCategoryIds(List<Long> applicationIds) {
+    Map<String, List<Long>> linkedIds = getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                                              applicationIds.stream()
+                                                                                            .map(String::valueOf)
+                                                                                            .toList());
+    Map<Long, List<Long>> categoryIds = new HashMap<>();
+    if (linkedIds != null) {
+      linkedIds.forEach((applicationId, ids) -> categoryIds.put(Long.valueOf(applicationId), ids));
+    }
+    return categoryIds;
   }
 
   /**
@@ -1942,14 +1951,6 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Links an application created from a Shortcuts portlet to the categories
-   * of its form. A category the user may not link to, that no longer exists or
-   * that fails to link is skipped: the application is created already, and is
-   * returned with the categories it got.
-   *
-   * @return the ids of the linked categories
-   */
-  /**
    * Links a copied application to its source's categories with no right
    * checked: a category that does not exist on this deployment, or that fails
    * to link, is skipped, never created.
@@ -1973,6 +1974,14 @@ public class ApplicationCenterService {
     return linkedCategoryIds;
   }
 
+  /**
+   * Links an application created from a Shortcuts portlet to the categories
+   * of its form. A category the user may not link to, that no longer exists or
+   * that fails to link is skipped: the application is created already, and is
+   * returned with the categories it got.
+   *
+   * @return the ids of the linked categories
+   */
   private List<Long> linkCategories(long applicationId, List<Long> categoryIds, String username) {
     if (CollectionUtils.isEmpty(categoryIds)) {
       return new ArrayList<>();

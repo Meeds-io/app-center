@@ -328,11 +328,14 @@ public class MyApplicationsCopyService {
                                                             .map(applicationCenterService::getApplication)
                                                             .filter(application -> isCopied(application, settingName))
                                                             .toList();
-    List<ApplicationCopy> applications = listed.stream()
+    List<Application> applications = listed.stream()
                                                .filter(isCarriedTo(listed, settingName, username))
-                                               .map(this::toCopy)
                                                .toList();
-    return headerTitles.isEmpty() && applications.isEmpty() ? null : new ApplicationListCopy(headerTitles, applications);
+    Map<Long, List<Long>> categoryIds = getCategoryIds(applications);
+    List<ApplicationCopy> copies = applications.stream()
+                                               .map(application -> toCopy(application, categoryIds.get(application.getId())))
+                                               .toList();
+    return headerTitles.isEmpty() && copies.isEmpty() ? null : new ApplicationListCopy(headerTitles, copies);
   }
 
   private boolean isCopied(Application application, String settingName) {
@@ -363,7 +366,7 @@ public class MyApplicationsCopyService {
   /**
    * @param application the cache's shared instance, read only
    */
-  private ApplicationCopy toCopy(Application application) {
+  private ApplicationCopy toCopy(Application application, List<Long> categoryIds) {
     String id = String.valueOf(application.getId());
     ApplicationCopy copy = new ApplicationCopy();
     copy.setId(application.getId());
@@ -380,21 +383,24 @@ public class MyApplicationsCopyService {
     copy.setMobile(application.isMobile());
     copy.setAllowDetach(application.isAllowDetach());
     copy.setIllustration(getIllustration(application));
-    copy.setCategoryIds(getCategoryIds(application));
+    copy.setCategoryIds(categoryIds);
     copy.setHidden(application.getPermissions() == null || application.getPermissions().isEmpty());
     return copy;
   }
 
   /**
-   * @return the ids of the application's categories, none when they cannot
-   *         be read
+   * @return the ids of the applications' categories, read in one query, by
+   *         application id, none when they cannot be read
    */
-  private List<Long> getCategoryIds(Application application) {
+  private Map<Long, List<Long>> getCategoryIds(List<Application> applications) {
+    if (applications.isEmpty()) {
+      return Map.of();
+    }
     try {
-      return applicationCenterService.getApplicationCategoryIds(application.getId());
+      return applicationCenterService.getApplicationCategoryIds(applications.stream().map(Application::getId).toList());
     } catch (RuntimeException e) {
-      LOG.debug("Categories of application {} not copied", application.getId(), e);
-      return null; // NOSONAR
+      LOG.debug("Categories of copied applications not copied", e);
+      return Map.of();
     }
   }
 
