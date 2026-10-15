@@ -107,14 +107,19 @@ class MyApplicationsCopyServiceTest {
 
   private static final byte[]      PNG          = new byte[] { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0 };
 
-  @MockitoBean
-  private ApplicationCenterService applicationCenterService;
+  private static final List<String> SPACE_AUDIENCE = List.of("*:/spaces/team");
 
   @MockitoBean
-  private TranslationService       translationService;
+  private ApplicationCenterService      applicationCenterService;
 
   @MockitoBean
-  private PortletWindowStorage     windowStorage;
+  private MyApplicationsSettingsService myApplicationsSettingsService;
+
+  @MockitoBean
+  private TranslationService            translationService;
+
+  @MockitoBean
+  private PortletWindowStorage          windowStorage;
 
   /** The window's preferences as committed, which the storage reads and writes */
   private final Map<String, String> committed = new HashMap<>();
@@ -133,6 +138,8 @@ class MyApplicationsCopyServiceTest {
     lenient().when(translationService.getTranslationField(anyString(), anyString(), anyString()))
              .thenThrow(new ObjectNotFoundException("no labels"));
     lenient().when(applicationCenterService.canAccess(any(), anyString())).thenReturn(true);
+    // The rule itself, which reads the application only
+    lenient().when(applicationCenterService.isManagedBy(any(), any())).thenCallRealMethod();
     // The service is the Spring context's, shared by the tests: no claim
     // outlives the test that took it
     ((Set<?>) ReflectionTestUtils.getField(copyService, "consumingWindows")).clear();
@@ -190,21 +197,48 @@ class MyApplicationsCopyServiceTest {
     assertEquals(Map.of("fr", "Wiki fr", "en", "Wiki"), copy.getTitles());
     assertEquals(Map.of("en", "<b>Wiki</b>"), copy.getDescriptions());
     assertArrayEquals(PNG, Base64.getDecoder().decode(copy.getIllustration()));
+    // Every application is in the user's audience: no settings right to read
+    verify(myApplicationsSettingsService, never()).canEditSettings(any(), any());
   }
 
   /**
-   * Fails the mutant dropping the access filter: a template app the copier
-   * cannot see would be copied for them
+   * A viewer's read, such as layout's impersonated page read, carries no
+   * application outside the viewer's audience, even one the window manages:
+   * fails the mutant dropping the access filter, and the one carrying the
+   * window's managed applications without the settings right
    */
   @Test
-  void getCopyPreferencesCarriesOnlyTheActiveApplicationsTheUserAccesses() throws Exception {
+  void getCopyPreferencesForAViewerCarriesOnlyTheActiveApplicationsTheViewerAccesses() throws Exception {
     Application hidden = contextApplication(1L, SETTING_NAME);
+    hidden.setPermissions(SPACE_AUDIENCE);
     when(applicationCenterService.canAccess(hidden, USERNAME)).thenReturn(false);
     Application inactive = contextApplication(2L, SETTING_NAME);
     inactive.setActive(false);
     contextApplication(3L, SETTING_NAME);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, USERNAME)).thenReturn(false);
 
     assertEquals(List.of(3L), copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2,3", null), false, USERNAME)));
+  }
+
+  /**
+   * A user who may edit the window's settings gets a copy carrying what the
+   * drawer lists them, the window's applications outside their audience
+   * included, except one whose audience an administrator emptied (PO,
+   * 2026-10-15): fails the mutant dropping the editor's branch, and the one
+   * dropping its managed-application condition
+   */
+  @Test
+  void getCopyPreferencesForAnEditorCarriesTheApplicationsTheWindowManagesOutsideTheirAudience() throws Exception {
+    Application outsideAudience = contextApplication(1L, SETTING_NAME);
+    outsideAudience.setPermissions(SPACE_AUDIENCE);
+    when(applicationCenterService.canAccess(outsideAudience, USERNAME)).thenReturn(false);
+    Application emptiedAudience = contextApplication(2L, SETTING_NAME);
+    when(applicationCenterService.canAccess(emptiedAudience, USERNAME)).thenReturn(false);
+    contextApplication(3L, SETTING_NAME);
+    when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, USERNAME)).thenReturn(true);
+
+    assertEquals(List.of(1L, 3L),
+                 copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2,3", null), false, USERNAME)));
   }
 
   /**
@@ -218,6 +252,7 @@ class MyApplicationsCopyServiceTest {
 
     assertEquals(List.of(1L, 2L), copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2", null), false, null)));
     verify(applicationCenterService, never()).canAccess(any(), any());
+    verify(myApplicationsSettingsService, never()).canEditSettings(any(), any());
   }
 
   /**

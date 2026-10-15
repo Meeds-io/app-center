@@ -2118,12 +2118,14 @@ public class ApplicationCenterService {
   }
 
   /**
+   * @param application the application
+   * @param settingName a Shortcuts portlet window's CMS setting name
    * @return true when the window's editors may see and delete the application
    *         outside its audience: one the window created, unless an
    *         administrator emptied its audience, which shows it to
    *         administrators only
    */
-  private boolean isManagedBy(Application application, String settingName) {
+  public boolean isManagedBy(Application application, String settingName) {
     return isOwnedBy(application, settingName) && CollectionUtils.isNotEmpty(application.getPermissions());
   }
 

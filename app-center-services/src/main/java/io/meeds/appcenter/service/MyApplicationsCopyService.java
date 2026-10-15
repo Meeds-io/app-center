@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -93,20 +94,26 @@ public class MyApplicationsCopyService {
   private final Set<String>   consumingWindows          = ConcurrentHashMap.newKeySet();
 
   @Autowired
-  private ApplicationCenterService applicationCenterService;
+  private ApplicationCenterService      applicationCenterService;
 
   @Autowired
-  private TranslationService       translationService;
+  private MyApplicationsSettingsService myApplicationsSettingsService;
 
   @Autowired
-  private PortletWindowStorage     windowStorage;
+  private TranslationService            translationService;
+
+  @Autowired
+  private PortletWindowStorage          windowStorage;
 
   /**
    * Computes the preferences of a copy of a Shortcuts portlet window: every
    * preference but its setting name, the legacy header key and data.init,
    * plus data.init carrying, by value, its header title and the applications
-   * it created that it lists, active and, when a user copies the window,
-   * accessible to that user. A data.init the window did not consume yet is
+   * it created that it lists, active and, when a user copies the window, as
+   * the window's settings drawer lists them to that user: those the user may
+   * access, and for a user who may edit the window's settings, those the
+   * window manages whatever their audience, unless an administrator emptied
+   * it. A data.init the window did not consume yet is
    * carried as it is, whatever its setting name. A draft of the window, which
    * the editor publishes back over it, keeps its preferences unchanged.
    *
@@ -317,23 +324,42 @@ public class MyApplicationsCopyService {
                                legacyHeaderKey,
                                MyApplicationsSettingsService.HEADER_TITLE_FIELD);
     }
-    List<ApplicationCopy> applications = MyApplicationsSettingsService.getApplicationIds(applicationIds)
-                                                                      .stream()
-                                                                      .map(applicationCenterService::getApplication)
-                                                                      .filter(application -> isCopied(application,
-                                                                                                      settingName,
-                                                                                                      username))
-                                                                      .map(this::toCopy)
-                                                                      .toList();
+    List<Application> listed = MyApplicationsSettingsService.getApplicationIds(applicationIds)
+                                                            .stream()
+                                                            .map(applicationCenterService::getApplication)
+                                                            .filter(application -> isCopied(application, settingName))
+                                                            .toList();
+    List<ApplicationCopy> applications = listed.stream()
+                                               .filter(isCarriedTo(listed, settingName, username))
+                                               .map(this::toCopy)
+                                               .toList();
     return headerTitles.isEmpty() && applications.isEmpty() ? null : new ApplicationListCopy(headerTitles, applications);
   }
 
-  private boolean isCopied(Application application, String settingName, String username) {
+  private boolean isCopied(Application application, String settingName) {
     return application != null
            && application.isContextual()
            && StringUtils.equals(application.getContextSettingName(), settingName)
-           && application.isActive()
-           && (username == null || applicationCenterService.canAccess(application, username));
+           && application.isActive();
+  }
+
+  /**
+   * @param listed the applications the window created that it lists
+   * @return which of them a copy made for the user carries, as the window's
+   *         settings drawer lists them to that user: those the user may
+   *         access, and for a user who may edit the window's settings, those
+   *         the window manages, whose audience an administrator did not
+   *         empty; every one when no user makes the copy. The settings right
+   *         is read only when an application is outside the user's audience.
+   */
+  private Predicate<Application> isCarriedTo(List<Application> listed, String settingName, String username) {
+    if (username == null) {
+      return application -> true;
+    }
+    boolean editor = listed.stream().anyMatch(application -> !applicationCenterService.canAccess(application, username))
+                     && myApplicationsSettingsService.canEditSettings(settingName, username);
+    return application -> applicationCenterService.canAccess(application, username)
+                          || editor && applicationCenterService.isManagedBy(application, settingName);
   }
 
   /**
