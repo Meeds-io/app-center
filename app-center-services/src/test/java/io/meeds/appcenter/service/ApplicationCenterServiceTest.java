@@ -2240,6 +2240,32 @@ public class ApplicationCenterServiceTest {
    * Application Center's applications, and failing the listing when the read
    * fails
    */
+  /**
+   * Fails the mutants reading the categories application by application, and
+   * returning none, which would copy apps without their categories
+   */
+  @Test
+  void getApplicationCategoryIdsReadsTheCategoriesOfEveryApplicationAtOnce() {
+    when(categoryLinkService.getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, List.of("1", "2"))).thenReturn(Map.of("1", List.of(10L, 11L)));
+
+    assertEquals(Map.of(1L, List.of(10L, 11L)), applicationCenterService.getApplicationCategoryIds(List.of(1L, 2L)));
+    verify(categoryLinkService, never()).getLinkedIds(any(CategoryObject.class));
+  }
+
+  /**
+   * The application exists when its links are read again: fails the mutant
+   * letting that read fail its creation, which would leave it listed nowhere
+   */
+  @Test
+  void createCopiedContextApplicationKeepsTheLinksMadeWhenTheyCannotBeReadAgain() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(List.of(3L));
+    when(categoryLinkService.getLinkedIds(any(CategoryObject.class))).thenThrow(new IllegalStateException("database unreachable"));
+
+    assertEquals(List.of(3L), applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false).getCategoryIds());
+  }
+
   @Test
   void getContextApplicationsGivesTheWindowsOwnApplicationsTheirCategories() throws Exception {
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);

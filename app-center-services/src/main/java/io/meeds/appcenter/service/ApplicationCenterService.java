@@ -1976,7 +1976,14 @@ public class ApplicationCenterService {
     if (linkedCategoryIds.isEmpty()) {
       return linkedCategoryIds;
     }
-    List<Long> applicationCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    List<Long> applicationCategoryIds;
+    try {
+      applicationCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    } catch (RuntimeException e) {
+      // The application exists already: it keeps the links made, unchecked
+      LOG.warn("Categories of copied application {} not checked", applicationId, e);
+      return linkedCategoryIds;
+    }
     for (Long linkedId : linkedCategoryIds) {
       if (!applicationCategoryIds.contains(linkedId)) {
         try {
