@@ -38,12 +38,12 @@ const editorUrls = [
   `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`,
 ];
 const vuetify = Vue.prototype.vuetifyOptions;
-const appId = 'myApplications';
 
-export function init(settings) {
+export function init(appId, settings) {
   exoi18n.loadLanguageAsync(lang, settings?.canEdit ? [...urls, ...editorUrls] : urls).then(i18n => {
     Vue.createApp({
       data: () => ({
+        appId,
         settings,
         noAutoOpen: true,
         quickActionExtensions: [],
