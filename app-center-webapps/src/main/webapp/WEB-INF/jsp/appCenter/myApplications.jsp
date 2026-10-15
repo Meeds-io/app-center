@@ -35,14 +35,16 @@
   String vAlign = MyApplicationsSettingsService.getAlignment(preferences.getValue(MyApplicationsSettingsService.V_ALIGN, null));
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           settingName, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
+  // One mount point per window: several Shortcuts portlets can share a page
+  String appId = "myApplications" + renderRequest.getWindowID();
 %>
 <div class="VuetifyApp">
   <div data-app="true"
     class="v-application v-application--is-ltr theme--light"
-    id="myApplications">
+    id="<%=StringEscapeUtils.escapeHtml4(appId)%>">
     <%-- myApplicationsService.js#isRenderedWithSettings parses this init block to confirm a save: keep settingName first and one "key: value," per line, a list printed as [a,b] --%>
     <script type="text/javascript">
-      require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init({
+      require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init('<%=StringEscapeUtils.escapeEcmaScript(appId)%>', {
         settingName: '<%=StringEscapeUtils.escapeEcmaScript(settingName)%>',
         maxAppsToList: '<%=maxAppsToList%>',
         listingMode: '<%=listingMode%>',

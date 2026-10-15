@@ -19,7 +19,7 @@
 -->
 
 <template>
-  <v-app id="myApplications">
+  <v-app :id="$root.appId">
     <v-hover v-model="hover">
       <widget-wrapper
         ref="widget"
