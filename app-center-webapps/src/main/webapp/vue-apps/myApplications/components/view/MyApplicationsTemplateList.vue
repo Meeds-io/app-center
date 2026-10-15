@@ -43,8 +43,9 @@
         <my-application-item
           v-for="application in applications"
           :key="application.id"
-          v-bind="itemProps"
           :application="application"
+          :display-settings="display"
+          :preview="preview"
           class="ma-1"
           @open-portlet="$emit('open-portlet', $event)" />
       </card-carousel>
@@ -55,8 +56,9 @@
         <my-application-item
           v-for="application in applications"
           :key="application.id"
-          v-bind="itemProps"
           :application="application"
+          :display-settings="display"
+          :preview="preview"
           :class="isColumn ? 'my-1' : 'ma-1'"
           @open-portlet="$emit('open-portlet', $event)" />
       </div>
@@ -121,17 +123,6 @@ export default {
         // Wrapped lines are aligned as the group is
         return `flex-wrap justify-${ALIGNMENTS[this.hAlign]} align-${ALIGNMENTS[this.vAlign]}`;
       }
-    },
-    itemProps() {
-      return {
-        template: this.display.template,
-        showIcon: this.display.showIcon,
-        iconSize: this.display.iconSize,
-        showName: this.display.showName,
-        outlined: this.display.outlined,
-        color: this.display.color,
-        preview: this.preview,
-      };
     },
   },
 };

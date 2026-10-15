@@ -46,59 +46,16 @@
         v-if="!preview"
         ref="placementMenu"
         :application="application" />
-      <div
-        :class="horizontal ? 'flex-row' : 'flex-column justify-center'"
-        class="d-flex align-center full-width">
-        <app-center-badge
-          v-if="!preview"
-          :badge-name="application.badgeName"
-          :class="horizontal ? 'align-self-start' : 'mx-auto'"
-          top-spacing="-5px"
-          x-spacing="12px" />
-        <template v-if="iconDisplayed">
-          <v-img
-            v-if="application.imageUrl"
-            :src="application.imageUrl"
-            :class="iconClass"
-            :max-width="iconPixels"
-            :max-height="iconPixels"
-            referrerpolicy="no-referrer"
-            contain />
-          <v-icon
-            v-else-if="application.icon"
-            :size="iconPixels"
-            :class="horizontal && 'flex-shrink-0'"
-            class="d-flex align-center justify-center">
-            {{ application.icon }}
-          </v-icon>
-          <v-img
-            v-else
-            :class="iconClass"
-            :max-width="iconPixels"
-            :max-height="iconPixels"
-            src="/app-center/skin/images/defaultApp.png"
-            contain
-            referrerpolicy="no-referrer" />
-        </template>
-        <v-tooltip
-          v-if="nameDisplayed"
-          bottom>
-          <template #activator="{ on, attrs }">
-            <span
-              :class="nameClass"
-              class="text-color"
-              v-bind="attrs"
-              v-on="on">
-              {{ applicationTitle }}
-            </span>
-          </template>
-          <span>{{ applicationTitle }}</span>
-        </v-tooltip>
-      </div>
+      <my-application-item-content
+        :application="application"
+        :display-settings="displaySettings"
+        :preview="preview" />
     </v-card>
   </v-hover>
 </template>
 <script>
+import {getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
+
 export default {
   props: {
     application: {
@@ -121,31 +78,10 @@ export default {
       type: String,
       default: null
     },
-    // ROW, CARDS or COLUMN, null for the legacy tile, which the props below leave as it is
-    template: {
-      type: String,
+    // The resolved display settings of a template, null for the legacy tile, left as it is
+    displaySettings: {
+      type: Object,
       default: null
-    },
-    showIcon: {
-      type: Boolean,
-      default: true
-    },
-    iconSize: {
-      type: Number,
-      default: 45
-    },
-    showName: {
-      type: Boolean,
-      default: true
-    },
-    outlined: {
-      type: Boolean,
-      default: false
-    },
-    // Empty for the skin's light grey
-    color: {
-      type: String,
-      default: ''
     },
     // Displayed only, as in the settings' preview: opens nothing
     preview: {
@@ -167,9 +103,6 @@ export default {
     applicationUrlTarget() {
       return this.application?.target;
     },
-    applicationTitle() {
-      return this.application?.title;
-    },
     applicationDescription() {
       return this.application?.description;
     },
@@ -189,56 +122,17 @@ export default {
         return {loading: this.loading};
       }
     },
-    horizontal() {
-      return this.template === 'ROW' || this.template === 'COLUMN';
-    },
-    iconDisplayed() {
-      return !this.template || this.showIcon;
-    },
-    nameDisplayed() {
-      return !this.template || this.showName;
-    },
-    iconPixels() {
-      return this.template ? this.iconSize : 45;
-    },
-    iconClass() {
-      return this.horizontal ? 'flex-grow-0 flex-shrink-0' : 'mx-auto';
-    },
-    nameClass() {
-      if (!this.horizontal) {
-        return ['text-truncate-2', this.iconDisplayed && 'mt-2'];
-      }
-      return ['text-truncate', this.iconDisplayed && 'ms-2'];
+    template() {
+      return this.displaySettings?.template;
     },
     templateMaxWidth() {
       return this.template === 'CARDS' ? 114 : 240;
     },
     cardClass() {
-      if (!this.template) {
-        return {
-          'border-color-black': this.isFocused,
-          'transparent': !this.hover,
-          'light-grey-background-color': this.hover,
-        };
-      }
-      return {
-        'rounded-pill px-4 py-2': this.template === 'ROW',
-        'pa-2': this.template === 'CARDS',
-        'px-2 py-1': this.template === 'COLUMN',
-        'border-color-black': this.isFocused,
-        // Outlined: no fill. Filled: the color, else the skin's light grey
-        'transparent': this.outlined,
-        'light-grey-background-color': !this.outlined && !this.color,
-      };
+      return getTileClass(this.displaySettings, this.hover, this.isFocused);
     },
     cardStyle() {
-      if (!this.template) {
-        return null;
-      } else if (this.outlined) {
-        return {border: `thin solid ${this.color || 'var(--allPagesBorderColor)'}`};
-      } else {
-        return this.color && {backgroundColor: this.color} || null;
-      }
+      return getTileStyle(this.displaySettings);
     },
   },
   methods: {

@@ -22,7 +22,7 @@
   String selectionMode = MyApplicationsSettingsService.getSelectionMode(preferences.getValue(MyApplicationsSettingsService.SELECTION_MODE, null));
   String applicationIds = MyApplicationsSettingsService.getApplicationIds(preferences.getValue(MyApplicationsSettingsService.APPLICATION_IDS, null)).toString().replace(" ", "");
   String categoryIds = MyApplicationsSettingsService.getCategoryIds(preferences.getValue(MyApplicationsSettingsService.CATEGORY_IDS, null)).toString().replace(" ", "");
-  // Each display setting is printed from its parsed value, null when unset or invalid, never as stored
+  // Each display setting is printed from its parsed value, never as stored: null when unset or invalid, the color empty
   String template = MyApplicationsSettingsService.getTemplate(preferences.getValue(MyApplicationsSettingsService.TEMPLATE, null));
   Boolean showSeeMore = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.SHOW_SEE_MORE, null));
   Boolean listInRow = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.LIST_IN_ROW, null));

@@ -131,8 +131,9 @@ export default {
       return getDisplaySettings(this.$root.settings);
     },
     toolbarDisplayed() {
-      // An editor keeps the line that holds the settings button
-      return !this.display || this.showHeader || this.display.showSeeMore || this.canEdit;
+      // An editor keeps the line that holds the settings button, and a viewer without favorites the one holding the +
+      return !this.display || this.showHeader || this.display.showSeeMore || this.canEdit
+          || (!this.selectedListing && !this.hasApplications);
     },
     headerTitle() {
       return this.$root.settings?.headerTitle;

@@ -148,6 +148,10 @@ export default {
   },
   methods: {
     update(key, value) {
+      // number-input emits its min or its max for a size typed beyond them: a size that is not a whole number is not kept
+      if (key === 'iconSize' && !(Number.isInteger(value) && value >= MIN_ICON_SIZE && value <= MAX_ICON_SIZE)) {
+        return;
+      }
       this.$emit('update:display', {...this.display, [key]: value});
     },
   },

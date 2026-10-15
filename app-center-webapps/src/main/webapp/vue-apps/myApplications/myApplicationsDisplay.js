@@ -92,3 +92,33 @@ export function getTemplateShowHeader(template) {
 export function isSameDisplay(display, otherDisplay) {
   return DISPLAY_KEYS.every(key => display?.[key] === otherDisplay?.[key]);
 }
+
+// The classes of an app's tile: the legacy one's without display settings
+export function getTileClass(displaySettings, hover, focused) {
+  if (!displaySettings) {
+    return {
+      'border-color-black': focused,
+      'transparent': !hover,
+      'light-grey-background-color': hover,
+    };
+  }
+  return {
+    'rounded-pill px-4 py-2': displaySettings.template === 'ROW',
+    'pa-2': displaySettings.template === 'CARDS',
+    'px-2 py-1': displaySettings.template === 'COLUMN',
+    'border-color-black': focused,
+    // Filled, without a color: the skin's light grey
+    'light-grey-background-color': !displaySettings.outlined && !displaySettings.color,
+  };
+}
+
+export function getTileStyle(displaySettings) {
+  if (!displaySettings) {
+    return null;
+  } else if (displaySettings.outlined) {
+    // No fill, and never the transparent class: it makes the border transparent as well
+    return {border: `thin solid ${displaySettings.color || 'var(--allPagesBorderColor)'}`, backgroundColor: 'transparent'};
+  } else {
+    return displaySettings.color && {backgroundColor: displaySettings.color} || null;
+  }
+}
