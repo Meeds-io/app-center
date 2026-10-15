@@ -28,7 +28,7 @@
     <div v-else class="flex-grow-1"></div>
     <div
       class="d-flex align-center ms-auto">
-      <template v-if="hasApplications">
+      <template v-if="hasApplications && showSeeMore">
         <v-btn
           v-if="!hover || !canEdit"
           :loading="loading === 'seeMore'"
@@ -113,6 +113,10 @@ export default {
       default: null
     },
     showHeader: {
+      type: Boolean,
+      default: true
+    },
+    showSeeMore: {
       type: Boolean,
       default: true
     },
