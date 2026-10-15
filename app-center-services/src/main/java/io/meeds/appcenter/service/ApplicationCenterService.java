@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -1190,7 +1191,9 @@ public class ApplicationCenterService {
    * Reads the applications a Shortcuts portlet window lists, for a user
    * editing its settings: as {@link #getListedApplications}, plus the
    * applications the window created whose audience excludes the user, unless
-   * an administrator emptied that audience.
+   * an administrator emptied that audience. The applications the window
+   * created carry their category ids, which its form edits: an empty list
+   * when they have none, null when they could not be read.
    *
    * @param filter the window's setting name and selected ids
    * @param locale the language of the labels, none when null
@@ -1210,7 +1213,9 @@ public class ApplicationCenterService {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
     }
-    return listApplications(filter, locale, username, true);
+    List<Application> applications = listApplications(filter, locale, username, true);
+    setContextApplicationCategories(applications);
+    return applications;
   }
 
   /**
@@ -1220,7 +1225,8 @@ public class ApplicationCenterService {
    * application created from a Shortcuts portlet is suggested to its own
    * window only, whatever its audience unless an administrator emptied it, so
    * that one left out of the list, by a failed save or a closed drawer, can be
-   * selected again.
+   * selected again; it carries its category ids as on
+   * {@link #getContextApplications}.
    *
    * @param settingName the window's CMS setting name
    * @param keyword matched in title and url, all applications when blank
@@ -1270,6 +1276,8 @@ public class ApplicationCenterService {
                                                      .toList();
     setApplicationLabels(applications, locale);
     setApplicationBadges(applications);
+    // A suggestion of its own is edited from the window's form as a listed one
+    setContextApplicationCategories(applications);
     return applications;
   }
 
@@ -1285,7 +1293,7 @@ public class ApplicationCenterService {
    * @param application the form's fields
    * @param settingName the window's CMS setting name
    * @param username the user creating the application
-   * @return the created application
+   * @return the created application, its badge resolved
    * @throws ObjectNotFoundException when the window's setting, or the space of
    *           its context, does not exist
    * @throws IllegalAccessException when the user may not manage the window's
@@ -1308,7 +1316,7 @@ public class ApplicationCenterService {
     if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
       throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
-    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), username);
+    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), null, username);
     String uploadId = application.getImageUploadId();
     byte[] illustration = null;
     String illustrationMimeType = null;
@@ -1326,6 +1334,8 @@ public class ApplicationCenterService {
       appCenterStorage.removeUpload(uploadId);
     }
     createdApplication.setCategoryIds(linkCategories(createdApplication.getId(), application.getCategoryIds(), username));
+    // Resolved, as the portlet's listing gives it, for the form that edits it next
+    createdApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(createdApplication));
     return createdApplication;
   }
 
@@ -1337,8 +1347,8 @@ public class ApplicationCenterService {
    * @param settingName the window's CMS setting name
    * @param username the user deleting the application
    * @throws ObjectNotFoundException when the window's setting does not exist,
-   *           or when the application does not exist or the user may not
-   *           access it
+   *           or when the application does not exist, or the window does
+   *           not manage it and the user may not access it
    * @throws IllegalAccessException when the user may not manage the window's
    *           applications
    * @throws IllegalArgumentException with the message
@@ -1349,23 +1359,104 @@ public class ApplicationCenterService {
   public void deleteContextApplication(long applicationId,
                                        String settingName,
                                        String username) throws ObjectNotFoundException, IllegalAccessException {
-    getContextSetting(settingName);
-    checkCanManageContextApplications(settingName, username);
-    Application application = appCenterStorage.getApplication(applicationId);
-    if (application == null || !isManagedBy(application, settingName) && !canAccess(application, username)) {
-      // The window's right covers the applications it created, whatever
-      // their audience
-      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
-    } else if (!application.isContextual()) {
-      throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
-    } else if (!StringUtils.equals(application.getContextSettingName(), settingName)) {
-      throw new IllegalArgumentException(NOT_OWNED_MESSAGE);
-    }
+    getOwnedContextApplication(applicationId, settingName, username);
     try {
       deleteApplication(applicationId);
     } catch (ApplicationNotFoundException e) {
       throw new ObjectNotFoundException(e.getMessage());
     }
+  }
+
+  /**
+   * Updates an application created from the settings of a Shortcuts portlet
+   * window, from that window's settings, with the fields its form offers, each
+   * one validated as on creation, but a portlet instance it keeps, which it
+   * does not check again. Its owner, audience, order and every field
+   * the form does not offer keep their stored or forced value. Its badge
+   * binding is the administrators' to change: for another editor, a new type
+   * drops it, and so does, unless the badge is turned off, a new url a badge
+   * provider declares. Its
+   * illustration is replaced from an upload only, removed only on the form's
+   * explicit request, and kept otherwise. Its categories become the form's
+   * ones as far as they can: a category the user may not link or unlink, or
+   * that fails to, keeps its state, and none changes when the form sends no
+   * list of them or when the stored ones cannot be read.
+   *
+   * @param applicationId the application id
+   * @param application the form's fields
+   * @param settingName the window's CMS setting name
+   * @param username the user updating the application
+   * @return the updated application, as a listing tile without its
+   *         permissions, its badge resolved, with its categories, null when
+   *         they could not be read
+   * @throws ObjectNotFoundException when the window's setting does not exist,
+   *           when the application does not exist, or the window does not
+   *           manage it and the user may not access it, or when the update's
+   *           own read of the application, or its read back once saved, finds
+   *           none
+   * @throws IllegalAccessException when the user may not manage the window's
+   *           applications
+   * @throws IllegalArgumentException with the message
+   *           {@value #NOT_CONTEXTUAL_MESSAGE} for an application of the
+   *           Application Center, {@value #NOT_OWNED_MESSAGE} for one another
+   *           window created, or a message naming the invalid field or
+   *           illustration
+   */
+  public Application updateContextApplication(long applicationId,
+                                              ApplicationForm application,
+                                              String settingName,
+                                              String username) throws ObjectNotFoundException, IllegalAccessException {
+    Application storedApplication = getOwnedContextApplication(applicationId, settingName, username);
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    Application contextApplication = toContextApplication(application, List.of(), storedApplication, username);
+    contextApplication.setId(applicationId);
+    contextApplication.setPermissions(storedApplication.getPermissions() == null ? null
+                                                                                 : new ArrayList<>(storedApplication.getPermissions()));
+    contextApplication.setOrder(storedApplication.getOrder());
+    contextApplication.setChangedManually(storedApplication.isChangedManually());
+    contextApplication.setContextSettingName(storedApplication.getContextSettingName());
+    contextApplication.setContextSpaceId(storedApplication.getContextSpaceId());
+    if (!isAdministrator(username)) {
+      // The badge binding is offered to administrators only, who read the
+      // badge providers: any other editor's form sends back the resolved
+      // badge, which would replace a stored 'none' or an url-derived binding
+      contextApplication.setBadgeName(getKeptBadgeName(storedApplication, contextApplication));
+    }
+    String uploadId = application.getImageUploadId();
+    Long newImageFileId = null;
+    if (StringUtils.isNotBlank(uploadId)) {
+      byte[] illustration = appCenterStorage.readUpload(uploadId, MAX_ILLUSTRATION_SIZE);
+      String illustrationMimeType = getIllustrationMimeType(illustration);
+      newImageFileId = appCenterStorage.saveIllustration(illustration, illustrationMimeType);
+      contextApplication.setImageFileId(newImageFileId);
+    } else if (!application.isIllustrationRemoved()) {
+      contextApplication.setImageFileId(storedApplication.getImageFileId());
+    }
+    // The new illustration only, never the kept one, is deleted when the update fails
+    try {
+      appCenterStorage.updateContextApplication(contextApplication);
+    } catch (ApplicationNotFoundException e) {
+      // Deleted since it was checked
+      deleteNewIllustration(newImageFileId);
+      throw new ObjectNotFoundException(e.getMessage());
+    } catch (RuntimeException e) {
+      deleteNewIllustration(newImageFileId);
+      throw e;
+    }
+    if (StringUtils.isNotBlank(uploadId)) {
+      appCenterStorage.removeUpload(uploadId);
+    }
+    Application storedUpdatedApplication = appCenterStorage.getApplication(applicationId);
+    if (storedUpdatedApplication == null) {
+      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    Application updatedApplication = toTile(storedUpdatedApplication);
+    updatedApplication.setCategoryIds(updateCategories(applicationId, application.getCategoryIds(), username));
+    // Resolved, as the portlet's listing gives it, for the form that edits it next
+    updatedApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(updatedApplication));
+    return updatedApplication;
   }
 
   /**
@@ -1454,6 +1545,58 @@ public class ApplicationCenterService {
     return setting;
   }
 
+  private void deleteNewIllustration(Long imageFileId) {
+    if (imageFileId != null) {
+      appCenterStorage.deleteIllustration(imageFileId);
+    }
+  }
+
+  /**
+   * The badge binding an update keeps for an editor who may not choose it,
+   * whatever the form sends, as the binding follows the url: a new type drops
+   * it, a turned off badge included; on the same type, a new url a badge
+   * provider declares drops it unless the badge is turned off; an unchanged
+   * url, or a new one no provider declares, keeps it.
+   *
+   * @return the stored binding, or null to let the new url resolve it
+   */
+  private String getKeptBadgeName(Application storedApplication, Application updatedApplication) {
+    String badgeName = storedApplication.getBadgeName();
+    if (updatedApplication.getType() != storedApplication.getType()) {
+      return null;
+    } else if (StringUtils.equals(updatedApplication.getUrl(), storedApplication.getUrl())
+               || ApplicationBadgePluginRegistry.BADGE_DISABLED.equals(badgeName)) {
+      return badgeName;
+    }
+    Application unbound = new Application(updatedApplication);
+    unbound.setBadgeName(null);
+    return badgePluginRegistry.resolveBadgeName(unbound) == null ? badgeName : null;
+  }
+
+  /**
+   * Checks, in this order, the window's setting, the user's right to manage
+   * the window's applications, the application, its access and its owner.
+   *
+   * @return the stored application, the cache's shared instance
+   */
+  private Application getOwnedContextApplication(long applicationId,
+                                                 String settingName,
+                                                 String username) throws ObjectNotFoundException, IllegalAccessException {
+    getContextSetting(settingName);
+    checkCanManageContextApplications(settingName, username);
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null || !isManagedBy(application, settingName) && !canAccess(application, username)) {
+      // The window's right covers the applications it created, whatever
+      // their audience
+      throw new ObjectNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    } else if (!application.isContextual()) {
+      throw new IllegalArgumentException(NOT_CONTEXTUAL_MESSAGE);
+    } else if (!StringUtils.equals(application.getContextSettingName(), settingName)) {
+      throw new IllegalArgumentException(NOT_OWNED_MESSAGE);
+    }
+    return application;
+  }
+
   private void checkCanManageContextApplications(String settingName, String username) throws IllegalAccessException {
     if (!myApplicationsSettingsService.canEditSettings(settingName, username)) {
       throw new IllegalAccessException(String.format("User %s is not allowed to manage the applications of %s",
@@ -1481,8 +1624,14 @@ public class ApplicationCenterService {
   /**
    * Builds an application created from a Shortcuts portlet from the fields
    * its form offers, each one validated, every other one forced.
+   *
+   * @param storedApplication the application an update changes, null on
+   *          creation
    */
-  private Application toContextApplication(ApplicationForm form, List<String> audience, String username) {
+  private Application toContextApplication(ApplicationForm form,
+                                           List<String> audience,
+                                           Application storedApplication,
+                                           String username) {
     if (StringUtils.isBlank(form.getTitle())) {
       throw new IllegalArgumentException(TITLE_MANDATORY_MESSAGE);
     } else if (form.getCategoryIds() != null && form.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
@@ -1493,7 +1642,7 @@ public class ApplicationCenterService {
     application.setTitle(checkLength("title", StringUtils.trim(form.getTitle()), MAX_TITLE_LENGTH));
     application.setDescription(checkLength("description", form.getDescription(), MAX_DESCRIPTION_LENGTH));
     application.setType(type);
-    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), username)));
+    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), storedApplication, username)));
     application.setHelpPageURL(StringUtils.isBlank(form.getHelpPageURL()) ? null
                                                                           : checkUrl("helpPageURL",
                                                                                      getContextLink(form.getHelpPageURL(),
@@ -1513,12 +1662,12 @@ public class ApplicationCenterService {
    * @return the url of an application created from a Shortcuts portlet: an
    *         http(s) or portal-relative link, the name of a drawer, which the
    *         server cannot check is registered, or a portlet instance the user
-   *         may access
+   *         binding it may access
    */
-  private String getContextApplicationUrl(ApplicationType type, String url, String username) {
+  private String getContextApplicationUrl(ApplicationType type, String url, Application storedApplication, String username) {
     return switch (type) {
     case DRAWER -> getDrawerName(url);
-    case PORTLET -> getPortletInstanceId(url, username);
+    case PORTLET -> getPortletInstanceId(url, storedApplication, username);
     default -> getContextLink(url, INVALID_URL_MESSAGE);
     };
   }
@@ -1550,10 +1699,16 @@ public class ApplicationCenterService {
     return url;
   }
 
-  private String getPortletInstanceId(String url, String username) {
+  private String getPortletInstanceId(String url, Application storedApplication, String username) {
     long portletInstanceId = NumberUtils.toLong(url, 0);
     if (portletInstanceId <= 0) {
       throw new IllegalArgumentException(INVALID_URL_MESSAGE);
+    } else if (storedApplication != null
+               && storedApplication.getType() == ApplicationType.PORTLET
+               && StringUtils.equals(storedApplication.getUrl(), String.valueOf(portletInstanceId))) {
+      // A kept instance is not checked again: an editor who keeps it needs no
+      // access to it
+      return storedApplication.getUrl();
     }
     try {
       portletInstanceService.getPortletInstance(portletInstanceId, username, null, false);
@@ -1635,6 +1790,75 @@ public class ApplicationCenterService {
         LOG.warn("Unable to link application {} to category {}", applicationId, categoryId, e);
       }
     }
+    return linkedCategoryIds;
+  }
+
+  /**
+   * Gives the applications a window created, among the listed copies, their
+   * categories, which the window's form edits, in one read. When the read
+   * fails, they stay unknown (null).
+   */
+  private void setContextApplicationCategories(List<Application> applications) {
+    List<String> contextApplicationIds = applications.stream()
+                                                     .filter(Application::isContextual)
+                                                     .map(application -> String.valueOf(application.getId()))
+                                                     .toList();
+    if (contextApplicationIds.isEmpty()) {
+      return;
+    }
+    Map<String, List<Long>> linkedIds;
+    try {
+      linkedIds = getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, contextApplicationIds);
+    } catch (RuntimeException e) {
+      LOG.warn("Unable to read the categories of the applications {}", contextApplicationIds, e);
+      return;
+    }
+    // An application with no category is absent from the map
+    Map<String, List<Long>> categoryIds = linkedIds == null ? Map.of() : linkedIds;
+    applications.stream()
+                .filter(Application::isContextual)
+                .forEach(application -> application.setCategoryIds(new ArrayList<>(CollectionUtils.emptyIfNull(categoryIds.get(String.valueOf(application.getId()))))));
+  }
+
+  /**
+   * Makes the categories of an updated application created from a Shortcuts
+   * portlet the ones of its form: links the new ones, unlinks the others, as
+   * the user may. A category that fails to link or unlink keeps its state: the
+   * application is updated already, and is returned with the categories it
+   * has.
+   *
+   * @return the ids of the linked categories
+   */
+  private List<Long> updateCategories(long applicationId, List<Long> categoryIds, String username) {
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                       String.valueOf(applicationId),
+                                                       0L);
+    List<Long> storedCategoryIds;
+    try {
+      storedCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
+    } catch (RuntimeException e) {
+      // Unknown, so left as they are and returned as unknown
+      LOG.warn("Unable to read the categories of updated application {}", applicationId, e);
+      return null; // NOSONAR
+    }
+    List<Long> linkedCategoryIds = new ArrayList<>(CollectionUtils.emptyIfNull(storedCategoryIds));
+    if (categoryIds == null) {
+      return linkedCategoryIds;
+    }
+    List<Long> newCategoryIds = categoryIds.stream().filter(Objects::nonNull).distinct().toList();
+    for (Long categoryId : linkedCategoryIds.stream().filter(id -> !newCategoryIds.contains(id)).toList()) {
+      try {
+        getCategoryLinkService().unlink(categoryId, categoryObject, username);
+        linkedCategoryIds.remove(categoryId);
+      } catch (ObjectNotFoundException | IllegalAccessException e) {
+        LOG.debug("Application {} not unlinked from category {} by {}", applicationId, categoryId, username, e);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to unlink application {} from category {}", applicationId, categoryId, e);
+      }
+    }
+    linkedCategoryIds.addAll(linkCategories(applicationId,
+                                            newCategoryIds.stream().filter(id -> !linkedCategoryIds.contains(id)).toList(),
+                                            username));
     return linkedCategoryIds;
   }
 

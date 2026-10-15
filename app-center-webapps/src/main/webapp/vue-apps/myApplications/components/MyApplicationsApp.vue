@@ -64,7 +64,8 @@
       :settings="$root.settings"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated"
-      @create-application="$refs.applicationFormDrawer.open()" />
+      @create-application="$refs.applicationFormDrawer.open()"
+      @edit-application="$refs.applicationFormDrawer.open($event)" />
     <app-center-form-drawer
       v-if="canEdit"
       ref="applicationFormDrawer"
@@ -72,7 +73,8 @@
       contextual
       @creation-started="$refs.settingsDrawer.creationStarted($event)"
       @saved="(application, isNew, creationId) => $refs.settingsDrawer.applicationCreated(application, creationId)"
-      @creation-completed="$refs.settingsDrawer.creationCompleted($event)" />
+      @creation-completed="$refs.settingsDrawer.creationCompleted($event)"
+      @updated="applicationUpdated" />
     <app-center-portlet-instance-drawer
       ref="portletInstanceDrawer" />
   </v-app>
@@ -158,6 +160,13 @@ export default {
       this.$root.settings.headerTitle = headerTitle;
       this.$refs.settingsDrawer.close();
       if (updateList) {
+        this.getFavoriteApplications();
+      }
+    },
+    applicationUpdated(application) {
+      this.$refs.settingsDrawer.applicationUpdated(application);
+      // The portlet lists the app with its new values, or by its new categories
+      if (this.selectedListing) {
         this.getFavoriteApplications();
       }
     },
