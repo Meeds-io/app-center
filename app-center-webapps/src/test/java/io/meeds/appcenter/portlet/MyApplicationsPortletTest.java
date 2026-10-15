@@ -248,12 +248,16 @@ class MyApplicationsPortletTest {
    * The new name is set on the preferences of the render request, the ones
    * passed to CMSPortlet#doView, which reads the name from them: fails the
    * mutant dropping that setValue, where CMSPortlet initializes and renders
-   * the window with the name it gave up
+   * the window with the name it gave up. The window's committed name is the
+   * one it gives up, as in production: fails the mutant generating the new
+   * name through generateRandomId, which adopts the committed name and would
+   * keep the copied one
    */
   @Test
   void doViewRendersAWindowWithTheNameItGetsInPlaceOfOneItMustNotKeep() throws Exception {
     givenAPageWindow();
     String copiedName = givenTheWindowCarries("Untitled-99-" + UUID.randomUUID());
+    lenient().when(copyService.getOrStoreSettingName(eq(STORAGE_ID), any())).thenReturn(copiedName);
     String newName = "Untitled-12-" + UUID.randomUUID();
     when(settingsService.generateSettingName(STORAGE_ID, WindowKind.PAGE)).thenReturn(newName);
 

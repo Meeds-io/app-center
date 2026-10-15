@@ -90,6 +90,9 @@ class PortletWindowStorageTest {
 
   private PortletWindowStorage storage;
 
+  /** The window's row, which a save writes */
+  private final AtomicReference<WindowEntity> committedWindow = new AtomicReference<>();
+
   @BeforeEach
   void setUp() {
     storage = spy(new PortletWindowStorage());
@@ -319,9 +322,6 @@ class PortletWindowStorageTest {
     assertTrue(PortletWindowStorage.class.getMethod("callInRequest", Supplier.class)
                                          .isAnnotationPresent(ContainerTransactional.class));
   }
-
-  /** The window's row, which a save writes */
-  private final AtomicReference<WindowEntity> committedWindow = new AtomicReference<>();
 
   private void givenTheCommittedWindow(Portlet portlet) {
     lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);

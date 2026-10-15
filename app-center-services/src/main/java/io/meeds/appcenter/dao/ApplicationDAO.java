@@ -104,7 +104,11 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
 
   /**
    * @param  ownerPattern a LIKE pattern over the owners' CMS setting names,
-   *                        compared as given
+   *                        compared in the column's collation: case-sensitive
+   *                        on PostgreSQL and HSQLDB, case-insensitive on MySQL,
+   *                        where the column takes the table's
+   *                        utf8_general_ci; a caller that needs an exact
+   *                        match checks each owner again
    * @return              the ids of the applications Shortcuts portlet
    *                      windows whose setting name matches created
    */

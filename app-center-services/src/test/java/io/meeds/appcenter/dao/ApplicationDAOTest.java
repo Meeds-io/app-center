@@ -122,8 +122,11 @@ class ApplicationDAOTest {
   }
 
   /**
-   * The pattern is matched as given: another template's id, another case or
-   * an unmarked name is not matched.
+   * The pattern is matched as given: another template's id or an unmarked
+   * name is not matched, nor, on HSQLDB as on PostgreSQL, another case. On
+   * MySQL the column's utf8_general_ci matches another case;
+   * ApplicationCenterService re-checks each owner against a case-sensitive
+   * pattern, which excludes it there.
    */
   @Test
   void findIdsByContextSettingNameLikeReadsTheApplicationsOfMatchingOwnersOnly() {
