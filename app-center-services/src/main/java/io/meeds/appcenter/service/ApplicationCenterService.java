@@ -1354,13 +1354,17 @@ public class ApplicationCenterService {
    * Every field is validated as on {@link #createContextApplication}, the
    * one exception being a portlet instance, which needs only to exist. The
    * illustration's type is decided from its content; an invalid or too large
-   * one is dropped, the application being created without it. No category is
-   * linked.
+   * one is dropped, the application being created without it. Its categories
+   * are linked with no right checked, as the source's were, a category that
+   * does not exist, or that fails to link, being skipped. An application whose
+   * source's audience an administrator emptied keeps it empty, shown to
+   * administrators only until one restores it.
    *
-   * @param application the copied application's fields
+   * @param application the copied application's fields and categories
    * @param illustration the copied illustration's content, null when none
    * @param settingName the copy's CMS setting name
-   * @return the created application
+   * @param hidden whether an administrator emptied the source's audience
+   * @return the created application, with the categories it got
    * @throws ObjectNotFoundException when the copy's setting, or the space of
    *           its context, does not exist
    * @throws IllegalArgumentException when a field is invalid, the message
@@ -1368,7 +1372,8 @@ public class ApplicationCenterService {
    */
   public Application createCopiedContextApplication(ApplicationForm application,
                                                     byte[] illustration,
-                                                    String settingName) throws ObjectNotFoundException {
+                                                    String settingName,
+                                                    boolean hidden) throws ObjectNotFoundException {
     CMSSetting setting = getContextSetting(settingName);
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
@@ -1377,17 +1382,31 @@ public class ApplicationCenterService {
     if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
       throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
-    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), null, null, true);
+    List<String> audience = getContextAudience(spaceId);
+    Application contextApplication = toContextApplication(application, hidden ? List.of() : audience, null, null, true);
     String illustrationMimeType = getCopiedIllustrationMimeType(illustration, settingName);
     if (illustrationMimeType != null) {
       contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
     }
+    Application createdApplication;
     try {
-      return new Application(appCenterStorage.createContextApplication(contextApplication, settingName, spaceId));
+      createdApplication = new Application(appCenterStorage.createContextApplication(contextApplication, settingName, spaceId));
     } catch (RuntimeException e) {
       deleteNewIllustration(contextApplication.getImageFileId());
       throw e;
     }
+    createdApplication.setCategoryIds(linkCopiedCategories(createdApplication.getId(), application.getCategoryIds()));
+    return createdApplication;
+  }
+
+  /**
+   * @param applicationId an application id
+   * @return the ids of the application's categories
+   */
+  public List<Long> getApplicationCategoryIds(long applicationId) {
+    return getCategoryLinkService().getLinkedIds(new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                                    String.valueOf(applicationId),
+                                                                    0));
   }
 
   /**
@@ -1930,6 +1949,30 @@ public class ApplicationCenterService {
    *
    * @return the ids of the linked categories
    */
+  /**
+   * Links a copied application to its source's categories with no right
+   * checked: a category that does not exist on this deployment, or that fails
+   * to link, is skipped, never created.
+   *
+   * @return the ids of the linked categories
+   */
+  private List<Long> linkCopiedCategories(long applicationId, List<Long> categoryIds) {
+    List<Long> linkedCategoryIds = new ArrayList<>();
+    if (CollectionUtils.isEmpty(categoryIds)) {
+      return linkedCategoryIds;
+    }
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(applicationId), 0L);
+    for (Long categoryId : categoryIds.stream().filter(Objects::nonNull).distinct().toList()) {
+      try {
+        getCategoryLinkService().link(categoryId, categoryObject);
+        linkedCategoryIds.add(categoryId);
+      } catch (RuntimeException e) {
+        LOG.debug("Copied application {} not linked to category {}", applicationId, categoryId, e);
+      }
+    }
+    return linkedCategoryIds;
+  }
+
   private List<Long> linkCategories(long applicationId, List<Long> categoryIds, String username) {
     if (CollectionUtils.isEmpty(categoryIds)) {
       return new ArrayList<>();
@@ -2125,16 +2168,22 @@ public class ApplicationCenterService {
    *         administrator emptied its audience, which shows it to
    *         administrators only
    */
-  public boolean isManagedBy(Application application, String settingName) {
+  private boolean isManagedBy(Application application, String settingName) {
     return isOwnedBy(application, settingName) && CollectionUtils.isNotEmpty(application.getPermissions());
   }
 
   /**
-   * @return true when a window lists the application to the user: one the
-   *         user may access, and for an editor of the window's settings one
-   *         the window manages
+   * Whether a Shortcuts portlet window's settings drawer lists an application
+   * to a user, the rule a copy of the window applies too.
+   *
+   * @param application the application
+   * @param settingName the window's CMS setting name
+   * @param username the user
+   * @param editor whether the user may edit the window's settings
+   * @return true for an application the user may access, and for an editor of
+   *         the window's settings one the window manages
    */
-  private boolean isShown(Application application, String settingName, String username, boolean editor) {
+  public boolean isShown(Application application, String settingName, String username, boolean editor) {
     return canAccess(application, username) || editor && isManagedBy(application, settingName);
   }
 

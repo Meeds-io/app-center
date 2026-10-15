@@ -18,6 +18,7 @@
  */
 package io.meeds.appcenter.model;
 
+import java.util.List;
 import java.util.Map;
 
 import io.meeds.appcenter.constant.ApplicationType;
@@ -68,5 +69,14 @@ public class ApplicationCopy {
 
   /** The illustration's content, base64-encoded, null when none is copied. */
   private String              illustration;
+
+  /** The ids of the source application's categories. */
+  private List<Long>          categoryIds;
+
+  /**
+   * Whether an administrator emptied the source application's audience: the
+   * copy keeps it empty, shown to administrators only.
+   */
+  private boolean             hidden;
 
 }

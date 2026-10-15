@@ -357,8 +357,7 @@ public class MyApplicationsCopyService {
     }
     boolean editor = listed.stream().anyMatch(application -> !applicationCenterService.canAccess(application, username))
                      && myApplicationsSettingsService.canEditSettings(settingName, username);
-    return application -> applicationCenterService.canAccess(application, username)
-                          || editor && applicationCenterService.isManagedBy(application, settingName);
+    return application -> applicationCenterService.isShown(application, settingName, username, editor);
   }
 
   /**
@@ -381,7 +380,22 @@ public class MyApplicationsCopyService {
     copy.setMobile(application.isMobile());
     copy.setAllowDetach(application.isAllowDetach());
     copy.setIllustration(getIllustration(application));
+    copy.setCategoryIds(getCategoryIds(application));
+    copy.setHidden(application.getPermissions() == null || application.getPermissions().isEmpty());
     return copy;
+  }
+
+  /**
+   * @return the ids of the application's categories, none when they cannot
+   *         be read
+   */
+  private List<Long> getCategoryIds(Application application) {
+    try {
+      return applicationCenterService.getApplicationCategoryIds(application.getId());
+    } catch (RuntimeException e) {
+      LOG.debug("Categories of application {} not copied", application.getId(), e);
+      return null; // NOSONAR
+    }
   }
 
   /**
@@ -419,11 +433,17 @@ public class MyApplicationsCopyService {
     form.setSameTab(copiedApplication.isSameTab());
     form.setMobile(copiedApplication.isMobile());
     form.setAllowDetach(copiedApplication.isAllowDetach());
+    List<Long> categoryIds = copiedApplication.getCategoryIds();
+    form.setCategoryIds(categoryIds == null ? null
+                                            : categoryIds.stream()
+                                                         .limit(MyApplicationsSettingsService.MAX_LISTED_CATEGORIES)
+                                                         .toList());
     Application createdApplication;
     try {
       createdApplication = applicationCenterService.createCopiedContextApplication(form,
                                                                                    decodeIllustration(copiedApplication.getIllustration()),
-                                                                                   settingName);
+                                                                                   settingName,
+                                                                                   copiedApplication.isHidden());
     } catch (ObjectNotFoundException | IllegalArgumentException e) {
       LOG.debug("Application {} not copied for {}", copiedApplication.getId(), settingName, e);
       return null;

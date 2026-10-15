@@ -2362,7 +2362,7 @@ public class ApplicationCenterServiceTest {
   void createCopiedContextApplicationChecksNoRightAndGivesTheCopyContextAudience() throws Exception {
     mockContext(SPACE_ID);
 
-    Application created = applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME);
+    Application created = applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME, false);
 
     verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:" + SPACE_GROUP)
                                                                                  .equals(application.getPermissions())),
@@ -2374,7 +2374,7 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
-  void createCopiedContextApplicationForcesWhatTheFormDoesNotOfferAndLinksNoCategory() throws Exception {
+  void createCopiedContextApplicationForcesWhatTheFormDoesNotOffer() throws Exception {
     mockContext(0L);
     ApplicationForm form = contextForm();
     form.setMandatory(true);
@@ -2385,7 +2385,7 @@ public class ApplicationCenterServiceTest {
     form.setPermissions(List.of("*:/platform/administrators"));
     form.setCategoryIds(List.of(3L));
 
-    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
+    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false);
 
     Application created = lastCreatedContextApplication();
     assertFalse(created.isMandatory());
@@ -2396,7 +2396,38 @@ public class ApplicationCenterServiceTest {
     assertTrue(created.isActive());
     assertEquals(List.of(ApplicationCenterService.DEFAULT_USERS_PERMISSION, ApplicationCenterService.EXTERNAL_USERS_PERMISSION),
                  created.getPermissions());
+  }
+
+  /**
+   * A copied app keeps its source's categories, linked with no right as the
+   * first viewer can be anyone: fails the mutant linking none, and the mutant
+   * letting a category unknown on this deployment refuse the application
+   */
+  @Test
+  void createCopiedContextApplicationLinksTheSourceCategoriesItCan() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(List.of(3L, 4L));
+    doThrow(new IllegalStateException("category 4 not found")).when(categoryLinkService).link(eq(4L), any(CategoryObject.class));
+
+    Application created = applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false);
+
+    assertEquals(List.of(3L), created.getCategoryIds());
+    verify(categoryLinkService).link(eq(3L), argThat((CategoryObject object) -> String.valueOf(CREATED_ID).equals(object.getId())));
     verify(categoryLinkService, never()).link(anyLong(), any(), any());
+  }
+
+  /**
+   * Duplicating a section must not publish an app an administrator hid:
+   * fails the mutant giving the copy of such an app its context's audience
+   */
+  @Test
+  void createCopiedContextApplicationKeepsAnAudienceAnAdministratorEmptied() throws Exception {
+    mockContext(SPACE_ID);
+
+    applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME, true);
+
+    assertEquals(List.of(), lastCreatedContextApplication().getPermissions());
   }
 
   /**
@@ -2419,7 +2450,7 @@ public class ApplicationCenterServiceTest {
     byte[] png = png(100);
     when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID);
 
-    applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME);
+    applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME, false);
 
     assertEquals(IMAGE_FILE_ID, lastCreatedContextApplication().getImageFileId());
   }
@@ -2435,10 +2466,12 @@ public class ApplicationCenterServiceTest {
 
     applicationCenterService.createCopiedContextApplication(contextForm(),
                                                             "<svg onload=\"alert(1)\"/>".getBytes(StandardCharsets.UTF_8),
-                                                            SETTING_NAME);
+                                                            SETTING_NAME,
+                                                            false);
     applicationCenterService.createCopiedContextApplication(contextForm(),
                                                             png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE + 1),
-                                                            SETTING_NAME);
+                                                            SETTING_NAME,
+                                                            false);
 
     verify(appCenterStorage, never()).saveIllustration(any(), any());
     verify(appCenterStorage, times(2)).createContextApplication(argThat(application -> application.getImageFileId() == null),
@@ -2455,7 +2488,7 @@ public class ApplicationCenterServiceTest {
                                                                .createContextApplication(any(), eq(SETTING_NAME), anyLong());
 
     assertThrows(IllegalStateException.class,
-                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME));
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME, false));
     verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID);
   }
 
@@ -2473,9 +2506,9 @@ public class ApplicationCenterServiceTest {
 
     assertEquals(ApplicationCenterService.INVALID_URL_MESSAGE,
                  assertThrows(IllegalArgumentException.class,
-                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME)).getMessage());
+                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false)).getMessage());
     when(portletInstanceService.getPortletInstance(35L)).thenReturn(new PortletInstance());
-    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
+    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false);
 
     assertEquals("35", lastCreatedContextApplication().getUrl());
     verify(portletInstanceService, never()).getPortletInstance(anyLong(), any(), any(), anyBoolean());
@@ -2484,7 +2517,7 @@ public class ApplicationCenterServiceTest {
   @Test
   void createCopiedContextApplicationRefusesAnUnknownSetting() {
     assertThrows(ObjectNotFoundException.class,
-                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME, false));
   }
 
   @Test
@@ -2493,7 +2526,7 @@ public class ApplicationCenterServiceTest {
     when(myApplicationsSettingsService.isContextDeleted(SETTING_NAME, PAGE_REFERENCE)).thenReturn(true);
 
     assertThrows(ObjectNotFoundException.class,
-                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME, false));
     verifyNoContextApplicationCreated();
   }
 
@@ -2503,7 +2536,7 @@ public class ApplicationCenterServiceTest {
     when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
 
     assertThrows(ObjectNotFoundException.class,
-                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME, false));
     verifyNoContextApplicationCreated();
   }
 
@@ -2887,7 +2920,7 @@ public class ApplicationCenterServiceTest {
     formChange.accept(form);
     assertEquals(messageCode,
                  assertThrows(IllegalArgumentException.class,
-                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME)).getMessage());
+                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false)).getMessage());
   }
 
   private void givenSectionTemplateApplications(Map<Long, String> owners) {
