@@ -20,11 +20,13 @@ package io.meeds.appcenter.rest;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -308,6 +310,54 @@ public class ApplicationRestTest {
   }
 
   @Test
+  void updateContextApplication() throws Exception {
+    Application updated = application();
+    updated.setContextSettingName(SETTING_NAME);
+    updated.setCategoryIds(List.of(10L));
+    when(applicationCenterService.updateContextApplication(eq(7L), any(), eq(SETTING_NAME), eq(SIMPLE_USER))).thenReturn(updated);
+
+    mockMvc.perform(put(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)
+                                            .content("{\"title\":\"title\",\"imageUploadId\":\"upload\",\"illustrationRemoved\":true,\"categoryIds\":[10]}")
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.contextual").value(true))
+           .andExpect(jsonPath("$.categoryIds[0]").value(10));
+    verify(applicationCenterService).updateContextApplication(eq(7L),
+                                                              argThat(form -> "title".equals(form.getTitle())
+                                                                              && "upload".equals(form.getImageUploadId())
+                                                                              && form.isIllustrationRemoved()
+                                                                              && List.of(10L).equals(form.getCategoryIds())),
+                                                              eq(SETTING_NAME),
+                                                              eq(SIMPLE_USER));
+
+    mockMvc.perform(put(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)
+                                            .content("{\"title\":\"title\"}")
+                                            .contentType(MediaType.APPLICATION_JSON))
+           .andExpect(status().isForbidden());
+    verify(applicationCenterService, times(1)).updateContextApplication(anyLong(), any(), any(), any());
+  }
+
+  /**
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
+   */
+  @Test
+  void updateContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    when(applicationCenterService.updateContextApplication(eq(1L), any(), eq(SETTING_NAME), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.updateContextApplication(eq(2L), any(), eq(SETTING_NAME), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.updateContextApplication(eq(3L),
+                                                           any(),
+                                                           eq(SETTING_NAME),
+                                                           any())).thenThrow(new IllegalArgumentException(ApplicationCenterService.NOT_OWNED_MESSAGE));
+
+    putContextApplication(1L).andExpect(status().isNotFound());
+    putContextApplication(2L).andExpect(status().isForbidden());
+    putContextApplication(3L).andExpect(status().isBadRequest())
+                             .andExpect(status().reason(ApplicationCenterService.NOT_OWNED_MESSAGE));
+  }
+
+  @Test
   void deleteContextApplication() throws Exception {
     mockMvc.perform(delete(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
            .andExpect(status().isOk());
@@ -343,6 +393,13 @@ public class ApplicationRestTest {
                                              .content("{\"title\":\"title\"}")
                                              .contentType(MediaType.APPLICATION_JSON)
                                              .with(testSimpleUser()));
+  }
+
+  private ResultActions putContextApplication(long applicationId) throws Exception {
+    return mockMvc.perform(put(CONTEXT_PATH + "/" + applicationId).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                                  .content("{\"title\":\"title\"}")
+                                                                  .contentType(MediaType.APPLICATION_JSON)
+                                                                  .with(testSimpleUser()));
   }
 
   @Test
