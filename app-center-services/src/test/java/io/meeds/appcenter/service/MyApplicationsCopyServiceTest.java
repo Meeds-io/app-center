@@ -713,6 +713,24 @@ class MyApplicationsCopyServiceTest {
     assertEquals(List.of(3L, 4L), form.getValue().getCategoryIds());
   }
 
+  /**
+   * Fails the mutant reading the categories application by application, a
+   * query per app on a read any page viewer can make
+   */
+  @Test
+  void getCopyPreferencesReadsTheCarriedApplicationsCategoriesAtOnce() {
+    contextApplication(1L, SETTING_NAME);
+    contextApplication(2L, SETTING_NAME);
+    when(applicationCenterService.getApplicationCategoryIds(List.of(1L, 2L))).thenReturn(Map.of(2L, List.of(5L)));
+
+    List<ApplicationCopy> copies = listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2", null), false, null))
+                                                                                                                       .getApplications();
+
+    assertNull(copies.get(0).getCategoryIds());
+    assertEquals(List.of(5L), copies.get(1).getCategoryIds());
+    verify(applicationCenterService, times(1)).getApplicationCategoryIds(any());
+  }
+
   private Map<String, String> preferences(String name, String applicationIds, String payload) {
     Map<String, String> preferences = new LinkedHashMap<>();
     if (name != null) {

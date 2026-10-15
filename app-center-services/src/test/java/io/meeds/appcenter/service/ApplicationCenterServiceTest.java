@@ -2235,12 +2235,6 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
-   * The window's form edits the categories of what the window created: fails
-   * the mutants reading them per application, reading those of the
-   * Application Center's applications, and failing the listing when the read
-   * fails
-   */
-  /**
    * Fails the mutants reading the categories application by application, and
    * returning none, which would copy apps without their categories
    */
@@ -2266,6 +2260,12 @@ public class ApplicationCenterServiceTest {
     assertEquals(List.of(3L), applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME, false).getCategoryIds());
   }
 
+  /**
+   * The window's form edits the categories of what the window created: fails
+   * the mutants reading them per application, reading those of the
+   * Application Center's applications, and failing the listing when the read
+   * fails
+   */
   @Test
   void getContextApplicationsGivesTheWindowsOwnApplicationsTheirCategories() throws Exception {
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, TEST_USER)).thenReturn(true);

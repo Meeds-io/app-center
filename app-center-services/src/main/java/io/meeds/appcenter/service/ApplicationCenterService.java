@@ -1955,7 +1955,8 @@ public class ApplicationCenterService {
    * checked: a category that does not exist on this deployment, or that fails
    * to link, is skipped, never created. The link takes any metadata id: an id
    * that the read of the application's categories does not return names no
-   * category, a tag or a favorite for instance, and its item is removed.
+   * category, a tag or a favorite for instance, and its item is removed;
+   * when that read fails, the links made are kept, unchecked.
    *
    * @return the ids of the linked categories
    */
