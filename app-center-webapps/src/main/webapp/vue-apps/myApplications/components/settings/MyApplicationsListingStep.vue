@@ -56,25 +56,28 @@
       hide-details
       mandatory
       @change="$emit('update:selection-mode', $event)">
-      <v-radio value="MANUAL">
-        <template #label>
-          <span class="ms-1 text-color">{{ $t('myApplications.pickApps.label') }}</span>
-        </template>
-      </v-radio>
-      <template v-if="selectionMode === 'MANUAL'">
-        <!-- A disabled button has no pointer events: the wrapper carries the cap's tooltip -->
+      <div class="d-flex align-center">
+        <v-radio value="MANUAL" class="flex-grow-1 mb-0">
+          <template #label>
+            <span class="ms-1 text-color">{{ $t('myApplications.pickApps.label') }}</span>
+          </template>
+        </v-radio>
+        <!-- A disabled button has no pointer events: the wrapper carries the tooltip -->
         <div
-          :title="capReached && $t('myApplications.searchApp.capReached', {0: maxApplications}) || null"
-          class="d-flex justify-end">
+          v-if="selectionMode === 'MANUAL'"
+          :title="capReached && $t('myApplications.searchApp.capReached', {0: maxApplications}) || $t('myApplications.createApp.label')"
+          class="flex-shrink-0">
           <v-btn
             :disabled="loading || capReached"
-            color="primary"
-            text
+            :aria-label="$t('myApplications.createApp.label')"
+            icon
+            small
             @click="$emit('create-application')">
-            <v-icon size="12" class="me-1">fas fa-plus</v-icon>
-            {{ $t('myApplications.createApp.label') }}
+            <v-icon size="16" class="icon-default-color">fas fa-plus</v-icon>
           </v-btn>
         </div>
+      </div>
+      <template v-if="selectionMode === 'MANUAL'">
         <my-applications-application-suggester
           :setting-name="settingName"
           :selected-ids="applicationIds"
@@ -109,6 +112,17 @@
               @click="move(index, 1)">
               <v-icon size="16" class="icon-default-color">fas fa-arrow-down</v-icon>
             </v-btn>
+            <!-- A disabled button has no pointer events: the wrapper carries the tooltip of an app this portlet did not create -->
+            <div :title="application.contextual ? $t('myApplications.editApp.tooltip') : $t('myApplications.editApp.notEditable')">
+              <v-btn
+                :disabled="loading || !application.contextual"
+                :aria-label="application.contextual ? $t('myApplications.editApp.tooltip') : $t('myApplications.editApp.notEditable')"
+                icon
+                small
+                @click="$emit('edit-application', application)">
+                <v-icon size="16" class="icon-default-color">fas fa-edit</v-icon>
+              </v-btn>
+            </div>
             <v-btn
               :title="$t('myApplications.removeApp.tooltip')"
               :disabled="loading"
