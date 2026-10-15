@@ -462,6 +462,32 @@ class MyApplicationsSettingsServiceTest {
   }
 
   @Test
+  void getWritableSettingsKeepsTheDisplaySettingsWithAListingMode() {
+    // A drawer save posts its listing mode with the display settings: they are kept in either mode
+    Map<String, String> display = new HashMap<>();
+    display.put(TEMPLATE, "ROW");
+    display.put(SHOW_SEE_MORE, "false");
+    display.put(LIST_IN_ROW, "true");
+    display.put(SHOW_ICON, "false");
+    display.put(ICON_SIZE, "32");
+    display.put(SHOW_NAME, "true");
+    display.put(COLOR, "");
+    display.put(OUTLINED, "true");
+    display.put(H_ALIGN, "CENTER");
+    display.put(V_ALIGN, "CENTER");
+
+    Map<String, String> favorites = new HashMap<>(display);
+    favorites.put(LISTING_MODE, LISTING_MODE_FAVORITES);
+    assertEquals(favorites, settingsService.getWritableSettings(PAGE_NAME, favorites));
+
+    Map<String, String> selected = new HashMap<>(display);
+    selected.put(LISTING_MODE, LISTING_MODE_SELECTED);
+    selected.put(SELECTION_MODE, SELECTION_MODE_MANUAL);
+    selected.put(APPLICATION_IDS, "5");
+    assertEquals(selected, settingsService.getWritableSettings(PAGE_NAME, selected));
+  }
+
+  @Test
   void getWritableSettingsValidatesTheTemplate() {
     for (String template : List.of("ROW", "CARDS", "COLUMN")) {
       assertEquals(Map.of(TEMPLATE, template), settingsService.getWritableSettings(PAGE_NAME, Map.of(TEMPLATE, template)));
