@@ -95,6 +95,49 @@ public class MyApplicationsSettingsService {
 
   public static final String  CATEGORY_IDS              = "categoryIds";
 
+  /**
+   * How the apps are displayed: ROW, CARDS or COLUMN. A window with none
+   * renders the legacy layout (D3).
+   */
+  public static final String  TEMPLATE                  = "template";
+
+  public static final String  TEMPLATE_ROW              = "ROW";
+
+  public static final String  TEMPLATE_CARDS            = "CARDS";
+
+  public static final String  TEMPLATE_COLUMN           = "COLUMN";
+
+  public static final String  SHOW_SEE_MORE             = "showSeeMore";
+
+  /** Whether the apps stay on one line, ignored by the COLUMN template. */
+  public static final String  LIST_IN_ROW               = "listInRow";
+
+  public static final String  SHOW_ICON                 = "showIcon";
+
+  /** The icon size, in pixels. */
+  public static final String  ICON_SIZE                 = "iconSize";
+
+  public static final String  SHOW_NAME                 = "showName";
+
+  /** The tiles' color, empty for the skin's light grey. */
+  public static final String  COLOR                     = "color";
+
+  public static final String  OUTLINED                  = "outlined";
+
+  public static final String  H_ALIGN                   = "hAlign";
+
+  public static final String  V_ALIGN                   = "vAlign";
+
+  public static final String  ALIGN_START               = "START";
+
+  public static final String  ALIGN_CENTER              = "CENTER";
+
+  public static final String  ALIGN_END                 = "END";
+
+  public static final int     MIN_ICON_SIZE             = 12;
+
+  public static final int     MAX_ICON_SIZE             = 60;
+
   /** Most categories a Shortcuts portlet lists the apps of (D6). */
   public static final int     MAX_LISTED_CATEGORIES     = 100;
 
@@ -143,6 +186,10 @@ public class MyApplicationsSettingsService {
   private static final Pattern DIGITS                   = Pattern.compile("^\\d{1,3}$");
 
   private static final Pattern ID                       = Pattern.compile("^\\d{1,18}$");
+
+  private static final Pattern COLOR_VALUE              = Pattern.compile("^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$");
+
+  private static final List<String> DISPLAY_FLAGS       = List.of(SHOW_SEE_MORE, LIST_IN_ROW, SHOW_ICON, SHOW_NAME, OUTLINED);
 
   private static final int     MAX_KEPT_SETTING_NAMES   = 1000;
 
@@ -300,6 +347,7 @@ public class MyApplicationsSettingsService {
     if (StringUtils.equalsAny(showHeader, "true", "false")) {
       settings.put(SHOW_HEADER, showHeader);
     }
+    putDisplaySettings(parameters, settings);
     String listingMode = StringUtils.trim(parameters.get(LISTING_MODE));
     if (!StringUtils.equalsAny(listingMode, LISTING_MODE_FAVORITES, LISTING_MODE_SELECTED)) {
       // The selection is written only with its listing mode, so that the
@@ -380,6 +428,74 @@ public class MyApplicationsSettingsService {
   public static List<Long> getCategoryIds(String storedValue) {
     List<Long> ids = parseIds(StringUtils.deleteWhitespace(storedValue), MAX_LISTED_CATEGORIES);
     return ids == null ? Collections.emptyList() : ids;
+  }
+
+  /**
+   * Reads a stored template: ROW, CARDS or COLUMN, null for any other value
+   * or none, which renders the legacy layout.
+   *
+   * @param storedValue the template preference
+   * @return the template to render, or null
+   */
+  public static String getTemplate(String storedValue) {
+    return StringUtils.equalsAny(storedValue, TEMPLATE_ROW, TEMPLATE_CARDS, TEMPLATE_COLUMN) ? storedValue : null;
+  }
+
+  /**
+   * Reads a stored display flag: showSeeMore, listInRow, showIcon, showName
+   * or outlined.
+   *
+   * @param storedValue the preference
+   * @return true or false, null for any other value or none, which the
+   *         template's default replaces
+   */
+  public static Boolean getDisplayFlag(String storedValue) {
+    if (StringUtils.equals(storedValue, "true")) {
+      return Boolean.TRUE;
+    } else if (StringUtils.equals(storedValue, "false")) {
+      return Boolean.FALSE;
+    } else {
+      return null; // NOSONAR
+    }
+  }
+
+  /**
+   * Reads a stored icon size.
+   *
+   * @param storedValue the iconSize preference
+   * @return the size, from {@link #MIN_ICON_SIZE} to {@link #MAX_ICON_SIZE},
+   *         null for any other value or none, which the template's default
+   *         replaces
+   */
+  public static Integer getIconSize(String storedValue) {
+    if (storedValue == null || !DIGITS.matcher(storedValue).matches()) {
+      return null;
+    }
+    int value = Integer.parseInt(storedValue);
+    return value >= MIN_ICON_SIZE && value <= MAX_ICON_SIZE ? value : null;
+  }
+
+  /**
+   * Reads a stored color: #RRGGBB or #RRGGBBAA.
+   *
+   * @param storedValue the color preference
+   * @return the color, empty for any other value or none, which is the skin's
+   *         light grey
+   */
+  public static String getColor(String storedValue) {
+    return storedValue != null && COLOR_VALUE.matcher(storedValue).matches() ? storedValue : "";
+  }
+
+  /**
+   * Reads a stored alignment, horizontal or vertical: START, CENTER or END,
+   * START being the left in a left-to-right page and the top vertically.
+   *
+   * @param storedValue the hAlign or vAlign preference
+   * @return the alignment, null for any other value or none, which the
+   *         template's default replaces
+   */
+  public static String getAlignment(String storedValue) {
+    return StringUtils.equalsAny(storedValue, ALIGN_START, ALIGN_CENTER, ALIGN_END) ? storedValue : null;
   }
 
   /**
@@ -682,6 +798,37 @@ public class MyApplicationsSettingsService {
     } catch (RuntimeException e) {
       LOG.debug("Unable to parse page reference {}", pageReference, e);
       return false;
+    }
+  }
+
+  /**
+   * Keeps the display settings of a write that have a valid value, whatever
+   * the listing mode: an empty color, the skin's light grey, included.
+   */
+  private void putDisplaySettings(Map<String, String> parameters, Map<String, String> settings) {
+    String template = getTemplate(StringUtils.trim(parameters.get(TEMPLATE)));
+    if (template != null) {
+      settings.put(TEMPLATE, template);
+    }
+    for (String flag : DISPLAY_FLAGS) {
+      Boolean value = getDisplayFlag(StringUtils.trim(parameters.get(flag)));
+      if (value != null) {
+        settings.put(flag, value.toString());
+      }
+    }
+    Integer iconSize = getIconSize(StringUtils.trim(parameters.get(ICON_SIZE)));
+    if (iconSize != null) {
+      settings.put(ICON_SIZE, iconSize.toString());
+    }
+    String color = StringUtils.trim(parameters.get(COLOR));
+    if (color != null && (color.isEmpty() || COLOR_VALUE.matcher(color).matches())) {
+      settings.put(COLOR, color);
+    }
+    for (String alignmentKey : List.of(H_ALIGN, V_ALIGN)) {
+      String alignment = getAlignment(StringUtils.trim(parameters.get(alignmentKey)));
+      if (alignment != null) {
+        settings.put(alignmentKey, alignment);
+      }
     }
   }
 

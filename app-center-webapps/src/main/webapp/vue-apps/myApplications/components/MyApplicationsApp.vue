@@ -29,11 +29,12 @@
         @focusin="onFocusIn" 
         @focusout="onFocusOut">
         <my-applications-toolbar
-          v-if="!isLoading"
+          v-if="!isLoading && toolbarDisplayed"
           ref="myApplicationsToolbar"
           :hover="hover"
           :can-edit="canEdit"
           :show-header="showHeader"
+          :show-see-more="!display || display.showSeeMore"
           :header-title="headerTitle"
           :has-applications="hasApplications"
           :favorites="!selectedListing"
@@ -50,6 +51,12 @@
             {{ $t('myApplications.addApps.label') }}
           </v-btn>
         </div>
+        <my-applications-template-list
+          v-else-if="display"
+          :applications="filteredApplications"
+          :display="display"
+          :is-loading="isLoading"
+          @open-portlet="$refs.portletInstanceDrawer.open($event)" />
         <my-applications-list
           v-else
           :applications-list="filteredApplications"
@@ -62,6 +69,7 @@
     <my-applications-settings-drawer
       v-if="canEdit"
       :settings="$root.settings"
+      :displayed-applications="filteredApplications"
       ref="settingsDrawer"
       @settings-updated="settingsUpdated"
       @create-application="$refs.applicationFormDrawer.open()"
@@ -81,6 +89,7 @@
 </template>
 
 <script>
+import {DISPLAY_KEYS, getDisplaySettings} from '../myApplicationsDisplay.js';
 
 export default {
   data() {
@@ -116,6 +125,15 @@ export default {
     },
     showHeader() {
       return this.$root.settings?.showHeader;
+    },
+    // Null for the legacy layout
+    display() {
+      return getDisplaySettings(this.$root.settings);
+    },
+    toolbarDisplayed() {
+      // An editor keeps the line that holds the settings button, and a viewer without favorites the one holding the +
+      return !this.display || this.showHeader || this.display.showSeeMore || this.canEdit
+          || (!this.selectedListing && !this.hasApplications);
     },
     headerTitle() {
       return this.$root.settings?.headerTitle;
@@ -157,6 +175,7 @@ export default {
       this.$root.settings.categoryIds = settings.categoryIds ? settings.categoryIds.split(',').map(Number) : [];
       this.$root.settings.maxAppsToList = settings.maxAppsToList;
       this.$root.settings.showHeader = settings.showHeader;
+      DISPLAY_KEYS.filter(key => key in settings).forEach(key => this.$root.settings[key] = settings[key]);
       this.$root.settings.headerTitle = headerTitle;
       this.$refs.settingsDrawer.close();
       if (updateList) {

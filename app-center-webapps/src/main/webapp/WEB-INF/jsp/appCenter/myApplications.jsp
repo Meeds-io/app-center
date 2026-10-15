@@ -22,6 +22,17 @@
   String selectionMode = MyApplicationsSettingsService.getSelectionMode(preferences.getValue(MyApplicationsSettingsService.SELECTION_MODE, null));
   String applicationIds = MyApplicationsSettingsService.getApplicationIds(preferences.getValue(MyApplicationsSettingsService.APPLICATION_IDS, null)).toString().replace(" ", "");
   String categoryIds = MyApplicationsSettingsService.getCategoryIds(preferences.getValue(MyApplicationsSettingsService.CATEGORY_IDS, null)).toString().replace(" ", "");
+  // Each display setting is printed from its parsed value, never as stored: null when unset or invalid, the color empty
+  String template = MyApplicationsSettingsService.getTemplate(preferences.getValue(MyApplicationsSettingsService.TEMPLATE, null));
+  Boolean showSeeMore = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.SHOW_SEE_MORE, null));
+  Boolean listInRow = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.LIST_IN_ROW, null));
+  Boolean showIcon = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.SHOW_ICON, null));
+  Integer iconSize = MyApplicationsSettingsService.getIconSize(preferences.getValue(MyApplicationsSettingsService.ICON_SIZE, null));
+  Boolean showName = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.SHOW_NAME, null));
+  String color = MyApplicationsSettingsService.getColor(preferences.getValue(MyApplicationsSettingsService.COLOR, null));
+  Boolean outlined = MyApplicationsSettingsService.getDisplayFlag(preferences.getValue(MyApplicationsSettingsService.OUTLINED, null));
+  String hAlign = MyApplicationsSettingsService.getAlignment(preferences.getValue(MyApplicationsSettingsService.H_ALIGN, null));
+  String vAlign = MyApplicationsSettingsService.getAlignment(preferences.getValue(MyApplicationsSettingsService.V_ALIGN, null));
   String headerTitle = CommonsUtils.getService(TranslationService.class).getTranslationLabelOrDefault(objectType,
           settingName, fieldName, LocaleContextInfoUtils.getUserLocale(request.getRemoteUser()));
 %>
@@ -39,6 +50,16 @@
         applicationIds: <%=applicationIds%>,
         categoryIds: <%=categoryIds%>,
         showHeader: <%=showHeader%>,
+        template: <%=template == null ? null : String.format("'%s'", template)%>,
+        showSeeMore: <%=showSeeMore%>,
+        listInRow: <%=listInRow%>,
+        showIcon: <%=showIcon%>,
+        iconSize: <%=iconSize%>,
+        showName: <%=showName%>,
+        color: '<%=StringEscapeUtils.escapeEcmaScript(color)%>',
+        outlined: <%=outlined%>,
+        hAlign: <%=hAlign == null ? null : String.format("'%s'", hAlign)%>,
+        vAlign: <%=vAlign == null ? null : String.format("'%s'", vAlign)%>,
         headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeEcmaScript(headerTitle))%>,
         canEdit: <%=canEdit%>,
         saveSettingsUrl: '<%=saveSettingsUrl%>'
