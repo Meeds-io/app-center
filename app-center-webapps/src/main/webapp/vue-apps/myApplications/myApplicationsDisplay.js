@@ -119,6 +119,7 @@ export function getTileStyle(displaySettings) {
     // No fill, and never the transparent class: it makes the border transparent as well
     return {border: `thin solid ${displaySettings.color || 'var(--allPagesBorderColor)'}`, backgroundColor: 'transparent'};
   } else {
-    return displaySettings.color && {backgroundColor: displaySettings.color} || null;
+    // A filled tile shows no border, yet keeps the room of the focus border so that focusing it moves nothing
+    return {border: 'thin solid transparent', ...(displaySettings.color && {backgroundColor: displaySettings.color})};
   }
 }
