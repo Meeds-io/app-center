@@ -2171,7 +2171,11 @@ public class ApplicationCenterService {
    * @return true for an administrator, false for a blank, guest or unknown
    *         user, where {@link #canEdit(String)} grants a blank username
    */
-  private boolean isAdministrator(String username) {
+  /**
+   * @param username a user, blank for a guest
+   * @return true when the user is an administrator
+   */
+  public boolean isAdministrator(String username) {
     if (StringUtils.isBlank(username) || StringUtils.equals(username, IdentityConstants.ANONIM)) {
       return false;
     }

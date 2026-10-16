@@ -731,6 +731,29 @@ class MyApplicationsCopyServiceTest {
     verify(applicationCenterService, times(1)).getApplicationCategoryIds(any());
   }
 
+  /**
+   * A payload copied before its first render: fails the mutant passing an
+   * app an administrator hid to a copy made for any other user (478114)
+   */
+  @Test
+  void getCopyPreferencesPassesHiddenAppsOnlyToAnAdministratorOrNoUser() {
+    ApplicationCopy hidden = copy(1L);
+    hidden.setHidden(true);
+    String payload = payload(null, hidden, copy(2L));
+
+    assertEquals(List.of(2L), passedIds(payload, USERNAME));
+    when(applicationCenterService.isAdministrator(USERNAME)).thenReturn(true);
+    assertEquals(List.of(1L, 2L), passedIds(payload, USERNAME));
+    assertEquals(List.of(1L, 2L), passedIds(payload, null));
+  }
+
+  private List<Long> passedIds(String payload, String username) {
+    return listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2", payload), false, username)).getApplications()
+                                                                                                                .stream()
+                                                                                                                .map(ApplicationCopy::getId)
+                                                                                                                .toList();
+  }
+
   private Map<String, String> preferences(String name, String applicationIds, String payload) {
     Map<String, String> preferences = new LinkedHashMap<>();
     if (name != null) {

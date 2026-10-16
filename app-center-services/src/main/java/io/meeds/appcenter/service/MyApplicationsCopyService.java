@@ -139,7 +139,7 @@ public class MyApplicationsCopyService {
     String payload = preferences.get(DATA_INIT_PREFERENCE);
     String settingName = preferences.get(NAME_PREFERENCE);
     if (StringUtils.isNotBlank(payload)) {
-      copyPreferences.put(DATA_INIT_PREFERENCE, payload);
+      copyPreferences.put(DATA_INIT_PREFERENCE, getPassedPayload(payload, username));
     } else if (StringUtils.isNotBlank(settingName)) {
       ApplicationListCopy listCopy = getListCopy(settingName,
                                                  preferences.get(APPLICATION_ID_PREFERENCE),
@@ -309,6 +309,27 @@ public class MyApplicationsCopyService {
     window.savePreferences(consumed);
     preferences.putAll(consumed);
     return preferences;
+  }
+
+  /**
+   * @return a payload not consumed yet, as a copy made for the user carries
+   *         it: without the applications an administrator hid, unless the
+   *         user is an administrator or no user makes the copy
+   */
+  private String getPassedPayload(String payload, String username) {
+    ApplicationListCopy listCopy = parseListCopy(null, payload);
+    if (listCopy == null
+        || listCopy.getApplications() == null
+        || listCopy.getApplications().stream().noneMatch(application -> application != null && application.isHidden())
+        || username == null
+        || applicationCenterService.isAdministrator(username)) {
+      return payload;
+    }
+    listCopy.setApplications(listCopy.getApplications()
+                                     .stream()
+                                     .filter(application -> application != null && !application.isHidden())
+                                     .toList());
+    return JsonUtils.toJsonString(listCopy);
   }
 
   private ApplicationListCopy getListCopy(String settingName,
