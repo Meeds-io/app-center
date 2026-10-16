@@ -68,6 +68,8 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
@@ -216,6 +218,9 @@ public class ApplicationCenterService {
 
   private static final int         MAX_URL_LENGTH                      = 500;
 
+  /** The metadata type of social's categories, which social keeps private */
+  private static final String      CATEGORY_METADATA_TYPE              = "category";
+
   @Autowired
   private UserACL                  userAcl;
 
@@ -263,6 +268,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private PortletInstanceService        portletInstanceService;
+
+  @Autowired
+  private MetadataService               metadataService;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -1949,10 +1957,10 @@ public class ApplicationCenterService {
   /**
    * Links a copied application to its source's categories with no right
    * checked: a category that does not exist on this deployment, or that fails
-   * to link, is skipped, never created. The link takes any metadata id: an id
-   * that the read of the application's categories does not return names no
-   * category, a tag or a favorite for instance, and its item is removed;
-   * when that read fails, the links made are kept, unchecked.
+   * to link, is skipped, never created. The link takes any metadata id, so an
+   * id is linked only once read as a category: one that names other
+   * metadata, a tag or a favorite for instance, is skipped, nothing being
+   * written for it.
    *
    * @return the ids of the linked categories
    */
@@ -1964,33 +1972,23 @@ public class ApplicationCenterService {
     CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(applicationId), 0L);
     for (Long categoryId : categoryIds.stream().filter(Objects::nonNull).distinct().toList()) {
       try {
-        getCategoryLinkService().link(categoryId, categoryObject);
-        linkedCategoryIds.add(categoryId);
+        if (isCategory(categoryId)) {
+          getCategoryLinkService().link(categoryId, categoryObject);
+          linkedCategoryIds.add(categoryId);
+        }
       } catch (RuntimeException e) {
         LOG.debug("Copied application {} not linked to category {}", applicationId, categoryId, e);
       }
     }
-    if (linkedCategoryIds.isEmpty()) {
-      return linkedCategoryIds;
-    }
-    List<Long> applicationCategoryIds;
-    try {
-      applicationCategoryIds = getCategoryLinkService().getLinkedIds(categoryObject);
-    } catch (RuntimeException e) {
-      // The application exists already: it keeps the links made, unchecked
-      LOG.warn("Categories of copied application {} not checked", applicationId, e);
-      return linkedCategoryIds;
-    }
-    for (Long linkedId : linkedCategoryIds) {
-      if (!applicationCategoryIds.contains(linkedId)) {
-        try {
-          getCategoryLinkService().unlink(linkedId, categoryObject);
-        } catch (RuntimeException e) {
-          LOG.warn("Copied application {} left linked to metadata {}, which is no category", applicationId, linkedId, e);
-        }
-      }
-    }
-    return linkedCategoryIds.stream().filter(applicationCategoryIds::contains).toList();
+    return linkedCategoryIds;
+  }
+
+  /**
+   * @return true when the metadata exists and is a category
+   */
+  private boolean isCategory(long metadataId) {
+    Metadata metadata = metadataService.getMetadataById(metadataId);
+    return metadata != null && StringUtils.equals(metadata.getTypeName(), CATEGORY_METADATA_TYPE);
   }
 
   /**

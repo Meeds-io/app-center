@@ -59,6 +59,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.dao.ApplicationDAO;
@@ -136,6 +137,9 @@ class ApplicationCenterServiceTransactionTest {
 
   @MockitoBean
   private PortletInstanceService         portletInstanceService;
+
+  @MockitoBean
+  private MetadataService                metadataService;
 
   @MockitoSpyBean
   private ApplicationCenterStorage       appCenterStorage;

@@ -87,6 +87,9 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
+import org.exoplatform.social.metadata.model.MetadataType;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
@@ -212,6 +215,9 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private PortletInstanceService   portletInstanceService;
+
+  @MockitoBean
+  private MetadataService          metadataService;
 
   @Autowired
   private ApplicationCenterService applicationCenterService;
@@ -2247,17 +2253,20 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
-   * The application exists when its links are read again: fails the mutant
-   * letting that read fail its creation, which would leave it listed nowhere
+   * The application exists when its categories' type is read: fails the
+   * mutant letting that read fail its creation, which would leave it listed
+   * nowhere
    */
   @Test
-  void createCopiedContextApplicationKeepsTheLinksMadeWhenTheyCannotBeReadAgain() throws Exception {
+  void createCopiedContextApplicationSkipsACategoryWhoseTypeCannotBeRead() throws Exception {
     mockContext(0L);
     ApplicationForm form = contextForm();
-    form.setCategoryIds(List.of(3L));
-    when(categoryLinkService.getLinkedIds(any(CategoryObject.class))).thenThrow(new IllegalStateException("database unreachable"));
+    form.setCategoryIds(List.of(3L, 4L));
+    when(metadataService.getMetadataById(3L)).thenThrow(new IllegalStateException("database unreachable"));
+    when(metadataService.getMetadataById(4L)).thenReturn(metadata(4L, "category"));
 
-    assertEquals(List.of(3L), applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME).getCategoryIds());
+    assertEquals(List.of(4L), applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME).getCategoryIds());
+    verify(categoryLinkService, never()).link(eq(3L), any(CategoryObject.class));
   }
 
   /**
@@ -2427,24 +2436,29 @@ public class ApplicationCenterServiceTest {
   /**
    * A copied app keeps its source's categories, linked with no right as the
    * first viewer can be anyone: fails the mutant linking none, the mutant
-   * letting a category unknown on this deployment refuse the application,
-   * and the mutant keeping a link to a metadata id that names no category,
-   * which an imported template or a rewritten payload can carry
+   * letting a category that fails to link refuse the application, and the
+   * mutants linking a metadata id that names no category or no metadata,
+   * which an imported template or a rewritten payload can carry: the link
+   * would write an item for a tag or a favorite, and fire its events, as the
+   * super user
    */
   @Test
-  void createCopiedContextApplicationLinksTheSourceCategoriesItCan() throws Exception {
+  void createCopiedContextApplicationLinksOnlyTheSourceCategoriesItCan() throws Exception {
     mockContext(0L);
     ApplicationForm form = contextForm();
-    form.setCategoryIds(List.of(3L, 4L, 5L));
+    form.setCategoryIds(List.of(3L, 4L, 5L, 6L));
+    when(metadataService.getMetadataById(3L)).thenReturn(metadata(3L, "category"));
+    when(metadataService.getMetadataById(4L)).thenReturn(metadata(4L, "category"));
+    when(metadataService.getMetadataById(5L)).thenReturn(metadata(5L, "tags"));
     doThrow(new IllegalStateException("category 4 not found")).when(categoryLinkService).link(eq(4L), any(CategoryObject.class));
-    when(categoryLinkService.getLinkedIds(any(CategoryObject.class))).thenReturn(List.of(3L));
 
     Application created = applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
 
     assertEquals(List.of(3L), created.getCategoryIds());
     verify(categoryLinkService).link(eq(3L), argThat((CategoryObject object) -> String.valueOf(CREATED_ID).equals(object.getId())));
-    verify(categoryLinkService).unlink(eq(5L), any(CategoryObject.class));
-    verify(categoryLinkService, never()).unlink(eq(3L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).link(eq(5L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).link(eq(6L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).unlink(anyLong(), any(CategoryObject.class));
     verify(categoryLinkService, never()).link(anyLong(), any(), any());
   }
 
@@ -2902,6 +2916,13 @@ public class ApplicationCenterServiceTest {
       created.setContextSpaceId(invocation.getArgument(2));
       return created;
     });
+  }
+
+  private Metadata metadata(long id, String type) {
+    Metadata metadata = new Metadata();
+    metadata.setId(id);
+    metadata.setType(new MetadataType(1L, type));
+    return metadata;
   }
 
   private ApplicationForm contextForm() {
