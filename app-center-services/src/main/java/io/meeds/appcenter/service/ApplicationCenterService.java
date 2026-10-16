@@ -87,6 +87,7 @@ import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.appcenter.util.ImageTypeUtils;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
@@ -271,6 +272,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private MetadataService               metadataService;
+
+  @Autowired
+  private PortletWindowStorage          windowStorage;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -1585,11 +1589,20 @@ public class ApplicationCenterService {
    * recorded on another draft page, another administrator's, and those whose
    * window's setting cannot be read. Each application is checked when its
    * turn comes, after all were selected: one created meanwhile waits for the
-   * next session, one deleted meanwhile is skipped.
+   * next session, one deleted meanwhile is skipped. Nothing is deleted once
+   * the window being initialized no longer exists as committed: its render
+   * loaded the draft page before a later session saved it again, so that the
+   * given windows are not those of the current draft page. That window is
+   * read before each deletion, after the selection, which lists the
+   * applications of such a later session's windows only once the draft page
+   * was saved again; a read that fails stops the deletion, its exception
+   * thrown.
    *
-   * @param settingName the CMS setting name of the window being initialized
+   * @param settingName the CMS setting name of the window being initialized,
+   *          which names that window: when it does not, nothing is deleted
    * @param draftPageReference the draft page the window is rendered on
-   * @param windowStorageIds the storage ids of the windows of that page
+   * @param windowStorageIds the storage ids of the windows of that page, as
+   *          the render loaded it
    */
   public void deleteSectionTemplateDraftLeftovers(String settingName,
                                                   String draftPageReference,
@@ -1598,6 +1611,7 @@ public class ApplicationCenterService {
     if (templateId <= 0) {
       return;
     }
+    String windowStorageId = myApplicationsSettingsService.getSectionTemplateDraftStorageId(settingName, templateId);
     deleteSectionTemplateDraftApplications(templateId, application -> {
       String owner = application.getContextSettingName();
       if (StringUtils.equals(owner, settingName)
@@ -1611,7 +1625,8 @@ public class ApplicationCenterService {
         LOG.debug("Application {} kept: the setting of {} cannot be read", application.getId(), owner, e);
         return false;
       }
-      return ownerSetting == null || StringUtils.equals(ownerSetting.getPageReference(), draftPageReference);
+      return (ownerSetting == null || StringUtils.equals(ownerSetting.getPageReference(), draftPageReference))
+             && windowStorage.exists(windowStorageId);
     });
   }
 

@@ -71,6 +71,7 @@ import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.translation.service.TranslationService;
@@ -140,6 +141,9 @@ class ApplicationCenterServiceTransactionTest {
 
   @MockitoBean
   private MetadataService                metadataService;
+
+  @MockitoBean
+  private PortletWindowStorage           windowStorage;
 
   @MockitoSpyBean
   private ApplicationCenterStorage       appCenterStorage;

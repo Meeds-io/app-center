@@ -111,6 +111,14 @@ public class PortletWindowStorage {
   }
 
   /**
+   * @param storageId the window's storage id
+   * @return true when the window exists as committed
+   */
+  public boolean exists(String storageId) {
+    return callInOwnRequest(() -> readPortlet(storageId) != null);
+  }
+
+  /**
    * Sets preferences of a window over its committed ones, the others kept.
    * When the wait ends with a {@link WindowPreferencesTimeoutException}, the
    * write still runs, and is committed unless it fails.

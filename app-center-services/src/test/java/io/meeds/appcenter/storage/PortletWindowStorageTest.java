@@ -19,6 +19,7 @@
 package io.meeds.appcenter.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -127,6 +129,22 @@ class PortletWindowStorageTest {
   @Test
   void readPreferencesOfAMissingWindowIsEmpty() {
     assertTrue(storage.readPreferences(STORAGE_ID).isEmpty());
+  }
+
+  /**
+   * Fails the mutants answering true for a window gone, false for one that
+   * exists, and reading outside a request of its own, whose entity manager
+   * returns the window as the request first loaded it
+   */
+  @Test
+  void existsReadsTheCommittedWindowRow() {
+    givenATaskRunsInTheCallingRequest();
+    when(windowDAO.find(12L)).thenReturn(new WindowEntity());
+
+    assertTrue(storage.exists(STORAGE_ID));
+    assertFalse(storage.exists("13"));
+    assertFalse(storage.exists(null));
+    verify(storage, times(3)).callInRequest(any());
   }
 
   /**

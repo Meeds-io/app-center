@@ -102,12 +102,14 @@ import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
+import io.meeds.appcenter.model.exception.WindowPreferencesTimeoutException;
 import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.layout.model.PortletInstance;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
@@ -218,6 +220,9 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private MetadataService          metadataService;
+
+  @MockitoBean
+  private PortletWindowStorage     windowStorage;
 
   @Autowired
   private ApplicationCenterService applicationCenterService;
@@ -2596,6 +2601,58 @@ public class ApplicationCenterServiceTest {
    */
   @Test
   void deleteSectionTemplateDraftLeftoversDeletesWhatAnEarlierSessionOfTheDraftLeft() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenReturn(true);
+
+    // The window being initialized is kept by its name, whatever the page scan
+    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("31"));
+
+    verify(appCenterStorage).deleteApplication(3L);
+    verify(appCenterStorage).deleteApplication(5L);
+    verify(appCenterStorage, never()).deleteApplication(1L);
+    verify(appCenterStorage, never()).deleteApplication(2L);
+    verify(appCenterStorage, never()).deleteApplication(4L);
+  }
+
+  /**
+   * A render that loaded the draft page before another tab saved it again,
+   * with new windows, sees none of them: fails the mutant deleting the
+   * applications of the current draft page's windows once the rendered
+   * window no longer exists, and the one checking that window before the
+   * applications are selected, which a save made in between escapes
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversOfAWindowNoLongerCommittedDeletesNothing() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenReturn(false);
+
+    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("31"));
+
+    verify(appCenterStorage, never()).deleteApplication(anyLong());
+    InOrder inOrder = inOrder(appCenterStorage, windowStorage);
+    inOrder.verify(appCenterStorage).getContextApplicationIdsByOwnerPattern(any());
+    inOrder.verify(windowStorage).exists("30");
+  }
+
+  /**
+   * A read of the rendered window that fails stops the cleanup with nothing
+   * deleted, the render going on: fails the mutant taking a window it could
+   * not read for one that exists, which would delete the applications of the
+   * current draft page's windows
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversOfAWindowThatCannotBeReadDeletesNothing() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenThrow(new WindowPreferencesTimeoutException("not read in time", null));
+
+    assertThrows(WindowPreferencesTimeoutException.class,
+                 () -> applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current",
+                                                                                    draftPage,
+                                                                                    List.of("31")));
+    verify(appCenterStorage, never()).deleteApplication(anyLong());
+  }
+
+  private String givenSectionTemplateDraftLeftovers() throws Exception {
     String draftPage = "portal::global::section_draft_7_john";
     when(myApplicationsSettingsService.getSectionTemplateId(draftPage)).thenReturn(7L);
     givenSectionTemplateApplications(Map.of(1L,
@@ -2627,15 +2684,7 @@ public class ApplicationCenterServiceTest {
                                         "Untitled-19-sdraft-7-other",
                                         "portal::global::section_draft_7_mary",
                                         0));
-
-    // The window being initialized is kept by its name, whatever the page scan
-    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("31"));
-
-    verify(appCenterStorage).deleteApplication(3L);
-    verify(appCenterStorage).deleteApplication(5L);
-    verify(appCenterStorage, never()).deleteApplication(1L);
-    verify(appCenterStorage, never()).deleteApplication(2L);
-    verify(appCenterStorage, never()).deleteApplication(4L);
+    return draftPage;
   }
 
   /**
@@ -2649,7 +2698,9 @@ public class ApplicationCenterServiceTest {
     givenSectionTemplateApplications(Map.of(1L, "Untitled-20-sdraft-7-unreadable", 2L, "Untitled-18-sdraft-7-gone"));
     when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-20-sdraft-7-unreadable", 7L)).thenReturn("20");
     when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-18-sdraft-7-gone", 7L)).thenReturn("18");
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-30-sdraft-7-current", 7L)).thenReturn("30");
     when(myApplicationsSettingsService.getSetting("Untitled-20-sdraft-7-unreadable")).thenThrow(new IllegalStateException("database unreachable"));
+    when(windowStorage.exists("30")).thenReturn(true);
 
     applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("30"));
 
