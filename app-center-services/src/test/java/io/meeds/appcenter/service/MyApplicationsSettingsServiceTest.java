@@ -920,6 +920,81 @@ class MyApplicationsSettingsServiceTest {
   }
 
   /**
+   * A section-template draft window's name carries the template: fails the
+   * mutants dropping the marker or the template id, by which the template's
+   * earlier sessions and its deletion find the applications to delete
+   */
+  @Test
+  void generateSectionTemplateDraftSettingNameMarksTheTemplate() {
+    String name = settingsService.generateSectionTemplateDraftSettingName("12", 7L);
+
+    assertTrue(name.matches("^Untitled-12-sdraft-7-[0-9a-f]{8}-[0-9a-f-]{27}$"), name);
+    assertTrue(settingsService.isSectionTemplateDraftName(name));
+    assertEquals("12", settingsService.getSectionTemplateDraftStorageId(name, 7L));
+    assertTrue(settingsService.keepsSettingName(name, "12", WindowKind.SECTION_TEMPLATE_DRAFT, PAGE_REFERENCE, this::noScan));
+  }
+
+  @Test
+  void getSectionTemplateIdReadsTheTemplateOfASectionTemplateDraftPageOnly() {
+    assertEquals(7L, settingsService.getSectionTemplateId("portal::global::section_draft_7_testuser"));
+    assertEquals(7L, settingsService.getSectionTemplateId("portal::global::section_draft_7_test_user.name"));
+    assertEquals(0L, settingsService.getSectionTemplateId("portal::global::section"));
+    assertEquals(0L, settingsService.getSectionTemplateId("portal::dw::section_draft_7_testuser"));
+    assertEquals(0L, settingsService.getSectionTemplateId("group::/spaces/team::section_draft_7_testuser"));
+    assertEquals(0L, settingsService.getSectionTemplateId("portal::global::home_draft_testuser"));
+    assertEquals(0L, settingsService.getSectionTemplateId("portal::global::section_draft_99999999999999999999_testuser"));
+    assertEquals(0L, settingsService.getSectionTemplateId("not a reference"));
+    assertEquals(0L, settingsService.getSectionTemplateId(null));
+  }
+
+  /**
+   * Fails the mutants matching another template's names, or an unanchored
+   * marker, which would delete another template's applications
+   */
+  @Test
+  void getSectionTemplateDraftStorageIdReadsTheNamesOfThatTemplateOnly() {
+    assertEquals("12", settingsService.getSectionTemplateDraftStorageId(SECTION_DRAFT_NAME, 7L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId(SECTION_DRAFT_NAME, 77L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId("Untitled-12-sdraft-77-1b4e28ba", 7L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId("Untitled-12-x-sdraft-7-1b4e28ba", 7L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId("Untitled-12-sdraft-99999999999999999999-1b4e28ba", 7L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId(PAGE_NAME, 7L));
+    assertNull(settingsService.getSectionTemplateDraftStorageId(null, 7L));
+    assertEquals("Untitled-%-sdraft-7-%", settingsService.getSectionTemplateDraftNamePattern(7L));
+  }
+
+  @Test
+  void isSectionTemplateDraftNameTellsTheMarkedNamesOnly() {
+    assertTrue(settingsService.isSectionTemplateDraftName(SECTION_DRAFT_NAME));
+    assertFalse(settingsService.isSectionTemplateDraftName(PAGE_NAME));
+    assertFalse(settingsService.isSectionTemplateDraftName(SITE_NAME));
+    assertFalse(settingsService.isSectionTemplateDraftName("Untitled-12-x-sdraft-7-1b4e28ba"));
+    assertFalse(settingsService.isSectionTemplateDraftName(null));
+  }
+
+  /**
+   * The section-template editor saves its draft page again, with new windows,
+   * at each session: fails the mutant keeping, through the page scan, a name
+   * generated for another window, an earlier session's, whose applications
+   * would then be listed by two windows
+   */
+  @Test
+  void keepsSettingNameOfASectionTemplateDraftWindowForItsOwnStorageIdOnly() {
+    assertTrue(settingsService.keepsSettingName(SECTION_DRAFT_NAME,
+                                                "12",
+                                                WindowKind.SECTION_TEMPLATE_DRAFT,
+                                                PAGE_REFERENCE,
+                                                this::noScan));
+    assertFalse(settingsService.keepsSettingName(SECTION_DRAFT_NAME,
+                                                 "13",
+                                                 WindowKind.SECTION_TEMPLATE_DRAFT,
+                                                 PAGE_REFERENCE,
+                                                 this::noScan));
+    assertFalse(settingsService.keepsSettingName(PAGE_NAME, "12", WindowKind.SECTION_TEMPLATE_DRAFT, PAGE_REFERENCE, this::noScan));
+    verifyNoInteractions(cmsService);
+  }
+
+  /**
    * A space's page reached through a portal site's navigation is still a page
    * of the space: fails the mutant keying a page window on anything but its
    * page's site, where its apps would take the platform audience and outlive
