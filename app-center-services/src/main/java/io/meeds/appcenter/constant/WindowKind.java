@@ -41,6 +41,13 @@ public enum WindowKind {
    * configured, and is kept, and its setting records the shared-layout
    * reference in place of a page.
    */
-  SHARED_LAYOUT;
+  SHARED_LAYOUT,
+
+  /**
+   * A window of a section-template draft page, which the section-template
+   * editor saves again, with new windows, each time it opens the template:
+   * edited by administrators only, in the platform context.
+   */
+  SECTION_TEMPLATE_DRAFT;
 
 }

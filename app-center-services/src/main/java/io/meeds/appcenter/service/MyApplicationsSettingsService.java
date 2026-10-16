@@ -27,10 +27,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -164,14 +166,22 @@ public class MyApplicationsSettingsService {
   /** Window of a site layout: edited by whoever may edit that site. */
   private static final Pattern SITE_LAYOUT_NAME         = Pattern.compile("^Untitled-\\d+-site-");
 
-  /** Window of a section-template draft page. */
-  private static final Pattern SECTION_DRAFT_NAME       = Pattern.compile("^Untitled-\\d+-sdraft-\\d+-");
+  /**
+   * Window of a section-template draft page: the window's storage id, then
+   * the template id.
+   */
+  private static final Pattern SECTION_DRAFT_NAME       = Pattern.compile("^Untitled-(\\d+)-sdraft-(\\d+)-");
+
+  /** Section-template draft page: the template id, then the user. */
+  private static final Pattern SECTION_DRAFT_PAGE_NAME  = Pattern.compile("^section_draft_(\\d+)_");
 
   private static final String  UNTITLED_PREFIX          = "Untitled-";
 
   private static final String  SITE_LAYOUT_MARKER       = "site-";
 
   private static final String  SHARED_LAYOUT_MARKER     = "shared-";
+
+  private static final String  SECTION_DRAFT_MARKER     = "sdraft-";
 
   /**
    * Section-template editor draft page, named section_draft_TEMPLATE_USER in
@@ -569,6 +579,70 @@ public class MyApplicationsSettingsService {
   }
 
   /**
+   * Generates the setting name of a window of a section-template draft page:
+   * Untitled-STORAGEID-sdraft-TEMPLATEID-UUID, so that the applications of the
+   * template's earlier editing sessions, and those to delete with the
+   * template, are told by their owner's name.
+   *
+   * @param storageId the window's storage id
+   * @param templateId the section template id
+   * @return a new setting name
+   */
+  public String generateSectionTemplateDraftSettingName(String storageId, long templateId) {
+    return UNTITLED_PREFIX + storageId + "-" + SECTION_DRAFT_MARKER + templateId + "-" + UUID.randomUUID();
+  }
+
+  /**
+   * @param pageReference a page reference
+   * @return the id of the section template whose draft page the reference
+   *         names, section_draft_TEMPLATE_USER in the global site, 0 for any
+   *         other page
+   */
+  public long getSectionTemplateId(String pageReference) {
+    PageKey pageKey = StringUtils.isBlank(pageReference) ? null : getPageKey(pageReference);
+    if (pageKey == null
+        || pageKey.getSite().getType() != SiteType.PORTAL
+        || !StringUtils.equals(pageKey.getSite().getName(), GLOBAL_SITE)) {
+      return 0;
+    }
+    Matcher matcher = SECTION_DRAFT_PAGE_NAME.matcher(pageKey.getName());
+    return matcher.find() ? NumberUtils.toLong(matcher.group(1), 0) : 0;
+  }
+
+  /**
+   * @param settingName a Shortcuts portlet window's CMS setting name
+   * @return true when the name was generated for a window of a
+   *         section-template draft page
+   */
+  public boolean isSectionTemplateDraftName(String settingName) {
+    return settingName != null && SECTION_DRAFT_NAME.matcher(settingName).find();
+  }
+
+  /**
+   * @param settingName a Shortcuts portlet window's CMS setting name
+   * @param templateId a section template id
+   * @return the storage id of the window of that template's draft page the
+   *         name was generated for, null for any other name
+   */
+  public String getSectionTemplateDraftStorageId(String settingName, long templateId) {
+    Matcher matcher = settingName == null ? null : SECTION_DRAFT_NAME.matcher(settingName);
+    return matcher != null
+           && matcher.find()
+           && templateId > 0
+           && NumberUtils.toLong(matcher.group(2), 0) == templateId ? matcher.group(1) : null;
+  }
+
+  /**
+   * @param templateId a section template id
+   * @return a LIKE pattern matching at least the setting names generated for
+   *         the windows of that template's draft pages, to check one by one
+   *         with {@link #getSectionTemplateDraftStorageId(String, long)}
+   */
+  public String getSectionTemplateDraftNamePattern(long templateId) {
+    return UNTITLED_PREFIX + "%-" + SECTION_DRAFT_MARKER + templateId + "-%";
+  }
+
+  /**
    * Decides the space a window's setting records: the space owning the site
    * of the recorded page reference, for a page window as for a site-layout
    * window, whose recorded page is on the site whose layout holds it, whatever
@@ -641,7 +715,8 @@ public class MyApplicationsSettingsService {
    * other window of the site carries, whatever space their setting recorded,
    * since the space is read from the recorded page
    * ({@link #getContextSpaceId(String, String)}). Every
-   * other name is given up, a shared-layout window's included. The decision
+   * other name is given up, a shared-layout window's and a section-template
+   * draft window's included. The decision
    * on a name generated for another storage id is memoised per window.
    *
    * @param settingName the name the window's preferences carry, not blank
@@ -664,7 +739,10 @@ public class MyApplicationsSettingsService {
       return false;
     } else if (StringUtils.startsWith(settingName, UNTITLED_PREFIX + storageId + "-")) {
       return true;
-    } else if (windowKind == WindowKind.SHARED_LAYOUT) {
+    } else if (windowKind == WindowKind.SHARED_LAYOUT || windowKind == WindowKind.SECTION_TEMPLATE_DRAFT) {
+      // A section-template draft page is saved again, with new windows, at
+      // each editing session: a name generated for another window is an
+      // earlier session's
       return false;
     }
     String key = storageId + "/" + settingName;
@@ -724,7 +802,7 @@ public class MyApplicationsSettingsService {
 
   /**
    * @return the kind of window a setting name was generated for, from its
-   *         marker, null for a section-template draft window
+   *         marker
    */
   private WindowKind getWindowKind(String settingName) {
     if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
@@ -732,7 +810,7 @@ public class MyApplicationsSettingsService {
     } else if (SHARED_LAYOUT_NAME.matcher(settingName).find()) {
       return WindowKind.SHARED_LAYOUT;
     } else if (SECTION_DRAFT_NAME.matcher(settingName).find()) {
-      return null;
+      return WindowKind.SECTION_TEMPLATE_DRAFT;
     } else {
       return WindowKind.PAGE;
     }

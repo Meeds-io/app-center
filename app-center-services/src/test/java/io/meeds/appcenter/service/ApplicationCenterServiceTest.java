@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -86,6 +87,9 @@ import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
+import org.exoplatform.social.metadata.model.MetadataType;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
@@ -98,12 +102,15 @@ import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
+import io.meeds.appcenter.model.exception.WindowPreferencesTimeoutException;
 import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
+import io.meeds.layout.model.PortletInstance;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.model.CategoryObject;
@@ -210,6 +217,12 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private PortletInstanceService   portletInstanceService;
+
+  @MockitoBean
+  private MetadataService          metadataService;
+
+  @MockitoBean
+  private PortletWindowStorage     windowStorage;
 
   @Autowired
   private ApplicationCenterService applicationCenterService;
@@ -2233,6 +2246,35 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
+   * Fails the mutants reading the categories application by application, and
+   * returning none, which would copy apps without their categories
+   */
+  @Test
+  void getApplicationCategoryIdsReadsTheCategoriesOfEveryApplicationAtOnce() {
+    when(categoryLinkService.getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE, List.of("1", "2"))).thenReturn(Map.of("1", List.of(10L, 11L)));
+
+    assertEquals(Map.of(1L, List.of(10L, 11L)), applicationCenterService.getApplicationCategoryIds(List.of(1L, 2L)));
+    verify(categoryLinkService, never()).getLinkedIds(any(CategoryObject.class));
+  }
+
+  /**
+   * The application exists when its categories' type is read: fails the
+   * mutant letting that read fail its creation, which would leave it listed
+   * nowhere
+   */
+  @Test
+  void createCopiedContextApplicationSkipsACategoryWhoseTypeCannotBeRead() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(List.of(3L, 4L));
+    when(metadataService.getMetadataById(3L)).thenThrow(new IllegalStateException("database unreachable"));
+    when(metadataService.getMetadataById(4L)).thenReturn(metadata(4L, "category"));
+
+    assertEquals(List.of(4L), applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME).getCategoryIds());
+    verify(categoryLinkService, never()).link(eq(3L), any(CategoryObject.class));
+  }
+
+  /**
    * The window's form edits the categories of what the window created: fails
    * the mutants reading them per application, reading those of the
    * Application Center's applications, and failing the listing when the read
@@ -2349,6 +2391,344 @@ public class ApplicationCenterServiceTest {
     applicationCenterService.deleteSpaceApplications(0);
     applicationCenterService.deleteSpaceApplications(-1);
     verify(appCenterStorage, never()).getContextApplicationIds(anyLong());
+  }
+
+  /**
+   * The copy's first viewer can be anyone: fails the mutant checking the
+   * right to manage the window's applications, where a viewer who may not
+   * edit the page would leave the copy without its applications
+   */
+  @Test
+  void createCopiedContextApplicationChecksNoRightAndGivesTheCopyContextAudience() throws Exception {
+    mockContext(SPACE_ID);
+
+    Application created = applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME);
+
+    verify(appCenterStorage).createContextApplication(argThat(application -> List.of("*:" + SPACE_GROUP)
+                                                                                 .equals(application.getPermissions())),
+                                                      eq(SETTING_NAME),
+                                                      eq(SPACE_ID));
+    verify(myApplicationsSettingsService, never()).canEditSettings(any(), any());
+    assertEquals(CREATED_ID, created.getId());
+    assertEquals(SETTING_NAME, created.getContextSettingName());
+  }
+
+  @Test
+  void createCopiedContextApplicationForcesWhatTheFormDoesNotOffer() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setMandatory(true);
+    form.setDefault(true);
+    form.setPwa(true);
+    form.setAllowStick(true);
+    form.setShortcut(SHORTCUT);
+    form.setPermissions(List.of("*:/platform/administrators"));
+    form.setCategoryIds(List.of(3L));
+
+    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
+
+    Application created = lastCreatedContextApplication();
+    assertFalse(created.isMandatory());
+    assertFalse(created.isDefault());
+    assertFalse(created.isPwa());
+    assertFalse(created.isAllowStick());
+    assertNull(created.getShortcut());
+    assertTrue(created.isActive());
+    assertEquals(List.of(ApplicationCenterService.DEFAULT_USERS_PERMISSION, ApplicationCenterService.EXTERNAL_USERS_PERMISSION),
+                 created.getPermissions());
+  }
+
+  /**
+   * A copied app keeps its source's categories, linked with no right as the
+   * first viewer can be anyone: fails the mutant linking none, the mutant
+   * letting a category that fails to link refuse the application, and the
+   * mutants linking a metadata id that names no category or no metadata,
+   * which an imported template or a rewritten payload can carry: the link
+   * would write an item for a tag or a favorite, and fire its events, as the
+   * super user
+   */
+  @Test
+  void createCopiedContextApplicationLinksOnlyTheSourceCategoriesItCan() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setCategoryIds(List.of(3L, 4L, 5L, 6L));
+    when(metadataService.getMetadataById(3L)).thenReturn(metadata(3L, "category"));
+    when(metadataService.getMetadataById(4L)).thenReturn(metadata(4L, "category"));
+    when(metadataService.getMetadataById(5L)).thenReturn(metadata(5L, "tags"));
+    doThrow(new IllegalStateException("category 4 not found")).when(categoryLinkService).link(eq(4L), any(CategoryObject.class));
+
+    Application created = applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
+
+    assertEquals(List.of(3L), created.getCategoryIds());
+    verify(categoryLinkService).link(eq(3L), argThat((CategoryObject object) -> String.valueOf(CREATED_ID).equals(object.getId())));
+    verify(categoryLinkService, never()).link(eq(5L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).link(eq(6L), any(CategoryObject.class));
+    verify(categoryLinkService, never()).unlink(anyLong(), any(CategoryObject.class));
+    verify(categoryLinkService, never()).link(anyLong(), any(), any());
+  }
+
+  /**
+   * A payload can be rewritten by any editor of the page: fails the mutant
+   * trusting its fields, an url, a title or an icon the form would refuse
+   */
+  @Test
+  void createCopiedContextApplicationValidatesTheFieldsAsOnCreation() throws Exception {
+    mockContext(0L);
+    assertCopyRefused(ApplicationCenterService.INVALID_URL_MESSAGE, form -> form.setUrl("javascript:alert(1)"));
+    assertCopyRefused(ApplicationCenterService.TITLE_MANDATORY_MESSAGE, form -> form.setTitle(" "));
+    assertCopyRefused(ApplicationCenterService.INVALID_ICON_MESSAGE, form -> form.setIcon("<script>"));
+    assertCopyRefused(CONTEXTUAL_PREFIX + "urlUnsupportedCharacter", form -> form.setUrl("https://meeds.io/\uD83D\uDE00"));
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createCopiedContextApplicationStoresAnIllustrationOfAnAcceptedType() throws Exception {
+    mockContext(0L);
+    byte[] png = png(100);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID);
+
+    applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME);
+
+    assertEquals(IMAGE_FILE_ID, lastCreatedContextApplication().getImageFileId());
+  }
+
+  /**
+   * Fails the mutants storing a copied illustration of a type decided from no
+   * content, or above the bound the form applies, and the mutant refusing the
+   * whole application for its illustration
+   */
+  @Test
+  void createCopiedContextApplicationCreatesWithoutAnIllustrationOfAnotherTypeOrTooLarge() throws Exception {
+    mockContext(0L);
+
+    applicationCenterService.createCopiedContextApplication(contextForm(),
+                                                            "<svg onload=\"alert(1)\"/>".getBytes(StandardCharsets.UTF_8),
+                                                            SETTING_NAME);
+    applicationCenterService.createCopiedContextApplication(contextForm(),
+                                                            png(ApplicationCenterService.MAX_ILLUSTRATION_SIZE + 1),
+                                                            SETTING_NAME);
+
+    verify(appCenterStorage, never()).saveIllustration(any(), any());
+    verify(appCenterStorage, times(2)).createContextApplication(argThat(application -> application.getImageFileId() == null),
+                                                                eq(SETTING_NAME),
+                                                                eq(0L));
+  }
+
+  @Test
+  void createCopiedContextApplicationDeletesTheIllustrationOfACreationThatFails() throws Exception {
+    mockContext(0L);
+    byte[] png = png(100);
+    when(appCenterStorage.saveIllustration(png, "image/png")).thenReturn(IMAGE_FILE_ID);
+    doThrow(new IllegalStateException("database unreachable")).when(appCenterStorage)
+                                                               .createContextApplication(any(), eq(SETTING_NAME), anyLong());
+
+    assertThrows(IllegalStateException.class,
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), png, SETTING_NAME));
+    verify(appCenterStorage).deleteIllustration(IMAGE_FILE_ID);
+  }
+
+  /**
+   * Fails the mutant checking the first viewer's access to the portlet
+   * instance, which would drop the copy for most viewers, and the mutant
+   * checking nothing
+   */
+  @Test
+  void createCopiedContextApplicationNeedsOnlyAnExistingPortletInstance() throws Exception {
+    mockContext(0L);
+    ApplicationForm form = contextForm();
+    form.setType(ApplicationType.PORTLET);
+    form.setUrl("35");
+
+    assertEquals(ApplicationCenterService.INVALID_URL_MESSAGE,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME)).getMessage());
+    when(portletInstanceService.getPortletInstance(35L)).thenReturn(new PortletInstance());
+    applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME);
+
+    assertEquals("35", lastCreatedContextApplication().getUrl());
+    verify(portletInstanceService, never()).getPortletInstance(anyLong(), any(), any(), anyBoolean());
+  }
+
+  @Test
+  void createCopiedContextApplicationRefusesAnUnknownSetting() {
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+  }
+
+  @Test
+  void createCopiedContextApplicationRefusesADeletedContext() throws Exception {
+    mockContext(0L);
+    when(myApplicationsSettingsService.isContextDeleted(SETTING_NAME, PAGE_REFERENCE)).thenReturn(true);
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+    verifyNoContextApplicationCreated();
+  }
+
+  @Test
+  void createCopiedContextApplicationRefusesTheContextOfADeletedSpace() throws Exception {
+    mockContext(SPACE_ID);
+    when(spaceService.getSpaceById(SPACE_ID)).thenReturn(null);
+
+    assertThrows(ObjectNotFoundException.class,
+                 () -> applicationCenterService.createCopiedContextApplication(contextForm(), null, SETTING_NAME));
+    verifyNoContextApplicationCreated();
+  }
+
+  /**
+   * The owners' LIKE pattern matches more than the names generated for the
+   * template: fails the mutant deleting every match
+   */
+  @Test
+  void deleteSectionTemplateApplicationsDeletesTheApplicationsOfTheTemplateDraftWindowsOnly() throws Exception {
+    givenSectionTemplateApplications(Map.of(1L, "Untitled-21-sdraft-7-a", 2L, "Untitled-22-sdraft-7-b", 3L, "Untitled-23-x-sdraft-7-c"));
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-21-sdraft-7-a", 7L)).thenReturn("21");
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-22-sdraft-7-b", 7L)).thenReturn("22");
+    doThrow(new IllegalStateException("database unreachable")).when(appCenterStorage).deleteApplication(1L);
+
+    applicationCenterService.deleteSectionTemplateApplications(7L);
+
+    verify(appCenterStorage).deleteApplication(1L);
+    verify(appCenterStorage).deleteApplication(2L);
+    verify(appCenterStorage, never()).deleteApplication(3L);
+  }
+
+  /**
+   * Kept: the window being initialized, a window of the current draft page,
+   * another administrator's draft; deleted: an earlier session of this
+   * draft page, and a window whose setting is gone. Each kept case fails the
+   * mutant dropping its condition. The rendered window is read once for the
+   * two applications deleted: fails the mutant reading it per application.
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversDeletesWhatAnEarlierSessionOfTheDraftLeft() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenReturn(true);
+
+    // The window being initialized is kept by its name, whatever the page scan
+    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("31"));
+
+    verify(appCenterStorage).deleteApplication(3L);
+    verify(appCenterStorage).deleteApplication(5L);
+    verify(appCenterStorage, never()).deleteApplication(1L);
+    verify(appCenterStorage, never()).deleteApplication(2L);
+    verify(appCenterStorage, never()).deleteApplication(4L);
+    verify(windowStorage, times(1)).exists("30");
+  }
+
+  /**
+   * A render that loaded the draft page before another tab saved it again,
+   * with new windows, sees none of them: fails the mutant deleting the
+   * applications of the current draft page's windows once the rendered
+   * window no longer exists, and the one checking that window before the
+   * applications are selected, which a save made in between escapes
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversOfAWindowNoLongerCommittedDeletesNothing() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenReturn(false);
+
+    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("31"));
+
+    verify(appCenterStorage, never()).deleteApplication(anyLong());
+    InOrder inOrder = inOrder(appCenterStorage, windowStorage);
+    inOrder.verify(appCenterStorage).getContextApplicationIdsByOwnerPattern(any());
+    inOrder.verify(windowStorage).exists("30");
+  }
+
+  /**
+   * A read of the rendered window that fails stops the cleanup with nothing
+   * deleted, the render going on: fails the mutant taking a window it could
+   * not read for one that exists, which would delete the applications of the
+   * current draft page's windows
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversOfAWindowThatCannotBeReadDeletesNothing() throws Exception {
+    String draftPage = givenSectionTemplateDraftLeftovers();
+    when(windowStorage.exists("30")).thenThrow(new WindowPreferencesTimeoutException("not read in time", null));
+
+    assertThrows(WindowPreferencesTimeoutException.class,
+                 () -> applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current",
+                                                                                    draftPage,
+                                                                                    List.of("31")));
+    verify(appCenterStorage, never()).deleteApplication(anyLong());
+  }
+
+  private String givenSectionTemplateDraftLeftovers() throws Exception {
+    String draftPage = "portal::global::section_draft_7_john";
+    when(myApplicationsSettingsService.getSectionTemplateId(draftPage)).thenReturn(7L);
+    givenSectionTemplateApplications(Map.of(1L,
+                                            "Untitled-30-sdraft-7-current",
+                                            2L,
+                                            "Untitled-31-sdraft-7-sibling",
+                                            3L,
+                                            "Untitled-20-sdraft-7-earlier",
+                                            4L,
+                                            "Untitled-19-sdraft-7-other",
+                                            5L,
+                                            "Untitled-18-sdraft-7-gone"));
+    Map.of("Untitled-30-sdraft-7-current",
+           "30",
+           "Untitled-31-sdraft-7-sibling",
+           "31",
+           "Untitled-20-sdraft-7-earlier",
+           "20",
+           "Untitled-19-sdraft-7-other",
+           "19",
+           "Untitled-18-sdraft-7-gone",
+           "18")
+       .forEach((owner, storageId) -> when(myApplicationsSettingsService.getSectionTemplateDraftStorageId(owner, 7L))
+                                                                                                             .thenReturn(storageId));
+    lenient().when(myApplicationsSettingsService.getSetting("Untitled-20-sdraft-7-earlier"))
+             .thenReturn(new CMSSetting(MyApplicationsSettingsService.SETTING_TYPE, "Untitled-20-sdraft-7-earlier", draftPage, 0));
+    lenient().when(myApplicationsSettingsService.getSetting("Untitled-19-sdraft-7-other"))
+             .thenReturn(new CMSSetting(MyApplicationsSettingsService.SETTING_TYPE,
+                                        "Untitled-19-sdraft-7-other",
+                                        "portal::global::section_draft_7_mary",
+                                        0));
+    return draftPage;
+  }
+
+  /**
+   * Fails the mutant letting a setting read that fails stop the cleanup, or
+   * delete an application whose window it could not tell
+   */
+  @Test
+  void deleteSectionTemplateDraftLeftoversKeepsAnApplicationWhoseWindowCannotBeReadAndGoesOn() throws Exception {
+    String draftPage = "portal::global::section_draft_7_john";
+    when(myApplicationsSettingsService.getSectionTemplateId(draftPage)).thenReturn(7L);
+    givenSectionTemplateApplications(Map.of(1L, "Untitled-20-sdraft-7-unreadable", 2L, "Untitled-18-sdraft-7-gone"));
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-20-sdraft-7-unreadable", 7L)).thenReturn("20");
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-18-sdraft-7-gone", 7L)).thenReturn("18");
+    when(myApplicationsSettingsService.getSectionTemplateDraftStorageId("Untitled-30-sdraft-7-current", 7L)).thenReturn("30");
+    when(myApplicationsSettingsService.getSetting("Untitled-20-sdraft-7-unreadable")).thenThrow(new IllegalStateException("database unreachable"));
+    when(windowStorage.exists("30")).thenReturn(true);
+
+    applicationCenterService.deleteSectionTemplateDraftLeftovers("Untitled-30-sdraft-7-current", draftPage, List.of("30"));
+
+    verify(appCenterStorage, never()).deleteApplication(1L);
+    verify(appCenterStorage).deleteApplication(2L);
+  }
+
+  @Test
+  void deleteSectionTemplateDraftLeftoversOutsideASectionTemplateDraftDeletesNothing() {
+    applicationCenterService.deleteSectionTemplateDraftLeftovers(SETTING_NAME, PAGE_REFERENCE, List.of("12"));
+
+    verify(appCenterStorage, never()).getContextApplicationIdsByOwnerPattern(any());
+  }
+
+  @Test
+  void getApplicationsHidesTheApplicationsOfSectionTemplateDraftWindows() {
+    Application draft = contextApplication(1L, "Untitled-21-sdraft-7-a");
+    Application owned = contextApplication(2L, SETTING_NAME);
+    Application catalog = accessibleApplication(3L);
+    when(appCenterStorage.getApplications(KEYWORD)).thenReturn(List.of(draft, owned, catalog));
+    when(myApplicationsSettingsService.isSectionTemplateDraftName("Untitled-21-sdraft-7-a")).thenReturn(true);
+
+    ApplicationList applicationList = applicationCenterService.getApplications(0, 0, KEYWORD);
+
+    assertEquals(List.of(2L, 3L), ids(applicationList.getApplications()));
+    assertEquals(2, applicationList.getSize());
   }
 
   @Test
@@ -2591,6 +2971,13 @@ public class ApplicationCenterServiceTest {
     });
   }
 
+  private Metadata metadata(long id, String type) {
+    Metadata metadata = new Metadata();
+    metadata.setId(id);
+    metadata.setType(new MetadataType(1L, type));
+    return metadata;
+  }
+
   private ApplicationForm contextForm() {
     ApplicationForm form = new ApplicationForm();
     form.setTitle(TITLE);
@@ -2616,6 +3003,23 @@ public class ApplicationCenterServiceTest {
     assertEquals(messageCode,
                  assertThrows(IllegalArgumentException.class,
                               () -> applicationCenterService.createContextApplication(form, SETTING_NAME, TEST_USER)).getMessage());
+  }
+
+  private void assertCopyRefused(String messageCode, Consumer<ApplicationForm> formChange) {
+    ApplicationForm form = contextForm();
+    formChange.accept(form);
+    assertEquals(messageCode,
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.createCopiedContextApplication(form, null, SETTING_NAME)).getMessage());
+  }
+
+  private void givenSectionTemplateApplications(Map<Long, String> owners) {
+    when(myApplicationsSettingsService.getSectionTemplateDraftNamePattern(7L)).thenReturn("Untitled-%-sdraft-7-%");
+    when(appCenterStorage.getContextApplicationIdsByOwnerPattern("Untitled-%-sdraft-7-%")).thenReturn(owners.keySet()
+                                                                                                          .stream()
+                                                                                                          .sorted()
+                                                                                                          .toList());
+    owners.forEach((id, owner) -> lenient().when(appCenterStorage.getApplication(id)).thenReturn(contextApplication(id, owner)));
   }
 
   private void assertIllustrationRefused(String uploadId, String messageCode) {
