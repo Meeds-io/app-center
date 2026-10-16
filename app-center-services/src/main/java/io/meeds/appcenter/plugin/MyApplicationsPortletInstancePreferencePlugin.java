@@ -52,13 +52,6 @@ public class MyApplicationsPortletInstancePreferencePlugin implements PortletIns
 
   public static final String     PORTLET_NAME   = "AppCenterMyApplicationsPortlet";
 
-  /**
-   * The property layout sets to "true" when it builds a draft of the same
-   * window: PortletInstanceContext.DRAFT_PROPERTY, from SiteLayoutService
-   * createDraftSite.
-   */
-  private static final String    DRAFT_PROPERTY = "draft";
-
   @Autowired
   private MyApplicationsCopyService copyService;
 
@@ -91,7 +84,7 @@ public class MyApplicationsPortletInstancePreferencePlugin implements PortletIns
     }
     boolean draft = portletInstanceContext != null
                     && portletInstanceContext.getProperties() != null
-                    && "true".equals(portletInstanceContext.getProperties().get(DRAFT_PROPERTY));
+                    && "true".equals(portletInstanceContext.getProperties().get(PortletInstanceContext.DRAFT_PROPERTY));
     return copyService.getCopyPreferences(values, draft, getCurrentUsername())
                       .entrySet()
                       .stream()

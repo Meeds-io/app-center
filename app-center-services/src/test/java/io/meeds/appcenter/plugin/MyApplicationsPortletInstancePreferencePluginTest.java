@@ -106,7 +106,7 @@ class MyApplicationsPortletInstancePreferencePluginTest {
    */
   @Test
   void generatePreferencesTellsADraftOfTheSameWindow() {
-    plugin.generatePreferences(new Application(), portlet(), new PortletInstanceContext(false, Map.of("draft", "true")));
+    plugin.generatePreferences(new Application(), portlet(), new PortletInstanceContext(false, Map.of(PortletInstanceContext.DRAFT_PROPERTY, "true")));
 
     verify(copyService).getCopyPreferences(Map.of(), true, null);
   }
@@ -115,7 +115,7 @@ class MyApplicationsPortletInstancePreferencePluginTest {
   void generatePreferencesTakesAnyOtherContextForACopy() {
     plugin.generatePreferences(new Application(), portlet(), null);
     plugin.generatePreferences(new Application(), portlet(), new PortletInstanceContext(true, null));
-    plugin.generatePreferences(new Application(), portlet(), new PortletInstanceContext(false, Map.of("draft", "false")));
+    plugin.generatePreferences(new Application(), portlet(), new PortletInstanceContext(false, Map.of(PortletInstanceContext.DRAFT_PROPERTY, "false")));
 
     verify(copyService, times(3)).getCopyPreferences(Map.of(), false, null);
   }
