@@ -24,15 +24,19 @@ import java.net.URISyntaxException;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -65,6 +69,8 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
@@ -82,6 +88,7 @@ import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.appcenter.util.ImageTypeUtils;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
@@ -213,6 +220,9 @@ public class ApplicationCenterService {
 
   private static final int         MAX_URL_LENGTH                      = 500;
 
+  /** The metadata type of social's categories, which social keeps private */
+  private static final String      CATEGORY_METADATA_TYPE              = "category";
+
   @Autowired
   private UserACL                  userAcl;
 
@@ -260,6 +270,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private PortletInstanceService        portletInstanceService;
+
+  @Autowired
+  private MetadataService               metadataService;
+
+  @Autowired
+  private PortletWindowStorage          windowStorage;
 
   private CategoryLinkService      categoryLinkService;
 
@@ -801,9 +817,12 @@ public class ApplicationCenterService {
    */
   public ApplicationList getApplications(int offset, int limit, String keyword, Locale locale) {
     ApplicationList applicationList = new ApplicationList();
+    // The applications of a section template's draft windows are the
+    // editor's working state, listed by those windows only
     List<Application> applications = appCenterStorage.getApplications(keyword)
                                                      .stream()
                                                      .filter(app -> !app.isPersonal())
+                                                     .filter(app -> !myApplicationsSettingsService.isSectionTemplateDraftName(app.getContextSettingName()))
                                                      .toList();
     int totalApplictions = applications.size();
     if (limit <= 0) {
@@ -1316,7 +1335,7 @@ public class ApplicationCenterService {
     if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
       throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
-    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), null, username);
+    Application contextApplication = toContextApplication(application, getContextAudience(spaceId), null, username, false);
     String uploadId = application.getImageUploadId();
     byte[] illustration = null;
     String illustrationMimeType = null;
@@ -1337,6 +1356,75 @@ public class ApplicationCenterService {
     // Resolved, as the portlet's listing gives it, for the form that edits it next
     createdApplication.setBadgeName(badgePluginRegistry.resolveBadgeName(createdApplication));
     return createdApplication;
+  }
+
+  /**
+   * Creates, in the context of a copy of a Shortcuts portlet window, the copy
+   * of an application the source window created, when the copy is first
+   * rendered: owned by the copy, with the audience of the context the copy's
+   * setting recorded. No right applies, as the first viewer of the copy can be
+   * anyone: the payload was written by the copy step or by an editor of the
+   * page, and the application is created in the copy's own context only.
+   * Every field is validated as on {@link #createContextApplication}, the
+   * one exception being a portlet instance, which needs only to exist. The
+   * illustration's type is decided from its content; an invalid or too large
+   * one is dropped, the application being created without it. Its categories
+   * are linked with no right checked, as the copy's first viewer can be
+   * anyone, a category that does not exist, or that fails to link, being
+   * skipped.
+   *
+   * @param application the copied application's fields and categories
+   * @param illustration the copied illustration's content, null when none
+   * @param settingName the copy's CMS setting name
+   * @return the created application, with the categories it got
+   * @throws ObjectNotFoundException when the copy's setting, or the space of
+   *           its context, does not exist
+   * @throws IllegalArgumentException when a field is invalid, the message
+   *           naming it
+   */
+  public Application createCopiedContextApplication(ApplicationForm application,
+                                                    byte[] illustration,
+                                                    String settingName) throws ObjectNotFoundException {
+    CMSSetting setting = getContextSetting(settingName);
+    if (application == null) {
+      throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
+    }
+    long spaceId = myApplicationsSettingsService.getContextSpaceId(settingName, setting.getPageReference());
+    if (spaceId <= 0 && myApplicationsSettingsService.isContextDeleted(settingName, setting.getPageReference())) {
+      throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
+    }
+    List<String> audience = getContextAudience(spaceId);
+    Application contextApplication = toContextApplication(application, audience, null, null, true);
+    String illustrationMimeType = getCopiedIllustrationMimeType(illustration, settingName);
+    if (illustrationMimeType != null) {
+      contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
+    }
+    Application createdApplication;
+    try {
+      createdApplication = new Application(appCenterStorage.createContextApplication(contextApplication, settingName, spaceId));
+    } catch (RuntimeException e) {
+      deleteNewIllustration(contextApplication.getImageFileId());
+      throw e;
+    }
+    createdApplication.setCategoryIds(linkCopiedCategories(createdApplication.getId(), application.getCategoryIds()));
+    return createdApplication;
+  }
+
+  /**
+   * @param applicationIds application ids
+   * @return the ids of each application's categories, read in one query, by
+   *         application id, none for an application without category
+   */
+  public Map<Long, List<Long>> getApplicationCategoryIds(List<Long> applicationIds) {
+    Map<String, List<Long>> linkedIds = getCategoryLinkService().getLinkedIds(ApplicationCategoryPlugin.OBJECT_TYPE,
+                                                                              applicationIds.stream()
+                                                                                            .map(String::valueOf)
+                                                                                            .toList());
+    Map<Long, List<Long>> categoryIds = new HashMap<>();
+    if (linkedIds != null) {
+      linkedIds.forEach((applicationId, ids) -> categoryIds.put(Long.valueOf(applicationId), ids));
+    }
+    return categoryIds;
   }
 
   /**
@@ -1410,7 +1498,7 @@ public class ApplicationCenterService {
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
     }
-    Application contextApplication = toContextApplication(application, List.of(), storedApplication, username);
+    Application contextApplication = toContextApplication(application, List.of(), storedApplication, username, false);
     contextApplication.setId(applicationId);
     contextApplication.setPermissions(storedApplication.getPermissions() == null ? null
                                                                                  : new ArrayList<>(storedApplication.getPermissions()));
@@ -1483,6 +1571,72 @@ public class ApplicationCenterService {
   }
 
   /**
+   * Deletes the applications the windows of a section template's drafts
+   * created, every administrator's, once the template is deleted.
+   *
+   * @param templateId the deleted section template id
+   */
+  public void deleteSectionTemplateApplications(long templateId) {
+    deleteSectionTemplateDraftApplications(templateId, application -> true);
+  }
+
+  /**
+   * Deletes the applications an earlier editing session of a section template
+   * left behind on a user's draft page: the section-template editor saves the
+   * draft page again, with new windows, each time it opens the template, so
+   * that the applications of the windows it replaced are listed nowhere. Kept:
+   * those of a window of the current draft page, among which the window being
+   * initialized, whatever their order of rendering, those of a window
+   * recorded on another draft page, another administrator's, and those whose
+   * window's setting cannot be read. Each application is checked when its
+   * turn comes, after all were selected: one created meanwhile waits for the
+   * next session, one deleted meanwhile is skipped. Nothing is deleted once
+   * the window being initialized no longer exists as committed: its render
+   * loaded the draft page before a later session saved it again, so that the
+   * given windows are not those of the current draft page. That window is
+   * read once, when the first application to delete is reached, after the
+   * selection, which lists the applications of such a later session's
+   * windows only once the draft page was saved again; a read that fails
+   * stops the deletion, its exception thrown.
+   *
+   * @param settingName the CMS setting name of the window being initialized,
+   *          which names that window: when it does not, nothing is deleted
+   * @param draftPageReference the draft page the window is rendered on
+   * @param windowStorageIds the storage ids of the windows of that page, as
+   *          the render loaded it
+   */
+  public void deleteSectionTemplateDraftLeftovers(String settingName,
+                                                  String draftPageReference,
+                                                  Collection<String> windowStorageIds) {
+    long templateId = myApplicationsSettingsService.getSectionTemplateId(draftPageReference);
+    if (templateId <= 0) {
+      return;
+    }
+    String windowStorageId = myApplicationsSettingsService.getSectionTemplateDraftStorageId(settingName, templateId);
+    AtomicReference<Boolean> windowCommitted = new AtomicReference<>();
+    deleteSectionTemplateDraftApplications(templateId, application -> {
+      String owner = application.getContextSettingName();
+      if (StringUtils.equals(owner, settingName)
+          || windowStorageIds.contains(myApplicationsSettingsService.getSectionTemplateDraftStorageId(owner, templateId))) {
+        return false;
+      }
+      CMSSetting ownerSetting;
+      try {
+        ownerSetting = myApplicationsSettingsService.getSetting(owner);
+      } catch (RuntimeException e) {
+        LOG.debug("Application {} kept: the setting of {} cannot be read", application.getId(), owner, e);
+        return false;
+      }
+      if (ownerSetting != null && !StringUtils.equals(ownerSetting.getPageReference(), draftPageReference)) {
+        return false;
+      } else if (windowCommitted.get() == null) {
+        windowCommitted.set(windowStorage.exists(windowStorageId));
+      }
+      return windowCommitted.get();
+    });
+  }
+
+  /**
    * Whether a user may edit an application from the settings of a Shortcuts
    * portlet window: an administrator any application, whoever manages the
    * applications of the window that created one that application only. When
@@ -1543,6 +1697,33 @@ public class ApplicationCenterService {
       throw new ObjectNotFoundException(String.format(SETTING_NOT_FOUND_MESSAGE, settingName));
     }
     return setting;
+  }
+
+  /**
+   * Deletes the applications owned by the windows of a section template's
+   * drafts that the predicate selects. One application failing to delete does
+   * not keep the others.
+   */
+  private void deleteSectionTemplateDraftApplications(long templateId, Predicate<Application> selected) {
+    String ownerPattern = myApplicationsSettingsService.getSectionTemplateDraftNamePattern(templateId);
+    for (Long applicationId : appCenterStorage.getContextApplicationIdsByOwnerPattern(ownerPattern)) {
+      Application application = appCenterStorage.getApplication(applicationId);
+      // The pattern's wildcards match more than the names generated for the
+      // template's draft windows: each owner is checked on its own
+      if (application == null
+          || myApplicationsSettingsService.getSectionTemplateDraftStorageId(application.getContextSettingName(),
+                                                                           templateId) == null
+          || !selected.test(application)) {
+        continue;
+      }
+      try {
+        deleteApplication(applicationId);
+      } catch (ApplicationNotFoundException e) {
+        LOG.debug("Application {} of section template {} is already deleted", applicationId, templateId, e);
+      } catch (RuntimeException e) {
+        LOG.warn("Unable to delete application {} of section template {}", applicationId, templateId, e);
+      }
+    }
   }
 
   private void deleteNewIllustration(Long imageFileId) {
@@ -1627,11 +1808,14 @@ public class ApplicationCenterService {
    *
    * @param storedApplication the application an update changes, null on
    *          creation
+   * @param copied whether the application is the copy of another, whose
+   *          portlet instance needs only to exist, no user binding it
    */
   private Application toContextApplication(ApplicationForm form,
                                            List<String> audience,
                                            Application storedApplication,
-                                           String username) {
+                                           String username,
+                                           boolean copied) {
     if (StringUtils.isBlank(form.getTitle())) {
       throw new IllegalArgumentException(TITLE_MANDATORY_MESSAGE);
     } else if (form.getCategoryIds() != null && form.getCategoryIds().size() > MyApplicationsSettingsService.MAX_LISTED_CATEGORIES) {
@@ -1642,7 +1826,7 @@ public class ApplicationCenterService {
     application.setTitle(checkLength("title", StringUtils.trim(form.getTitle()), MAX_TITLE_LENGTH));
     application.setDescription(checkLength("description", form.getDescription(), MAX_DESCRIPTION_LENGTH));
     application.setType(type);
-    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), storedApplication, username)));
+    application.setUrl(checkUrl("url", getContextApplicationUrl(type, form.getUrl(), storedApplication, username, copied)));
     application.setHelpPageURL(StringUtils.isBlank(form.getHelpPageURL()) ? null
                                                                           : checkUrl("helpPageURL",
                                                                                      getContextLink(form.getHelpPageURL(),
@@ -1664,10 +1848,14 @@ public class ApplicationCenterService {
    *         server cannot check is registered, or a portlet instance the user
    *         binding it may access
    */
-  private String getContextApplicationUrl(ApplicationType type, String url, Application storedApplication, String username) {
+  private String getContextApplicationUrl(ApplicationType type,
+                                          String url,
+                                          Application storedApplication,
+                                          String username,
+                                          boolean copied) {
     return switch (type) {
     case DRAWER -> getDrawerName(url);
-    case PORTLET -> getPortletInstanceId(url, storedApplication, username);
+    case PORTLET -> getPortletInstanceId(url, storedApplication, username, copied);
     default -> getContextLink(url, INVALID_URL_MESSAGE);
     };
   }
@@ -1699,10 +1887,16 @@ public class ApplicationCenterService {
     return url;
   }
 
-  private String getPortletInstanceId(String url, Application storedApplication, String username) {
+  private String getPortletInstanceId(String url, Application storedApplication, String username, boolean copied) {
     long portletInstanceId = NumberUtils.toLong(url, 0);
     if (portletInstanceId <= 0) {
       throw new IllegalArgumentException(INVALID_URL_MESSAGE);
+    } else if (copied) {
+      // The copy's first viewer can be anyone: the instance has only to exist
+      if (portletInstanceService.getPortletInstance(portletInstanceId) == null) {
+        throw new IllegalArgumentException(INVALID_URL_MESSAGE);
+      }
+      return String.valueOf(portletInstanceId);
     } else if (storedApplication != null
                && storedApplication.getType() == ApplicationType.PORTLET
                && StringUtils.equals(storedApplication.getUrl(), String.valueOf(portletInstanceId))) {
@@ -1762,6 +1956,60 @@ public class ApplicationCenterService {
       throw new IllegalArgumentException(INVALID_TYPE_MESSAGE);
     }
     return mimeType;
+  }
+
+  /**
+   * @return the type of a copied illustration decided from its content, null
+   *         when there is none, or when it is too large or not an image of an
+   *         accepted type, the copy being created without it
+   */
+  private String getCopiedIllustrationMimeType(byte[] illustration, String settingName) {
+    if (illustration == null) {
+      return null;
+    }
+    try {
+      return getIllustrationMimeType(illustration);
+    } catch (IllegalArgumentException e) {
+      LOG.debug("Illustration of an application copied for {} dropped", settingName, e);
+      return null;
+    }
+  }
+
+  /**
+   * Links a copied application to its source's categories with no right
+   * checked: a category that does not exist on this deployment, or that fails
+   * to link, is skipped, never created. The link takes any metadata id, so an
+   * id is linked only once read as a category: one that names other
+   * metadata, a tag or a favorite for instance, is skipped, nothing being
+   * written for it.
+   *
+   * @return the ids of the linked categories
+   */
+  private List<Long> linkCopiedCategories(long applicationId, List<Long> categoryIds) {
+    List<Long> linkedCategoryIds = new ArrayList<>();
+    if (CollectionUtils.isEmpty(categoryIds)) {
+      return linkedCategoryIds;
+    }
+    CategoryObject categoryObject = new CategoryObject(ApplicationCategoryPlugin.OBJECT_TYPE, String.valueOf(applicationId), 0L);
+    for (Long categoryId : categoryIds.stream().filter(Objects::nonNull).distinct().toList()) {
+      try {
+        if (isCategory(categoryId)) {
+          getCategoryLinkService().link(categoryId, categoryObject);
+          linkedCategoryIds.add(categoryId);
+        }
+      } catch (RuntimeException e) {
+        LOG.debug("Copied application {} not linked to category {}", applicationId, categoryId, e);
+      }
+    }
+    return linkedCategoryIds;
+  }
+
+  /**
+   * @return true when the metadata exists and is a category
+   */
+  private boolean isCategory(long metadataId) {
+    Metadata metadata = metadataService.getMetadataById(metadataId);
+    return metadata != null && StringUtils.equals(metadata.getTypeName(), CATEGORY_METADATA_TYPE);
   }
 
   /**
@@ -1960,6 +2208,8 @@ public class ApplicationCenterService {
   }
 
   /**
+   * @param application the application
+   * @param settingName a Shortcuts portlet window's CMS setting name
    * @return true when the window's editors may see and delete the application
    *         outside its audience: one the window created, unless an
    *         administrator emptied its audience, which shows it to
@@ -1970,11 +2220,17 @@ public class ApplicationCenterService {
   }
 
   /**
-   * @return true when a window lists the application to the user: one the
-   *         user may access, and for an editor of the window's settings one
-   *         the window manages
+   * Whether a Shortcuts portlet window's settings drawer lists an application
+   * to a user, the rule a copy of the window applies too.
+   *
+   * @param application the application
+   * @param settingName the window's CMS setting name
+   * @param username the user
+   * @param editor whether the user may edit the window's settings
+   * @return true for an application the user may access, and for an editor of
+   *         the window's settings one the window manages
    */
-  private boolean isShown(Application application, String settingName, String username, boolean editor) {
+  public boolean isShown(Application application, String settingName, String username, boolean editor) {
     return canAccess(application, username) || editor && isManagedBy(application, settingName);
   }
 
