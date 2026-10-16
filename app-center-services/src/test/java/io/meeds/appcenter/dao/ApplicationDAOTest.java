@@ -61,6 +61,10 @@ class ApplicationDAOTest {
 
   private static ApplicationEntity    platformApplication;
 
+  private static ApplicationEntity    sectionDraftApplication;
+
+  private static ApplicationEntity    secondSectionDraftApplication;
+
   @BeforeAll
   static void setup() {
     entityManagerFactory = new HibernatePersistenceConfiguration("app-center-dao-test")
@@ -81,6 +85,11 @@ class ApplicationDAOTest {
     secondSpaceApplication = contextApplication("Team board", SPACE_ID);
     otherSpaceApplication = contextApplication("Other team wiki", OTHER_SPACE_ID);
     platformApplication = contextApplication("Platform wiki", 0L);
+    sectionDraftApplication = ownedApplication("Untitled-21-sdraft-7-1b4e28ba");
+    secondSectionDraftApplication = ownedApplication("Untitled-22-sdraft-7-2c5f39cb");
+    ownedApplication("Untitled-23-sdraft-77-3d6a4adc");
+    ownedApplication("untitled-24-sdraft-7-4e7b5bed");
+    ownedApplication("Untitled-25-4e7b5bed");
     entityManager.flush();
   }
 
@@ -112,11 +121,35 @@ class ApplicationDAOTest {
     assertEquals(List.of(), applicationDAO.findIdsByContextSpaceId(7L));
   }
 
+  /**
+   * The pattern is matched as given: another template's id or an unmarked
+   * name is not matched, nor, on HSQLDB as on PostgreSQL, another case. On
+   * MySQL the column's utf8_general_ci matches another case;
+   * ApplicationCenterService re-checks each owner against a case-sensitive
+   * pattern, which excludes it there.
+   */
+  @Test
+  void findIdsByContextSettingNameLikeReadsTheApplicationsOfMatchingOwnersOnly() {
+    assertEquals(Set.of(sectionDraftApplication.getId(), secondSectionDraftApplication.getId()),
+                 new HashSet<>(applicationDAO.findIdsByContextSettingNameLike("Untitled-%-sdraft-7-%")));
+    assertEquals(List.of(sectionDraftApplication.getId()),
+                 applicationDAO.findIdsByContextSettingNameLike("Untitled-21-sdraft-7-1b4e28ba"));
+    assertEquals(List.of(), applicationDAO.findIdsByContextSettingNameLike("Untitled-%-sdraft-8-%"));
+  }
+
   private static ApplicationEntity application(String title, String description, String url) {
     ApplicationEntity application = new ApplicationEntity();
     application.setTitle(title);
     application.setDescription(description);
     application.setUrl(url);
+    return application;
+  }
+
+  private static ApplicationEntity ownedApplication(String owner) {
+    ApplicationEntity application = application(owner, owner, "https://wiki.example.org/" + owner);
+    application.setContextSettingName(owner);
+    application.setContextSpaceId(9L);
+    entityManager.persist(application);
     return application;
   }
 

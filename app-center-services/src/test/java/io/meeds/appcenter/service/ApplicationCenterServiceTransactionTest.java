@@ -59,6 +59,7 @@ import org.exoplatform.services.resources.ResourceBundleService;
 import org.exoplatform.services.security.Identity;
 import org.exoplatform.services.thumbnail.ImageThumbnailService;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
 import org.exoplatform.upload.UploadService;
 
 import io.meeds.appcenter.dao.ApplicationDAO;
@@ -70,6 +71,7 @@ import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
+import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.layout.service.PortletInstanceService;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.translation.service.TranslationService;
@@ -136,6 +138,12 @@ class ApplicationCenterServiceTransactionTest {
 
   @MockitoBean
   private PortletInstanceService         portletInstanceService;
+
+  @MockitoBean
+  private MetadataService                metadataService;
+
+  @MockitoBean
+  private PortletWindowStorage           windowStorage;
 
   @MockitoSpyBean
   private ApplicationCenterStorage       appCenterStorage;
