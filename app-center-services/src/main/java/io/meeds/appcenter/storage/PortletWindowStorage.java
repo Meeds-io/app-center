@@ -38,6 +38,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.ApplicationState;
 import org.exoplatform.portal.jdbc.entity.WindowEntity;
@@ -98,7 +99,10 @@ public class PortletWindowStorage {
   @Autowired
   private LayoutService               layoutService;
 
-  @Autowired
+  /**
+   * Never injected: the Kernel to Spring bridge exposes no GenericDAO as a
+   * bean, so it is read from the portal container at its first use
+   */
   private WindowDAO                   windowDAO;
 
   /**
@@ -231,11 +235,24 @@ public class PortletWindowStorage {
   }
 
   /**
+   * Called on a thread of this storage, inside {@link #callInRequest(Supplier)},
+   * whose advice makes the portal container the current one.
+   *
+   * @return the portal container's window DAO
+   */
+  WindowDAO getWindowDAO() {
+    if (windowDAO == null) {
+      windowDAO = ExoContainerContext.getService(WindowDAO.class);
+    }
+    return windowDAO;
+  }
+
+  /**
    * @return true when the window's row exists, its preferences not read
    */
   private boolean hasWindow(String storageId) {
     long id = NumberUtils.toLong(storageId, 0);
-    return id > 0 && windowDAO.find(id) != null;
+    return id > 0 && getWindowDAO().find(id) != null;
   }
 
   /**
@@ -244,7 +261,7 @@ public class PortletWindowStorage {
    */
   private Portlet readPortlet(String storageId) {
     long id = NumberUtils.toLong(storageId, 0);
-    WindowEntity window = id > 0 ? windowDAO.find(id) : null;
+    WindowEntity window = id > 0 ? getWindowDAO().find(id) : null;
     if (window == null) {
       return null;
     }

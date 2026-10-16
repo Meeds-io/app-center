@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -52,9 +53,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.ApplicationState;
 import org.exoplatform.portal.jdbc.entity.WindowEntity;
@@ -333,6 +336,24 @@ class PortletWindowStorageTest {
   @Test
   void stopRunsWhenTheContextCloses() throws NoSuchMethodException {
     assertTrue(PortletWindowStorage.class.getMethod("stop").isAnnotationPresent(PreDestroy.class));
+  }
+
+  /**
+   * The window DAO is no Spring bean: fails the mutants never reading it from
+   * the portal container, and reading it at every call
+   */
+  @Test
+  void getWindowDAOReadsThePortalContainersOnce() {
+    PortletWindowStorage unwiredStorage = new PortletWindowStorage();
+    try (MockedStatic<ExoContainerContext> containerContext = mockStatic(ExoContainerContext.class)) {
+      containerContext.when(() -> ExoContainerContext.getService(WindowDAO.class)).thenReturn(windowDAO);
+
+      assertSame(windowDAO, unwiredStorage.getWindowDAO());
+      assertSame(windowDAO, unwiredStorage.getWindowDAO());
+      containerContext.verify(() -> ExoContainerContext.getService(WindowDAO.class), times(1));
+    } finally {
+      unwiredStorage.stop();
+    }
   }
 
   /**
