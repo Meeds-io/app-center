@@ -23,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,8 +50,9 @@ import io.meeds.appcenter.storage.PortletWindowStorage;
 class KernelDaoInjectionTest {
 
   /**
-   * Fails the mutant injecting the window DAO into {@link PortletWindowStorage}
-   * again, which only a server start detects otherwise
+   * An injected field, constructor parameter or method parameter. Fails the
+   * mutant injecting the window DAO into {@link PortletWindowStorage} again,
+   * which only a server start detects otherwise
    */
   @Test
   void noBeanInjectsAKernelDao() throws ClassNotFoundException {
@@ -68,6 +71,12 @@ class KernelDaoInjectionTest {
         for (Field field : type.getDeclaredFields()) {
           if (field.isAnnotationPresent(Autowired.class) && GenericDAO.class.isAssignableFrom(field.getType())) {
             kernelDaoInjections.add(beanClassName + "#" + field.getName());
+          }
+        }
+        for (Method method : type.getDeclaredMethods()) {
+          if (method.isAnnotationPresent(Autowired.class)
+              && Arrays.stream(method.getParameterTypes()).anyMatch(GenericDAO.class::isAssignableFrom)) {
+            kernelDaoInjections.add(beanClassName + "#" + method.getName() + "()");
           }
         }
       }
