@@ -28,7 +28,7 @@
       :class="[
         $attrs.class,
         {
-          'border-color': card,
+          'border-color no-background': card,
           'border-color-black': isFocused,
           'transparent': !card && !hover,
           'light-grey-background-color': !card && hover,
@@ -156,7 +156,7 @@
           }"
           :height="card ? 135 : '100%'"
           width="100%"
-          class="d-flex flex-column text-start border-box-sizing"
+          class="d-flex flex-column text-start border-box-sizing transparent"
           flat>
           <div v-if="!card" class="text-truncate white--text">
             {{ applicationTitle }}
