@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -108,19 +109,20 @@ public class MyApplicationsCopyService {
    * Computes the preferences of a copy of a Shortcuts portlet window: every
    * preference but its setting name, the legacy header key and data.init,
    * plus data.init carrying, by value, its header title and the applications
-   * it created that it lists, active and, when a user copies the window, as
-   * the window's settings drawer lists them to that user: those the user may
-   * access, and for a user who may edit the window's settings, those the
-   * window manages whatever their audience, unless an administrator emptied
-   * it. A data.init the window did not consume yet is
-   * carried as it is, whatever its setting name. A draft of the window, which
-   * the editor publishes back over it, keeps its preferences unchanged.
+   * it created that it lists, active, with an audience: one whose audience an
+   * administrator emptied is never copied, whoever makes the copy. When a
+   * user copies the window, they are those the window's settings drawer lists
+   * to that user: those the user may access, and for a user who may edit the
+   * window's settings, those the window manages whatever their audience. A
+   * data.init the window did not consume yet is carried as it is, whatever
+   * its setting name. A draft of the window, which the editor publishes back
+   * over it, keeps its preferences unchanged.
    *
    * @param preferences the window's preferences, null when it has none
    * @param draft whether the preferences are those of a draft of the same
    *          window
    * @param username the user the copy is made for, null when no user does
-   *          it, which carries every application
+   *          it, which carries every application with an audience
    * @return the copy's preferences, by name
    */
   public Map<String, String> getCopyPreferences(Map<String, String> preferences, boolean draft, String username) {
@@ -139,7 +141,7 @@ public class MyApplicationsCopyService {
     String payload = preferences.get(DATA_INIT_PREFERENCE);
     String settingName = preferences.get(NAME_PREFERENCE);
     if (StringUtils.isNotBlank(payload)) {
-      copyPreferences.put(DATA_INIT_PREFERENCE, getPassedPayload(payload, username));
+      copyPreferences.put(DATA_INIT_PREFERENCE, payload);
     } else if (StringUtils.isNotBlank(settingName)) {
       ApplicationListCopy listCopy = getListCopy(settingName,
                                                  preferences.get(APPLICATION_ID_PREFERENCE),
@@ -311,27 +313,6 @@ public class MyApplicationsCopyService {
     return preferences;
   }
 
-  /**
-   * @return a payload not consumed yet, as a copy made for the user carries
-   *         it: without the applications an administrator hid, unless the
-   *         user is an administrator or no user makes the copy
-   */
-  private String getPassedPayload(String payload, String username) {
-    ApplicationListCopy listCopy = parseListCopy(null, payload);
-    if (listCopy == null
-        || listCopy.getApplications() == null
-        || listCopy.getApplications().stream().noneMatch(application -> application != null && application.isHidden())
-        || username == null
-        || applicationCenterService.isAdministrator(username)) {
-      return payload;
-    }
-    listCopy.setApplications(listCopy.getApplications()
-                                     .stream()
-                                     .filter(application -> application != null && !application.isHidden())
-                                     .toList());
-    return JsonUtils.toJsonString(listCopy);
-  }
-
   private ApplicationListCopy getListCopy(String settingName,
                                           String legacyHeaderKey,
                                           String applicationIds,
@@ -359,11 +340,18 @@ public class MyApplicationsCopyService {
     return headerTitles.isEmpty() && copies.isEmpty() ? null : new ApplicationListCopy(headerTitles, copies);
   }
 
+  /**
+   * @return whether a copy may carry an application: one the window created,
+   *         active, whose audience an administrator did not empty, as such an
+   *         application's content would reach whoever reads the copy, a
+   *         template's content being readable by any user
+   */
   private boolean isCopied(Application application, String settingName) {
     return application != null
            && application.isContextual()
            && StringUtils.equals(application.getContextSettingName(), settingName)
-           && application.isActive();
+           && application.isActive()
+           && CollectionUtils.isNotEmpty(application.getPermissions());
   }
 
   /**
@@ -371,9 +359,9 @@ public class MyApplicationsCopyService {
    * @return which of them a copy made for the user carries, as the window's
    *         settings drawer lists them to that user: those the user may
    *         access, and for a user who may edit the window's settings, those
-   *         the window manages, whose audience an administrator did not
-   *         empty; every one when no user makes the copy. The settings right
-   *         is read only when an application is outside the user's audience.
+   *         the window manages; every one when no user makes the copy. The
+   *         settings right is read only when an application is outside the
+   *         user's audience.
    */
   private Predicate<Application> isCarriedTo(List<Application> listed, String settingName, String username) {
     if (username == null) {
@@ -405,7 +393,6 @@ public class MyApplicationsCopyService {
     copy.setAllowDetach(application.isAllowDetach());
     copy.setIllustration(getIllustration(application));
     copy.setCategoryIds(categoryIds);
-    copy.setHidden(application.getPermissions() == null || application.getPermissions().isEmpty());
     return copy;
   }
 
@@ -469,8 +456,7 @@ public class MyApplicationsCopyService {
     try {
       createdApplication = applicationCenterService.createCopiedContextApplication(form,
                                                                                    decodeIllustration(copiedApplication.getIllustration()),
-                                                                                   settingName,
-                                                                                   copiedApplication.isHidden());
+                                                                                   settingName);
     } catch (ObjectNotFoundException | IllegalArgumentException e) {
       LOG.debug("Application {} not copied for {}", copiedApplication.getId(), settingName, e);
       return null;

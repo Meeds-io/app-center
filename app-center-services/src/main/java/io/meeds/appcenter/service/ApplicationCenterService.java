@@ -1358,14 +1358,11 @@ public class ApplicationCenterService {
    * one is dropped, the application being created without it. Its categories
    * are linked with no right checked, as the copy's first viewer can be
    * anyone, a category that does not exist, or that fails to link, being
-   * skipped. An application whose
-   * source's audience an administrator emptied keeps it empty, shown to
-   * administrators only until one restores it.
+   * skipped.
    *
    * @param application the copied application's fields and categories
    * @param illustration the copied illustration's content, null when none
    * @param settingName the copy's CMS setting name
-   * @param hidden whether an administrator emptied the source's audience
    * @return the created application, with the categories it got
    * @throws ObjectNotFoundException when the copy's setting, or the space of
    *           its context, does not exist
@@ -1374,8 +1371,7 @@ public class ApplicationCenterService {
    */
   public Application createCopiedContextApplication(ApplicationForm application,
                                                     byte[] illustration,
-                                                    String settingName,
-                                                    boolean hidden) throws ObjectNotFoundException {
+                                                    String settingName) throws ObjectNotFoundException {
     CMSSetting setting = getContextSetting(settingName);
     if (application == null) {
       throw new IllegalArgumentException(APPLICATION_IS_MANDATORY_MESSAGE);
@@ -1385,7 +1381,7 @@ public class ApplicationCenterService {
       throw new ObjectNotFoundException(String.format("The context of setting %s doesn't exist", settingName));
     }
     List<String> audience = getContextAudience(spaceId);
-    Application contextApplication = toContextApplication(application, hidden ? List.of() : audience, null, null, true);
+    Application contextApplication = toContextApplication(application, audience, null, null, true);
     String illustrationMimeType = getCopiedIllustrationMimeType(illustration, settingName);
     if (illustrationMimeType != null) {
       contextApplication.setImageFileId(appCenterStorage.saveIllustration(illustration, illustrationMimeType));
@@ -2171,11 +2167,7 @@ public class ApplicationCenterService {
    * @return true for an administrator, false for a blank, guest or unknown
    *         user, where {@link #canEdit(String)} grants a blank username
    */
-  /**
-   * @param username a user, blank for a guest
-   * @return true when the user is an administrator
-   */
-  public boolean isAdministrator(String username) {
+  private boolean isAdministrator(String username) {
     if (StringUtils.isBlank(username) || StringUtils.equals(username, IdentityConstants.ANONIM)) {
       return false;
     }

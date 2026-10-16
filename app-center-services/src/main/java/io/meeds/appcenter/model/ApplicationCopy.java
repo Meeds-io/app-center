@@ -73,10 +73,4 @@ public class ApplicationCopy {
   /** The ids of the source application's categories. */
   private List<Long>          categoryIds;
 
-  /**
-   * Whether an administrator emptied the source application's audience: the
-   * copy keeps it empty, shown to administrators only.
-   */
-  private boolean             hidden;
-
 }

@@ -110,6 +110,8 @@ class MyApplicationsCopyServiceTest {
 
   private static final List<String> SPACE_AUDIENCE = List.of("*:/spaces/team");
 
+  private static final List<String> USERS_AUDIENCE = List.of("*:/platform/users");
+
   @MockitoBean
   private ApplicationCenterService      applicationCenterService;
 
@@ -224,27 +226,46 @@ class MyApplicationsCopyServiceTest {
   /**
    * A user who may edit the window's settings gets a copy carrying what the
    * drawer lists them, the window's applications outside their audience
-   * included, except one whose audience an administrator emptied (PO,
-   * 2026-10-15): fails the mutant dropping the editor's branch, and the one
-   * dropping its managed-application condition
+   * included (PO, 2026-10-15): fails the mutant dropping the editor's
+   * branch
    */
   @Test
   void getCopyPreferencesForAnEditorCarriesTheApplicationsTheWindowManagesOutsideTheirAudience() throws Exception {
     Application outsideAudience = contextApplication(1L, SETTING_NAME);
     outsideAudience.setPermissions(SPACE_AUDIENCE);
     when(applicationCenterService.canAccess(outsideAudience, USERNAME)).thenReturn(false);
-    Application emptiedAudience = contextApplication(2L, SETTING_NAME);
-    when(applicationCenterService.canAccess(emptiedAudience, USERNAME)).thenReturn(false);
     contextApplication(3L, SETTING_NAME);
     when(myApplicationsSettingsService.canEditSettings(SETTING_NAME, USERNAME)).thenReturn(true);
 
     assertEquals(List.of(1L, 3L),
-                 copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2,3", null), false, USERNAME)));
+                 copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,3", null), false, USERNAME)));
   }
 
   /**
-   * With no user, as at startup or in a job, every application is copied:
-   * fails the mutant checking access for a null user
+   * An application whose audience an administrator emptied is never copied,
+   * whoever makes the copy, an administrator, who accesses it, or no user:
+   * its content would reach whoever reads the copy, a template's content
+   * being readable by any user. Fails the mutant carrying it to an
+   * administrator's copy, and the one carrying it when no user makes the
+   * copy
+   */
+  @Test
+  void getCopyPreferencesNeverCarriesAnApplicationWhoseAudienceAnAdministratorEmptied() throws Exception {
+    Application emptiedAudience = contextApplication(1L, SETTING_NAME);
+    emptiedAudience.setPermissions(List.of());
+    Application noAudience = contextApplication(2L, SETTING_NAME);
+    noAudience.setPermissions(null);
+    contextApplication(3L, SETTING_NAME);
+
+    // canAccess grants every application, as it does to an administrator
+    assertEquals(List.of(3L),
+                 copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2,3", null), false, USERNAME)));
+    assertEquals(List.of(3L), copiedIds(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2,3", null), false, null)));
+  }
+
+  /**
+   * With no user, as at startup or in a job, every application with an
+   * audience is copied: fails the mutant checking access for a null user
    */
   @Test
   void getCopyPreferencesWithNoUserCarriesEveryApplication() throws Exception {
@@ -357,7 +378,7 @@ class MyApplicationsCopyServiceTest {
     copiedApplication.setIllustration(Base64.getEncoder().encodeToString(PNG));
     appCenterApplication(2L);
     contextApplication(3L, OTHER_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
 
     String applicationIds = copyService.consumeCopy(COPY_NAME,
                                                     payload(Map.of("en", "Shortcuts"), copiedApplication),
@@ -366,7 +387,7 @@ class MyApplicationsCopyServiceTest {
     assertEquals("41,2", applicationIds);
     ArgumentCaptor<ApplicationForm> form = ArgumentCaptor.forClass(ApplicationForm.class);
     ArgumentCaptor<byte[]> illustration = ArgumentCaptor.forClass(byte[].class);
-    verify(applicationCenterService).createCopiedContextApplication(form.capture(), illustration.capture(), eq(COPY_NAME), eq(false));
+    verify(applicationCenterService).createCopiedContextApplication(form.capture(), illustration.capture(), eq(COPY_NAME));
     assertEquals("Wiki 1", form.getValue().getTitle());
     assertEquals(ApplicationType.LINK, form.getValue().getType());
     assertEquals("https://wiki.example.org/1", form.getValue().getUrl());
@@ -384,15 +405,15 @@ class MyApplicationsCopyServiceTest {
    */
   @Test
   void consumeCopyCreatesOnlyTheCarriedApplicationsTheListNames() throws Exception {
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
 
     assertEquals("41", copyService.consumeCopy(COPY_NAME, payload(null, copy(1L), copy(9L)), "1"));
-    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any());
   }
 
   @Test
   void consumeCopyDropsACarriedApplicationWhoseFieldsAreRefused() throws Exception {
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean()))
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME)))
                                                                                          .thenThrow(new IllegalArgumentException("appCenter.contextual.invalidUrl"))
                                                                                          .thenReturn(created(42L));
 
@@ -405,11 +426,11 @@ class MyApplicationsCopyServiceTest {
     notBase64.setIllustration("not base64 !");
     ApplicationCopy tooLong = copy(2L);
     tooLong.setIllustration("A".repeat(4 * ((ApplicationCenterService.MAX_ILLUSTRATION_SIZE + 2) / 3) + 4));
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L),
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L),
                                                                                                          created(42L));
 
     assertEquals("41,42", copyService.consumeCopy(COPY_NAME, payload(null, notBase64, tooLong), "1,2"));
-    verify(applicationCenterService, times(2)).createCopiedContextApplication(any(), isNull(), eq(COPY_NAME), anyBoolean());
+    verify(applicationCenterService, times(2)).createCopiedContextApplication(any(), isNull(), eq(COPY_NAME));
   }
 
   @Test
@@ -419,7 +440,7 @@ class MyApplicationsCopyServiceTest {
     contextApplication(5L, COPY_NAME);
 
     assertEquals("2,5", copyService.consumeCopy(COPY_NAME, "not json", "1,2,3,5"));
-    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any());
     verify(translationService, never()).saveTranslationLabels(anyString(), anyString(), anyString(), any(), anyBoolean());
   }
 
@@ -461,7 +482,7 @@ class MyApplicationsCopyServiceTest {
   @Test
   void consumeWindowCopyCreatesTheCarriedApplicationsAndStoresTheList() throws Exception {
     givenACommittedCopy(COPY_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
 
     Map<String, String> window = copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME);
 
@@ -480,7 +501,7 @@ class MyApplicationsCopyServiceTest {
     givenACommittedCopy(OTHER_NAME);
 
     assertEquals(OTHER_NAME, copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME).get(NAME_PREFERENCE));
-    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any());
     verify(window, never()).savePreferences(any());
   }
 
@@ -495,7 +516,7 @@ class MyApplicationsCopyServiceTest {
     committed.put(DATA_INIT_PREFERENCE, "");
 
     assertEquals("1", copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME).get(MyApplicationsSettingsService.APPLICATION_IDS));
-    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any());
     verify(windowStorage).savePreferences(STORAGE_ID, Map.of(DATA_INIT_PREFERENCE, ""));
   }
 
@@ -508,7 +529,7 @@ class MyApplicationsCopyServiceTest {
   @Test
   void consumeWindowCopyOfAWindowChangedMeanwhileDeletesWhatItCreated() throws Exception {
     givenACommittedCopy(COPY_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenAnswer(invocation -> {
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenAnswer(invocation -> {
       committed.put(DATA_INIT_PREFERENCE, "");
       committed.put(MyApplicationsSettingsService.APPLICATION_IDS, "2");
       return created(41L);
@@ -528,7 +549,7 @@ class MyApplicationsCopyServiceTest {
   @Test
   void consumeWindowCopyDeletesWhatItCreatedWhenTheWindowCannotBeReadAgain() throws Exception {
     givenACommittedCopy(COPY_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
     when(window.getPreferences()).thenThrow(new IllegalStateException("database unreachable"));
 
     assertThrows(IllegalStateException.class, () -> copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME));
@@ -544,7 +565,7 @@ class MyApplicationsCopyServiceTest {
   @Test
   void consumeWindowCopyThatARenderStoppedWaitingForKeepsItsClaimUntilItEnds() throws Exception {
     givenACommittedCopy(COPY_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
     AtomicReference<Runnable> runningTaskEnd = new AtomicReference<>();
     when(windowStorage.callOnWindow(eq(STORAGE_ID), any(), any())).thenAnswer(invocation -> {
       runningTaskEnd.set(invocation.getArgument(2));
@@ -567,7 +588,7 @@ class MyApplicationsCopyServiceTest {
    */
   @Test
   void consumeCopyGoesOnWhenAListedApplicationOrTheHeaderTitleCannotBeRead() throws Exception {
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
     when(applicationCenterService.getApplication(7L)).thenThrow(new IllegalStateException("database unreachable"));
     doThrow(new IllegalStateException("database unreachable")).when(translationService)
                                                                .getTranslationField(HEADER_TYPE, COPY_NAME, HEADER_FIELD);
@@ -581,7 +602,7 @@ class MyApplicationsCopyServiceTest {
    */
   @Test
   void consumeCopyGoesOnWhenACopiedApplicationFails() throws Exception {
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean()))
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME)))
                                                                                          .thenReturn(created(41L))
                                                                                          .thenThrow(new IllegalStateException("database unreachable"))
                                                                                          .thenReturn(created(43L));
@@ -602,7 +623,7 @@ class MyApplicationsCopyServiceTest {
   void consumeWindowCopyMeetingAnotherConsumptionOfTheWindowConsumesNothing() throws Exception {
     givenACommittedCopy(COPY_NAME);
     AtomicReference<Map<String, String>> concurrentRender = new AtomicReference<>(Map.of());
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenAnswer(invocation -> {
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenAnswer(invocation -> {
       concurrentRender.set(copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME));
       return created(41L);
     });
@@ -610,7 +631,7 @@ class MyApplicationsCopyServiceTest {
     copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME);
 
     assertNull(concurrentRender.get());
-    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any());
   }
 
   @Test
@@ -618,7 +639,7 @@ class MyApplicationsCopyServiceTest {
     givenACommittedCopy(COPY_NAME);
     CountDownLatch creating = new CountDownLatch(1);
     CountDownLatch otherRenderDone = new CountDownLatch(1);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenAnswer(invocation -> {
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenAnswer(invocation -> {
       creating.countDown();
       otherRenderDone.await(10, TimeUnit.SECONDS);
       return created(41L);
@@ -634,7 +655,7 @@ class MyApplicationsCopyServiceTest {
     } finally {
       renders.shutdownNow();
     }
-    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any());
   }
 
   /**
@@ -645,7 +666,7 @@ class MyApplicationsCopyServiceTest {
   @Test
   void consumeWindowCopyDeletesWhatItCreatedWhenItsListCannotBeStored() throws Exception {
     givenACommittedCopy(COPY_NAME);
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
     doThrow(new IllegalStateException("database unreachable")).when(window).savePreferences(any());
 
     assertThrows(IllegalStateException.class, () -> copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME));
@@ -658,7 +679,7 @@ class MyApplicationsCopyServiceTest {
       return null;
     }).when(window).savePreferences(any());
     copyService.consumeWindowCopy(STORAGE_ID, COPY_NAME);
-    verify(applicationCenterService, times(2)).createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean());
+    verify(applicationCenterService, times(2)).createCopiedContextApplication(any(), any(), eq(COPY_NAME));
   }
 
   /**
@@ -671,7 +692,7 @@ class MyApplicationsCopyServiceTest {
   void twoFirstRendersOfACopyCreateOneSetOwnedByTheNameItKeeps() throws Exception {
     committed.put(DATA_INIT_PREFERENCE, payload(null, copy(1L)));
     committed.put(MyApplicationsSettingsService.APPLICATION_IDS, "1");
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), any(), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), any())).thenReturn(created(41L));
 
     String firstName = copyService.getOrStoreSettingName(STORAGE_ID, () -> COPY_NAME);
     String secondName = copyService.getOrStoreSettingName(STORAGE_ID, () -> OTHER_NAME);
@@ -681,7 +702,7 @@ class MyApplicationsCopyServiceTest {
     assertEquals(COPY_NAME, secondName);
     assertEquals(COPY_NAME, committed.get(NAME_PREFERENCE));
     assertEquals("41", committed.get(MyApplicationsSettingsService.APPLICATION_IDS));
-    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any(), anyBoolean());
+    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any());
   }
 
   private void givenACommittedCopy(String name) {
@@ -691,25 +712,22 @@ class MyApplicationsCopyServiceTest {
   }
 
   /**
-   * A copy keeps its source's categories and an audience an administrator
-   * emptied: fails the mutants dropping either from the payload or from the
-   * creation
+   * A copy keeps its source's categories: fails the mutants dropping them
+   * from the payload or from the creation
    */
   @Test
-  void copiesCarryTheSourceCategoriesAndAnEmptiedAudience() throws Exception {
-    Application hidden = contextApplication(1L, SETTING_NAME);
-    hidden.setPermissions(List.of());
+  void copiesCarryTheSourceCategories() throws Exception {
+    contextApplication(1L, SETTING_NAME);
     when(applicationCenterService.getApplicationCategoryIds(List.of(1L))).thenReturn(Map.of(1L, List.of(3L, 4L)));
 
     ApplicationCopy copy = listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1", null), false, null)).getApplications()
                                                                                                                       .get(0);
     assertEquals(List.of(3L, 4L), copy.getCategoryIds());
-    assertTrue(copy.isHidden());
 
-    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME), anyBoolean())).thenReturn(created(41L));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
     copyService.consumeCopy(COPY_NAME, payload(null, copy), "1");
     ArgumentCaptor<ApplicationForm> form = ArgumentCaptor.forClass(ApplicationForm.class);
-    verify(applicationCenterService).createCopiedContextApplication(form.capture(), any(), eq(COPY_NAME), eq(true));
+    verify(applicationCenterService).createCopiedContextApplication(form.capture(), any(), eq(COPY_NAME));
     assertEquals(List.of(3L, 4L), form.getValue().getCategoryIds());
   }
 
@@ -729,29 +747,6 @@ class MyApplicationsCopyServiceTest {
     assertNull(copies.get(0).getCategoryIds());
     assertEquals(List.of(5L), copies.get(1).getCategoryIds());
     verify(applicationCenterService, times(1)).getApplicationCategoryIds(any());
-  }
-
-  /**
-   * A payload copied before its first render: fails the mutant passing an
-   * app an administrator hid to a copy made for any other user (478114)
-   */
-  @Test
-  void getCopyPreferencesPassesHiddenAppsOnlyToAnAdministratorOrNoUser() {
-    ApplicationCopy hidden = copy(1L);
-    hidden.setHidden(true);
-    String payload = payload(null, hidden, copy(2L));
-
-    assertEquals(List.of(2L), passedIds(payload, USERNAME));
-    when(applicationCenterService.isAdministrator(USERNAME)).thenReturn(true);
-    assertEquals(List.of(1L, 2L), passedIds(payload, USERNAME));
-    assertEquals(List.of(1L, 2L), passedIds(payload, null));
-  }
-
-  private List<Long> passedIds(String payload, String username) {
-    return listCopy(copyService.getCopyPreferences(preferences(SETTING_NAME, "1,2", payload), false, username)).getApplications()
-                                                                                                                .stream()
-                                                                                                                .map(ApplicationCopy::getId)
-                                                                                                                .toList();
   }
 
   private Map<String, String> preferences(String name, String applicationIds, String payload) {
@@ -782,6 +777,7 @@ class MyApplicationsCopyServiceTest {
     application.setUrl("https://wiki.example.org/" + id);
     application.setSameTab(true);
     application.setActive(true);
+    application.setPermissions(USERS_AUDIENCE);
     lenient().when(applicationCenterService.getApplication(id)).thenReturn(application);
     return application;
   }
