@@ -121,7 +121,7 @@ public class MyApplicationsSettingsService {
 
   public static final String  SHOW_NAME                 = "showName";
 
-  /** The tiles' color, empty for the skin's light grey. */
+  /** The tiles' color, empty for none: a white tile, or the skin's border color when outlined. */
   public static final String  COLOR                     = "color";
 
   public static final String  OUTLINED                  = "outlined";
@@ -489,8 +489,7 @@ public class MyApplicationsSettingsService {
    * Reads a stored color: #RRGGBB or #RRGGBBAA.
    *
    * @param storedValue the color preference
-   * @return the color, empty for any other value or none, which is the skin's
-   *         light grey
+   * @return the color, empty for any other value or none: no color
    */
   public static String getColor(String storedValue) {
     return storedValue != null && COLOR_VALUE.matcher(storedValue).matches() ? storedValue : "";
@@ -881,7 +880,7 @@ public class MyApplicationsSettingsService {
 
   /**
    * Keeps the display settings of a write that have a valid value, whatever
-   * the listing mode: an empty color, the skin's light grey, included.
+   * the listing mode, an empty color included.
    */
   private void putDisplaySettings(Map<String, String> parameters, Map<String, String> settings) {
     String template = getTemplate(StringUtils.trim(parameters.get(TEMPLATE)));
