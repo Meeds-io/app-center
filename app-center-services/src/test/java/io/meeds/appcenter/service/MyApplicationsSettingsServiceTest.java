@@ -522,7 +522,7 @@ class MyApplicationsSettingsServiceTest {
   void getWritableSettingsValidatesTheColor() {
     assertEquals(Map.of(COLOR, "#e1e8ee"), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, "#e1e8ee")));
     assertEquals(Map.of(COLOR, "#E1E8EE80"), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, " #E1E8EE80 ")));
-    // Empty: back to the skin's light grey
+    // Empty: back to no color
     assertEquals(Map.of(COLOR, ""), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, "")));
     for (String value : List.of("#FFF", "#FFFF", "#GGGGGG", "E1E8EE", "#E1E8EE8", "red", "#E1E8EE</script>", "#E1E8EE';alert(1)//")) {
       assertEquals(Map.of(), settingsService.getWritableSettings(PAGE_NAME, Map.of(COLOR, value)), value);
