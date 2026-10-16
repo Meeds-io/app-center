@@ -34,11 +34,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
 
+import io.meeds.appcenter.plugin.MyApplicationsPortletInstancePreferencePlugin;
 import io.meeds.appcenter.storage.PortletWindowStorage;
 
 /**
@@ -51,20 +53,29 @@ class KernelDaoInjectionTest {
 
   /**
    * An {@link Autowired} field or method, or a constructor parameter, the
-   * module's injection forms; {@code @Resource} and {@code @Inject} are not
-   * looked at. Fails the mutant injecting the window DAO into
-   * {@link PortletWindowStorage} again, which only a server start detects
-   * otherwise
+   * module's injection forms, of every bean whatever its profiles;
+   * {@code @Resource} and {@code @Inject} are not looked at. Fails the mutant
+   * injecting the window DAO into {@link PortletWindowStorage}, which only a
+   * server start detects otherwise
    */
   @Test
   void noBeanInjectsAKernelDao() throws ClassNotFoundException {
     ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+    // Every profile active, as on a server: a @Profile bean is scanned too
+    scanner.setEnvironment(new StandardEnvironment() {
+      @Override
+      public boolean matchesProfiles(String... profileExpressions) {
+        return true;
+      }
+    });
     scanner.addIncludeFilter(new AnnotationTypeFilter(Component.class));
     Set<String> beanClassNames = scanner.findCandidateComponents("io.meeds.appcenter")
                                         .stream()
                                         .map(BeanDefinition::getBeanClassName)
                                         .collect(Collectors.toSet());
     assertTrue(beanClassNames.contains(PortletWindowStorage.class.getName()), "The scan finds no bean of the module");
+    assertTrue(beanClassNames.contains(MyApplicationsPortletInstancePreferencePlugin.class.getName()),
+               "The scan skips the beans of a profile");
 
     List<String> kernelDaoInjections = new ArrayList<>();
     for (String beanClassName : beanClassNames) {
