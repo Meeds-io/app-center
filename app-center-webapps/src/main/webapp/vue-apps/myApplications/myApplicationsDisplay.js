@@ -27,7 +27,7 @@ export const MAX_ICON_SIZE = 60;
 // The settings a template reads but showHeader, which the legacy layout reads too, in the order they are compared
 export const DISPLAY_KEYS = ['template', 'showSeeMore', 'listInRow', 'showIcon', 'iconSize', 'showName', 'color', 'outlined', 'hAlign', 'vAlign'];
 
-// The configuration each template comes with. An empty color is the skin's light grey
+// The configuration each template comes with. An empty color is none: a white tile, or the skin's border color when outlined
 const TEMPLATE_DEFAULTS = {
   ROW: {
     showHeader: false,
@@ -107,8 +107,8 @@ export function getTileClass(displaySettings, hover, focused) {
     'pa-2': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',
     'border-color-black': focused,
-    // Filled, without a color: the skin's light grey
-    'light-grey-background-color': !displaySettings.outlined && !displaySettings.color,
+    // Filled, without a color: white. Never Vuetify's white class, which also whitens the focus border
+    'white-background': !displaySettings.outlined && !displaySettings.color,
   };
 }
 
