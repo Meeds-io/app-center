@@ -50,9 +50,11 @@ import io.meeds.appcenter.storage.PortletWindowStorage;
 class KernelDaoInjectionTest {
 
   /**
-   * An injected field, constructor parameter or method parameter. Fails the
-   * mutant injecting the window DAO into {@link PortletWindowStorage} again,
-   * which only a server start detects otherwise
+   * An {@link Autowired} field or method, or a constructor parameter, the
+   * module's injection forms; {@code @Resource} and {@code @Inject} are not
+   * looked at. Fails the mutant injecting the window DAO into
+   * {@link PortletWindowStorage} again, which only a server start detects
+   * otherwise
    */
   @Test
   void noBeanInjectsAKernelDao() throws ClassNotFoundException {
