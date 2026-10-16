@@ -53,6 +53,8 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.Identity;
 
 import io.meeds.appcenter.constant.WindowKind;
+import io.meeds.appcenter.service.ApplicationCenterService;
+import io.meeds.appcenter.service.MyApplicationsCopyService;
 import io.meeds.appcenter.service.MyApplicationsSettingsService;
 import io.meeds.social.portlet.CMSPortlet;
 
@@ -65,6 +67,10 @@ public class MyApplicationsPortlet extends CMSPortlet {
   private static final Log              LOG            = ExoLogger.getLogger(MyApplicationsPortlet.class);
 
   private MyApplicationsSettingsService settingsService;
+
+  private MyApplicationsCopyService     copyService;
+
+  private ApplicationCenterService      applicationCenterService;
 
   @Override
   public void init(PortletConfig config) throws PortletException {
@@ -103,6 +109,9 @@ public class MyApplicationsPortlet extends CMSPortlet {
     for (Map.Entry<String, String> setting : settings.entrySet()) {
       preferences.setValue(setting.getKey(), setting.getValue());
     }
+    // Stored through the request, whose render then reads it back: a view of
+    // the window read before its copy was consumed would restore the payload
+    preferences.setValue(DATA_INIT_PREFERENCE_NAME, "");
     preferences.store();
   }
 
@@ -112,35 +121,105 @@ public class MyApplicationsPortlet extends CMSPortlet {
            && getSettingsService().canEditSettings(name, userAclIdentity == null ? null : userAclIdentity.getUserId());
   }
 
+  /**
+   * Names a window rendered with no name, a new window or a copy: the name
+   * another render stored meanwhile is adopted, so that two first renders of
+   * a copy initialize it once, under one name.
+   */
   @Override
   protected String generateRandomId() {
     UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
     if (uiPortlet == null || StringUtils.isBlank(uiPortlet.getStorageId())) {
       return super.generateRandomId();
     }
-    WindowKind windowKind = getWindowKind(uiPortlet);
-    String name;
-    do {
-      name = getSettingsService().generateSettingName(uiPortlet.getStorageId(), windowKind);
-    } while (isSettingNameExists(name));
-    return name;
+    return getCopyService().getOrStoreSettingName(uiPortlet.getStorageId(), () -> generateSettingName(uiPortlet));
   }
 
   @Override
   protected void saveSettingName(String name, String pageReference, long spaceId) {
-    String settingPageReference = isSharedLayoutWindow() ? MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE :
-                                                         getSettingsService().getSettingPageReference(name,
-                                                                                                      pageReference,
-                                                                                                      getLayoutSiteKey());
+    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
+    WindowKind windowKind = uiPortlet == null ? null : getWindowKind(uiPortlet);
+    String settingPageReference;
+    if (windowKind == WindowKind.SHARED_LAYOUT) {
+      settingPageReference = MyApplicationsSettingsService.SHARED_LAYOUT_REFERENCE;
+    } else if (windowKind == WindowKind.SECTION_TEMPLATE_DRAFT) {
+      // The draft page itself, which CMSPortlet would cut at _draft_ into
+      // global::section: its name tells the template and the administrator
+      settingPageReference = uiPortlet.getAncestorOfType(UIPage.class).getPageId();
+    } else {
+      settingPageReference = getSettingsService().getSettingPageReference(name, pageReference, getLayoutSiteKey());
+    }
     super.saveSettingName(name, settingPageReference, getSettingsService().getContextSpaceId(name, settingPageReference));
   }
 
+  /**
+   * Deletes, for a window of a section-template draft page named by this
+   * render, what the template's earlier editing sessions left. A failure
+   * leaves them, and does not fail the render.
+   */
+  @Override
+  protected void postSettingInit(PortletPreferences preferences, String name) {
+    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
+    if (uiPortlet == null || getWindowKind(uiPortlet) != WindowKind.SECTION_TEMPLATE_DRAFT) {
+      return;
+    }
+    UIPage uiPage = uiPortlet.getAncestorOfType(UIPage.class);
+    try {
+      getApplicationCenterService().deleteSectionTemplateDraftLeftovers(name, uiPage.getPageId(), getWindowStorageIds(uiPage));
+    } catch (RuntimeException e) {
+      LOG.warn("Unable to delete the applications earlier sessions of section template draft {} left", uiPage.getPageId(), e);
+    }
+  }
+
+  /**
+   * Writes a preference of the rendered window over its committed
+   * preferences: the render's own view of them, read when it started, would
+   * restore what another render changed since.
+   */
+  @Override
+  protected void savePreference(String name, String value) {
+    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
+    if (uiPortlet == null || StringUtils.isBlank(uiPortlet.getStorageId())) {
+      super.savePreference(name, value);
+      return;
+    }
+    getCopyService().saveWindowPreference(uiPortlet.getStorageId(), name, value);
+  }
+
+  /**
+   * Moves a legacy header title to the window's setting name, then consumes
+   * what a copy of a window carries, at the first render that finds it, and
+   * at each render until it is consumed: the applications it carries are
+   * created in the copy's own context, its list names them, and data.init is
+   * blanked. Nothing is created on a draft site, whose windows keep their own
+   * setting. A failure is logged and the render goes on with the window's
+   * list as it is.
+   */
   @Override
   protected void setViewRequestAttributes(String name, RenderRequest request, RenderResponse response) {
-    String legacyApplicationId = request.getPreferences().getValue(APPLICATION_ID, null);
+    PortletPreferences preferences = request.getPreferences();
+    String legacyApplicationId = preferences.getValue(APPLICATION_ID, null);
     if (StringUtils.isNotBlank(legacyApplicationId)) {
       getSettingsService().copyHeaderTitle(legacyApplicationId, name);
       savePreference(APPLICATION_ID, "");
+    }
+    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
+    if (StringUtils.isBlank(preferences.getValue(DATA_INIT_PREFERENCE_NAME, null))
+        || isDraftSite()
+        || uiPortlet == null
+        || StringUtils.isBlank(uiPortlet.getStorageId())) {
+      return;
+    }
+    try {
+      Map<String, String> window = getCopyService().consumeWindowCopy(uiPortlet.getStorageId(), name);
+      if (window != null) {
+        setRequestPreference(preferences,
+                             MyApplicationsSettingsService.APPLICATION_IDS,
+                             window.get(MyApplicationsSettingsService.APPLICATION_IDS));
+        setRequestPreference(preferences, DATA_INIT_PREFERENCE_NAME, window.get(DATA_INIT_PREFERENCE_NAME));
+      }
+    } catch (RuntimeException e) {
+      LOG.warn("Unable to create the applications the copy {} carries", name, e);
     }
   }
 
@@ -172,7 +251,7 @@ public class MyApplicationsPortlet extends CMSPortlet {
                                                                                             getPageReference(uiPage),
                                                                                             getLayoutSiteKey()),
                                                () -> getOtherWindowNames(uiPortlet, uiPage, windowKind))) {
-      String newName = generateRandomId();
+      String newName = generateSettingName(uiPortlet);
       savePreference(NAME, newName);
       try {
         preferences.setValue(NAME, newName);
@@ -184,22 +263,14 @@ public class MyApplicationsPortlet extends CMSPortlet {
   }
 
   /**
-   * @return whether the window rendered is in a shared layout, read from the
-   *         request: a window of a configured shared layout has no storage
-   *         id, so no generated name to tell it
-   */
-  private boolean isSharedLayoutWindow() {
-    UIPortlet uiPortlet = UIPortlet.getCurrentUIPortlet();
-    return uiPortlet != null && getWindowKind(uiPortlet) == WindowKind.SHARED_LAYOUT;
-  }
-
-  /**
    * @return where a window is placed: a page window has a page ancestor, a
    *         site-layout window a site one only, a shared-layout window neither
    */
   private WindowKind getWindowKind(UIPortlet uiPortlet) {
-    if (uiPortlet.getAncestorOfType(UIPage.class) != null) {
-      return WindowKind.PAGE;
+    UIPage uiPage = uiPortlet.getAncestorOfType(UIPage.class);
+    if (uiPage != null) {
+      return getSettingsService().getSectionTemplateId(uiPage.getPageId()) > 0 ? WindowKind.SECTION_TEMPLATE_DRAFT :
+                                                                               WindowKind.PAGE;
     } else if (uiPortlet.getAncestorOfType(UIPortal.class) != null) {
       return WindowKind.SITE_LAYOUT;
     } else {
@@ -233,6 +304,43 @@ public class MyApplicationsPortlet extends CMSPortlet {
     } catch (Exception e) {
       LOG.debug("Unable to read the preferences of window {}", window.getStorageId(), e);
       return null;
+    }
+  }
+
+  /**
+   * @return a new setting name for the window, marked for its kind, that no
+   *         setting holds yet
+   */
+  private String generateSettingName(UIPortlet uiPortlet) {
+    WindowKind windowKind = getWindowKind(uiPortlet);
+    long sectionTemplateId = windowKind == WindowKind.SECTION_TEMPLATE_DRAFT ?
+                                                                             getSettingsService().getSectionTemplateId(uiPortlet.getAncestorOfType(UIPage.class)
+                                                                                                                                .getPageId()) :
+                                                                             0;
+    String name;
+    do {
+      name = sectionTemplateId > 0 ?
+                                   getSettingsService().generateSectionTemplateDraftSettingName(uiPortlet.getStorageId(),
+                                                                                                sectionTemplateId) :
+                                   getSettingsService().generateSettingName(uiPortlet.getStorageId(), windowKind);
+    } while (isSettingNameExists(name));
+    return name;
+  }
+
+  /**
+   * @return the storage ids of the windows of a page
+   */
+  private List<String> getWindowStorageIds(UIPage uiPage) {
+    List<UIPortlet> windows = new ArrayList<>();
+    uiPage.findComponentOfType(windows, UIPortlet.class);
+    return windows.stream().map(UIPortlet::getStorageId).filter(Objects::nonNull).toList();
+  }
+
+  private void setRequestPreference(PortletPreferences preferences, String name, String value) {
+    try {
+      preferences.setValue(name, value);
+    } catch (ReadOnlyException e) {
+      LOG.debug("Unable to set preference {} on the rendered window", name, e);
     }
   }
 
@@ -276,4 +384,19 @@ public class MyApplicationsPortlet extends CMSPortlet {
     }
     return settingsService;
   }
+
+  private MyApplicationsCopyService getCopyService() {
+    if (copyService == null) {
+      copyService = ExoContainerContext.getService(MyApplicationsCopyService.class);
+    }
+    return copyService;
+  }
+
+  private ApplicationCenterService getApplicationCenterService() {
+    if (applicationCenterService == null) {
+      applicationCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+    }
+    return applicationCenterService;
+  }
+
 }
