@@ -121,7 +121,7 @@ public class MyApplicationsSettingsService {
 
   public static final String  SHOW_NAME                 = "showName";
 
-  /** The tiles' color, empty for none: a white tile, or the skin's border color when outlined. */
+  /** The tiles' color, empty for none: a transparent tile, with the skin's border color when outlined. */
   public static final String  COLOR                     = "color";
 
   public static final String  OUTLINED                  = "outlined";

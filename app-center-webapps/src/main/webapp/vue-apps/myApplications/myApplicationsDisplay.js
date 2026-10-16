@@ -27,7 +27,7 @@ export const MAX_ICON_SIZE = 60;
 // The settings a template reads but showHeader, which the legacy layout reads too, in the order they are compared
 export const DISPLAY_KEYS = ['template', 'showSeeMore', 'listInRow', 'showIcon', 'iconSize', 'showName', 'color', 'outlined', 'hAlign', 'vAlign'];
 
-// The configuration each template comes with. An empty color is none: a white tile, or the skin's border color when outlined
+// The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined
 const TEMPLATE_DEFAULTS = {
   ROW: {
     showHeader: false,
@@ -107,8 +107,6 @@ export function getTileClass(displaySettings, hover, focused) {
     'pa-2': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',
     'border-color-black': focused,
-    // Filled, without a color: white. Never Vuetify's white class, which also whitens the focus border
-    'white-background': !displaySettings.outlined && !displaySettings.color,
   };
 }
 
@@ -119,7 +117,8 @@ export function getTileStyle(displaySettings) {
     // No fill, and never the transparent class: it makes the border transparent as well
     return {border: `thin solid ${displaySettings.color || 'var(--allPagesBorderColor)'}`, backgroundColor: 'transparent'};
   } else {
-    // A filled tile shows no border, yet keeps the room of the focus border so that focusing it moves nothing
-    return {border: 'thin solid transparent', ...(displaySettings.color && {backgroundColor: displaySettings.color})};
+    // No border, yet the room of the focus border so that focusing it moves nothing. Without a color, no fill
+    // either, set inline: in the settings drawer, a clickable card is white otherwise
+    return {border: 'thin solid transparent', backgroundColor: displaySettings.color || 'transparent'};
   }
 }
