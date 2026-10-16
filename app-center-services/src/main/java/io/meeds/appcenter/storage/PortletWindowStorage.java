@@ -115,7 +115,7 @@ public class PortletWindowStorage {
    * @return true when the window exists as committed
    */
   public boolean exists(String storageId) {
-    return callInOwnRequest(() -> readPortlet(storageId) != null);
+    return callInOwnRequest(() -> hasWindow(storageId));
   }
 
   /**
@@ -228,6 +228,14 @@ public class PortletWindowStorage {
     Portlet updated = new Portlet(preferences);
     values.forEach(updated::setValue);
     layoutService.save(state, updated);
+  }
+
+  /**
+   * @return true when the window's row exists, its preferences not read
+   */
+  private boolean hasWindow(String storageId) {
+    long id = NumberUtils.toLong(storageId, 0);
+    return id > 0 && windowDAO.find(id) != null;
   }
 
   /**

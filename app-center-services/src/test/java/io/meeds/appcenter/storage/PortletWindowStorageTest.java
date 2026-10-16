@@ -133,13 +133,17 @@ class PortletWindowStorageTest {
 
   /**
    * Fails the mutants answering true for a window gone, false for one that
-   * exists, and reading outside a request of its own, whose entity manager
-   * returns the window as the request first loaded it
+   * exists, reading outside a request of its own, whose entity manager
+   * returns the window as the request first loaded it, and deserializing the
+   * window's preferences, as large as an unconsumed payload, only to test
+   * its row
    */
   @Test
   void existsReadsTheCommittedWindowRow() {
     givenATaskRunsInTheCallingRequest();
-    when(windowDAO.find(12L)).thenReturn(new WindowEntity());
+    WindowEntity window = new WindowEntity();
+    window.setCustomization(new byte[] { 1, 2, 3 });
+    when(windowDAO.find(12L)).thenReturn(window);
 
     assertTrue(storage.exists(STORAGE_ID));
     assertFalse(storage.exists("13"));

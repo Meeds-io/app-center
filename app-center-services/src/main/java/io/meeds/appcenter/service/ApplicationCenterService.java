@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1593,10 +1594,10 @@ public class ApplicationCenterService {
    * the window being initialized no longer exists as committed: its render
    * loaded the draft page before a later session saved it again, so that the
    * given windows are not those of the current draft page. That window is
-   * read before each deletion, after the selection, which lists the
-   * applications of such a later session's windows only once the draft page
-   * was saved again; a read that fails stops the deletion, its exception
-   * thrown.
+   * read once, when the first application to delete is reached, after the
+   * selection, which lists the applications of such a later session's
+   * windows only once the draft page was saved again; a read that fails
+   * stops the deletion, its exception thrown.
    *
    * @param settingName the CMS setting name of the window being initialized,
    *          which names that window: when it does not, nothing is deleted
@@ -1612,6 +1613,7 @@ public class ApplicationCenterService {
       return;
     }
     String windowStorageId = myApplicationsSettingsService.getSectionTemplateDraftStorageId(settingName, templateId);
+    AtomicReference<Boolean> windowCommitted = new AtomicReference<>();
     deleteSectionTemplateDraftApplications(templateId, application -> {
       String owner = application.getContextSettingName();
       if (StringUtils.equals(owner, settingName)
@@ -1625,8 +1627,12 @@ public class ApplicationCenterService {
         LOG.debug("Application {} kept: the setting of {} cannot be read", application.getId(), owner, e);
         return false;
       }
-      return (ownerSetting == null || StringUtils.equals(ownerSetting.getPageReference(), draftPageReference))
-             && windowStorage.exists(windowStorageId);
+      if (ownerSetting != null && !StringUtils.equals(ownerSetting.getPageReference(), draftPageReference)) {
+        return false;
+      } else if (windowCommitted.get() == null) {
+        windowCommitted.set(windowStorage.exists(windowStorageId));
+      }
+      return windowCommitted.get();
     });
   }
 

@@ -2597,7 +2597,8 @@ public class ApplicationCenterServiceTest {
    * Kept: the window being initialized, a window of the current draft page,
    * another administrator's draft; deleted: an earlier session of this
    * draft page, and a window whose setting is gone. Each kept case fails the
-   * mutant dropping its condition.
+   * mutant dropping its condition. The rendered window is read once for the
+   * two applications deleted: fails the mutant reading it per application.
    */
   @Test
   void deleteSectionTemplateDraftLeftoversDeletesWhatAnEarlierSessionOfTheDraftLeft() throws Exception {
@@ -2612,6 +2613,7 @@ public class ApplicationCenterServiceTest {
     verify(appCenterStorage, never()).deleteApplication(1L);
     verify(appCenterStorage, never()).deleteApplication(2L);
     verify(appCenterStorage, never()).deleteApplication(4L);
+    verify(windowStorage, times(1)).exists("30");
   }
 
   /**
