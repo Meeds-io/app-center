@@ -194,7 +194,7 @@ export default {
     setHover(hover) {
       // Measured before the name opens: a name that fits keeps its line, so that its tile keeps its size
       if (hover && !this.hover && this.template) {
-        this.nameOpen = this.fullyVisible() && !!this.$refs.content?.nameTruncated();
+        this.nameOpen = (!this.liftable || this.fullyVisible()) && !!this.$refs.content?.nameTruncated();
         if (this.nameOpen && this.liftable) {
           this.liftTile();
         }
@@ -231,13 +231,17 @@ export default {
     // events come once per frame). The origin is read from where the face is drawn: a transformed ancestor
     // moves it as the page scrolls
     followTile() {
-      if (this.lift) {
+      if (this.lift && !this.fullyVisible()) {
+        this.nameOpen = false;
+        this.dropTile();
+      } else if (this.lift) {
         const face = this.$refs.face.getBoundingClientRect();
         this.liftOrigin = {x: face.left - this.lift.left, y: face.top - this.lift.top};
         this.lift = {...this.liftedRect(), ground: this.lift.ground};
       }
     },
-    // A tile cut by the edge of what holds it, as a scrolled carousel, is not opened: its face would come out of it
+    // A lifted tile cut by the edge of what holds it, as a scrolled carousel, is not opened: its face would come
+    // out of it
     fullyVisible() {
       const tile = this.$el.getBoundingClientRect();
       for (let element = this.$el.parentElement; element && element !== document.body; element = element.parentElement) {
@@ -251,12 +255,15 @@ export default {
       }
       return true;
     },
-    // The color the tile lies on: its first ancestor painted with an opaque one, white over an image or nothing
+    // The color the tile lies on: that of the first ancestor painted with an opaque color, white when an image
+    // comes first, which no color reproduces, or when nothing is painted
     groundColor() {
       for (let element = this.$el.parentElement; element; element = element.parentElement) {
-        const color = window.getComputedStyle(element).backgroundColor;
-        if (color.startsWith('rgb(')) {
-          return color;
+        const style = window.getComputedStyle(element);
+        if (style.backgroundColor.startsWith('rgb(')) {
+          return style.backgroundColor;
+        } else if (style.backgroundImage !== 'none') {
+          return '#FFFFFF';
         }
       }
       return '#FFFFFF';
