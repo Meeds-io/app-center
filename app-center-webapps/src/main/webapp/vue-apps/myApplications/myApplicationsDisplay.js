@@ -142,13 +142,28 @@ export function getTileStyle(displaySettings) {
   }
 }
 
+// The style of a tile whose face is lifted over the page: it keeps its size in the line, and shows nothing
+export function getLiftedSlotStyle(size) {
+  return {
+    width: `${size.width}px`,
+    height: `${size.height}px`,
+    border: 'thin solid transparent',
+    backgroundColor: 'transparent',
+  };
+}
+
+// A tile filled with its color, whose name keeps the page's text color over it
+export function isFilledTile(displaySettings) {
+  return !!displaySettings && !displaySettings.outlined && !!displaySettings.color;
+}
+
 // The style of a tile lifted over the page: what lies under it must not show through, so it is painted on the
-// opaque color it lies on, the tile's own color over it when the tile is filled
-export function getLiftedTileStyle(displaySettings, groundColor) {
-  const filledColor = !displaySettings.outlined && displaySettings.color;
+// ground of the page's menus, with the tile's own color over it when filled
+export function getLiftedTileStyle(displaySettings) {
+  const color = isFilledTile(displaySettings) && displaySettings.color;
   return {
     ...getTileStyle(displaySettings),
-    backgroundColor: groundColor,
-    backgroundImage: filledColor ? `linear-gradient(${filledColor}, ${filledColor})` : 'none',
+    backgroundColor: 'var(--allPagesBaseBackground, #FFFFFF)',
+    backgroundImage: color ? `linear-gradient(${color}, ${color})` : 'none',
   };
 }

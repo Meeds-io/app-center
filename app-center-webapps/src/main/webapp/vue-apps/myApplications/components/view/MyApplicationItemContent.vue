@@ -59,8 +59,7 @@
       <template #activator="{ on, attrs }">
         <span
           ref="name"
-          :class="nameClass"
-          class="text-color"
+          :class="[nameClass, nameColorClass]"
           v-bind="attrs"
           v-on="on">
           {{ application.title }}
@@ -71,6 +70,8 @@
   </div>
 </template>
 <script>
+import {isFilledTile} from '../../myApplicationsDisplay.js';
+
 export default {
   props: {
     application: {
@@ -86,13 +87,24 @@ export default {
       type: Boolean,
       default: false
     },
-    // The name opens on two lines at most: its app is hovered or focused, and it does not fit on one
+    // The name opens on two lines at most: its app is hovered or focused, it does not fit on one, and, in Row
+    // or Cards, the app is wholly in view
     expanded: {
+      type: Boolean,
+      default: false
+    },
+    // Drawn over the page as the page's menus are
+    lifted: {
       type: Boolean,
       default: false
     },
   },
   computed: {
+    // Lifted, a tile with no fill of its own lies on the ground of the page's menus, so its name takes their text
+    // color, the dark grey of their buttons
+    nameColorClass() {
+      return this.lifted && !isFilledTile(this.displaySettings) ? 'dark-grey-color' : 'text-color';
+    },
     template() {
       return this.displaySettings?.template;
     },

@@ -49,19 +49,14 @@
         v-if="!preview"
         ref="placementMenu"
         :application="application" />
-      <!-- While lifted, the face is drawn over the page at the tile's place, the tile keeping its size in the line -->
-      <div
+      <my-application-item-face
         v-if="template"
         ref="face"
-        :class="faceClass"
-        :style="faceStyle">
-        <my-application-item-content
-          ref="content"
-          :application="application"
-          :display-settings="displaySettings"
-          :preview="preview"
-          :expanded="nameOpen" />
-      </div>
+        :application="application"
+        :display-settings="displaySettings"
+        :preview="preview"
+        :focused="isFocused"
+        @lift="lift = $event" />
       <my-application-item-content
         v-else
         :application="application"
@@ -70,7 +65,7 @@
   </v-hover>
 </template>
 <script>
-import {getLiftedTileStyle, getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
+import {getLiftedSlotStyle, getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
 
 export default {
   props: {
@@ -111,9 +106,7 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
-    // A name that does not fit on one line opens on two while its app is hovered or focused
-    nameOpen: false,
-    // The place and size of the lifted tile, null while it lies in its line
+    // The size the tile keeps in its line while its face is lifted over the page, null otherwise
     lift: null,
   }),
   computed: {
@@ -148,128 +141,21 @@ export default {
     templateMaxWidth() {
       return this.template === 'CARDS' ? 114 : 240;
     },
-    // A Row or Cards tile is lifted instead of growing, so that the other apps of its line keep their height
-    liftable() {
-      return this.template === 'ROW' || this.template === 'CARDS';
-    },
     cardClass() {
       return this.lift ? null : getTileClass(this.displaySettings, this.hover, this.isFocused);
     },
     cardStyle() {
-      if (this.lift) {
-        return {
-          width: `${this.lift.width}px`,
-          height: `${this.lift.height}px`,
-          border: 'thin solid transparent',
-          backgroundColor: 'transparent',
-        };
-      }
-      return getTileStyle(this.displaySettings);
+      return this.lift ? getLiftedSlotStyle(this.lift) : getTileStyle(this.displaySettings);
     },
-    faceClass() {
-      return this.lift ? [getTileClass(this.displaySettings, this.hover, this.isFocused), 'elevation-2'] : 'full-width';
-    },
-    faceStyle() {
-      // At the carousel arrows' level, which come later in the page and so stay above it
-      return this.lift && {
-        ...getLiftedTileStyle(this.displaySettings, this.lift.ground),
-        position: 'fixed',
-        top: `${this.lift.top}px`,
-        left: `${this.lift.left}px`,
-        width: `${this.lift.width}px`,
-        minHeight: `${this.lift.height}px`,
-        zIndex: 1,
-      };
-    },
-  },
-  created() {
-    // Where a fixed element's coordinates start, in the viewport: its corner, unless a transformed ancestor
-    // such as a drawer holds the tile
-    this.liftOrigin = {x: 0, y: 0};
-  },
-  beforeDestroy() {
-    this.dropTile();
   },
   methods: {
     setHover(hover) {
-      // Measured before the name opens: a name that fits keeps its line, so that its tile keeps its size
-      if (hover && !this.hover && this.template && this.$refs.content?.nameTruncated()) {
-        if (this.liftable) {
-          window.addEventListener('scroll', this.followTile, true);
-          window.addEventListener('resize', this.followTile);
-          this.followTile();
-        } else {
-          this.nameOpen = true;
-        }
+      if (hover && !this.hover) {
+        this.$refs.face?.open();
       } else if (!hover) {
-        this.nameOpen = false;
-        this.dropTile();
+        this.$refs.face?.close();
       }
       this.hover = hover;
-    },
-    dropTile() {
-      this.lift = null;
-      window.removeEventListener('scroll', this.followTile, true);
-      window.removeEventListener('resize', this.followTile);
-    },
-    liftedRect() {
-      const rect = this.$el.getBoundingClientRect();
-      return {
-        top: rect.top - this.liftOrigin.y,
-        left: rect.left - this.liftOrigin.x,
-        width: rect.width,
-        height: rect.height,
-      };
-    },
-    // While the tile is hovered, and on every scroll and resize (scroll events come once per frame): lifted with
-    // its name open when wholly in view, put back in its line with its name closed when cut by the edge of what
-    // holds it, as a scrolled carousel, out of which its face would come
-    followTile() {
-      if (!this.fullyVisible()) {
-        this.nameOpen = false;
-        this.lift = null;
-      } else if (!this.lift) {
-        // Measured while the name is on one line, then placed again once drawn
-        this.lift = {...this.liftedRect(), ground: this.groundColor()};
-        this.nameOpen = true;
-        this.$nextTick(this.placeFace);
-      } else {
-        this.placeFace();
-      }
-    },
-    // The origin is read from where the face is drawn: a transformed ancestor moves it as the page scrolls
-    placeFace() {
-      if (this.lift) {
-        const face = this.$refs.face.getBoundingClientRect();
-        this.liftOrigin = {x: face.left - this.lift.left, y: face.top - this.lift.top};
-        this.lift = {...this.liftedRect(), ground: this.lift.ground};
-      }
-    },
-    fullyVisible() {
-      const tile = this.$el.getBoundingClientRect();
-      for (let element = this.$el.parentElement; element && element !== document.body; element = element.parentElement) {
-        const style = window.getComputedStyle(element);
-        if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
-          const box = element.getBoundingClientRect();
-          if (tile.left < box.left - 0.5 || tile.right > box.right + 0.5 || tile.top < box.top - 0.5 || tile.bottom > box.bottom + 0.5) {
-            return false;
-          }
-        }
-      }
-      return true;
-    },
-    // The color the tile lies on: that of the first ancestor painted with an opaque color, white when an image
-    // comes first, drawn over its own element's color and reproduced by none, or when nothing is painted
-    groundColor() {
-      for (let element = this.$el.parentElement; element; element = element.parentElement) {
-        const style = window.getComputedStyle(element);
-        if (style.backgroundImage !== 'none') {
-          return '#FFFFFF';
-        } else if (style.backgroundColor.startsWith('rgb(')) {
-          return style.backgroundColor;
-        }
-      }
-      return '#FFFFFF';
     },
     async openApplication(event) {
       if (this.preview) {
