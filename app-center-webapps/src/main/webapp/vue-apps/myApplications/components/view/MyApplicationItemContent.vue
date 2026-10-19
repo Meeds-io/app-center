@@ -85,6 +85,11 @@ export default {
       type: Boolean,
       default: false
     },
+    // The app is hovered or focused
+    expanded: {
+      type: Boolean,
+      default: false
+    },
   },
   computed: {
     template() {
@@ -106,10 +111,16 @@ export default {
       return this.horizontal ? 'flex-grow-0 flex-shrink-0' : 'mx-auto';
     },
     nameClass() {
-      if (!this.horizontal) {
+      if (!this.template) {
         return ['text-truncate-2', this.iconDisplayed && 'mt-2'];
       }
-      return ['text-truncate', this.iconDisplayed && 'ms-2'];
+      // One line, and the whole name on two lines at most while the app is hovered or focused
+      const lines = this.expanded ? 'text-truncate-2' : 'text-truncate';
+      if (this.horizontal) {
+        return [lines, this.iconDisplayed && 'ms-2'];
+      }
+      // Centered in a column, a single line is as wide as its text unless bounded by the tile
+      return [lines, 'max-width-fit', this.iconDisplayed && 'mt-2'];
     },
   },
 };

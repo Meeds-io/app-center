@@ -48,6 +48,10 @@
           :preview="preview"
           class="ma-1"
           @open-portlet="$emit('open-portlet', $event)" />
+        <my-applications-see-more
+          v-if="showSeeMore"
+          :preview="preview"
+          class="ma-1" />
       </card-carousel>
       <div
         v-else
@@ -61,6 +65,10 @@
           :preview="preview"
           :class="isColumn ? 'my-1' : 'ma-1'"
           @open-portlet="$emit('open-portlet', $event)" />
+        <my-applications-see-more
+          v-if="showSeeMore"
+          :preview="preview"
+          :class="isColumn ? 'my-1' : 'ma-1'" />
       </div>
     </div>
   </div>
@@ -93,6 +101,11 @@ export default {
       default: false
     },
     preview: {
+      type: Boolean,
+      default: false
+    },
+    // 'See more' ends the list of apps
+    showSeeMore: {
       type: Boolean,
       default: false
     },

@@ -21,6 +21,7 @@ import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsTemplateList from './components/view/MyApplicationsTemplateList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
+import MyApplicationsSeeMore from './components/view/MyApplicationsSeeMore.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
 import MyApplicationItemContent from './components/view/MyApplicationItemContent.vue';
 import MyApplicationsSettingsDrawer from './components/settings/MyApplicationsSettingsDrawer.vue';
@@ -37,6 +38,7 @@ const components = {
   'my-applications-list': MyApplicationsList,
   'my-applications-template-list': MyApplicationsTemplateList,
   'my-applications-toolbar': MyApplicationsToolbar,
+  'my-applications-see-more': MyApplicationsSeeMore,
   'my-application-item': MyApplicationItem,
   'my-application-item-content': MyApplicationItemContent,
   'my-applications-settings-drawer': MyApplicationsSettingsDrawer,

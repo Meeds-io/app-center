@@ -89,6 +89,17 @@ export function getTemplateShowHeader(template) {
   return TEMPLATE_DEFAULTS[template].showHeader;
 }
 
+// Where 'see more' is displayed: HEADER on the header line, as the legacy layout does and a Column with its header,
+// LIST at the end of the apps otherwise, there being no header line to carry it; null when the display hides it
+export function getSeeMorePlacement(display, showHeader) {
+  if (!display) {
+    return 'HEADER';
+  } else if (!display.showSeeMore) {
+    return null;
+  }
+  return display.template === 'COLUMN' && showHeader ? 'HEADER' : 'LIST';
+}
+
 export function isSameDisplay(display, otherDisplay) {
   return DISPLAY_KEYS.every(key => display?.[key] === otherDisplay?.[key]);
 }

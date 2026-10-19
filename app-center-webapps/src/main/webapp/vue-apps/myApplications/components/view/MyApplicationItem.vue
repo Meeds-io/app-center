@@ -49,7 +49,8 @@
       <my-application-item-content
         :application="application"
         :display-settings="displaySettings"
-        :preview="preview" />
+        :preview="preview"
+        :expanded="hover" />
     </v-card>
   </v-hover>
 </template>
