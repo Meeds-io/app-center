@@ -58,8 +58,8 @@
       bottom>
       <template #activator="{ on, attrs }">
         <span
-          :class="nameClass"
-          class="text-color"
+          ref="name"
+          :class="[nameClass, nameColorClass]"
           v-bind="attrs"
           v-on="on">
           {{ application.title }}
@@ -70,6 +70,8 @@
   </div>
 </template>
 <script>
+import {isFilledTile} from '../../myApplicationsDisplay.js';
+
 export default {
   props: {
     application: {
@@ -85,8 +87,24 @@ export default {
       type: Boolean,
       default: false
     },
+    // The name opens on two lines at most: its app is hovered or focused, it does not fit on one, and, in Row
+    // or Cards, the app is wholly in view
+    expanded: {
+      type: Boolean,
+      default: false
+    },
+    // Drawn over the page as the page's menus are
+    lifted: {
+      type: Boolean,
+      default: false
+    },
   },
   computed: {
+    // Lifted, a tile with no fill of its own lies on the ground of the page's menus, so its name takes their text
+    // color, the dark grey of their buttons
+    nameColorClass() {
+      return this.lifted && !isFilledTile(this.displaySettings) ? 'dark-grey-color' : 'text-color';
+    },
     template() {
       return this.displaySettings?.template;
     },
@@ -106,10 +124,22 @@ export default {
       return this.horizontal ? 'flex-grow-0 flex-shrink-0' : 'mx-auto';
     },
     nameClass() {
-      if (!this.horizontal) {
+      if (!this.template) {
         return ['text-truncate-2', this.iconDisplayed && 'mt-2'];
       }
-      return ['text-truncate', this.iconDisplayed && 'ms-2'];
+      // One line, and the whole name on two lines at most while the app is hovered or focused
+      const lines = this.expanded ? 'text-truncate-2' : 'text-truncate';
+      if (this.horizontal) {
+        return [lines, this.iconDisplayed && 'ms-2'];
+      }
+      // Centered in a column, a single line is as wide as its text unless bounded by the tile
+      return [lines, 'max-width-fit', this.iconDisplayed && 'mt-2'];
+    },
+  },
+  methods: {
+    nameTruncated() {
+      const name = this.$refs.name;
+      return !!name && name.scrollWidth > name.clientWidth;
     },
   },
 };

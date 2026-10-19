@@ -44,25 +44,23 @@
       class="mt-4 pa-2 border-box-sizing overflow-hidden"
       outlined
       flat>
-      <!-- The header line as the portlet draws it: its title, then See more -->
+      <!-- The header line as the portlet draws it: its title, then See more when the template places it there -->
       <div
-        v-if="showHeader || display.showSeeMore"
+        v-if="showHeader"
         class="d-flex align-center mb-2">
-        <span
-          v-if="showHeader"
-          class="text-header text-truncate">
+        <span class="text-header text-truncate">
           {{ headerTitle }}
         </span>
-        <span
-          v-if="display.showSeeMore"
-          class="ms-auto ps-2 primary--text text-font-size text-no-wrap">
-          {{ $t('myApplications.seeMore.label') }}
-        </span>
+        <my-applications-see-more
+          v-if="seeMorePlacement === 'HEADER'"
+          class="ms-auto ps-2"
+          preview />
       </div>
       <my-applications-template-list
         v-if="previewApplications.length"
         :applications="previewApplications"
         :display="display"
+        :show-see-more="seeMorePlacement === 'LIST'"
         preview />
       <div v-else class="text-sub-title text-center py-2">
         {{ $t('myApplications.noApps.label') }}
@@ -105,7 +103,7 @@
 </template>
 
 <script>
-import {TEMPLATES} from '../../myApplicationsDisplay.js';
+import {TEMPLATES, getSeeMorePlacement} from '../../myApplicationsDisplay.js';
 
 export default {
   props: {
@@ -152,6 +150,9 @@ export default {
     templates: TEMPLATES,
   }),
   computed: {
+    seeMorePlacement() {
+      return getSeeMorePlacement(this.display, this.showHeader);
+    },
     template: {
       get() {
         return this.display ? this.display.template : '';

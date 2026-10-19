@@ -34,7 +34,7 @@
           :hover="hover"
           :can-edit="canEdit"
           :show-header="showHeader"
-          :show-see-more="!display || display.showSeeMore"
+          :show-see-more="seeMorePlacement === 'HEADER'"
           :header-title="headerTitle"
           :has-applications="hasApplications"
           :favorites="!selectedListing"
@@ -56,6 +56,7 @@
           :applications="filteredApplications"
           :display="display"
           :is-loading="isLoading"
+          :show-see-more="seeMorePlacement === 'LIST'"
           @open-portlet="$refs.portletInstanceDrawer.open($event)" />
         <my-applications-list
           v-else
@@ -89,7 +90,7 @@
 </template>
 
 <script>
-import {DISPLAY_KEYS, getDisplaySettings} from '../myApplicationsDisplay.js';
+import {DISPLAY_KEYS, getDisplaySettings, getSeeMorePlacement} from '../myApplicationsDisplay.js';
 
 export default {
   data() {
@@ -130,9 +131,13 @@ export default {
     display() {
       return getDisplaySettings(this.$root.settings);
     },
+    seeMorePlacement() {
+      return getSeeMorePlacement(this.display, this.showHeader);
+    },
     toolbarDisplayed() {
-      // An editor keeps the line that holds the settings button, and a viewer without favorites the one holding the +
-      return !this.display || this.showHeader || this.display.showSeeMore || this.canEdit
+      // With a template, see more is on the header line only along with the header. An editor keeps the line that
+      // holds the settings button, and a viewer without favorites the one holding the +
+      return !this.display || this.showHeader || this.canEdit
           || (!this.selectedListing && !this.hasApplications);
     },
     headerTitle() {
