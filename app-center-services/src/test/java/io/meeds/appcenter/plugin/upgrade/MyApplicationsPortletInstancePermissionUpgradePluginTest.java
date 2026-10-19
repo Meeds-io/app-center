@@ -112,6 +112,8 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     PortletInstance shortcuts = shortcutsInstance(1, ADMINISTRATORS);
     PortletInstance duplicatedShortcuts = shortcutsInstance(2, ADMINISTRATORS);
     when(portletInstanceService.getPortletInstances()).thenReturn(Arrays.asList(shortcuts, duplicatedShortcuts));
+    when(portletInstanceService.getPortletInstance(1)).thenReturn(shortcuts);
+    when(portletInstanceService.getPortletInstance(2)).thenReturn(duplicatedShortcuts);
 
     assertEquals(2, plugin.replaceFormerPermissions(portletInstanceService));
 
@@ -140,6 +142,39 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     verify(portletInstanceService, never()).updatePortletInstance(any());
   }
 
+  /**
+   * The run starts once the server has started: an administrator may change
+   * or delete an instance between the listing and its turn.
+   */
+  @Test
+  void keepAnInstanceChangedOrDeletedSinceTheListing() throws Exception {
+    PortletInstance changedInstance = shortcutsInstance(1, ADMINISTRATORS, "*:/platform/web-contributors");
+    when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcutsInstance(1, ADMINISTRATORS),
+                                                                         shortcutsInstance(2, ADMINISTRATORS)));
+    when(portletInstanceService.getPortletInstance(1)).thenReturn(changedInstance);
+    when(portletInstanceService.getPortletInstance(2)).thenReturn(null);
+
+    assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
+
+    assertEquals(List.of(ADMINISTRATORS, "*:/platform/web-contributors"), changedInstance.getPermissions());
+    verify(portletInstanceService, never()).updatePortletInstance(any());
+  }
+
+  @Test
+  void skipAnInstanceDeletedBeforeItsSave() throws Exception {
+    PortletInstance deletedInstance = shortcutsInstance(1, ADMINISTRATORS);
+    PortletInstance shortcuts = shortcutsInstance(2, ADMINISTRATORS);
+    when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcutsInstance(1, ADMINISTRATORS),
+                                                                         shortcutsInstance(2, ADMINISTRATORS)));
+    when(portletInstanceService.getPortletInstance(1)).thenReturn(deletedInstance);
+    when(portletInstanceService.getPortletInstance(2)).thenReturn(shortcuts);
+    when(portletInstanceService.updatePortletInstance(deletedInstance)).thenThrow(new ObjectNotFoundException("deleted"));
+
+    assertEquals(1, plugin.replaceFormerPermissions(portletInstanceService));
+
+    verify(portletInstanceService).updatePortletInstance(shortcuts);
+  }
+
   @Test
   void keepOtherPortletInstances() throws Exception {
     PortletInstance otherInstance = shortcutsInstance(1, ADMINISTRATORS);
@@ -165,6 +200,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   void openTheShippedInstanceOnceTheServerHasStarted() throws Exception {
     PortletInstance shortcuts = shortcutsInstance(1, ADMINISTRATORS);
     when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcuts));
+    when(portletInstanceService.getPortletInstance(1)).thenReturn(shortcuts);
     MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = startedPlugin();
 
     upgradePlugin.processUpgrade("7.2.0", "7.3.0");
@@ -178,18 +214,22 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
 
   /**
    * A failure must reach UpgradeProductService as an exception, so that it
-   * records no execution and attempts the upgrade again.
+   * records no execution: the upgrade then runs again at a startup on a
+   * version later than the one it was upgrading from.
    */
   @Test
   void failTheRunWhenAnUpdateFails() throws Exception {
     PortletInstance shortcuts = shortcutsInstance(1, ADMINISTRATORS);
+    IllegalStateException failure = new IllegalStateException("database unavailable");
     when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcuts));
-    when(portletInstanceService.updatePortletInstance(shortcuts)).thenThrow(new ObjectNotFoundException("deleted"));
+    when(portletInstanceService.getPortletInstance(1)).thenReturn(shortcuts);
+    when(portletInstanceService.updatePortletInstance(shortcuts)).thenThrow(failure);
     MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = startedPlugin();
 
     UpgradePluginException exception = assertThrows(UpgradePluginException.class,
                                                     () -> upgradePlugin.processUpgrade("7.2.0", "7.3.0"));
-    assertTrue(exception.getCause() instanceof ObjectNotFoundException);
+    assertEquals(failure, exception.getCause());
+    assertTrue(exception.getMessage().endsWith("a startup on a version later than 7.2.0"));
   }
 
   @Test

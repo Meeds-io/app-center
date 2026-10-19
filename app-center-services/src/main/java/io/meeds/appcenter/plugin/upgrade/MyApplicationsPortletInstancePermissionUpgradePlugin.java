@@ -41,7 +41,10 @@ import io.meeds.layout.service.PortletInstanceService;
  * as a fresh database gets it from portlet-instances.json, so that whoever may
  * edit a page can add the portlet to it. Only an instance still holding the
  * permissions formerly shipped is changed: a value an administrator set is
- * kept. Where an operator sets commons.upgrade.proceedIfFirstRun to false, a
+ * kept: each instance is read again at its turn, since the run starts once the
+ * server has started and an administrator may change or delete it meanwhile,
+ * which leaves only the time between that read and the save. Where an operator
+ * sets commons.upgrade.proceedIfFirstRun to false, a
  * platform installed at this version runs it at its first version upgrade
  * instead, and opens an instance an administrator restricted to exactly the
  * platform administrators in between. The portlet instance service is a Spring
@@ -49,7 +52,10 @@ import io.meeds.layout.service.PortletInstanceService;
  * server has finished starting: taken in the constructor, the Kernel would
  * create it while that context is still starting. The plugin is asynchronous:
  * the wait for the server startup is refused on the startup thread, and the
- * asynchronous path of the upgrade framework binds the container itself.
+ * asynchronous path of the upgrade framework binds the container itself. A
+ * failure is thrown back to the upgrade framework, which records no execution:
+ * the plugin runs again at a startup on a version later than the one it was
+ * upgrading from, never on the same one.
  */
 public class MyApplicationsPortletInstancePermissionUpgradePlugin extends UpgradeProductPlugin {
 
@@ -79,23 +85,44 @@ public class MyApplicationsPortletInstancePermissionUpgradePlugin extends Upgrad
                System.currentTimeMillis() - start);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new UpgradePluginException(DESCRIPTION + " was interrupted, it will be attempted again at a later startup", e);
+      throw new UpgradePluginException(DESCRIPTION + " was interrupted, " + retryMessage(oldVersion), e);
     } catch (Exception e) {
-      throw new UpgradePluginException(DESCRIPTION + " did not complete, it will be attempted again at a later startup", e);
+      throw new UpgradePluginException(DESCRIPTION + " did not complete, " + retryMessage(oldVersion), e);
     }
   }
 
-  int replaceFormerPermissions(PortletInstanceService portletInstanceService) throws ObjectNotFoundException {
+  int replaceFormerPermissions(PortletInstanceService portletInstanceService) {
     int upgradedCount = 0;
-    for (PortletInstance portletInstance : portletInstanceService.getPortletInstances()) {
-      if (StringUtils.equals(PORTLET_CONTENT_ID, portletInstance.getContentId())
-          && FORMER_PERMISSIONS.equals(portletInstance.getPermissions())) {
-        portletInstance.setPermissions(new ArrayList<>(NEW_PERMISSIONS));
-        portletInstanceService.updatePortletInstance(portletInstance);
-        upgradedCount++;
+    for (PortletInstance listedInstance : portletInstanceService.getPortletInstances()) {
+      if (isShippedShortcutsInstance(listedInstance)) {
+        PortletInstance portletInstance = portletInstanceService.getPortletInstance(listedInstance.getId());
+        if (isShippedShortcutsInstance(portletInstance) && openToAllUsers(portletInstanceService, portletInstance)) {
+          upgradedCount++;
+        }
       }
     }
     return upgradedCount;
+  }
+
+  private boolean openToAllUsers(PortletInstanceService portletInstanceService, PortletInstance portletInstance) {
+    portletInstance.setPermissions(new ArrayList<>(NEW_PERMISSIONS));
+    try {
+      portletInstanceService.updatePortletInstance(portletInstance);
+      return true;
+    } catch (ObjectNotFoundException e) {
+      LOG.debug("{}: portlet instance {} deleted before being opened to all users", DESCRIPTION, portletInstance.getId(), e);
+      return false;
+    }
+  }
+
+  private boolean isShippedShortcutsInstance(PortletInstance portletInstance) {
+    return portletInstance != null
+           && StringUtils.equals(PORTLET_CONTENT_ID, portletInstance.getContentId())
+           && FORMER_PERMISSIONS.equals(portletInstance.getPermissions());
+  }
+
+  private String retryMessage(String oldVersion) {
+    return "it will be attempted again at a startup on a version later than " + oldVersion;
   }
 
   void awaitServerStartup() throws InterruptedException {
