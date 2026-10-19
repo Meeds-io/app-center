@@ -207,6 +207,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
 
     InOrder inOrder = inOrder(upgradePlugin, portletInstanceService);
     inOrder.verify(upgradePlugin).awaitServerStartup();
+    inOrder.verify(upgradePlugin).portletInstanceService();
     inOrder.verify(portletInstanceService).getPortletInstances();
     inOrder.verify(portletInstanceService).updatePortletInstance(shortcuts);
     assertEquals(List.of(USERS), shortcuts.getPermissions());
@@ -256,6 +257,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     } finally {
       Thread.interrupted();
     }
+    verify(upgradePlugin, never()).portletInstanceService();
     verify(portletInstanceService, never()).getPortletInstances();
   }
 
