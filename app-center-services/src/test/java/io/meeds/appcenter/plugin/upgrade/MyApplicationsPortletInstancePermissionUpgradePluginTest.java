@@ -233,6 +233,19 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   }
 
   @Test
+  void failTheRunWhenAnInstanceCannotBeReadAgain() throws Exception {
+    IllegalStateException failure = new IllegalStateException("database unavailable");
+    when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcutsInstance(1, ADMINISTRATORS)));
+    when(portletInstanceService.getPortletInstance(1)).thenThrow(failure);
+    MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = startedPlugin();
+
+    UpgradePluginException exception = assertThrows(UpgradePluginException.class,
+                                                    () -> upgradePlugin.processUpgrade("7.2.0", "7.3.0"));
+    assertEquals(failure, exception.getCause());
+    verify(portletInstanceService, never()).updatePortletInstance(any());
+  }
+
+  @Test
   void failTheRunAndKeepTheInterruptionWhenTheWaitIsInterrupted() throws Exception {
     MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = spy(plugin);
     doThrow(new InterruptedException()).when(upgradePlugin).awaitServerStartup();

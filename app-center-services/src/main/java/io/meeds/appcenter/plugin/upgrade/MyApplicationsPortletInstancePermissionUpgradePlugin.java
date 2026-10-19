@@ -55,7 +55,7 @@ import io.meeds.layout.service.PortletInstanceService;
  * asynchronous path of the upgrade framework binds the container itself. A
  * failure is thrown back to the upgrade framework, which records no execution:
  * the plugin runs again at a startup on a version later than the one it was
- * upgrading from, never on the same one.
+ * upgrading from.
  */
 public class MyApplicationsPortletInstancePermissionUpgradePlugin extends UpgradeProductPlugin {
 
