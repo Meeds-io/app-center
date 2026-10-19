@@ -45,6 +45,11 @@
           <name>plugin.upgrade.execute.once</name>
           <value>true</value>
         </value-param>
+        <!-- Required: the plugin waits for the server startup, which is refused on the startup thread -->
+        <value-param>
+          <name>plugin.upgrade.async.execution</name>
+          <value>true</value>
+        </value-param>
       </init-params>
     </component-plugin>
   </external-component-plugins>

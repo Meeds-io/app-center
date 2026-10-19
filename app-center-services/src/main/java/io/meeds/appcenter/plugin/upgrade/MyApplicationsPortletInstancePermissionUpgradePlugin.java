@@ -23,14 +23,16 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.upgrade.UpgradePluginException;
 import org.exoplatform.commons.upgrade.UpgradeProductPlugin;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.monitor.jvm.ServerStartupWaiter;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 
-import io.meeds.common.ContainerTransactional;
 import io.meeds.layout.model.PortletInstance;
 import io.meeds.layout.service.PortletInstanceService;
 
@@ -39,47 +41,51 @@ import io.meeds.layout.service.PortletInstanceService;
  * as a fresh database gets it from portlet-instances.json, so that whoever may
  * edit a page can add the portlet to it. Only an instance still holding the
  * permissions formerly shipped is changed: a value an administrator set is
- * kept.
+ * kept. Where an operator sets commons.upgrade.proceedIfFirstRun to false, a
+ * platform installed at this version runs it at its first version upgrade
+ * instead, and opens an instance an administrator restricted to exactly the
+ * platform administrators in between. The portlet instance service is a Spring
+ * bean of the layout context, resolved when the plugin runs and after the
+ * server has finished starting: taken in the constructor, the Kernel would
+ * create it while that context is still starting. The plugin is asynchronous:
+ * the wait for the server startup is refused on the startup thread, and the
+ * asynchronous path of the upgrade framework binds the container itself.
  */
 public class MyApplicationsPortletInstancePermissionUpgradePlugin extends UpgradeProductPlugin {
 
-  public static final String        PORTLET_CONTENT_ID = "app-center/AppCenterMyApplicationsPortlet";
+  public static final String       PORTLET_CONTENT_ID = "app-center/AppCenterMyApplicationsPortlet";
 
-  public static final List<String>  FORMER_PERMISSIONS = List.of("*:/platform/administrators");
+  public static final List<String> FORMER_PERMISSIONS = List.of("*:/platform/administrators");
 
-  public static final List<String>  NEW_PERMISSIONS    = List.of("*:/platform/users");
+  public static final List<String> NEW_PERMISSIONS    = List.of("*:/platform/users");
 
-  private static final Log          LOG                = ExoLogger.getLogger(MyApplicationsPortletInstancePermissionUpgradePlugin.class);
+  private static final Log         LOG                = ExoLogger.getLogger(MyApplicationsPortletInstancePermissionUpgradePlugin.class);
 
-  private PortletInstanceService    portletInstanceService;
+  private static final String      DESCRIPTION        = "Shortcuts portlet instance permissions upgrade";
 
-  public MyApplicationsPortletInstancePermissionUpgradePlugin(SettingService settingService,
-                                                              PortletInstanceService portletInstanceService,
-                                                              InitParams initParams) {
-    super(settingService, initParams);
-    this.portletInstanceService = portletInstanceService;
+  public MyApplicationsPortletInstancePermissionUpgradePlugin(InitParams initParams) {
+    super(initParams);
   }
 
   @Override
   public void processUpgrade(String oldVersion, String newVersion) {
     long start = System.currentTimeMillis();
-    int upgradedCount = upgradePortletInstances();
-    LOG.info("Upgrade {}: {} Shortcuts portlet instance(s) opened to all users in {} ms",
-             getName(),
-             upgradedCount,
-             System.currentTimeMillis() - start);
-  }
-
-  @ContainerTransactional
-  public int upgradePortletInstances() {
     try {
-      return replaceFormerPermissions();
-    } catch (ObjectNotFoundException e) {
-      throw new IllegalStateException("A Shortcuts portlet instance was deleted while being upgraded", e);
+      awaitServerStartup();
+      int upgradedCount = replaceFormerPermissions(portletInstanceService());
+      LOG.info("{}: {} Shortcuts portlet instance(s) opened to all users in {} ms",
+               DESCRIPTION,
+               upgradedCount,
+               System.currentTimeMillis() - start);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new UpgradePluginException(DESCRIPTION + " was interrupted, it will be attempted again at a later startup", e);
+    } catch (Exception e) {
+      throw new UpgradePluginException(DESCRIPTION + " did not complete, it will be attempted again at a later startup", e);
     }
   }
 
-  int replaceFormerPermissions() throws ObjectNotFoundException {
+  int replaceFormerPermissions(PortletInstanceService portletInstanceService) throws ObjectNotFoundException {
     int upgradedCount = 0;
     for (PortletInstance portletInstance : portletInstanceService.getPortletInstances()) {
       if (StringUtils.equals(PORTLET_CONTENT_ID, portletInstance.getContentId())
@@ -90,6 +96,14 @@ public class MyApplicationsPortletInstancePermissionUpgradePlugin extends Upgrad
       }
     }
     return upgradedCount;
+  }
+
+  void awaitServerStartup() throws InterruptedException {
+    ServerStartupWaiter.awaitServerStartup(PortalContainer.getInstance(), DESCRIPTION);
+  }
+
+  PortletInstanceService portletInstanceService() {
+    return ExoContainerContext.getService(PortletInstanceService.class);
   }
 
 }

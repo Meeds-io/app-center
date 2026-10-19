@@ -22,9 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,10 +44,12 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.upgrade.UpgradePluginException;
 import org.exoplatform.commons.upgrade.UpgradePluginExecutionContext;
 import org.exoplatform.container.configuration.ConfigurationUnmarshaller;
 import org.exoplatform.container.xml.ComponentPlugin;
@@ -69,9 +77,6 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   private static final String    USERS                 = "*:/platform/users";
 
   @Mock
-  private SettingService         settingService;
-
-  @Mock
   private PortletInstanceService portletInstanceService;
 
   private ComponentPlugin        declaration;
@@ -81,9 +86,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   @BeforeEach
   void setUp() throws Exception {
     declaration = getDeclaration();
-    plugin = new MyApplicationsPortletInstancePermissionUpgradePlugin(settingService,
-                                                                      portletInstanceService,
-                                                                      declaration.getInitParams());
+    plugin = new MyApplicationsPortletInstancePermissionUpgradePlugin(declaration.getInitParams());
   }
 
   /**
@@ -110,7 +113,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     PortletInstance duplicatedShortcuts = shortcutsInstance(2, ADMINISTRATORS);
     when(portletInstanceService.getPortletInstances()).thenReturn(Arrays.asList(shortcuts, duplicatedShortcuts));
 
-    assertEquals(2, plugin.replaceFormerPermissions());
+    assertEquals(2, plugin.replaceFormerPermissions(portletInstanceService));
 
     assertEquals(List.of(USERS), shortcuts.getPermissions());
     assertEquals(List.of(USERS), duplicatedShortcuts.getPermissions());
@@ -127,7 +130,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
                                                               shortcutsInstance(5, (String[]) null));
     when(portletInstanceService.getPortletInstances()).thenReturn(customisedInstances);
 
-    assertEquals(0, plugin.replaceFormerPermissions());
+    assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
 
     assertEquals(List.of(ADMINISTRATORS, "*:/platform/web-contributors"), customisedInstances.get(0).getPermissions());
     assertEquals(List.of("*:/platform/web-contributors"), customisedInstances.get(1).getPermissions());
@@ -143,7 +146,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     otherInstance.setContentId("app-center/AppCenterAppLauncherPortlet");
     when(portletInstanceService.getPortletInstances()).thenReturn(List.of(otherInstance));
 
-    assertEquals(0, plugin.replaceFormerPermissions());
+    assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
 
     assertEquals(List.of(ADMINISTRATORS), otherInstance.getPermissions());
     verify(portletInstanceService, never()).updatePortletInstance(any());
@@ -153,15 +156,61 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   void doNothingWhenTheInstanceIsNotImportedYet() throws Exception {
     when(portletInstanceService.getPortletInstances()).thenReturn(Collections.emptyList());
 
-    assertEquals(0, plugin.replaceFormerPermissions());
+    assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
 
     verify(portletInstanceService, never()).updatePortletInstance(any());
+  }
+
+  @Test
+  void openTheShippedInstanceOnceTheServerHasStarted() throws Exception {
+    PortletInstance shortcuts = shortcutsInstance(1, ADMINISTRATORS);
+    when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcuts));
+    MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = startedPlugin();
+
+    upgradePlugin.processUpgrade("7.2.0", "7.3.0");
+
+    InOrder inOrder = inOrder(upgradePlugin, portletInstanceService);
+    inOrder.verify(upgradePlugin).awaitServerStartup();
+    inOrder.verify(portletInstanceService).getPortletInstances();
+    inOrder.verify(portletInstanceService).updatePortletInstance(shortcuts);
+    assertEquals(List.of(USERS), shortcuts.getPermissions());
+  }
+
+  /**
+   * A failure must reach UpgradeProductService as an exception, so that it
+   * records no execution and attempts the upgrade again.
+   */
+  @Test
+  void failTheRunWhenAnUpdateFails() throws Exception {
+    PortletInstance shortcuts = shortcutsInstance(1, ADMINISTRATORS);
+    when(portletInstanceService.getPortletInstances()).thenReturn(List.of(shortcuts));
+    when(portletInstanceService.updatePortletInstance(shortcuts)).thenThrow(new ObjectNotFoundException("deleted"));
+    MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = startedPlugin();
+
+    UpgradePluginException exception = assertThrows(UpgradePluginException.class,
+                                                    () -> upgradePlugin.processUpgrade("7.2.0", "7.3.0"));
+    assertTrue(exception.getCause() instanceof ObjectNotFoundException);
+  }
+
+  @Test
+  void failTheRunAndKeepTheInterruptionWhenTheWaitIsInterrupted() throws Exception {
+    MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = spy(plugin);
+    doThrow(new InterruptedException()).when(upgradePlugin).awaitServerStartup();
+
+    try {
+      assertThrows(UpgradePluginException.class, () -> upgradePlugin.processUpgrade("7.2.0", "7.3.0"));
+      assertTrue(Thread.currentThread().isInterrupted());
+    } finally {
+      Thread.interrupted();
+    }
+    verify(portletInstanceService, never()).getPortletInstances();
   }
 
   /**
    * Reads the shipped declaration: the plugin must run once, including on an
    * acceptance server redeployed with an unchanged version, which a target
-   * version would prevent.
+   * version would prevent, and asynchronously, since it waits for the server
+   * startup.
    */
   @Test
   void runOnceWhateverTheVersion() {
@@ -169,6 +218,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     assertEquals("org.exoplatform.social", plugin.getProductGroupId());
     assertTrue(plugin.isExecuteOnlyOnce());
     assertNull(plugin.getTargetVersion());
+    assertTrue(plugin.isAsyncUpgradeExecution());
 
     assertTrue(plugin.shouldProceedToUpgrade("7.3.0", "7.3.0", null));
     assertTrue(plugin.shouldProceedToUpgrade("7.3.0", "7.2.0", new UpgradePluginExecutionContext("7.2.0", 0)));
@@ -184,6 +234,13 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
                          .filter(p -> MyApplicationsPortletInstancePermissionUpgradePlugin.class.getName().equals(p.getType()))
                          .findFirst()
                          .orElseThrow();
+  }
+
+  private MyApplicationsPortletInstancePermissionUpgradePlugin startedPlugin() throws InterruptedException {
+    MyApplicationsPortletInstancePermissionUpgradePlugin upgradePlugin = spy(plugin);
+    doNothing().when(upgradePlugin).awaitServerStartup();
+    doReturn(portletInstanceService).when(upgradePlugin).portletInstanceService();
+    return upgradePlugin;
   }
 
   private PortletInstance shortcutsInstance(long id, String... permissions) {
