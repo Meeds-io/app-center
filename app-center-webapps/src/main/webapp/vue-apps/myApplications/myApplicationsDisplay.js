@@ -68,6 +68,12 @@ const TEMPLATE_DEFAULTS = {
   },
 };
 
+const TILE_ALIGNMENTS = {
+  START: 'align-start',
+  CENTER: 'align-center',
+  END: 'align-end',
+};
+
 // The display settings to render, null for the legacy layout: no template, or one the server
 // did not print. A setting the server printed null, unset or invalid, takes the template's default
 export function getDisplaySettings(settings) {
@@ -89,6 +95,17 @@ export function getTemplateShowHeader(template) {
   return TEMPLATE_DEFAULTS[template].showHeader;
 }
 
+// Where 'see more' is displayed: HEADER on the header line, as the legacy layout does and a Column with its header,
+// LIST at the end of the apps, in Row and Cards and in a Column without its header line; null when the display hides it
+export function getSeeMorePlacement(display, showHeader) {
+  if (!display) {
+    return 'HEADER';
+  } else if (!display.showSeeMore) {
+    return null;
+  }
+  return display.template === 'COLUMN' && showHeader ? 'HEADER' : 'LIST';
+}
+
 export function isSameDisplay(display, otherDisplay) {
   return DISPLAY_KEYS.every(key => display?.[key] === otherDisplay?.[key]);
 }
@@ -103,8 +120,11 @@ export function getTileClass(displaySettings, hover, focused) {
     };
   }
   return {
+    // Stretched to the height of its line, a Row or Cards tile places its content as Vertical alignment says
+    [`d-flex ${TILE_ALIGNMENTS[displaySettings.vAlign] || 'align-center'}`]: displaySettings.template !== 'COLUMN',
     'rounded-pill px-4 py-2': displaySettings.template === 'ROW',
-    'pa-2': displaySettings.template === 'CARDS',
+    // The card's own corners, carried by the class so that the lifted face keeps them
+    'pa-2 rounded': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',
     'border-color-black': focused,
   };
@@ -121,4 +141,30 @@ export function getTileStyle(displaySettings) {
     // either, set inline: in the settings drawer, a clickable card is white otherwise
     return {border: 'thin solid transparent', backgroundColor: displaySettings.color || 'transparent'};
   }
+}
+
+// The style of a tile whose face is lifted over the page: it keeps its size in the line, and shows nothing
+export function getLiftedSlotStyle(size) {
+  return {
+    width: `${size.width}px`,
+    height: `${size.height}px`,
+    border: 'thin solid transparent',
+    backgroundColor: 'transparent',
+  };
+}
+
+// A tile filled with its color, whose name keeps the page's text color over it
+export function isFilledTile(displaySettings) {
+  return !!displaySettings && !displaySettings.outlined && !!displaySettings.color;
+}
+
+// The style of a tile lifted over the page: what lies under it must not show through, so it is painted on the
+// ground of the page's menus, with the tile's own color over it when filled
+export function getLiftedTileStyle(displaySettings) {
+  const color = isFilledTile(displaySettings) && displaySettings.color;
+  return {
+    ...getTileStyle(displaySettings),
+    backgroundColor: 'var(--allPagesBaseBackground, #FFFFFF)',
+    backgroundImage: color ? `linear-gradient(${color}, ${color})` : 'none',
+  };
 }
