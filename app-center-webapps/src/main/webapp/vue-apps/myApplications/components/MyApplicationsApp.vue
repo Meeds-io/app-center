@@ -33,6 +33,8 @@
           ref="myApplicationsToolbar"
           :hover="hover"
           :can-edit="canEdit"
+          :show-cog="canEdit && cogPlacement === 'HEADER'"
+          :legacy="!display"
           :show-header="showHeader"
           :show-see-more="seeMorePlacement === 'HEADER'"
           :header-title="headerTitle"
@@ -57,6 +59,9 @@
           :display="display"
           :is-loading="isLoading"
           :show-see-more="seeMorePlacement === 'LIST'"
+          :show-cog="canEdit && cogPlacement === 'LIST'"
+          :hover="hover"
+          @open-settings="openSettingsDrawer"
           @open-portlet="$refs.portletInstanceDrawer.open($event)" />
         <my-applications-list
           v-else
@@ -90,7 +95,7 @@
 </template>
 
 <script>
-import {DISPLAY_KEYS, getDisplaySettings, getSeeMorePlacement} from '../myApplicationsDisplay.js';
+import {DISPLAY_KEYS, getCogPlacement, getDisplaySettings, getSeeMorePlacement} from '../myApplicationsDisplay.js';
 
 export default {
   data() {
@@ -134,10 +139,15 @@ export default {
     seeMorePlacement() {
       return getSeeMorePlacement(this.display, this.showHeader);
     },
+    // The cog ends the list of apps where the display places it there, and is on the header line while no app is
+    // listed
+    cogPlacement() {
+      return this.hasDisplayedApplications ? getCogPlacement(this.display, this.showHeader) : 'HEADER';
+    },
     toolbarDisplayed() {
       // With a template, see more is on the header line only along with the header. An editor keeps the line that
-      // holds the settings button, and a viewer without favorites the one holding the +
-      return !this.display || this.showHeader || this.canEdit
+      // holds the settings cog, and a viewer without favorites the one holding the +
+      return !this.display || this.showHeader || (this.canEdit && this.cogPlacement === 'HEADER')
           || (!this.selectedListing && !this.hasApplications);
     },
     headerTitle() {

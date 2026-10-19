@@ -22,6 +22,7 @@ import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsTemplateList from './components/view/MyApplicationsTemplateList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
 import MyApplicationsSeeMore from './components/view/MyApplicationsSeeMore.vue';
+import MyApplicationsCog from './components/view/MyApplicationsCog.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
 import MyApplicationItemContent from './components/view/MyApplicationItemContent.vue';
 import MyApplicationItemFace from './components/view/MyApplicationItemFace.vue';
@@ -40,6 +41,7 @@ const components = {
   'my-applications-template-list': MyApplicationsTemplateList,
   'my-applications-toolbar': MyApplicationsToolbar,
   'my-applications-see-more': MyApplicationsSeeMore,
+  'my-applications-cog': MyApplicationsCog,
   'my-application-item': MyApplicationItem,
   'my-application-item-content': MyApplicationItemContent,
   'my-application-item-face': MyApplicationItemFace,
