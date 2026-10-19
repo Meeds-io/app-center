@@ -19,7 +19,10 @@
 -->
 
 <template>
-  <v-hover v-if="display" v-model="hover">
+  <v-hover
+    v-if="display"
+    :value="hover"
+    @input="setHover">
     <v-card
       v-bind="cardBindings"
       v-on="application.type !== 'LINK' && !preview && {
@@ -35,7 +38,7 @@
       :min-width="template === 'CARDS' ? 114 : null"
       :height="template ? null : height"
       :max-height="template ? null : maxHeight"
-      :elevation="hover ? 2 : 0"
+      :elevation="hover && !lift ? 2 : 0"
       link
       flat
       @keydown.enter="openApplication"
@@ -46,15 +49,23 @@
         v-if="!preview"
         ref="placementMenu"
         :application="application" />
-      <my-application-item-content
+      <my-application-item-face
+        v-if="template"
+        ref="face"
         :application="application"
         :display-settings="displaySettings"
+        :preview="preview"
+        :focused="isFocused"
+        @lift="lift = $event" />
+      <my-application-item-content
+        v-else
+        :application="application"
         :preview="preview" />
     </v-card>
   </v-hover>
 </template>
 <script>
-import {getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
+import {getLiftedSlotStyle, getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
 
 export default {
   props: {
@@ -95,6 +106,8 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
+    // The size the tile keeps in its line while its face is lifted over the page, null otherwise
+    lift: null,
   }),
   computed: {
     applicationUrl() {
@@ -129,13 +142,21 @@ export default {
       return this.template === 'CARDS' ? 114 : 240;
     },
     cardClass() {
-      return getTileClass(this.displaySettings, this.hover, this.isFocused);
+      return this.lift ? null : getTileClass(this.displaySettings, this.hover, this.isFocused);
     },
     cardStyle() {
-      return getTileStyle(this.displaySettings);
+      return this.lift ? getLiftedSlotStyle(this.lift) : getTileStyle(this.displaySettings);
     },
   },
   methods: {
+    setHover(hover) {
+      if (hover && !this.hover) {
+        this.$refs.face?.open();
+      } else if (!hover) {
+        this.$refs.face?.close();
+      }
+      this.hover = hover;
+    },
     async openApplication(event) {
       if (this.preview) {
         return;
@@ -165,7 +186,7 @@ export default {
     },
     onFocusOut(event) {
       if (!this.$el.contains(event.relatedTarget)) {
-        this.hover = false;
+        this.setHover(false);
         this.isFocused = false;
       }
     },
@@ -176,7 +197,7 @@ export default {
       } else {
         this.isFocused = true;
       }
-      this.hover = true;
+      this.setHover(true);
     },
     onMouseDown() {
       this.ignoreNextFocus = true;

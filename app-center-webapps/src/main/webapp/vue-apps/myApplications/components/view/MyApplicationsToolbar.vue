@@ -29,19 +29,8 @@
     <div
       class="d-flex align-center ms-auto">
       <template v-if="hasApplications && showSeeMore">
-        <v-btn
-          v-if="!hover || !canEdit"
-          :loading="loading === 'seeMore'"
-          color="primary"
-          class="pa-0 text-font-size"
-          small
-          text
-          link
-          @click="openApplications('seeMore')">
-          <span class="primary--text text-none">
-            {{ $t('myApplications.seeMore.label') }}
-          </span>
-        </v-btn>
+        <my-applications-see-more
+          v-if="!hover || !canEdit" />
         <v-btn
           v-else
           ref="btnSeeMoreIcon"

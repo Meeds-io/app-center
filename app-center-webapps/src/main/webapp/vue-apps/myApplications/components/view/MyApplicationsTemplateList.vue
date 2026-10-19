@@ -48,6 +48,10 @@
           :preview="preview"
           class="ma-1"
           @open-portlet="$emit('open-portlet', $event)" />
+        <my-applications-see-more
+          v-if="seeMoreDisplayed"
+          :preview="preview"
+          class="ma-1 align-self-center" />
       </card-carousel>
       <div
         v-else
@@ -61,6 +65,10 @@
           :preview="preview"
           :class="isColumn ? 'my-1' : 'ma-1'"
           @open-portlet="$emit('open-portlet', $event)" />
+        <my-applications-see-more
+          v-if="seeMoreDisplayed"
+          :preview="preview"
+          :class="isColumn ? 'my-1' : 'ma-1 align-self-center'" />
       </div>
     </div>
   </div>
@@ -96,8 +104,17 @@ export default {
       type: Boolean,
       default: false
     },
+    // 'See more' ends the list of apps
+    showSeeMore: {
+      type: Boolean,
+      default: false
+    },
   },
   computed: {
+    // 'See more' ends a list of apps, so none while the apps load
+    seeMoreDisplayed() {
+      return this.showSeeMore && this.applications.length > 0;
+    },
     isColumn() {
       return this.display.template === 'COLUMN';
     },
@@ -118,10 +135,12 @@ export default {
         // One app per line: the apps are aligned within the column
         return `flex-column align-${ALIGNMENTS[this.hAlign]}`;
       } else if (this.inRow) {
-        return `flex-nowrap align-${ALIGNMENTS[this.vAlign]}`;
+        // The apps of a line share one height, the tallest one's: an app whose name opens on two lines is lifted
+        // over the line instead of growing it
+        return 'flex-nowrap align-stretch';
       } else {
-        // Wrapped lines are aligned as the group is
-        return `flex-wrap justify-${ALIGNMENTS[this.hAlign]} align-${ALIGNMENTS[this.vAlign]}`;
+        // Wrapped lines are aligned as the group is, and the apps of a line share one height
+        return `flex-wrap justify-${ALIGNMENTS[this.hAlign]} align-stretch`;
       }
     },
   },
