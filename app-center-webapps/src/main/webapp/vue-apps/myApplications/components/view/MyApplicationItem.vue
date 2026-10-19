@@ -170,14 +170,15 @@ export default {
       return this.lift ? [getTileClass(this.displaySettings, this.hover, this.isFocused), 'elevation-2'] : 'full-width';
     },
     faceStyle() {
+      // At the carousel arrows' level, which come later in the page and so stay above it
       return this.lift && {
-        ...getLiftedTileStyle(this.displaySettings),
+        ...getLiftedTileStyle(this.displaySettings, this.lift.ground),
         position: 'fixed',
         top: `${this.lift.top}px`,
         left: `${this.lift.left}px`,
         width: `${this.lift.width}px`,
         minHeight: `${this.lift.height}px`,
-        zIndex: 2,
+        zIndex: 1,
       };
     },
   },
@@ -192,8 +193,8 @@ export default {
   methods: {
     setHover(hover) {
       // Measured before the name opens: a name that fits keeps its line, so that its tile keeps its size
-      if (hover && !this.hover && !this.preview && this.template) {
-        this.nameOpen = !!this.$refs.content?.nameTruncated();
+      if (hover && !this.hover && this.template) {
+        this.nameOpen = this.fullyVisible() && !!this.$refs.content?.nameTruncated();
         if (this.nameOpen && this.liftable) {
           this.liftTile();
         }
@@ -204,7 +205,7 @@ export default {
       this.hover = hover;
     },
     liftTile() {
-      this.lift = this.liftedRect();
+      this.lift = {...this.liftedRect(), ground: this.groundColor()};
       window.addEventListener('scroll', this.followTile, true);
       window.addEventListener('resize', this.followTile);
       // Ordered after the render: the face is measured where it was drawn
@@ -233,8 +234,32 @@ export default {
       if (this.lift) {
         const face = this.$refs.face.getBoundingClientRect();
         this.liftOrigin = {x: face.left - this.lift.left, y: face.top - this.lift.top};
-        this.lift = this.liftedRect();
+        this.lift = {...this.liftedRect(), ground: this.lift.ground};
       }
+    },
+    // A tile cut by the edge of what holds it, as a scrolled carousel, is not opened: its face would come out of it
+    fullyVisible() {
+      const tile = this.$el.getBoundingClientRect();
+      for (let element = this.$el.parentElement; element && element !== document.body; element = element.parentElement) {
+        const style = window.getComputedStyle(element);
+        if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
+          const box = element.getBoundingClientRect();
+          if (tile.left < box.left - 0.5 || tile.right > box.right + 0.5 || tile.top < box.top - 0.5 || tile.bottom > box.bottom + 0.5) {
+            return false;
+          }
+        }
+      }
+      return true;
+    },
+    // The color the tile lies on: its first ancestor painted with an opaque one, white over an image or nothing
+    groundColor() {
+      for (let element = this.$el.parentElement; element; element = element.parentElement) {
+        const color = window.getComputedStyle(element).backgroundColor;
+        if (color.startsWith('rgb(')) {
+          return color;
+        }
+      }
+      return '#FFFFFF';
     },
     async openApplication(event) {
       if (this.preview) {

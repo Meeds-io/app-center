@@ -143,12 +143,12 @@ export function getTileStyle(displaySettings) {
 }
 
 // The style of a tile lifted over the page: what lies under it must not show through, so it is painted on the
-// portlet's ground, the tile's own color over it when the tile is filled
-export function getLiftedTileStyle(displaySettings) {
+// opaque color it lies on, the tile's own color over it when the tile is filled
+export function getLiftedTileStyle(displaySettings, groundColor) {
   const filledColor = !displaySettings.outlined && displaySettings.color;
   return {
     ...getTileStyle(displaySettings),
-    backgroundColor: 'var(--appBackgroundColor, #FFFFFF)',
+    backgroundColor: groundColor,
     backgroundImage: filledColor ? `linear-gradient(${filledColor}, ${filledColor})` : 'none',
   };
 }
