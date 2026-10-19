@@ -193,10 +193,13 @@ export default {
   methods: {
     setHover(hover) {
       // Measured before the name opens: a name that fits keeps its line, so that its tile keeps its size
-      if (hover && !this.hover && this.template) {
-        this.nameOpen = (!this.liftable || this.fullyVisible()) && !!this.$refs.content?.nameTruncated();
-        if (this.nameOpen && this.liftable) {
-          this.liftTile();
+      if (hover && !this.hover && this.template && this.$refs.content?.nameTruncated()) {
+        if (this.liftable) {
+          window.addEventListener('scroll', this.followTile, true);
+          window.addEventListener('resize', this.followTile);
+          this.followTile();
+        } else {
+          this.nameOpen = true;
         }
       } else if (!hover) {
         this.nameOpen = false;
@@ -204,19 +207,10 @@ export default {
       }
       this.hover = hover;
     },
-    liftTile() {
-      this.lift = {...this.liftedRect(), ground: this.groundColor()};
-      window.addEventListener('scroll', this.followTile, true);
-      window.addEventListener('resize', this.followTile);
-      // Ordered after the render: the face is measured where it was drawn
-      this.$nextTick(this.followTile);
-    },
     dropTile() {
-      if (this.lift) {
-        this.lift = null;
-        window.removeEventListener('scroll', this.followTile, true);
-        window.removeEventListener('resize', this.followTile);
-      }
+      this.lift = null;
+      window.removeEventListener('scroll', this.followTile, true);
+      window.removeEventListener('resize', this.followTile);
     },
     liftedRect() {
       const rect = this.$el.getBoundingClientRect();
@@ -227,21 +221,30 @@ export default {
         height: rect.height,
       };
     },
-    // Places the lifted face on its tile again, once drawn and whenever the page or the line scrolls (scroll
-    // events come once per frame). The origin is read from where the face is drawn: a transformed ancestor
-    // moves it as the page scrolls
+    // While the tile is hovered, and on every scroll and resize (scroll events come once per frame): lifted with
+    // its name open when wholly in view, put back in its line with its name closed when cut by the edge of what
+    // holds it, as a scrolled carousel, out of which its face would come
     followTile() {
-      if (this.lift && !this.fullyVisible()) {
+      if (!this.fullyVisible()) {
         this.nameOpen = false;
-        this.dropTile();
-      } else if (this.lift) {
+        this.lift = null;
+      } else if (!this.lift) {
+        // Measured while the name is on one line, then placed again once drawn
+        this.lift = {...this.liftedRect(), ground: this.groundColor()};
+        this.nameOpen = true;
+        this.$nextTick(this.placeFace);
+      } else {
+        this.placeFace();
+      }
+    },
+    // The origin is read from where the face is drawn: a transformed ancestor moves it as the page scrolls
+    placeFace() {
+      if (this.lift) {
         const face = this.$refs.face.getBoundingClientRect();
         this.liftOrigin = {x: face.left - this.lift.left, y: face.top - this.lift.top};
         this.lift = {...this.liftedRect(), ground: this.lift.ground};
       }
     },
-    // A lifted tile cut by the edge of what holds it, as a scrolled carousel, is not opened: its face would come
-    // out of it
     fullyVisible() {
       const tile = this.$el.getBoundingClientRect();
       for (let element = this.$el.parentElement; element && element !== document.body; element = element.parentElement) {
@@ -256,14 +259,14 @@ export default {
       return true;
     },
     // The color the tile lies on: that of the first ancestor painted with an opaque color, white when an image
-    // comes first, which no color reproduces, or when nothing is painted
+    // comes first, drawn over its own element's color and reproduced by none, or when nothing is painted
     groundColor() {
       for (let element = this.$el.parentElement; element; element = element.parentElement) {
         const style = window.getComputedStyle(element);
-        if (style.backgroundColor.startsWith('rgb(')) {
-          return style.backgroundColor;
-        } else if (style.backgroundImage !== 'none') {
+        if (style.backgroundImage !== 'none') {
           return '#FFFFFF';
+        } else if (style.backgroundColor.startsWith('rgb(')) {
+          return style.backgroundColor;
         }
       }
       return '#FFFFFF';
