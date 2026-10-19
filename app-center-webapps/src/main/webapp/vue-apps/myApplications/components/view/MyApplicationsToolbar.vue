@@ -49,7 +49,7 @@
           </v-icon>
         </v-btn>
       </template>
-      <!-- The legacy layout adds the cog on hover, a template keeps its room -->
+      <!-- The legacy layout adds the cog with the portlet's hover state, a template keeps its room -->
       <my-applications-cog
         v-if="showCog && (hover || !legacy)"
         :displayed="hover"
@@ -123,7 +123,8 @@ export default {
     headerLabel() {
       return this.headerTitle || this.$t('myApplications.name.label');
     },
-    // On hover, the legacy layout shows an editor an icon in place of 'see more'. A template keeps 'see more'
+    // With the portlet's hover state, the legacy layout shows an editor an icon in place of 'see more'. A template
+    // keeps 'see more'
     seeMoreIconDisplayed() {
       return this.legacy && this.hover && this.canEdit;
     },

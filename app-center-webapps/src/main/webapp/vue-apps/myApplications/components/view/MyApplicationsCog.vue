@@ -19,7 +19,7 @@
 -->
 
 <template>
-  <!-- Hidden, it keeps its room, so that nothing moves when the portlet is hovered -->
+  <!-- Hidden, it keeps its room, so that nothing moves when it shows -->
   <v-btn
     :title="$t('myApplications.editSettings.tooltip')"
     :aria-label="$t('myApplications.editSettings.tooltip')"
@@ -39,7 +39,7 @@
 <script>
 export default {
   props: {
-    // The settings cog is displayed on hover only
+    // Displayed with the portlet's hover state, which the pointer and the keyboard focus both set
     displayed: {
       type: Boolean,
       default: false

@@ -125,7 +125,7 @@ export default {
       type: Boolean,
       default: false
     },
-    // The portlet is hovered, which displays the cog
+    // The portlet's hover state, which the pointer and the keyboard focus both set: it displays the cog
     hover: {
       type: Boolean,
       default: false
