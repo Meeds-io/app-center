@@ -69,7 +69,18 @@
           v-if="seeMoreDisplayed"
           :preview="preview"
           :class="isColumn ? 'my-1' : 'ma-1 align-self-center'" />
+        <my-applications-cog
+          v-if="cogDisplayed"
+          :displayed="hover"
+          :class="isColumn ? 'my-1' : 'ma-1 align-self-center'"
+          @open-settings="$emit('open-settings')" />
       </div>
+      <!-- After the carousel rather than in it, so that it is reached however far the line is scrolled -->
+      <my-applications-cog
+        v-if="inRow && cogDisplayed"
+        :displayed="hover"
+        class="ma-1 align-self-center"
+        @open-settings="$emit('open-settings')" />
     </div>
   </div>
 </template>
@@ -109,11 +120,24 @@ export default {
       type: Boolean,
       default: false
     },
+    // The settings cog ends the list of apps, after 'see more'
+    showCog: {
+      type: Boolean,
+      default: false
+    },
+    // The portlet is hovered, which displays the cog
+    hover: {
+      type: Boolean,
+      default: false
+    },
   },
   computed: {
     // 'See more' ends a list of apps, so none while the apps load
     seeMoreDisplayed() {
       return this.showSeeMore && this.applications.length > 0;
+    },
+    cogDisplayed() {
+      return this.showCog && this.applications.length > 0;
     },
     isColumn() {
       return this.display.template === 'COLUMN';
