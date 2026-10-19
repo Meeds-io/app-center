@@ -19,7 +19,10 @@
 -->
 
 <template>
-  <v-hover v-if="display" v-model="hover">
+  <v-hover
+    v-if="display"
+    :value="hover"
+    @input="setHover">
     <v-card
       v-bind="cardBindings"
       v-on="application.type !== 'LINK' && !preview && {
@@ -35,7 +38,7 @@
       :min-width="template === 'CARDS' ? 114 : null"
       :height="template ? null : height"
       :max-height="template ? null : maxHeight"
-      :elevation="hover ? 2 : 0"
+      :elevation="hover && !lift ? 2 : 0"
       link
       flat
       @keydown.enter="openApplication"
@@ -46,16 +49,28 @@
         v-if="!preview"
         ref="placementMenu"
         :application="application" />
+      <!-- While lifted, the face is drawn over the page at the tile's place, the tile keeping its size in the line -->
+      <div
+        v-if="template"
+        ref="face"
+        :class="faceClass"
+        :style="faceStyle">
+        <my-application-item-content
+          ref="content"
+          :application="application"
+          :display-settings="displaySettings"
+          :preview="preview"
+          :expanded="nameOpen" />
+      </div>
       <my-application-item-content
+        v-else
         :application="application"
-        :display-settings="displaySettings"
-        :preview="preview"
-        :expanded="hover" />
+        :preview="preview" />
     </v-card>
   </v-hover>
 </template>
 <script>
-import {getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
+import {getLiftedTileStyle, getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
 
 export default {
   props: {
@@ -96,6 +111,10 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
+    // A name that does not fit on one line opens on two while its app is hovered or focused
+    nameOpen: false,
+    // The place and size of the lifted tile, null while it lies in its line
+    lift: null,
   }),
   computed: {
     applicationUrl() {
@@ -129,14 +148,94 @@ export default {
     templateMaxWidth() {
       return this.template === 'CARDS' ? 114 : 240;
     },
+    // A Row or Cards tile is lifted instead of growing, so that the other apps of its line keep their height
+    liftable() {
+      return this.template === 'ROW' || this.template === 'CARDS';
+    },
     cardClass() {
-      return getTileClass(this.displaySettings, this.hover, this.isFocused);
+      return this.lift ? null : getTileClass(this.displaySettings, this.hover, this.isFocused);
     },
     cardStyle() {
+      if (this.lift) {
+        return {
+          width: `${this.lift.width}px`,
+          height: `${this.lift.height}px`,
+          border: 'thin solid transparent',
+          backgroundColor: 'transparent',
+        };
+      }
       return getTileStyle(this.displaySettings);
     },
+    faceClass() {
+      return this.lift ? [getTileClass(this.displaySettings, this.hover, this.isFocused), 'elevation-2'] : 'full-width';
+    },
+    faceStyle() {
+      return this.lift && {
+        ...getLiftedTileStyle(this.displaySettings),
+        position: 'fixed',
+        top: `${this.lift.top}px`,
+        left: `${this.lift.left}px`,
+        width: `${this.lift.width}px`,
+        minHeight: `${this.lift.height}px`,
+        zIndex: 2,
+      };
+    },
+  },
+  created() {
+    // Where a fixed element's coordinates start, in the viewport: its corner, unless a transformed ancestor
+    // such as a drawer holds the tile
+    this.liftOrigin = {x: 0, y: 0};
+  },
+  beforeDestroy() {
+    this.dropTile();
   },
   methods: {
+    setHover(hover) {
+      // Measured before the name opens: a name that fits keeps its line, so that its tile keeps its size
+      if (hover && !this.hover && !this.preview && this.template) {
+        this.nameOpen = !!this.$refs.content?.nameTruncated();
+        if (this.nameOpen && this.liftable) {
+          this.liftTile();
+        }
+      } else if (!hover) {
+        this.nameOpen = false;
+        this.dropTile();
+      }
+      this.hover = hover;
+    },
+    liftTile() {
+      this.lift = this.liftedRect();
+      window.addEventListener('scroll', this.followTile, true);
+      window.addEventListener('resize', this.followTile);
+      // Ordered after the render: the face is measured where it was drawn
+      this.$nextTick(this.followTile);
+    },
+    dropTile() {
+      if (this.lift) {
+        this.lift = null;
+        window.removeEventListener('scroll', this.followTile, true);
+        window.removeEventListener('resize', this.followTile);
+      }
+    },
+    liftedRect() {
+      const rect = this.$el.getBoundingClientRect();
+      return {
+        top: rect.top - this.liftOrigin.y,
+        left: rect.left - this.liftOrigin.x,
+        width: rect.width,
+        height: rect.height,
+      };
+    },
+    // Places the lifted face on its tile again, once drawn and whenever the page or the line scrolls (scroll
+    // events come once per frame). The origin is read from where the face is drawn: a transformed ancestor
+    // moves it as the page scrolls
+    followTile() {
+      if (this.lift) {
+        const face = this.$refs.face.getBoundingClientRect();
+        this.liftOrigin = {x: face.left - this.lift.left, y: face.top - this.lift.top};
+        this.lift = this.liftedRect();
+      }
+    },
     async openApplication(event) {
       if (this.preview) {
         return;
@@ -166,7 +265,7 @@ export default {
     },
     onFocusOut(event) {
       if (!this.$el.contains(event.relatedTarget)) {
-        this.hover = false;
+        this.setHover(false);
         this.isFocused = false;
       }
     },
@@ -177,7 +276,7 @@ export default {
       } else {
         this.isFocused = true;
       }
-      this.hover = true;
+      this.setHover(true);
     },
     onMouseDown() {
       this.ignoreNextFocus = true;

@@ -135,7 +135,8 @@ export default {
         // One app per line: the apps are aligned within the column
         return `flex-column align-${ALIGNMENTS[this.hAlign]}`;
       } else if (this.inRow) {
-        // The apps of a line share one height, the tallest one's, which grows while a name shows on two lines
+        // The apps of a line share one height, the tallest one's: an app whose name opens on two lines is lifted
+        // over the line instead of growing it
         return 'flex-nowrap align-stretch';
       } else {
         // Wrapped lines are aligned as the group is, and the apps of a line share one height

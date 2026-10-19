@@ -58,6 +58,7 @@
       bottom>
       <template #activator="{ on, attrs }">
         <span
+          ref="name"
           :class="nameClass"
           class="text-color"
           v-bind="attrs"
@@ -85,7 +86,7 @@ export default {
       type: Boolean,
       default: false
     },
-    // The app is hovered or focused
+    // The name opens on two lines at most: its app is hovered or focused, and it does not fit on one
     expanded: {
       type: Boolean,
       default: false
@@ -121,6 +122,12 @@ export default {
       }
       // Centered in a column, a single line is as wide as its text unless bounded by the tile
       return [lines, 'max-width-fit', this.iconDisplayed && 'mt-2'];
+    },
+  },
+  methods: {
+    nameTruncated() {
+      const name = this.$refs.name;
+      return !!name && name.scrollWidth > name.clientWidth;
     },
   },
 };

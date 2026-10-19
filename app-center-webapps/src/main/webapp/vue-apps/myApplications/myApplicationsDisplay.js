@@ -68,6 +68,12 @@ const TEMPLATE_DEFAULTS = {
   },
 };
 
+const TILE_ALIGNMENTS = {
+  START: 'align-start',
+  CENTER: 'align-center',
+  END: 'align-end',
+};
+
 // The display settings to render, null for the legacy layout: no template, or one the server
 // did not print. A setting the server printed null, unset or invalid, takes the template's default
 export function getDisplaySettings(settings) {
@@ -114,8 +120,8 @@ export function getTileClass(displaySettings, hover, focused) {
     };
   }
   return {
-    // Stretched to the height of its line, a Row or Cards tile keeps its content in the middle
-    'd-flex align-center': displaySettings.template !== 'COLUMN',
+    // Stretched to the height of its line, a Row or Cards tile places its content as Vertical alignment says
+    [`d-flex ${TILE_ALIGNMENTS[displaySettings.vAlign] || 'align-center'}`]: displaySettings.template !== 'COLUMN',
     'rounded-pill px-4 py-2': displaySettings.template === 'ROW',
     'pa-2': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',
@@ -134,4 +140,15 @@ export function getTileStyle(displaySettings) {
     // either, set inline: in the settings drawer, a clickable card is white otherwise
     return {border: 'thin solid transparent', backgroundColor: displaySettings.color || 'transparent'};
   }
+}
+
+// The style of a tile lifted over the page: what lies under it must not show through, so it is painted on the
+// portlet's ground, the tile's own color over it when the tile is filled
+export function getLiftedTileStyle(displaySettings) {
+  const filledColor = !displaySettings.outlined && displaySettings.color;
+  return {
+    ...getTileStyle(displaySettings),
+    backgroundColor: 'var(--appBackgroundColor, #FFFFFF)',
+    backgroundImage: filledColor ? `linear-gradient(${filledColor}, ${filledColor})` : 'none',
+  };
 }
