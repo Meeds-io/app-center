@@ -29,6 +29,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -131,6 +132,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
                                                               shortcutsInstance(4),
                                                               shortcutsInstance(5, (String[]) null));
     when(portletInstanceService.getPortletInstances()).thenReturn(customisedInstances);
+    stubReadAgain(customisedInstances);
 
     assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
 
@@ -180,6 +182,7 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
     PortletInstance otherInstance = shortcutsInstance(1, ADMINISTRATORS);
     otherInstance.setContentId("app-center/AppCenterAppLauncherPortlet");
     when(portletInstanceService.getPortletInstances()).thenReturn(List.of(otherInstance));
+    stubReadAgain(List.of(otherInstance));
 
     assertEquals(0, plugin.replaceFormerPermissions(portletInstanceService));
 
@@ -290,6 +293,15 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
                          .filter(p -> MyApplicationsPortletInstancePermissionUpgradePlugin.class.getName().equals(p.getType()))
                          .findFirst()
                          .orElseThrow();
+  }
+
+  /**
+   * Reading an instance again returns it unchanged, so that only the check
+   * under test can keep it out: lenient, since that check stops before the
+   * read when it holds.
+   */
+  private void stubReadAgain(List<PortletInstance> portletInstances) {
+    portletInstances.forEach(p -> lenient().when(portletInstanceService.getPortletInstance(p.getId())).thenReturn(p));
   }
 
   private MyApplicationsPortletInstancePermissionUpgradePlugin startedPlugin() throws InterruptedException {
