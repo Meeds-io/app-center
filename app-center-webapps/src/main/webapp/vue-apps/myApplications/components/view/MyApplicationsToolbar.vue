@@ -30,7 +30,7 @@
       class="d-flex align-center ms-auto">
       <template v-if="hasApplications && showSeeMore">
         <my-applications-see-more
-          v-if="!hover || !canEdit" />
+          v-if="!seeMoreIconDisplayed" />
         <v-btn
           v-else
           ref="btnSeeMoreIcon"
@@ -49,21 +49,12 @@
           </v-icon>
         </v-btn>
       </template>
-      <v-btn
-        v-if="hover && canEdit"
-        :title="$t('myApplications.editSettings.tooltip')"
-        :aria-label="$t('myApplications.editSettings.tooltip')"
-        class="ms-2 text-font-size"
-        small
-        link
-        icon
-        @click="$emit('open-settings')">
-        <v-icon
-          :size="18"
-          class="icon-default-size icon-default-color">
-          fas fa-cog
-        </v-icon>
-      </v-btn>
+      <!-- The legacy layout adds the cog with the portlet's hover state, a template keeps its room -->
+      <my-applications-cog
+        v-if="showCog && (hover || !legacy)"
+        :displayed="hover"
+        class="ms-2"
+        @open-settings="$emit('open-settings')" />
       <v-btn
         v-if="!hasApplications && favorites"
         :title="$t('myApplications.add.application.tooltip')"
@@ -97,6 +88,16 @@ export default {
       type: Boolean,
       default: false
     },
+    // The settings cog is on this line
+    showCog: {
+      type: Boolean,
+      default: false
+    },
+    // No template: the layout kept until one is picked
+    legacy: {
+      type: Boolean,
+      default: false
+    },
     headerTitle: {
       type: String,
       default: null
@@ -121,6 +122,11 @@ export default {
   computed: {
     headerLabel() {
       return this.headerTitle || this.$t('myApplications.name.label');
+    },
+    // With the portlet's hover state, the legacy layout shows an editor an icon in place of 'see more'. A template
+    // keeps 'see more'
+    seeMoreIconDisplayed() {
+      return this.legacy && this.hover && this.canEdit;
     },
   },
   methods: {
