@@ -262,9 +262,10 @@ class MyApplicationsPortletInstancePermissionUpgradePluginTest {
   }
 
   /**
-   * Reads the shipped declaration: the plugin must run once, including on an
-   * acceptance server redeployed with an unchanged version, which a target
-   * version would prevent, and asynchronously, since it waits for the server
+   * Reads the shipped declaration: the plugin must run once, execute.once being
+   * the run-once gate (a target version is none: VersionComparator ranks the .x
+   * and dated builds of a line before its release), including on a server whose
+   * version did not change, and asynchronously, since it waits for the server
    * startup.
    */
   @Test

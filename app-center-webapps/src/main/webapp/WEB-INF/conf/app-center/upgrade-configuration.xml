@@ -40,7 +40,7 @@
           <name>plugin.execution.order</name>
           <value>5</value>
         </value-param>
-        <!-- No target version: the plugin must also run where the version did not change, an acceptance server included -->
+        <!-- No target version: execute.once is the run-once gate -->
         <value-param>
           <name>plugin.upgrade.execute.once</name>
           <value>true</value>
