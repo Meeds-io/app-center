@@ -49,7 +49,7 @@
           class="ma-1"
           @open-portlet="$emit('open-portlet', $event)" />
         <my-applications-see-more
-          v-if="showSeeMore"
+          v-if="seeMoreDisplayed"
           :preview="preview"
           class="ma-1 align-self-center" />
       </card-carousel>
@@ -66,7 +66,7 @@
           :class="isColumn ? 'my-1' : 'ma-1'"
           @open-portlet="$emit('open-portlet', $event)" />
         <my-applications-see-more
-          v-if="showSeeMore"
+          v-if="seeMoreDisplayed"
           :preview="preview"
           :class="isColumn ? 'my-1' : 'ma-1 align-self-center'" />
       </div>
@@ -111,6 +111,10 @@ export default {
     },
   },
   computed: {
+    // 'See more' ends a list of apps, so none while the apps load
+    seeMoreDisplayed() {
+      return this.showSeeMore && this.applications.length > 0;
+    },
     isColumn() {
       return this.display.template === 'COLUMN';
     },
