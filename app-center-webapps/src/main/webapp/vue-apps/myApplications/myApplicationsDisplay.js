@@ -123,7 +123,8 @@ export function getTileClass(displaySettings, hover, focused) {
     // Stretched to the height of its line, a Row or Cards tile places its content as Vertical alignment says
     [`d-flex ${TILE_ALIGNMENTS[displaySettings.vAlign] || 'align-center'}`]: displaySettings.template !== 'COLUMN',
     'rounded-pill px-4 py-2': displaySettings.template === 'ROW',
-    'pa-2': displaySettings.template === 'CARDS',
+    // The card's own corners, carried by the class so that the lifted face keeps them
+    'pa-2 rounded': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',
     'border-color-black': focused,
   };
