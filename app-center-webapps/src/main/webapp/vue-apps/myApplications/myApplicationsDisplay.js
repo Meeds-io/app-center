@@ -114,6 +114,8 @@ export function getTileClass(displaySettings, hover, focused) {
     };
   }
   return {
+    // Stretched to the height of its line, a Row or Cards tile keeps its content in the middle
+    'd-flex align-center': displaySettings.template !== 'COLUMN',
     'rounded-pill px-4 py-2': displaySettings.template === 'ROW',
     'pa-2': displaySettings.template === 'CARDS',
     'px-2 py-1': displaySettings.template === 'COLUMN',

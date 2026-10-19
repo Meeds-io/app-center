@@ -51,7 +51,7 @@
         <my-applications-see-more
           v-if="showSeeMore"
           :preview="preview"
-          class="ma-1" />
+          class="ma-1 align-self-center" />
       </card-carousel>
       <div
         v-else
@@ -68,7 +68,7 @@
         <my-applications-see-more
           v-if="showSeeMore"
           :preview="preview"
-          :class="isColumn ? 'my-1' : 'ma-1'" />
+          :class="isColumn ? 'my-1' : 'ma-1 align-self-center'" />
       </div>
     </div>
   </div>
@@ -131,10 +131,11 @@ export default {
         // One app per line: the apps are aligned within the column
         return `flex-column align-${ALIGNMENTS[this.hAlign]}`;
       } else if (this.inRow) {
-        return `flex-nowrap align-${ALIGNMENTS[this.vAlign]}`;
+        // The apps of a line share one height, the tallest one's, which grows while a name shows on two lines
+        return 'flex-nowrap align-stretch';
       } else {
-        // Wrapped lines are aligned as the group is
-        return `flex-wrap justify-${ALIGNMENTS[this.hAlign]} align-${ALIGNMENTS[this.vAlign]}`;
+        // Wrapped lines are aligned as the group is, and the apps of a line share one height
+        return `flex-wrap justify-${ALIGNMENTS[this.hAlign]} align-stretch`;
       }
     },
   },
