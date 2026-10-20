@@ -19,8 +19,7 @@
 -->
 
 <template>
-  <!-- Hidden, it keeps its room and its place in the tab order: nothing moves when it shows, and focusing it shows it.
-       A pointer cannot hit it until it shows -->
+  <!-- Hidden, it keeps its place in the tab order, and focusing it shows it. A pointer cannot hit it until it shows -->
   <v-btn
     :title="$t('myApplications.editSettings.tooltip')"
     :aria-label="$t('myApplications.editSettings.tooltip')"
