@@ -21,6 +21,23 @@
 <template>
   <div>
     <template v-for="option in options">
+      <!-- The color comes before Outlined, which decides whether it fills or borders the tiles -->
+      <div
+        v-if="option.key === 'outlined'"
+        :key="`${option.key}-color`"
+        class="d-flex align-center justify-space-between mt-2">
+        <div class="v-label text-color align-start">
+          {{ $t('myApplications.color.label') }}
+        </div>
+        <div class="align-end">
+          <color-picker
+            :value="display.color"
+            :disabled="disabled"
+            swatch-size="28px"
+            resettable
+            @input="update('color', $event)" />
+        </div>
+      </div>
       <div
         :key="option.key"
         class="d-flex align-center justify-space-between mt-2">
