@@ -72,7 +72,7 @@
         <my-applications-cog
           v-if="cogDisplayed"
           :displayed="hover"
-          :class="isColumn ? 'my-1' : 'ma-1 align-self-center'"
+          class="ma-1 align-self-center"
           @open-settings="$emit('open-settings')" />
       </div>
       <!-- After the carousel rather than in it, so that it is reached however far the line is scrolled -->
