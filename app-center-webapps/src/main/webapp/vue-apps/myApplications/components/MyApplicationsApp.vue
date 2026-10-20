@@ -28,48 +28,56 @@
         extra-class="application-body position-static border-box-sizing"
         @focusin="onFocusIn" 
         @focusout="onFocusOut">
-        <my-applications-toolbar
-          v-if="!isLoading && toolbarDisplayed"
-          ref="myApplicationsToolbar"
-          :hover="hover"
-          :can-edit="canEdit"
-          :show-cog="canEdit && cogPlacement === 'HEADER'"
-          :legacy="!display"
-          :show-header="showHeader"
-          :show-see-more="seeMorePlacement === 'HEADER'"
-          :header-title="headerTitle"
-          :has-applications="hasApplications"
-          :favorites="!selectedListing"
-          @open-settings="openSettingsDrawer" />
-        <div
-          v-if="canEdit && selectedListing && !hasDisplayedApplications && !isLoading"
-          class="d-flex flex-column justify-center align-center flex-grow-1 py-4">
-          <p class="mb-2 text-sub-title">
-            {{ $t('myApplications.noApps.label') }}
-          </p>
-          <v-btn
-            class="btn btn-primary"
-            @click="openSettingsDrawer">
-            {{ $t('myApplications.addApps.label') }}
-          </v-btn>
+        <div class="position-relative d-flex flex-column flex-grow-1">
+          <!-- Laid over the portlet's top end: the list does not move when it shows -->
+          <my-applications-cog
+            v-if="!isLoading && canEdit && cogPlacement === 'TOP'"
+            :displayed="hovered"
+            class="position-absolute t-0 z-index-one"
+            style="inset-inline-end: 0;"
+            @open-settings="openSettingsDrawer" />
+          <my-applications-toolbar
+            v-if="!isLoading && toolbarDisplayed"
+            ref="myApplicationsToolbar"
+            :hover="hovered"
+            :can-edit="canEdit"
+            :show-cog="canEdit && cogPlacement === 'HEADER'"
+            :show-header="showHeader"
+            :show-see-more="seeMorePlacement === 'HEADER'"
+            :header-title="headerTitle"
+            :has-applications="hasApplications"
+            :favorites="!selectedListing"
+            @open-settings="openSettingsDrawer" />
+          <div
+            v-if="canEdit && selectedListing && !hasDisplayedApplications && !isLoading"
+            class="d-flex flex-column justify-center align-center flex-grow-1 py-4">
+            <p class="mb-2 text-sub-title">
+              {{ $t('myApplications.noApps.label') }}
+            </p>
+            <v-btn
+              class="btn btn-primary"
+              @click="openSettingsDrawer">
+              {{ $t('myApplications.addApps.label') }}
+            </v-btn>
+          </div>
+          <my-applications-template-list
+            v-else-if="display"
+            :applications="filteredApplications"
+            :display="display"
+            :is-loading="isLoading"
+            :show-see-more="seeMorePlacement === 'LIST'"
+            :show-cog="canEdit && cogPlacement === 'LIST'"
+            :hover="hovered"
+            @open-settings="openSettingsDrawer"
+            @open-portlet="$refs.portletInstanceDrawer.open($event)" />
+          <my-applications-list
+            v-else
+            :applications-list="filteredApplications"
+            :is-loading="isLoading"
+            :sortable="!selectedListing"
+            @list-updated="handleListOrderUpdate"
+            @open-portlet="$refs.portletInstanceDrawer.open($event)" />
         </div>
-        <my-applications-template-list
-          v-else-if="display"
-          :applications="filteredApplications"
-          :display="display"
-          :is-loading="isLoading"
-          :show-see-more="seeMorePlacement === 'LIST'"
-          :show-cog="canEdit && cogPlacement === 'LIST'"
-          :hover="hover"
-          @open-settings="openSettingsDrawer"
-          @open-portlet="$refs.portletInstanceDrawer.open($event)" />
-        <my-applications-list
-          v-else
-          :applications-list="filteredApplications"
-          :is-loading="isLoading"
-          :sortable="!selectedListing"
-          @list-updated="handleListOrderUpdate"
-          @open-portlet="$refs.portletInstanceDrawer.open($event)" />
       </widget-wrapper>
     </v-hover>
     <my-applications-settings-drawer
@@ -107,6 +115,9 @@ export default {
       currentUser: eXo.env.portal.userName,
       initialized: false,
       hover: false,
+      // The keyboard focus is in the portlet: it shows what the pointer's hover shows, wherever the pointer goes. A
+      // pointer click leaves it to the hover
+      focusWithin: false,
       tabindex: '0',
       listingLoaded: false,
     };
@@ -139,16 +150,21 @@ export default {
     seeMorePlacement() {
       return getSeeMorePlacement(this.display, this.showHeader);
     },
-    // The cog ends the list of apps where the display places it there, and is on the header line while no app is
-    // listed
+    // The cog follows the display while apps are listed. With none, it is on the header line or the line holding the +,
+    // else over the portlet's top end
     cogPlacement() {
-      return this.hasDisplayedApplications ? getCogPlacement(this.display, this.showHeader) : 'HEADER';
+      if (this.hasDisplayedApplications) {
+        return getCogPlacement(this.display, this.showHeader);
+      }
+      return !this.display || this.showHeader || (!this.selectedListing && !this.hasApplications) ? 'HEADER' : 'TOP';
+    },
+    hovered() {
+      return this.hover || this.focusWithin;
     },
     toolbarDisplayed() {
-      // With a template, see more is on the header line only along with the header. An editor keeps the line that
-      // holds the settings cog, and a viewer without favorites the one holding the +
-      return !this.display || this.showHeader || (this.canEdit && this.cogPlacement === 'HEADER')
-          || (!this.selectedListing && !this.hasApplications);
+      // With a template, see more is on the header line only along with the header, and a portlet without favorites
+      // keeps the line holding the +
+      return !this.display || this.showHeader || (!this.selectedListing && !this.hasApplications);
     },
     headerTitle() {
       return this.$root.settings?.headerTitle;
@@ -306,11 +322,14 @@ export default {
       this.updateApplicationsOrder(applicationList);
     },
     onFocusIn(event) {
-      this.hover =true;
+      this.focusWithin = event.target.matches(':focus-visible');
       this.$nextTick(() => {
         const activeElement = document.activeElement;
         const header = this.$refs.myApplicationsToolbar?.$refs?.btnSeeMoreIcon?.$el;
-        if (header && activeElement === this.$refs.widget?.$el && event.relatedTarget) {
+        // The focus goes on to the header icon from the portlet itself under a keyboard focus, and from the 'See More'
+        // link that the icon replaces once the focus shows it
+        if (header && ((this.focusWithin && activeElement === this.$refs.widget?.$el && event.relatedTarget)
+            || !event.target.isConnected)) {
           header.focus();
         }
         if (this.tabindex === '0') {
@@ -325,7 +344,17 @@ export default {
         return;
       }
       this.tabindex = '0';
-      this.hover = false;
+      if (next) {
+        this.focusWithin = false;
+      } else {
+        // With no next target, the focus leaves the page or its node is removed by the re-render, and the header icon
+        // takes it on the next tick
+        this.$nextTick(() => {
+          if (!root.contains(document.activeElement)) {
+            this.focusWithin = false;
+          }
+        });
+      }
     },
   }
 };
