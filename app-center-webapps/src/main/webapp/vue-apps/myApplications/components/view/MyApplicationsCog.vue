@@ -19,15 +19,18 @@
 -->
 
 <template>
-  <!-- Hidden, it keeps its room, so that nothing moves when it shows -->
+  <!-- Hidden, it keeps its room and its place in the tab order: nothing moves when it shows, and focusing it shows it.
+       A pointer cannot hit it until it shows -->
   <v-btn
     :title="$t('myApplications.editSettings.tooltip')"
     :aria-label="$t('myApplications.editSettings.tooltip')"
-    :class="!displayed && 'invisible'"
+    :style="!displayed && !focused && 'opacity: 0; pointer-events: none'"
     class="text-font-size"
     small
     link
     icon
+    @focus="focused = true"
+    @blur="focused = false"
     @click="$emit('open-settings')">
     <v-icon
       :size="18"
@@ -45,5 +48,9 @@ export default {
       default: false
     },
   },
+  data: () => ({
+    // Focused, it stays displayed: the pointer leaving the portlet clears its hover state while the focus stays here
+    focused: false,
+  }),
 };
 </script>
