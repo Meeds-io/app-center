@@ -54,9 +54,8 @@ class KernelDaoInjectionTest {
   /**
    * An {@link Autowired} field or method, or a constructor parameter, the
    * module's injection forms, of every bean whatever its profiles;
-   * {@code @Resource} and {@code @Inject} are not looked at. Fails the mutant
-   * injecting the window DAO into {@link PortletWindowStorage}, which only a
-   * server start detects otherwise
+   * {@code @Resource} and {@code @Inject} are not looked at. Fails a bean
+   * injecting a kernel DAO, which only a server start detects otherwise
    */
   @Test
   void noBeanInjectsAKernelDao() throws ClassNotFoundException {

@@ -34,17 +34,10 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.portal.config.model.Application;
-import org.exoplatform.portal.config.model.ApplicationState;
-import org.exoplatform.portal.jdbc.entity.WindowEntity;
-import org.exoplatform.portal.mop.dao.WindowDAO;
 import org.exoplatform.portal.mop.service.LayoutService;
-import org.exoplatform.portal.mop.storage.utils.MOPUtils;
 import org.exoplatform.portal.pom.spi.portlet.Portlet;
 import org.exoplatform.portal.pom.spi.portlet.Preference;
 import org.exoplatform.services.log.ExoLogger;
@@ -61,9 +54,14 @@ import jakarta.annotation.PreDestroy;
  * returns the window as that request first loaded it, whatever another
  * request committed since; the layout service's preferences cache is filled
  * through the entity manager of the request that misses it, so it can hold
- * such a view too. This storage reads the window's row on a thread of its
- * own, in a request of its own, never through that cache, and writes through
- * the layout service, which empties the window's cache entry. Each
+ * such a view too. This storage reads the window through the layout service's
+ * reads of its row ({@link LayoutService#loadCommitted(String)},
+ * {@link LayoutService#existsCommitted(String)}), never through that cache,
+ * on a thread of its own, in a request of its own, so that no
+ * transaction of its caller decides what the read sees, and writes the
+ * preferences column alone ({@link LayoutService#saveCommitted}), which
+ * empties the window's cache entry and leaves the window's other columns as
+ * committed. Each
  * read-modify-write holds a lock of this node per window on that thread,
  * from its read to its committed write, so that a caller who stops waiting
  * never lets another write run over it.
@@ -100,12 +98,6 @@ public class PortletWindowStorage {
   private LayoutService               layoutService;
 
   /**
-   * Never injected: the Kernel to Spring bridge exposes no GenericDAO as a
-   * bean, so it is read from the portal container at its first use
-   */
-  private WindowDAO                   windowDAO;
-
-  /**
    * @param storageId the window's storage id
    * @return the window's preferences as committed, by name, empty when the
    *         window does not exist
@@ -119,7 +111,7 @@ public class PortletWindowStorage {
    * @return true when the window exists as committed
    */
   public boolean exists(String storageId) {
-    return callInOwnRequest(() -> hasWindow(storageId));
+    return callInOwnRequest(() -> layoutService.existsCommitted(storageId));
   }
 
   /**
@@ -208,7 +200,7 @@ public class PortletWindowStorage {
 
   Map<String, String> readPreferences(String storageId) {
     Map<String, String> preferences = new HashMap<>();
-    Portlet portlet = readPortlet(storageId);
+    Portlet portlet = layoutService.loadCommitted(storageId);
     if (portlet != null) {
       for (Preference preference : portlet) {
         preferences.put(preference.getName(), preference.getValue());
@@ -218,10 +210,8 @@ public class PortletWindowStorage {
   }
 
   void writePreferences(String storageId, Map<String, String> values) {
-    // Read first: the layout service's model of a window gone is no null
-    Portlet portlet = readPortlet(storageId);
-    ApplicationState state = portlet == null ? null : getState(storageId);
-    if (state == null) {
+    Portlet portlet = layoutService.loadCommitted(storageId);
+    if (portlet == null) {
       LOG.debug("Window {} no longer exists, its preferences are not written", storageId);
       return;
     }
@@ -231,42 +221,7 @@ public class PortletWindowStorage {
     }
     Portlet updated = new Portlet(preferences);
     values.forEach(updated::setValue);
-    layoutService.save(state, updated);
-  }
-
-  /**
-   * Called on a thread of this storage, inside {@link #callInRequest(Supplier)},
-   * whose advice makes the portal container the current one.
-   *
-   * @return the portal container's window DAO
-   */
-  WindowDAO getWindowDAO() {
-    if (windowDAO == null) {
-      windowDAO = ExoContainerContext.getService(WindowDAO.class);
-    }
-    return windowDAO;
-  }
-
-  /**
-   * @return true when the window's row exists, its preferences not read
-   */
-  private boolean hasWindow(String storageId) {
-    long id = NumberUtils.toLong(storageId, 0);
-    return id > 0 && getWindowDAO().find(id) != null;
-  }
-
-  /**
-   * @return the window's preferences as its row holds them, null when the
-   *         window does not exist
-   */
-  private Portlet readPortlet(String storageId) {
-    long id = NumberUtils.toLong(storageId, 0);
-    WindowEntity window = id > 0 ? getWindowDAO().find(id) : null;
-    if (window == null) {
-      return null;
-    }
-    byte[] customization = window.getCustomization();
-    return customization == null ? new Portlet() : (Portlet) MOPUtils.unserialize(customization);
+    layoutService.saveCommitted(storageId, updated);
   }
 
   private <T> T withWindowLock(String storageId, Supplier<T> task) {
@@ -277,11 +232,6 @@ public class PortletWindowStorage {
     } finally {
       lock.unlock();
     }
-  }
-
-  private ApplicationState getState(String storageId) {
-    Application applicationModel = layoutService.getApplicationModel(storageId);
-    return applicationModel == null ? null : applicationModel.getState();
   }
 
   /**
