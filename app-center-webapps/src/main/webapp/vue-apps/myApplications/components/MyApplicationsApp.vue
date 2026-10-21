@@ -29,7 +29,7 @@
         @focusin="onFocusIn" 
         @focusout="onFocusOut">
         <div class="position-relative d-flex flex-column flex-grow-1">
-          <!-- Laid over the portlet's top end: the list does not move when it shows -->
+          <!-- Laid over the portlet's top end: it takes no line of the list, whose lines end before it while it shows -->
           <my-applications-cog
             v-if="!isLoading && canEdit && cogPlacement === 'TOP'"
             :displayed="hovered"
