@@ -28,7 +28,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -53,15 +52,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.ApplicationState;
-import org.exoplatform.portal.jdbc.entity.WindowEntity;
-import org.exoplatform.portal.mop.dao.WindowDAO;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.portal.mop.storage.utils.MOPUtils;
 import org.exoplatform.portal.pom.spi.portlet.Portlet;
@@ -90,19 +85,15 @@ class PortletWindowStorageTest {
   @Mock
   private ApplicationState     state;
 
-  @Mock
-  private WindowDAO            windowDAO;
-
   private PortletWindowStorage storage;
 
-  /** The window's row, which a save writes */
-  private final AtomicReference<WindowEntity> committedWindow = new AtomicReference<>();
+  /** The window's preferences as committed, which a save writes */
+  private final AtomicReference<byte[]> committedPreferences = new AtomicReference<>();
 
   @BeforeEach
   void setUp() {
     storage = spy(new PortletWindowStorage());
     ReflectionTestUtils.setField(storage, "layoutService", layoutService);
-    ReflectionTestUtils.setField(storage, "windowDAO", windowDAO);
   }
 
   @AfterEach
@@ -115,7 +106,7 @@ class PortletWindowStorageTest {
    * fails the mutant reading through it
    */
   @Test
-  void readPreferencesReadsTheWindowRowNotTheCache() {
+  void readPreferencesReadsTheCommittedWindowNotTheCache() {
     givenTheWindow(portlet("name", "Untitled-12-a", "data.init", "{}"));
 
     assertEquals(Map.of("name", "Untitled-12-a", "data.init", "{}"), storage.readPreferences(STORAGE_ID));
@@ -124,7 +115,7 @@ class PortletWindowStorageTest {
 
   @Test
   void readPreferencesOfAWindowWithoutPreferencesIsEmpty() {
-    when(windowDAO.find(12L)).thenReturn(new WindowEntity());
+    when(layoutService.loadCommitted(STORAGE_ID)).thenReturn(new Portlet());
 
     assertTrue(storage.readPreferences(STORAGE_ID).isEmpty());
   }
@@ -136,22 +127,20 @@ class PortletWindowStorageTest {
 
   /**
    * Fails the mutants answering true for a window gone, false for one that
-   * exists, reading outside a request of its own, whose entity manager
-   * returns the window as the request first loaded it, and deserializing the
-   * window's preferences, as large as an unconsumed payload, only to test
-   * its row
+   * exists, reading outside a request of its own, where a transaction of its
+   * caller decides what the read sees, and reading the window's preferences,
+   * as large as an unconsumed payload, only to test that it exists
    */
   @Test
-  void existsReadsTheCommittedWindowRow() {
+  void existsReadsTheCommittedWindow() {
     givenATaskRunsInTheCallingRequest();
-    WindowEntity window = new WindowEntity();
-    window.setCustomization(new byte[] { 1, 2, 3 });
-    when(windowDAO.find(12L)).thenReturn(window);
+    when(layoutService.existsCommitted(STORAGE_ID)).thenReturn(true);
 
     assertTrue(storage.exists(STORAGE_ID));
     assertFalse(storage.exists("13"));
     assertFalse(storage.exists(null));
     verify(storage, times(3)).callInRequest(any());
+    verify(layoutService, never()).loadCommitted(any());
   }
 
   /**
@@ -186,8 +175,8 @@ class PortletWindowStorageTest {
   }
 
   /**
-   * Fails the mutant reading on the request's thread, whose entity manager
-   * returns the window as the request first loaded it
+   * Fails the mutant reading on the request's thread, where a transaction of
+   * the request decides what the read sees
    */
   @Test
   void getPreferencesReadsOnAThreadOfItsOwnInARequestOfItsOwn() {
@@ -247,14 +236,14 @@ class PortletWindowStorageTest {
     AtomicInteger reads = new AtomicInteger();
     CountDownLatch firstRead = new CountDownLatch(1);
     CountDownLatch secondRead = new CountDownLatch(1);
-    when(windowDAO.find(12L)).thenAnswer(invocation -> {
+    when(layoutService.loadCommitted(STORAGE_ID)).thenAnswer(invocation -> {
       if (reads.incrementAndGet() == 1) {
         firstRead.countDown();
         secondRead.await(500, TimeUnit.MILLISECONDS);
       } else {
         secondRead.countDown();
       }
-      return committedWindow.get();
+      return MOPUtils.unserialize(committedPreferences.get());
     });
     ExecutorService callers = Executors.newFixedThreadPool(2);
     try {
@@ -339,24 +328,6 @@ class PortletWindowStorageTest {
   }
 
   /**
-   * The window DAO is no Spring bean: fails the mutants never reading it from
-   * the portal container, and reading it at every call
-   */
-  @Test
-  void getWindowDAOReadsThePortalContainersOnce() {
-    PortletWindowStorage unwiredStorage = new PortletWindowStorage();
-    try (MockedStatic<ExoContainerContext> containerContext = mockStatic(ExoContainerContext.class)) {
-      containerContext.when(() -> ExoContainerContext.getService(WindowDAO.class)).thenReturn(windowDAO);
-
-      assertSame(windowDAO, unwiredStorage.getWindowDAO());
-      assertSame(windowDAO, unwiredStorage.getWindowDAO());
-      containerContext.verify(() -> ExoContainerContext.getService(WindowDAO.class), times(1));
-    } finally {
-      unwiredStorage.stop();
-    }
-  }
-
-  /**
    * The new entity manager comes from the advice: fails the mutant removing
    * the annotation, which a test stubbing the method cannot detect
    */
@@ -369,13 +340,9 @@ class PortletWindowStorageTest {
   private void givenTheCommittedWindow(Portlet portlet) {
     lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);
     lenient().when(applicationModel.getState()).thenReturn(state);
-    WindowEntity window = new WindowEntity();
-    window.setCustomization(MOPUtils.serialize(portlet));
-    committedWindow.set(window);
+    committedPreferences.set(MOPUtils.serialize(portlet));
     lenient().when(layoutService.save(eq(state), any(Portlet.class))).thenAnswer(invocation -> {
-      WindowEntity saved = new WindowEntity();
-      saved.setCustomization(MOPUtils.serialize(invocation.getArgument(1, Portlet.class)));
-      committedWindow.set(saved);
+      committedPreferences.set(MOPUtils.serialize(invocation.getArgument(1, Portlet.class)));
       return state;
     });
   }
@@ -387,9 +354,8 @@ class PortletWindowStorageTest {
   private void givenTheWindow(Portlet portlet) {
     lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);
     lenient().when(applicationModel.getState()).thenReturn(state);
-    WindowEntity window = new WindowEntity();
-    window.setCustomization(MOPUtils.serialize(portlet));
-    when(windowDAO.find(12L)).thenReturn(window);
+    byte[] preferences = MOPUtils.serialize(portlet);
+    when(layoutService.loadCommitted(STORAGE_ID)).thenAnswer(invocation -> MOPUtils.unserialize(preferences));
     // What a stale cache entry would answer
     lenient().when(layoutService.load(state)).thenReturn(portlet("name", "stale"));
   }
