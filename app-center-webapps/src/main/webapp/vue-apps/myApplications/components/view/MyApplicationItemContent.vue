@@ -20,7 +20,7 @@
 
 <template>
   <div
-    :class="horizontal ? 'flex-row' : 'flex-column justify-center'"
+    :class="contentClass"
     class="d-flex align-center full-width">
     <app-center-badge
       v-if="!preview"
@@ -72,6 +72,12 @@
 <script>
 import {isFilledTile} from '../../myApplicationsDisplay.js';
 
+const LINE_ALIGNMENTS = {
+  START: 'justify-start',
+  CENTER: 'justify-center',
+  END: 'justify-end',
+};
+
 export default {
   props: {
     application: {
@@ -110,6 +116,13 @@ export default {
     },
     horizontal() {
       return this.template === 'ROW' || this.template === 'COLUMN';
+    },
+    // A column's app spans its line, and its icon and name are placed in it as Horizontal alignment says
+    contentClass() {
+      if (this.template === 'COLUMN') {
+        return ['flex-row', LINE_ALIGNMENTS[this.displaySettings.hAlign] || 'justify-start'];
+      }
+      return this.horizontal ? 'flex-row' : 'flex-column justify-center';
     },
     iconDisplayed() {
       return !this.template || this.displaySettings.showIcon;

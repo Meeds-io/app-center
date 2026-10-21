@@ -138,7 +138,11 @@ export default {
     template() {
       return this.displaySettings?.template;
     },
+    // A column's app spans its line
     templateMaxWidth() {
+      if (this.template === 'COLUMN') {
+        return null;
+      }
       return this.template === 'CARDS' ? 114 : 240;
     },
     cardClass() {

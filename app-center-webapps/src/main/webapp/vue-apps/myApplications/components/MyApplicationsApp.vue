@@ -35,6 +35,7 @@
             :displayed="hovered"
             class="position-absolute t-0 z-index-one"
             style="inset-inline-end: 0;"
+            @focused="topCogFocused = $event"
             @open-settings="openSettingsDrawer" />
           <my-applications-toolbar
             v-if="!isLoading && toolbarDisplayed"
@@ -67,6 +68,7 @@
             :is-loading="isLoading"
             :show-see-more="seeMorePlacement === 'LIST'"
             :show-cog="canEdit && cogPlacement === 'LIST'"
+            :top-cog-shown="canEdit && cogPlacement === 'TOP' && (hovered || topCogFocused)"
             :hover="hovered"
             @open-settings="openSettingsDrawer"
             @open-portlet="$refs.portletInstanceDrawer.open($event)" />
@@ -118,6 +120,8 @@ export default {
       // The keyboard focus is in the portlet: it shows what the pointer's hover shows, wherever the pointer goes. A
       // pointer click leaves it to the hover
       focusWithin: false,
+      // The cog over the portlet's top end holds the focus, which shows it whatever the hover
+      topCogFocused: false,
       tabindex: '0',
       listingLoaded: false,
     };
