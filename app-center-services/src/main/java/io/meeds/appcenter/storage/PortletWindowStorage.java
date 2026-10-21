@@ -37,8 +37,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import org.exoplatform.portal.config.model.Application;
-import org.exoplatform.portal.config.model.ApplicationState;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.portal.pom.spi.portlet.Portlet;
 import org.exoplatform.portal.pom.spi.portlet.Preference;
@@ -60,8 +58,10 @@ import jakarta.annotation.PreDestroy;
  * reads of its row ({@link LayoutService#loadCommitted(String)},
  * {@link LayoutService#existsCommitted(String)}), never through that cache,
  * on a thread of its own, in a request of its own, so that no
- * transaction of its caller decides what the read sees, and writes through
- * the layout service, which empties the window's cache entry. Each
+ * transaction of its caller decides what the read sees, and writes the
+ * preferences column alone ({@link LayoutService#saveCommitted}), which
+ * empties the window's cache entry and leaves the window's other columns as
+ * committed. Each
  * read-modify-write holds a lock of this node per window on that thread,
  * from its read to its committed write, so that a caller who stops waiting
  * never lets another write run over it.
@@ -210,10 +210,8 @@ public class PortletWindowStorage {
   }
 
   void writePreferences(String storageId, Map<String, String> values) {
-    // Read first: the layout service's model of a window gone is no null
     Portlet portlet = layoutService.loadCommitted(storageId);
-    ApplicationState state = portlet == null ? null : getState(storageId);
-    if (state == null) {
+    if (portlet == null) {
       LOG.debug("Window {} no longer exists, its preferences are not written", storageId);
       return;
     }
@@ -223,7 +221,7 @@ public class PortletWindowStorage {
     }
     Portlet updated = new Portlet(preferences);
     values.forEach(updated::setValue);
-    layoutService.save(state, updated);
+    layoutService.saveCommitted(storageId, updated);
   }
 
   private <T> T withWindowLock(String storageId, Supplier<T> task) {
@@ -234,11 +232,6 @@ public class PortletWindowStorage {
     } finally {
       lock.unlock();
     }
-  }
-
-  private ApplicationState getState(String storageId) {
-    Application applicationModel = layoutService.getApplicationModel(storageId);
-    return applicationModel == null ? null : applicationModel.getState();
   }
 
   /**

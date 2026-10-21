@@ -55,7 +55,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.exoplatform.portal.config.model.Application;
 import org.exoplatform.portal.config.model.ApplicationState;
 import org.exoplatform.portal.mop.service.LayoutService;
 import org.exoplatform.portal.mop.storage.utils.MOPUtils;
@@ -78,12 +77,6 @@ class PortletWindowStorageTest {
 
   @Mock
   private LayoutService        layoutService;
-
-  @Mock
-  private Application          applicationModel;
-
-  @Mock
-  private ApplicationState     state;
 
   private PortletWindowStorage storage;
 
@@ -144,8 +137,9 @@ class PortletWindowStorageTest {
   }
 
   /**
-   * Fails the mutant writing over the cache's view of the window, which a
-   * render's stale entity manager can have filled
+   * Fails the mutants writing over the cache's view of the window, which a
+   * render's stale entity manager can have filled, and writing through
+   * {@link LayoutService#save}, which writes that view's other columns back
    */
   @Test
   void writePreferencesSetsTheValuesOverTheCommittedOnes() {
@@ -154,23 +148,19 @@ class PortletWindowStorageTest {
     storage.writePreferences(STORAGE_ID, Map.of("data.init", "", "applicationIds", "41"));
 
     ArgumentCaptor<Portlet> saved = ArgumentCaptor.forClass(Portlet.class);
-    verify(layoutService).save(eq(state), saved.capture());
+    verify(layoutService).saveCommitted(eq(STORAGE_ID), saved.capture());
     assertEquals("Untitled-12-a", saved.getValue().getValue("name"));
     assertEquals("", saved.getValue().getValue("data.init"));
     assertEquals("41", saved.getValue().getValue("applicationIds"));
     verify(layoutService, never()).load(any());
+    verify(layoutService, never()).save(any(ApplicationState.class), any(Portlet.class));
   }
 
-  /**
-   * The layout service's model of a window gone throws rather than being
-   * null: fails the mutant asking it first
-   */
   @Test
   void writePreferencesOfAMissingWindowWritesNothing() {
-    lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenThrow(new NullPointerException("no window data"));
-
     storage.writePreferences(STORAGE_ID, Map.of("data.init", ""));
 
+    verify(layoutService, never()).saveCommitted(any(), any());
     verify(layoutService, never()).save(any(ApplicationState.class), any(Portlet.class));
   }
 
@@ -208,7 +198,7 @@ class PortletWindowStorageTest {
     givenATaskRunsInTheCallingRequest();
 
     assertEquals("Untitled-12-a", storage.getOrSetPreference(STORAGE_ID, "name", "Untitled-12-b"));
-    verify(layoutService, never()).save(any(ApplicationState.class), any(Portlet.class));
+    verify(layoutService, never()).saveCommitted(any(), any());
   }
 
   @Test
@@ -218,7 +208,7 @@ class PortletWindowStorageTest {
 
     assertEquals("Untitled-12-b", storage.getOrSetPreference(STORAGE_ID, "name", "Untitled-12-b"));
     ArgumentCaptor<Portlet> saved = ArgumentCaptor.forClass(Portlet.class);
-    verify(layoutService).save(eq(state), saved.capture());
+    verify(layoutService).saveCommitted(eq(STORAGE_ID), saved.capture());
     assertEquals("Untitled-12-b", saved.getValue().getValue("name"));
     assertEquals("{}", saved.getValue().getValue("data.init"));
   }
@@ -285,7 +275,7 @@ class PortletWindowStorageTest {
       assertTrue(blocked.await(5, TimeUnit.SECONDS));
       assertThrows(WindowPreferencesTimeoutException.class, () -> storage.savePreferences(STORAGE_ID, Map.of("data.init", "")));
       release.countDown();
-      verify(layoutService, timeout(5000)).save(eq(state), any(Portlet.class));
+      verify(layoutService, timeout(5000)).saveCommitted(eq(STORAGE_ID), any(Portlet.class));
     } finally {
       callers.shutdownNow();
     }
@@ -338,12 +328,10 @@ class PortletWindowStorageTest {
   }
 
   private void givenTheCommittedWindow(Portlet portlet) {
-    lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);
-    lenient().when(applicationModel.getState()).thenReturn(state);
     committedPreferences.set(MOPUtils.serialize(portlet));
-    lenient().when(layoutService.save(eq(state), any(Portlet.class))).thenAnswer(invocation -> {
+    lenient().when(layoutService.saveCommitted(eq(STORAGE_ID), any(Portlet.class))).thenAnswer(invocation -> {
       committedPreferences.set(MOPUtils.serialize(invocation.getArgument(1, Portlet.class)));
-      return state;
+      return true;
     });
   }
 
@@ -352,12 +340,10 @@ class PortletWindowStorageTest {
   }
 
   private void givenTheWindow(Portlet portlet) {
-    lenient().when(layoutService.getApplicationModel(STORAGE_ID)).thenReturn(applicationModel);
-    lenient().when(applicationModel.getState()).thenReturn(state);
     byte[] preferences = MOPUtils.serialize(portlet);
     when(layoutService.loadCommitted(STORAGE_ID)).thenAnswer(invocation -> MOPUtils.unserialize(preferences));
     // What a stale cache entry would answer
-    lenient().when(layoutService.load(state)).thenReturn(portlet("name", "stale"));
+    lenient().when(layoutService.load(any())).thenReturn(portlet("name", "stale"));
   }
 
   private Portlet portlet(String... namesAndValues) {
