@@ -28,8 +28,8 @@
     small
     link
     icon
-    @focus="focused = true"
-    @blur="focused = false"
+    @focus="setFocused(true)"
+    @blur="setFocused(false)"
     @click="$emit('open-settings')">
     <v-icon
       :size="18"
@@ -51,5 +51,12 @@ export default {
     // Focused, it stays displayed: the pointer leaving the portlet clears its hover state while the focus stays here
     focused: false,
   }),
+  methods: {
+    // Told to the list, so that the cog shown by its focus keeps its room as when the portlet is hovered
+    setFocused(focused) {
+      this.focused = focused;
+      this.$emit('focused', focused);
+    },
+  },
 };
 </script>
