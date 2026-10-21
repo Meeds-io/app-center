@@ -57,8 +57,9 @@
       <my-applications-cog
         v-if="showCog"
         :displayed="hover"
-        :class="hover ? 'ms-2' : 'position-absolute'"
-        :style="!hover && 'inset-inline-end: 0'"
+        :class="cogShown ? 'ms-2' : 'position-absolute'"
+        :style="!cogShown && 'inset-inline-end: 0'"
+        @focused="cogFocused = $event"
         @open-settings="$emit('open-settings')" />
       <v-btn
         v-if="!hasApplications && favorites"
@@ -118,6 +119,8 @@ export default {
   data: () => ({
     loading: false,
     applicationsDrawer: false,
+    // The cog holds the focus, which shows it whatever the hover
+    cogFocused: false,
   }),
   computed: {
     headerLabel() {
@@ -127,6 +130,10 @@ export default {
     // platform's other widgets
     seeMoreIconDisplayed() {
       return this.hover && this.canEdit;
+    },
+    // Shown, the cog takes its room after 'see more'
+    cogShown() {
+      return this.hover || this.cogFocused;
     },
   },
   methods: {
