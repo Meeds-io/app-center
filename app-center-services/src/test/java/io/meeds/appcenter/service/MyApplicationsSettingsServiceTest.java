@@ -90,13 +90,14 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
+import org.exoplatform.social.metadata.model.MetadataType;
 
 import io.meeds.appcenter.constant.WindowKind;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
-import io.meeds.social.category.model.Category;
-import io.meeds.social.category.service.CategoryService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.translation.model.TranslationField;
@@ -142,7 +143,7 @@ class MyApplicationsSettingsServiceTest {
   private ApplicationCenterStorage      applicationCenterStorage;
 
   @MockitoBean
-  private CategoryService               categoryService;
+  private MetadataService               metadataService;
 
   @MockitoBean
   private SpaceService                  spaceService;
@@ -156,7 +157,7 @@ class MyApplicationsSettingsServiceTest {
   @BeforeEach
   void existingApplications() {
     lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
-    lenient().when(categoryService.getCategory(anyLong())).thenReturn(new Category());
+    lenient().when(metadataService.getMetadataById(anyLong())).thenAnswer(invocation -> metadata(invocation.getArgument(0), "category"));
   }
 
   @Test
@@ -799,7 +800,7 @@ class MyApplicationsSettingsServiceTest {
 
   @Test
   void getWritableSettingsDropsTheIdsOfDeletedCategories() {
-    when(categoryService.getCategory(4l)).thenReturn(null);
+    when(metadataService.getMetadataById(4l)).thenReturn(null);
     assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "7"),
                  settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
                                                             LISTING_MODE_SELECTED,
@@ -809,6 +810,20 @@ class MyApplicationsSettingsServiceTest {
                                                             "4,7")));
     Map<String, String> onlyDeleted = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "4");
     assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, onlyDeleted));
+  }
+
+  @Test
+  void getWritableSettingsDropsTheIdsOfOtherMetadata() {
+    when(metadataService.getMetadataById(5l)).thenReturn(metadata(5l, "tags"));
+    assertEquals(Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "7"),
+                 settingsService.getWritableSettings(PAGE_NAME, Map.of(LISTING_MODE,
+                                                            LISTING_MODE_SELECTED,
+                                                            SELECTION_MODE,
+                                                            SELECTION_MODE_CATEGORY,
+                                                            CATEGORY_IDS,
+                                                            "5,7")));
+    Map<String, String> onlyTag = Map.of(LISTING_MODE, LISTING_MODE_SELECTED, SELECTION_MODE, SELECTION_MODE_CATEGORY, CATEGORY_IDS, "5");
+    assertThrows(IllegalArgumentException.class, () -> settingsService.getWritableSettings(PAGE_NAME, onlyTag));
   }
 
   @Test
@@ -1351,6 +1366,13 @@ class MyApplicationsSettingsServiceTest {
     Space space = new Space();
     space.setId(id);
     return space;
+  }
+
+  private static Metadata metadata(long id, String type) {
+    Metadata metadata = new Metadata();
+    metadata.setId(id);
+    metadata.setType(new MetadataType(1L, type));
+    return metadata;
   }
 
   private CMSSetting setting(String name, String pageReference, long spaceId) {
