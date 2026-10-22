@@ -220,9 +220,6 @@ public class ApplicationCenterService {
 
   private static final int         MAX_URL_LENGTH                      = 500;
 
-  /** The metadata type of social's categories, which social keeps private */
-  private static final String      CATEGORY_METADATA_TYPE              = "category";
-
   @Autowired
   private UserACL                  userAcl;
 
@@ -2009,7 +2006,7 @@ public class ApplicationCenterService {
    */
   private boolean isCategory(long metadataId) {
     Metadata metadata = metadataService.getMetadataById(metadataId);
-    return metadata != null && StringUtils.equals(metadata.getTypeName(), CATEGORY_METADATA_TYPE);
+    return metadata != null && StringUtils.equals(metadata.getTypeName(), MyApplicationsSettingsService.CATEGORY_METADATA_TYPE);
   }
 
   /**

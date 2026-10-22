@@ -50,12 +50,13 @@ import org.exoplatform.services.security.IdentityConstants;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.metadata.MetadataService;
+import org.exoplatform.social.metadata.model.Metadata;
 
 import io.meeds.appcenter.constant.WindowKind;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
-import io.meeds.social.category.service.CategoryService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
 import io.meeds.social.translation.model.TranslationField;
@@ -143,6 +144,9 @@ public class MyApplicationsSettingsService {
   /** Most categories a Shortcuts portlet lists the apps of (D6). */
   public static final int     MAX_LISTED_CATEGORIES     = 100;
 
+  /** The metadata type of social's categories, which social keeps private */
+  public static final String  CATEGORY_METADATA_TYPE    = "category";
+
   public static final int     MIN_APPS_TO_LIST          = 1;
 
   public static final int     MAX_APPS_TO_LIST_LIMIT    = 100;
@@ -219,7 +223,7 @@ public class MyApplicationsSettingsService {
   private ApplicationCenterStorage applicationCenterStorage;
 
   @Autowired
-  private CategoryService     categoryService;
+  private MetadataService     metadataService;
 
   @Autowired
   private SpaceService        spaceService;
@@ -380,8 +384,10 @@ public class MyApplicationsSettingsService {
     String categoryIds = StringUtils.deleteWhitespace(parameters.get(CATEGORY_IDS));
     List<Long> categories = categoryIds == null ? null : parseIds(categoryIds, MAX_LISTED_CATEGORIES);
     if (categories != null) {
-      // The id of a deleted category is dropped as well
-      categories = categories.stream().filter(id -> categoryService.getCategory(id) != null).toList();
+      // The id of a deleted category is dropped as well, and so is the id of
+      // another metadata (a tag, a favorite), which social's getCategory would
+      // read as a category
+      categories = categories.stream().filter(this::isCategory).toList();
       settings.put(CATEGORY_IDS, StringUtils.join(categories, ","));
     }
     if (StringUtils.equals(listingMode, LISTING_MODE_SELECTED)
@@ -912,6 +918,14 @@ public class MyApplicationsSettingsService {
   private boolean isListable(Application application, String settingName) {
     return application != null
            && (!application.isContextual() || StringUtils.equals(application.getContextSettingName(), settingName));
+  }
+
+  /**
+   * @return true when the metadata exists and is a category
+   */
+  private boolean isCategory(long metadataId) {
+    Metadata metadata = metadataService.getMetadataById(metadataId);
+    return metadata != null && StringUtils.equals(metadata.getTypeName(), CATEGORY_METADATA_TYPE);
   }
 
   private boolean hasLabels(TranslationField translationField) {
