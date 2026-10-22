@@ -191,7 +191,9 @@ export default {
           || this.settings.selectionMode !== this.selectionMode
           || this.savedApplicationIds.join(',') !== this.postedApplicationIds.join(',')
           || this.savedCategoryIds.join(',') !== this.postedCategoryIds.join(',')
-          || this.settings.showHeader !== this.showHeader || this.savedMaxAppsToList !== this.maxAppsToList
+          || this.settings.showHeader !== this.showHeader
+          // Against the stored value, not its clamped display: a value stored out of the bounds can be saved back within them
+          || Number(this.settings.maxAppsToList) !== this.maxAppsToList
           || !isSameDisplay(this.savedDisplay, this.display)
           || JSON.stringify(this.currentTranslations) !== JSON.stringify(this.translations);
     },
@@ -204,7 +206,7 @@ export default {
       return applications.slice(0, 5);
     },
     savedMaxAppsToList() {
-      // A value stored before the 1–100 bounds is shown, and compared, clamped
+      // A value stored before the 1–100 bounds is shown clamped
       const value = Number(this.settings.maxAppsToList);
       return Number.isNaN(value) ? 4 : Math.min(Math.max(value, 1), 100);
     },
