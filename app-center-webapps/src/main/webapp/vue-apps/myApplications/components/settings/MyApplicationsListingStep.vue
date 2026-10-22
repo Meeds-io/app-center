@@ -32,7 +32,7 @@
     </v-radio>
     <div v-if="listingMode === 'FAVORITES'" class="d-flex align-center mb-2">
       <label class="v-label text-color">
-        {{ $t('myApplications.numberToList.label') }}
+        {{ $t('myApplications.numberOfAppsToList.label') }}
       </label>
       <div class="ms-auto">
         <number-input
