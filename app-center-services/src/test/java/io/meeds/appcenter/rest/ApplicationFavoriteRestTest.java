@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Arrays;
@@ -70,6 +71,8 @@ public class ApplicationFavoriteRestTest {
 
   private static final String FAVORITES_PATH = "/favorites";  // NOSONAR
 
+  private static final String PRIVATE_NO_STORE = "no-store, private";
+
   private static final String SIMPLE_USER    = "simple";
 
   private static final String TEST_PASSWORD  = "testPassword";
@@ -113,7 +116,9 @@ public class ApplicationFavoriteRestTest {
   @Test
   void getApplicationFavorites() throws Exception {
     ResultActions response = mockMvc.perform(get(FAVORITES_PATH).with(testSimpleUser()));
-    response.andExpect(status().isOk());
+    // The URL is the same for every user: only the directives keep a shared
+    // cache from serving one user's favorites to another
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test

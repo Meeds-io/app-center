@@ -18,6 +18,8 @@
  */
 package io.meeds.appcenter.rest;
 
+import static io.meeds.appcenter.rest.util.RestUtils.privateAnswer;
+
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Objects;
@@ -82,22 +84,22 @@ public class ApplicationRest {
   @Operation(summary = "Retrieves all authorized applications for currently authenticated user", method = "GET", description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ApplicationList getActiveApplications(
-                                               HttpServletRequest request,
-                                               @Parameter(description = "Query Offset", required = true)
-                                               @RequestParam("offset")
-                                               Optional<Integer> offset,
-                                               @Parameter(description = "Query results limit", required = true)
-                                               @RequestParam("limit")
-                                               Optional<Integer> limit,
-                                               @Parameter(description = "Keyword to search in applications title and url", required = false)
-                                               @RequestParam("keyword")
-                                               Optional<String> keyword) {
-    return appCenterService.getActiveApplications(offset.orElse(0),
-                                                  limit.orElse(0),
-                                                  keyword.orElse(null),
-                                                  request.getLocale(),
-                                                  request.getRemoteUser());
+  public ResponseEntity<ApplicationList> getActiveApplications(
+                                                               HttpServletRequest request,
+                                                               @Parameter(description = "Query Offset", required = true)
+                                                               @RequestParam("offset")
+                                                               Optional<Integer> offset,
+                                                               @Parameter(description = "Query results limit", required = true)
+                                                               @RequestParam("limit")
+                                                               Optional<Integer> limit,
+                                                               @Parameter(description = "Keyword to search in applications title and url", required = false)
+                                                               @RequestParam("keyword")
+                                                               Optional<String> keyword) {
+    return privateAnswer(appCenterService.getActiveApplications(offset.orElse(0),
+                                                                limit.orElse(0),
+                                                                keyword.orElse(null),
+                                                                request.getLocale(),
+                                                                request.getRemoteUser()));
   }
 
   @GetMapping(path = "all")
@@ -105,21 +107,21 @@ public class ApplicationRest {
   @Operation(summary = "Retrieves all available applications", method = "GET", description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
     @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ApplicationList getApplications(
-                                         HttpServletRequest request,
-                                         @Parameter(description = "Query Offset", required = true)
-                                         @RequestParam("offset")
-                                         Optional<Integer> offset,
-                                         @Parameter(description = "Query results limit", required = true)
-                                         @RequestParam("limit")
-                                         Optional<Integer> limit,
-                                         @Parameter(description = "Keyword to search in applications title and url", required = true)
-                                         @RequestParam("keyword")
-                                         Optional<String> keyword) {
-    return appCenterService.getApplications(offset.orElse(0),
-                                            limit.orElse(0),
-                                            keyword.orElse(null),
-                                            request.getLocale());
+  public ResponseEntity<ApplicationList> getApplications(
+                                                         HttpServletRequest request,
+                                                         @Parameter(description = "Query Offset", required = true)
+                                                         @RequestParam("offset")
+                                                         Optional<Integer> offset,
+                                                         @Parameter(description = "Query results limit", required = true)
+                                                         @RequestParam("limit")
+                                                         Optional<Integer> limit,
+                                                         @Parameter(description = "Keyword to search in applications title and url", required = true)
+                                                         @RequestParam("keyword")
+                                                         Optional<String> keyword) {
+    return privateAnswer(appCenterService.getApplications(offset.orElse(0),
+                                                          limit.orElse(0),
+                                                          keyword.orElse(null),
+                                                          request.getLocale()));
   }
 
   @PostMapping
@@ -190,8 +192,8 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Retrieves app-center global settings", method = "GET")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
-  public ApplicationCenterSettings getSettings() {
-    return appCenterService.getSettings();
+  public ResponseEntity<ApplicationCenterSettings> getSettings() {
+    return privateAnswer(appCenterService.getSettings());
   }
 
   @PostMapping(path = "/settings")
@@ -214,12 +216,12 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Retrieves the applications stuck to each layout side by the authenticated user", method = "GET")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
-  public ApplicationPlacements getApplicationPlacements(
-                                                        HttpServletRequest request,
-                                                        @Parameter(description = "Current site name, used to compute whether stuck panels may display on it")
-                                                        @RequestParam(name = "siteName", required = false)
-                                                        String siteName) {
-    return appCenterService.getApplicationPlacements(request.getRemoteUser(), siteName);
+  public ResponseEntity<ApplicationPlacements> getApplicationPlacements(
+                                                                        HttpServletRequest request,
+                                                                        @Parameter(description = "Current site name, used to compute whether stuck panels may display on it")
+                                                                        @RequestParam(name = "siteName", required = false)
+                                                                        String siteName) {
+    return privateAnswer(appCenterService.getApplicationPlacements(request.getRemoteUser(), siteName));
   }
 
   @PutMapping(path = "placements/{side}")
