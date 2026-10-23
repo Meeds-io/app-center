@@ -34,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -221,6 +222,31 @@ public class ApplicationRestTest {
                                                   .param("ids", "1")
                                                   .with(testSimpleUser()))
            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void listingAndSuggestionAnswersAreKeptOutOfSharedCaches() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenReturn(List.of());
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenReturn(List.of());
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any())).thenReturn(List.of());
+    for (String path : List.of(LISTED_APPLICATIONS_PATH, CONTEXT_APPLICATIONS_PATH, CONTEXT_SUGGEST_PATH)) {
+      mockMvc.perform(get(path).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+             .andExpect(status().isOk())
+             .andExpect(header().string("Cache-Control", "no-store, private"));
+    }
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
   }
 
   @Test
