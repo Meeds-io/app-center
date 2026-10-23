@@ -32,7 +32,7 @@ import org.springframework.http.ResponseEntity;
  */
 public class RestUtils {
 
-  public static final CacheControl PRIVATE_NO_STORE = CacheControl.noStore().cachePrivate();
+  private static final CacheControl PRIVATE_NO_STORE = CacheControl.noStore().cachePrivate();
 
   private RestUtils() {
     // Utility class

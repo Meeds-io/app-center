@@ -69,11 +69,11 @@ import lombok.SneakyThrows;
 @ExtendWith(MockitoExtension.class)
 public class ApplicationFavoriteRestTest {
 
-  private static final String FAVORITES_PATH   = "/favorites";        // NOSONAR
+  private static final String FAVORITES_PATH = "/favorites";  // NOSONAR
 
   private static final String PRIVATE_NO_STORE = "no-store, private";
 
-  private static final String SIMPLE_USER      = "simple";
+  private static final String SIMPLE_USER    = "simple";
 
   private static final String TEST_PASSWORD  = "testPassword";
 
