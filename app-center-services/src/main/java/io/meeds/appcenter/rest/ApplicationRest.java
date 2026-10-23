@@ -30,6 +30,7 @@ import org.exoplatform.commons.file.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("applications")
@@ -72,6 +74,14 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ApplicationRest {
 
   private static final Log         LOG = ExoLogger.getLogger(ApplicationRest.class);
+
+  /**
+   * Cache directives of an answer that depends on the current user from a URL
+   * that names no user: the platform sets none, so a shared cache could serve
+   * it to another user. Set before the call, a refusal the handler renders
+   * carries them too.
+   */
+  private static final String      NOT_SHARED_CACHE_CONTROL = CacheControl.noStore().cachePrivate().getHeaderValue();
 
   @Autowired
   private ApplicationCenterService appCenterService;
@@ -110,6 +120,7 @@ public class ApplicationRest {
     @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
   public List<Application> getListedApplications(
                                                  HttpServletRequest request,
+                                                 HttpServletResponse response,
                                                  @Parameter(description = "CMS setting name of the portlet window", required = true)
                                                  @RequestParam("settingName")
                                                  String settingName,
@@ -119,6 +130,7 @@ public class ApplicationRest {
                                                  @Parameter(description = "Ordered category ids, comma-separated", required = false)
                                                  @RequestParam(name = "categoryIds", required = false)
                                                  List<Long> categoryIds) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
     try {
       return appCenterService.getListedApplications(new ApplicationListFilter(settingName, ids, categoryIds),
                                                     request.getLocale(),
@@ -139,12 +151,14 @@ public class ApplicationRest {
     @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
   public List<Application> getContextApplications(
                                                   HttpServletRequest request,
+                                                  HttpServletResponse response,
                                                   @Parameter(description = "CMS setting name of the portlet window", required = true)
                                                   @RequestParam("settingName")
                                                   String settingName,
                                                   @Parameter(description = "Ordered application ids, comma-separated", required = false)
                                                   @RequestParam(name = "ids", required = false)
                                                   List<Long> ids) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
     try {
       return appCenterService.getContextApplications(new ApplicationListFilter(settingName, ids),
                                                      request.getLocale(),
@@ -167,6 +181,7 @@ public class ApplicationRest {
     @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
   public List<Application> getContextSuggestions(
                                                  HttpServletRequest request,
+                                                 HttpServletResponse response,
                                                  @Parameter(description = "CMS setting name of the portlet window", required = true)
                                                  @RequestParam("settingName")
                                                  String settingName,
@@ -182,6 +197,7 @@ public class ApplicationRest {
                                                  @Parameter(description = "Query results limit, at most 20", required = false)
                                                  @RequestParam(name = "limit", defaultValue = "20")
                                                  int limit) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
     try {
       return appCenterService.getContextSuggestions(settingName,
                                                     keyword,
