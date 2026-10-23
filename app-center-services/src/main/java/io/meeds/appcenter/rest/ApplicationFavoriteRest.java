@@ -18,6 +18,8 @@
  */
 package io.meeds.appcenter.rest;
 
+import static io.meeds.appcenter.rest.util.RestUtils.privateAnswer;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -57,13 +60,15 @@ public class ApplicationFavoriteRest {
              description = "Return list of applications in json format")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public ApplicationList getFavoriteApplicationsList(HttpServletRequest request,
-                                                     @RequestParam(name = "size", required = false) Integer size,
-                                                     @PageableDefault(size = 20) Pageable pageable) {
+  public ResponseEntity<ApplicationList> getFavoriteApplicationsList(HttpServletRequest request,
+                                                                     @RequestParam(name = "size", required = false) Integer size,
+                                                                     @PageableDefault(size = 20) Pageable pageable) {
     if (size != null && size == 0) {
       pageable = Pageable.unpaged();
     }
-    return appCenterService.getMandatoryAndFavoriteApplications(pageable, request.getRemoteUser(), request.getLocale());
+    return privateAnswer(appCenterService.getMandatoryAndFavoriteApplications(pageable,
+                                                                              request.getRemoteUser(),
+                                                                              request.getLocale()));
   }
 
   @PostMapping(path = "{applicationId}")

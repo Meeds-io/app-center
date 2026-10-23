@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
@@ -71,6 +72,8 @@ class ApplicationBadgeRestTest {
 
   private static final String     BADGE_NAME     = "emailUnread";
 
+  private static final String     PRIVATE_NO_STORE = "no-store, private";
+
   private static final String     SIMPLE_USER    = "simple";
 
   private static final String     ADMIN_USER     = "admin";
@@ -107,7 +110,9 @@ class ApplicationBadgeRestTest {
 
     ResultActions response = mockMvc.perform(get(BADGES_PATH + "/" + BADGE_NAME).with(testSimpleUser()));
 
-    response.andExpect(status().isOk()).andExpect(content().string("4"));
+    response.andExpect(status().isOk())
+            .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE))
+            .andExpect(content().string("4"));
   }
 
   @Test
@@ -116,7 +121,7 @@ class ApplicationBadgeRestTest {
 
     ResultActions response = mockMvc.perform(get(BADGES_PATH + "/unknown").with(testSimpleUser()));
 
-    response.andExpect(status().isNotFound());
+    response.andExpect(status().isNotFound()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test
@@ -127,7 +132,7 @@ class ApplicationBadgeRestTest {
 
     // Reading a count for an application the user may not access must not be
     // possible, whatever the badge name they guess
-    response.andExpect(status().isForbidden());
+    response.andExpect(status().isForbidden()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test
@@ -142,7 +147,7 @@ class ApplicationBadgeRestTest {
 
     ResultActions response = mockMvc.perform(get(PROVIDERS_PATH).with(testAdminUser()));
 
-    response.andExpect(status().isOk());
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   private RequestPostProcessor testAdminUser() {

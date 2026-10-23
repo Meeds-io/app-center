@@ -18,16 +18,19 @@
  */
 package io.meeds.appcenter.rest;
 
+import static io.meeds.appcenter.rest.util.RestUtils.privateAnswer;
+import static io.meeds.appcenter.rest.util.RestUtils.privateRefusal;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import org.exoplatform.commons.exception.ObjectNotFoundException;
 
@@ -59,17 +62,17 @@ public class ApplicationBadgeRest {
                           @ApiResponse(responseCode = "403", description = "Forbidden"),
                           @ApiResponse(responseCode = "404", description = "Badge not found"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public long getBadge(
-                       HttpServletRequest request,
-                       @Parameter(description = "Badge technical name", required = true)
-                       @PathVariable("badgeName")
-                       String badgeName) {
+  public ResponseEntity<Long> getBadge(
+                                       HttpServletRequest request,
+                                       @Parameter(description = "Badge technical name", required = true)
+                                       @PathVariable("badgeName")
+                                       String badgeName) {
     try {
-      return badgeService.getBadge(badgeName, request.getRemoteUser());
+      return privateAnswer(badgeService.getBadge(badgeName, request.getRemoteUser()));
     } catch (ObjectNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+      return privateRefusal(HttpStatus.NOT_FOUND);
     } catch (IllegalAccessException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+      return privateRefusal(HttpStatus.FORBIDDEN);
     }
   }
 
@@ -82,8 +85,8 @@ public class ApplicationBadgeRest {
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
                           @ApiResponse(responseCode = "401", description = "Unauthorized"),
                           @ApiResponse(responseCode = "500", description = "Internal server error") })
-  public List<ApplicationBadgeProvider> getBadgeProviders() {
-    return badgeService.getBadgeProviders();
+  public ResponseEntity<List<ApplicationBadgeProvider>> getBadgeProviders() {
+    return privateAnswer(badgeService.getBadgeProviders());
   }
 
 }
