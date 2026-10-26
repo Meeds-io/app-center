@@ -62,9 +62,9 @@ public class ApplicationPinRest {
 
   @PutMapping(path = "{applicationId}")
   @Secured("users")
-  @Operation(summary = "Pins an application to the topbar of the authenticated user", method = "PUT", description = "Pins an active application the authenticated user can access, after the applications already pinned")
+  @Operation(summary = "Pins an application to the topbar of the authenticated user", method = "PUT", description = "Pins an active application the authenticated user can access, after the applications already pinned, up to 100 pinned applications")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "Invalid application id, or inactive application"),
+    @ApiResponse(responseCode = "400", description = "Invalid application id, inactive application (appCenter.pin.pinNotAllowed), or an application not pinned yet while 100 applications are already pinned (appCenter.pin.tooManyPins)"),
     @ApiResponse(responseCode = "403", description = "The authenticated user can't access the application"),
     @ApiResponse(responseCode = "404", description = "Application not found") })
   public void pinApplication(
