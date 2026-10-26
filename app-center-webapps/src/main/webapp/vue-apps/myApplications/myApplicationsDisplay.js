@@ -96,17 +96,17 @@ export function getTemplateShowHeader(template) {
 }
 
 // Where the settings cog is displayed, whatever 'see more' does: HEADER on the header line, as the legacy layout does
-// and a Column with its header, TOP over the portlet's top end in a Column without its header line, so that the list
-// keeps no line for it, LIST at the end of the apps, in Row and Cards
+// and any template with its header, TOP over the portlet's top end in a Column without its header line, so that the
+// list keeps no line for it, LIST at the end of the apps, in Row and Cards without their header line
 export function getCogPlacement(display, showHeader) {
-  if (!display || (display.template === 'COLUMN' && showHeader)) {
+  if (!display || showHeader) {
     return 'HEADER';
   }
   return display.template === 'COLUMN' ? 'TOP' : 'LIST';
 }
 
-// Where 'see more' is displayed: on the header line along with the cog, else at the end of the apps; null when the
-// display hides it
+// Where 'see more' is displayed: on the header line along with the cog, whatever the template, else at the end of the
+// apps; null when the display hides it
 export function getSeeMorePlacement(display, showHeader) {
   if (display && !display.showSeeMore) {
     return null;

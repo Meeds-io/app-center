@@ -44,7 +44,8 @@
       class="mt-4 pa-2 border-box-sizing overflow-hidden"
       outlined
       flat>
-      <!-- The header line as the portlet draws it: its title, then See more when the template places it there -->
+      <!-- The header line as the portlet draws it: its title, then See more, whatever the template, when it is shown
+           and apps are listed -->
       <div
         v-if="showHeader"
         class="d-flex align-center mb-2">
@@ -52,7 +53,7 @@
           {{ headerTitle }}
         </span>
         <my-applications-see-more
-          v-if="seeMorePlacement === 'HEADER'"
+          v-if="seeMorePlacement === 'HEADER' && previewApplications.length"
           class="ms-auto ps-2"
           preview />
       </div>
