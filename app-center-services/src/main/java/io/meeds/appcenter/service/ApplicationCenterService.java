@@ -624,10 +624,11 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Pins an active application the user can access to his topbar, after the
+   * Pins an active application the user can access to the user's topbar, after the
    * applications already pinned. An application already pinned keeps its
-   * place. The written list keeps only the applications that still exist and
-   * that the user can still access.
+   * place. The written list drops the applications that no longer exist, and
+   * keeps the ones the user can't access anymore, which the pages don't
+   * display and display again once the access is given back.
    *
    * @param applicationId technical application id
    * @param username user login
@@ -652,7 +653,7 @@ public class ApplicationCenterService {
     if (!application.isActive()) {
       throw new IllegalArgumentException(PIN_NOT_ALLOWED_MESSAGE);
     }
-    List<Long> pinnedApplicationIds = getAccessiblePinnedApplicationIds(username);
+    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
     if (!pinnedApplicationIds.contains(applicationId)) {
       pinnedApplicationIds.add(applicationId);
     }
@@ -662,8 +663,8 @@ public class ApplicationCenterService {
   /**
    * Unpins an application from the topbar of the given user. An application
    * that isn't pinned is left as is, so the operation stays idempotent. The
-   * written list keeps only the applications that still exist and that the
-   * user can still access.
+   * written list drops the applications that no longer exist, as
+   * {@link #pinApplication(long, String)} does.
    *
    * @param applicationId technical application id
    * @param username user login
@@ -672,7 +673,7 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    List<Long> pinnedApplicationIds = getAccessiblePinnedApplicationIds(username);
+    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
     pinnedApplicationIds.remove(Long.valueOf(applicationId));
     pinStorage.setPinnedApplicationIds(username, pinnedApplicationIds);
   }
@@ -1017,13 +1018,10 @@ public class ApplicationCenterService {
     }
   }
 
-  private List<Long> getAccessiblePinnedApplicationIds(String username) {
+  private List<Long> getExistingPinnedApplicationIds(String username) {
     return pinStorage.getPinnedApplicationIds(username)
                      .stream()
-                     .filter(id -> {
-                       Application application = appCenterStorage.getApplication(id);
-                       return application != null && canAccess(application, username);
-                     })
+                     .filter(id -> appCenterStorage.getApplication(id) != null)
                      .collect(Collectors.toCollection(ArrayList::new));
   }
 

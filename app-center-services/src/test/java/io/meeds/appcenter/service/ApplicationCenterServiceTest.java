@@ -786,9 +786,14 @@ public class ApplicationCenterServiceTest {
     verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
   }
 
+  /**
+   * A pin of a deleted application is dropped, a pin of an application the
+   * user can't access right now is kept: it is displayed again once the
+   * access is given back.
+   */
   @Test
   @SneakyThrows
-  void pinApplicationAppendsAfterTheAccessiblePins() {
+  void pinApplicationAppendsAfterThePinsOfExistingApplications() {
     Application application = accessibleApplication(ID);
     when(appCenterStorage.getApplication(ID)).thenReturn(application);
     when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
@@ -797,7 +802,7 @@ public class ApplicationCenterServiceTest {
     when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 7l));
 
     applicationCenterService.pinApplication(ID, TEST_USER);
-    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, ID));
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l, ID));
   }
 
   @Test
@@ -817,10 +822,12 @@ public class ApplicationCenterServiceTest {
 
     when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
     when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
-    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, ID));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, ID, 7l));
 
     applicationCenterService.unpinApplication(ID, TEST_USER);
-    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Collections.singletonList(5l));
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l));
   }
 
   @Test

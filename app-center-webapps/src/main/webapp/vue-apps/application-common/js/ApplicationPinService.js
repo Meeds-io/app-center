@@ -16,8 +16,20 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+// The server rewrites the whole list of pins on each pin and unpin: the
+// requests of the page are sent one after the other, so that two quick clicks
+// can't overwrite each other, and a refresh never reads an older list than
+// the last save
+let pendingRequest = Promise.resolve();
+
+function enqueue(request) {
+  const result = pendingRequest.then(request);
+  pendingRequest = result.catch(() => null);
+  return result;
+}
+
 export function getPinnedApplications() {
-  return fetch('/app-center/rest/pins', {
+  return enqueue(() => fetch('/app-center/rest/pins', {
     method: 'GET',
     credentials: 'include',
   })
@@ -27,12 +39,12 @@ export function getPinnedApplications() {
       } else {
         throw new Error('Error when getting pinned applications');
       }
-    })
+    }))
     .catch(() => []);
 }
 
 export function pinApplication(applicationId) {
-  return fetch(`/app-center/rest/pins/${applicationId}`, {
+  return enqueue(() => fetch(`/app-center/rest/pins/${applicationId}`, {
     method: 'PUT',
     credentials: 'include',
   })
@@ -40,11 +52,11 @@ export function pinApplication(applicationId) {
       if (!resp?.ok) {
         throw new Error('Error when pinning application');
       }
-    });
+    }));
 }
 
 export function unpinApplication(applicationId) {
-  return fetch(`/app-center/rest/pins/${applicationId}`, {
+  return enqueue(() => fetch(`/app-center/rest/pins/${applicationId}`, {
     method: 'DELETE',
     credentials: 'include',
   })
@@ -52,5 +64,5 @@ export function unpinApplication(applicationId) {
       if (!resp?.ok) {
         throw new Error('Error when unpinning application');
       }
-    });
+    }));
 }
