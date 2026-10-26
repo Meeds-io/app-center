@@ -23,11 +23,22 @@
     :class="contentClass"
     class="d-flex align-center full-width">
     <app-center-badge
-      v-if="!preview"
+      v-if="!preview && iconDisplayed"
       :badge-name="application.badgeName"
       :class="horizontal ? 'align-self-start' : 'mx-auto'"
       top-spacing="-5px"
       x-spacing="12px" />
+    <!-- With no icon, the badge lies on the tile's top end corner, over its edges, so that it never covers the name:
+         the corner of the tile, or of its lifted face, whichever is drawn -->
+    <div
+      v-else-if="!preview"
+      class="position-absolute t-0"
+      style="inset-inline-end: 0">
+      <app-center-badge
+        :badge-name="application.badgeName"
+        :x-spacing="cornerBadgeXSpacing"
+        top-spacing="-5px" />
+    </div>
     <template v-if="iconDisplayed">
       <v-img
         v-if="application.imageUrl"
@@ -133,6 +144,11 @@ export default {
     iconPixels() {
       return this.template ? this.displaySettings.iconSize : 45;
     },
+    // Past the tile's 1px border, the 20px badge goes 4px over its top and its end, the room the tile's margin leaves
+    // before the list clips. A column's app spans the list, which clips at its end: its badge ends on the tile's end
+    cornerBadgeXSpacing() {
+      return this.template === 'COLUMN' ? '-19px' : '-15px';
+    },
     iconClass() {
       return this.horizontal ? 'flex-grow-0 flex-shrink-0' : 'mx-auto';
     },
@@ -143,7 +159,8 @@ export default {
       // One line, and the whole name on two lines at most while the app is hovered or focused
       const lines = this.expanded ? 'text-truncate-2' : 'text-truncate';
       if (this.horizontal) {
-        return [lines, this.iconDisplayed && 'ms-2'];
+        // With no icon, every name of a column ends before the room of a badge on its tile's end
+        return [lines, this.iconDisplayed && 'ms-2', !this.iconDisplayed && this.template === 'COLUMN' && 'me-3'];
       }
       // Centered in a column, a single line is as wide as its text unless bounded by the tile
       return [lines, 'max-width-fit', this.iconDisplayed && 'mt-2'];
