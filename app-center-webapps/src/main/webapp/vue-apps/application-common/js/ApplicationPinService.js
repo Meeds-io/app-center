@@ -48,11 +48,7 @@ export function pinApplication(applicationId) {
     method: 'PUT',
     credentials: 'include',
   })
-    .then(resp => {
-      if (!resp?.ok) {
-        throw new Error('Error when pinning application');
-      }
-    }));
+    .then(resp => checkResponse(resp, 'Error when pinning application')));
 }
 
 export function unpinApplication(applicationId) {
@@ -60,9 +56,14 @@ export function unpinApplication(applicationId) {
     method: 'DELETE',
     credentials: 'include',
   })
-    .then(resp => {
-      if (!resp?.ok) {
-        throw new Error('Error when unpinning application');
-      }
-    }));
+    .then(resp => checkResponse(resp, 'Error when unpinning application')));
+}
+
+// A refused request is rejected with the message the server sent, which is
+// the key of its label when the request is invalid
+async function checkResponse(resp, defaultMessage) {
+  if (!resp?.ok) {
+    const error = resp && await resp.json().catch(() => null);
+    throw new Error(error?.message || defaultMessage);
+  }
 }

@@ -37,28 +37,35 @@ import org.exoplatform.services.log.Log;
 import io.meeds.social.util.JsonUtils;
 
 /**
- * Stores the ordered list of applications a user pinned to the topbar, as the
- * JSON array of their ids, under the key the browser used to write through the
- * generic settings REST, so that the pins stored before this endpoint existed
- * are read as they are.
+ * Stores the ordered list of applications a user pinned to the topbar as a
+ * JSON array of their ids, under {@link Context#USER},
+ * {@code APPLICATION:PinnedApplications}, {@code pins}: the key of the
+ * existing pins, which are read as they are.
  */
 @Component
 public class ApplicationPinStorage {
 
-  public static final Scope  PINS_SCOPE = Scope.APPLICATION.id("PinnedApplications");
+  public static final Scope  PINS_SCOPE              = Scope.APPLICATION.id("PinnedApplications");
 
-  public static final String PINS_KEY   = "pins";
+  public static final String PINS_KEY                = "pins";
 
-  private static final Log   LOG        = ExoLogger.getLogger(ApplicationPinStorage.class);
+  /**
+   * Bound of the list, far above what the topbar and the launcher display:
+   * the value of the setting can also be written around this storage.
+   */
+  public static final int    MAX_PINNED_APPLICATIONS = 100;
+
+  private static final Log   LOG                     = ExoLogger.getLogger(ApplicationPinStorage.class);
 
   @Autowired
   private SettingService     settingService;
 
   /**
    * @param username user login
-   * @return the stored application ids, in pin order, without duplicates or
-   *         non-positive values; an empty list when nothing is stored or the
-   *         stored value is not a JSON array of numbers
+   * @return the first {@link #MAX_PINNED_APPLICATIONS} stored application ids,
+   *         in pin order, without duplicates or non-positive values; an empty
+   *         list when nothing is stored or the stored value is not a JSON array
+   *         of numbers
    */
   public List<Long> getPinnedApplicationIds(String username) {
     SettingValue<?> value = settingService.get(Context.USER.id(username), PINS_SCOPE, PINS_KEY);
@@ -72,6 +79,7 @@ public class ApplicationPinStorage {
                                             .filter(Objects::nonNull)
                                             .filter(id -> id > 0)
                                             .distinct()
+                                            .limit(MAX_PINNED_APPLICATIONS)
                                             .toList();
     } catch (Exception e) {
       LOG.debug("Pinned applications of user {} aren't a JSON array of ids, read as none", username, e);

@@ -439,18 +439,22 @@ export default {
     async tooglePin(application, pin) {
       this.loading = true;
       try {
+        const error = await (pin ? this.$applicationPinService.pinApplication(application.id) : this.$applicationPinService.unpinApplication(application.id))
+          .then(() => null, e => e);
+        if (error) {
+          // the server answers a refused pin with the key of its label
+          const messageKey = this.$te(error.message) && error.message || (pin ? 'appCenter.appLauncher.pinError' : 'appCenter.appLauncher.unpinError');
+          this.$root.$emit('alert-message', this.$t(messageKey), 'error');
+          return;
+        }
         if (pin) {
-          await this.$applicationPinService.pinApplication(application.id);
           this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.pinAdded'), 'success');
           document.dispatchEvent(new CustomEvent('app-center-application-unpinned', {detail: this.application}));
         } else {
-          await this.$applicationPinService.unpinApplication(application.id);
           this.$root.$emit('alert-message', this.$t('appCenter.appLauncher.pinRemoved'), 'success');
           document.dispatchEvent(new CustomEvent('app-center-application-pinned', {detail: this.application}));
         }
         await this.refresh();
-      } catch {
-        this.$root.$emit('alert-message', this.$t(pin ? 'appCenter.appLauncher.pinError' : 'appCenter.appLauncher.unpinError'), 'error');
       } finally {
         this.loading = false;
       }

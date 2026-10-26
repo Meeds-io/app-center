@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -39,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -803,6 +805,23 @@ public class ApplicationCenterServiceTest {
 
     applicationCenterService.pinApplication(ID, TEST_USER);
     verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l, ID));
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationRefusesBeyondTheMaximum() {
+    List<Long> pinnedApplicationIds = LongStream.range(100, 100l + ApplicationPinStorage.MAX_PINNED_APPLICATIONS)
+                                                .boxed()
+                                                .toList();
+    when(appCenterStorage.getApplication(anyLong())).thenReturn(accessibleApplication(ID));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(pinnedApplicationIds);
+
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+
+    // an application already pinned is still accepted, at its place
+    applicationCenterService.pinApplication(100l, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, pinnedApplicationIds);
   }
 
   @Test

@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -86,14 +88,23 @@ class ApplicationPinStorageTest {
   }
 
   /**
-   * A value written through the generic settings REST was printed as is in
-   * the inline scripts of the topbar JSPs: whatever is stored, the read
-   * returns application ids only.
+   * Whatever is stored, the read returns application ids only: the topbar JSPs
+   * print the result into their inline scripts.
    */
   @Test
   void getPinnedApplicationIdsReturnsIdsOnly() {
     storePins("[1]);alert(1);//");
     assertEquals(Collections.singletonList(1l), pinStorage.getPinnedApplicationIds(USERNAME));
+  }
+
+  @Test
+  void getPinnedApplicationIdsIsBounded() {
+    storePins(LongStream.rangeClosed(1, ApplicationPinStorage.MAX_PINNED_APPLICATIONS + 1l)
+                        .boxed()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",", "[", "]")));
+    assertEquals(LongStream.rangeClosed(1, ApplicationPinStorage.MAX_PINNED_APPLICATIONS).boxed().toList(),
+                 pinStorage.getPinnedApplicationIds(USERNAME));
   }
 
   @Test
@@ -106,7 +117,7 @@ class ApplicationPinStorageTest {
     verify(settingService).set(context.capture(), scope.capture(), eq(ApplicationPinStorage.PINS_KEY), value.capture());
     assertEquals(USERNAME, context.getValue().getId());
     assertEquals("PinnedApplications", scope.getValue().getId());
-    // the format the browser wrote before, so that both read each other's value
+    // the stored format: a JSON array of numbers
     assertEquals("[3,1]", value.getValue().getValue());
   }
 

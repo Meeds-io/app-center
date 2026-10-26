@@ -131,6 +131,8 @@ public class ApplicationCenterService {
 
   private static final String      PIN_NOT_ALLOWED_MESSAGE             = "appCenter.pin.pinNotAllowed";
 
+  private static final String      TOO_MANY_PINS_MESSAGE               = "appCenter.pin.tooManyPins";
+
   private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
   private static final Pattern     CONTROL_CHARS_PATTERN               = Pattern.compile("[\\t\\n\\r]");
@@ -624,16 +626,20 @@ public class ApplicationCenterService {
   }
 
   /**
-   * Pins an active application the user can access to the user's topbar, after the
-   * applications already pinned. An application already pinned keeps its
-   * place. The written list drops the applications that no longer exist, and
-   * keeps the ones the user can't access anymore, which the pages don't
-   * display and display again once the access is given back.
+   * Pins an active application the user can access to the user's topbar, after
+   * the applications already pinned, up to
+   * {@link ApplicationPinStorage#MAX_PINNED_APPLICATIONS}. An application
+   * already pinned keeps its place. The written list drops the applications
+   * that no longer exist, and keeps the ones the user can't access anymore,
+   * which the pages don't display and display again once the access is given
+   * back.
    *
    * @param applicationId technical application id
    * @param username user login
    * @throws ApplicationNotFoundException when the application doesn't exist
    * @throws IllegalAccessException when the user can't access the application
+   * @throws IllegalArgumentException when the application is inactive, or the
+   *           user already pinned the maximum number of applications
    */
   public void pinApplication(long applicationId, String username) throws ApplicationNotFoundException,
                                                                   IllegalAccessException {
@@ -655,6 +661,9 @@ public class ApplicationCenterService {
     }
     List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
     if (!pinnedApplicationIds.contains(applicationId)) {
+      if (pinnedApplicationIds.size() >= ApplicationPinStorage.MAX_PINNED_APPLICATIONS) {
+        throw new IllegalArgumentException(TOO_MANY_PINS_MESSAGE);
+      }
       pinnedApplicationIds.add(applicationId);
     }
     pinStorage.setPinnedApplicationIds(username, pinnedApplicationIds);
