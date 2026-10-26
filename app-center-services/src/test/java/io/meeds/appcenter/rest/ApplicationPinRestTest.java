@@ -136,8 +136,13 @@ class ApplicationPinRestTest {
 
   @Test
   void pinApplicationNotAllowed() throws Exception {
-    doThrow(IllegalArgumentException.class).when(applicationCenterService).pinApplication(anyLong(), anyString());
-    mockMvc.perform(put(PIN_PATH).with(testSimpleUser())).andExpect(status().isBadRequest());
+    doThrow(new IllegalArgumentException("appCenter.pin.tooManyPins")).when(applicationCenterService)
+                                                                       .pinApplication(anyLong(), anyString());
+    // the reason is the key of the label the client displays, sent as the
+    // error body's message
+    mockMvc.perform(put(PIN_PATH).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(status().reason("appCenter.pin.tooManyPins"));
   }
 
   @Test

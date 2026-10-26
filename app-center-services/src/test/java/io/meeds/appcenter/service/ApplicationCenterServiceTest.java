@@ -783,7 +783,10 @@ public class ApplicationCenterServiceTest {
 
     application.setPermissions(Collections.singletonList(PERMISSIONS_2));
     application.setActive(false);
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+    // the message is the key of the label the client displays
+    assertEquals("appCenter.pin.pinNotAllowed",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
 
     verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
   }
@@ -816,7 +819,9 @@ public class ApplicationCenterServiceTest {
     when(appCenterStorage.getApplication(anyLong())).thenReturn(accessibleApplication(ID));
     when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(pinnedApplicationIds);
 
-    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+    assertEquals("appCenter.pin.tooManyPins",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
     verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
 
     // an application already pinned is still accepted, at its place
