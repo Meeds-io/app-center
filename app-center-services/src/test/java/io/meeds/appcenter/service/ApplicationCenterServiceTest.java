@@ -74,6 +74,7 @@ import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPinStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.portal.navigation.service.NavigationConfigurationService;
 import io.meeds.social.category.service.CategoryLinkService;
@@ -135,6 +136,9 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ApplicationPlacementStorage placementStorage;
+
+  @MockitoBean
+  private ApplicationPinStorage    pinStorage;
 
   @MockitoBean
   private NavigationConfigurationService navigationConfigurationService;
@@ -755,6 +759,71 @@ public class ApplicationCenterServiceTest {
   }
 
   @Test
+  void getPinnedApplicationIds() {
+    assertEquals(Collections.emptyList(), applicationCenterService.getPinnedApplicationIds(null));
+    verify(pinStorage, never()).getPinnedApplicationIds(any());
+
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(3l, 1l));
+    assertEquals(Arrays.asList(3l, 1l), applicationCenterService.getPinnedApplicationIds(TEST_USER));
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationRefusesBeforeAnyWrite() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, ""));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(0, TEST_USER));
+    assertThrows(ApplicationNotFoundException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+
+    // the application is restricted to PERMISSIONS_1, which the user isn't member of
+    Application application = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    assertThrows(IllegalAccessException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application.setActive(false);
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationAppendsAfterTheAccessiblePins() {
+    Application application = accessibleApplication(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 7l));
+
+    applicationCenterService.pinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, ID));
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationKeepsThePlaceOfAnAlreadyPinnedApplication() {
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(ID, 5l));
+
+    applicationCenterService.pinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(ID, 5l));
+  }
+
+  @Test
+  void unpinApplication() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.unpinApplication(ID, ""));
+
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, ID));
+
+    applicationCenterService.unpinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Collections.singletonList(5l));
+  }
+
+  @Test
   @SneakyThrows
   void deletePersonalApplication() {
     assertThrows(IllegalArgumentException.class,
@@ -841,6 +910,13 @@ public class ApplicationCenterServiceTest {
 
   private Application application() {
     return application(ID);
+  }
+
+  private Application accessibleApplication(Long id) {
+    Application application = application(id);
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application.setActive(true);
+    return application;
   }
 
   private Application application(Long id) {

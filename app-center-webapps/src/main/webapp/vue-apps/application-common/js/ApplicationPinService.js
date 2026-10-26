@@ -16,37 +16,41 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const contextName = 'USER';
-const contextId = eXo.env.portal.userName;
-const scopeName = 'APPLICATION';
-const scopeId = 'PinnedApplications';
-const key = 'pins';
-
-export async function getPinnedApplications() {
-  try {
-    const pinnedApplicationIds = await Vue.prototype.$settingService.getSettingValue(contextName, contextId, scopeName, scopeId, key);
-    return pinnedApplicationIds?.value && JSON.parse(pinnedApplicationIds.value) || [];
-  } catch (e) {
-    return [];
-  }
+export function getPinnedApplications() {
+  return fetch('/app-center/rest/pins', {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (resp?.ok) {
+        return resp.json();
+      } else {
+        throw new Error('Error when getting pinned applications');
+      }
+    })
+    .catch(() => []);
 }
 
-export async function pinApplication(applicationId) {
-  const pinnedApplicationIds = await getPinnedApplications();
-  if (!pinnedApplicationIds.includes(applicationId)) {
-    pinnedApplicationIds.push(applicationId);
-  }
-  await savePinnedApplications(pinnedApplicationIds);
+export function pinApplication(applicationId) {
+  return fetch(`/app-center/rest/pins/${applicationId}`, {
+    method: 'PUT',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (!resp?.ok) {
+        throw new Error('Error when pinning application');
+      }
+    });
 }
 
-export async function unpinApplication(applicationId) {
-  const pinnedApplicationIds = await getPinnedApplications();
-  while (pinnedApplicationIds.includes(applicationId)) {
-    pinnedApplicationIds.splice(pinnedApplicationIds.indexOf(applicationId), 1);
-  }
-  await savePinnedApplications(pinnedApplicationIds);
-}
-
-export async function savePinnedApplications(pinnedApplicationIds) {
-  await Vue.prototype.$settingService.setSettingValue(contextName, contextId, scopeName, scopeId, key, JSON.stringify(pinnedApplicationIds));
+export function unpinApplication(applicationId) {
+  return fetch(`/app-center/rest/pins/${applicationId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (!resp?.ok) {
+        throw new Error('Error when unpinning application');
+      }
+    });
 }

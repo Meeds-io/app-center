@@ -449,6 +449,8 @@ export default {
           document.dispatchEvent(new CustomEvent('app-center-application-pinned', {detail: this.application}));
         }
         await this.refresh();
+      } catch {
+        this.$root.$emit('alert-message', this.$t(pin ? 'appCenter.appLauncher.pinError' : 'appCenter.appLauncher.unpinError'), 'error');
       } finally {
         this.loading = false;
       }

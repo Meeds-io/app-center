@@ -1,13 +1,10 @@
 <%@page import="io.meeds.portal.navigation.service.NavigationConfigurationService"%>
-<%@page import="org.exoplatform.commons.api.settings.SettingValue"%>
-<%@page import="org.exoplatform.commons.api.settings.data.Scope"%>
-<%@page import="org.exoplatform.commons.api.settings.data.Context"%>
+<%@page import="io.meeds.appcenter.service.ApplicationCenterService"%>
+<%@page import="io.meeds.social.util.JsonUtils"%>
 <%@page import="org.exoplatform.container.ExoContainerContext"%>
-<%@page import="org.exoplatform.commons.api.settings.SettingService"%>
 <%
-  SettingService settingService = ExoContainerContext.getService(SettingService.class);
-  SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
-  String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString();
+  ApplicationCenterService appCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+  String pinnedApplicationIds = JsonUtils.toJsonString(appCenterService.getPinnedApplicationIds(request.getRemoteUser()));
 
   NavigationConfigurationService navigationConfigurationService = ExoContainerContext.getService(NavigationConfigurationService.class);
   long topbarAppsCount = navigationConfigurationService.getTopbarConfiguration(request.getRemoteUser(), request.getLocale()).getApplications().stream().filter(a -> a.isEnabled() || a.getId().contains("mandatory-")).count();
