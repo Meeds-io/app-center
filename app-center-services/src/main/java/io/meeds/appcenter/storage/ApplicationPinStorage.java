@@ -63,9 +63,12 @@ public class ApplicationPinStorage {
   /**
    * @param username user login
    * @return the first {@link #MAX_PINNED_APPLICATIONS} stored application ids,
-   *         in pin order, without duplicates or non-positive values; an empty
-   *         list when nothing is stored or the stored value is not a JSON array
-   *         of numbers
+   *         in pin order, without duplicates, nulls or non-positive values. The
+   *         stored value is read as the JSON array it starts with, bound to
+   *         {@code Long[]} (ids stored as numeric strings included), and any
+   *         text after that array is ignored. An empty list when nothing is
+   *         stored, when the value does not start with an array, or when an
+   *         entry cannot be bound
    */
   public List<Long> getPinnedApplicationIds(String username) {
     SettingValue<?> value = settingService.get(Context.USER.id(username), PINS_SCOPE, PINS_KEY);

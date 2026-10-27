@@ -77,6 +77,16 @@ class ApplicationPinStorageTest {
     assertEquals(Arrays.asList(3l, 1l), pinStorage.getPinnedApplicationIds(USERNAME));
   }
 
+  /**
+   * Pins stored as numeric strings, as some stored values hold them, are read
+   * as ids.
+   */
+  @Test
+  void getPinnedApplicationIdsReadsIdsStoredAsStrings() {
+    storePins("[\"12\",3]");
+    assertEquals(Arrays.asList(12l, 3l), pinStorage.getPinnedApplicationIds(USERNAME));
+  }
+
   @Test
   void getPinnedApplicationIdsWhenNotAnArrayOfIds() {
     storePins("junk");
