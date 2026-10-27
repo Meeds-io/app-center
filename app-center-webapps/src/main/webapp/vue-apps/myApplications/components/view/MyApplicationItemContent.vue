@@ -23,12 +23,26 @@
     :class="contentClass"
     class="d-flex align-center full-width">
     <app-center-badge
-      v-if="!preview"
+      v-if="!preview && !cornerBadge"
       :badge-name="application.badgeName"
       :class="horizontal ? 'align-self-start' : 'mx-auto'"
       top-spacing="-5px"
       x-spacing="12px" />
-    <template v-if="iconDisplayed">
+    <!-- With no icon, or one too narrow to carry it, the badge lies on the tile's top end corner, over its edges, so
+         that it never covers the name: the corner of the tile, or of its lifted face, whichever is drawn -->
+    <div
+      v-else-if="!preview"
+      class="position-absolute t-0"
+      style="inset-inline-end: 0">
+      <app-center-badge
+        :badge-name="application.badgeName"
+        :x-spacing="cornerBadgeXSpacing"
+        top-spacing="-5px" />
+    </div>
+    <div
+      v-if="iconDisplayed"
+      :style="iconBoxStyle"
+      class="d-flex align-center justify-center flex-shrink-0">
       <v-img
         v-if="application.imageUrl"
         :src="application.imageUrl"
@@ -40,7 +54,6 @@
       <v-icon
         v-else-if="application.icon"
         :size="iconPixels"
-        :class="horizontal && 'flex-shrink-0'"
         class="d-flex align-center justify-center">
         {{ application.icon }}
       </v-icon>
@@ -52,7 +65,7 @@
         src="/app-center/skin/images/defaultApp.png"
         contain
         referrerpolicy="no-referrer" />
-    </template>
+    </div>
     <v-tooltip
       v-if="nameDisplayed"
       bottom>
@@ -133,8 +146,23 @@ export default {
     iconPixels() {
       return this.template ? this.displaySettings.iconSize : 45;
     },
+    // In Row and Column, a glyph narrower than its size, or an image smaller than it, is centered in a box of the
+    // icon's size, so that the name never starts before the size plus its 8px margin
+    iconBoxStyle() {
+      return this.horizontal && {minWidth: `${this.iconPixels}px`};
+    },
+    // On the icon's corner, the 20px badge spans 12px to 32px past the icon's start: in Row and Column, an icon
+    // under 24px would leave it over the name
+    cornerBadge() {
+      return !this.iconDisplayed || (this.horizontal && this.iconPixels < 24);
+    },
+    // Past the tile's 1px border, the 20px badge goes 4px over its top and its end, the room the tile's margin leaves
+    // before the list clips. A column's app spans the list, which clips at its end: its badge ends on the tile's end
+    cornerBadgeXSpacing() {
+      return this.template === 'COLUMN' ? '-19px' : '-15px';
+    },
     iconClass() {
-      return this.horizontal ? 'flex-grow-0 flex-shrink-0' : 'mx-auto';
+      return this.horizontal ? 'flex-grow-0' : 'mx-auto';
     },
     nameClass() {
       if (!this.template) {
@@ -143,7 +171,8 @@ export default {
       // One line, and the whole name on two lines at most while the app is hovered or focused
       const lines = this.expanded ? 'text-truncate-2' : 'text-truncate';
       if (this.horizontal) {
-        return [lines, this.iconDisplayed && 'ms-2'];
+        // With the badge on the tile's corner, every name of a column ends before the badge's room on its tile's end
+        return [lines, this.iconDisplayed && 'ms-2', this.cornerBadge && this.template === 'COLUMN' && 'me-3'];
       }
       // Centered in a column, a single line is as wide as its text unless bounded by the tile
       return [lines, 'max-width-fit', this.iconDisplayed && 'mt-2'];
