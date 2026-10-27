@@ -29,9 +29,10 @@
       {{ $t('myApplications.edit.shortcutsList.title') }}
     </template>
     <template #content>
+      <!-- The category suggester's menu is attached inside the stepper, which Vuetify otherwise clips -->
       <v-stepper
         v-model="stepper"
-        class="ma-0 pa-4 d-flex flex-column"
+        class="ma-0 pa-4 d-flex flex-column overflow-visible"
         vertical
         flat>
         <div class="flex-shrink-0">
