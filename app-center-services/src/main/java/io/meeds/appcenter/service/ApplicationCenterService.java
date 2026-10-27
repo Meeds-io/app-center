@@ -87,6 +87,7 @@ import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPinStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.appcenter.util.ImageTypeUtils;
@@ -199,6 +200,10 @@ public class ApplicationCenterService {
 
   private static final String      USER_CANNOT_ACCESS_APP_MESSAGE      = "User %s is not allowed to access application %s";
 
+  private static final String      PIN_NOT_ALLOWED_MESSAGE             = "appCenter.pin.pinNotAllowed";
+
+  private static final String      TOO_MANY_PINS_MESSAGE               = "appCenter.pin.tooManyPins";
+
   private static final Pattern     SCHEME_PATTERN                      = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
   private static final Pattern     CONTROL_CHARS_PATTERN               = Pattern.compile("[\\t\\n\\r]");
@@ -231,6 +236,9 @@ public class ApplicationCenterService {
 
   @Autowired
   private ApplicationPlacementStorage placementStorage;
+
+  @Autowired
+  private ApplicationPinStorage    pinStorage;
 
   @Autowired
   private NavigationConfigurationService navigationConfigurationService;
@@ -710,6 +718,83 @@ public class ApplicationCenterService {
       throw new IllegalArgumentException(SIDE_IS_MANDATORY_MESSAGE);
     }
     placementStorage.removePlacedApplicationId(username, side);
+  }
+
+  /**
+   * Retrieves the ids of the applications the given user pinned to the topbar,
+   * in pin order. The ids are those stored: the pages render only the pinned
+   * applications found in the user's own list of applications.
+   *
+   * @param username user login
+   * @return the pinned application ids, an empty list for a blank username
+   */
+  public List<Long> getPinnedApplicationIds(String username) {
+    if (StringUtils.isBlank(username)) {
+      return Collections.emptyList();
+    }
+    return pinStorage.getPinnedApplicationIds(username);
+  }
+
+  /**
+   * Pins an active application the user can access to the user's topbar, after
+   * the applications already pinned, up to
+   * {@link ApplicationPinStorage#MAX_PINNED_APPLICATIONS}. An application
+   * already pinned keeps its place. The written list drops the applications
+   * that no longer exist, and keeps the ones the user can't access anymore,
+   * which the pages don't display and display again once the access is given
+   * back.
+   *
+   * @param applicationId technical application id
+   * @param username user login
+   * @throws ApplicationNotFoundException when the application doesn't exist
+   * @throws IllegalAccessException when the user can't access the application
+   * @throws IllegalArgumentException when the application is inactive, or the
+   *           user already pinned the maximum number of applications
+   */
+  public void pinApplication(long applicationId, String username) throws ApplicationNotFoundException,
+                                                                  IllegalAccessException {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    if (applicationId <= 0) {
+      throw new IllegalArgumentException(APPLICATION_ID_IS_MANDATORY_MESSAGE);
+    }
+    Application application = appCenterStorage.getApplication(applicationId);
+    if (application == null) {
+      throw new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE, applicationId));
+    }
+    if (!canAccess(application, username)) {
+      throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
+    }
+    if (!application.isActive()) {
+      throw new IllegalArgumentException(PIN_NOT_ALLOWED_MESSAGE);
+    }
+    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
+    if (!pinnedApplicationIds.contains(applicationId)) {
+      if (pinnedApplicationIds.size() >= ApplicationPinStorage.MAX_PINNED_APPLICATIONS) {
+        throw new IllegalArgumentException(TOO_MANY_PINS_MESSAGE);
+      }
+      pinnedApplicationIds.add(applicationId);
+    }
+    pinStorage.setPinnedApplicationIds(username, pinnedApplicationIds);
+  }
+
+  /**
+   * Unpins an application from the topbar of the given user. An application
+   * that isn't pinned is left as is, so the operation stays idempotent. The
+   * written list drops the applications that no longer exist, as
+   * {@link #pinApplication(long, String)} does.
+   *
+   * @param applicationId technical application id
+   * @param username user login
+   */
+  public void unpinApplication(long applicationId, String username) {
+    if (StringUtils.isBlank(username)) {
+      throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
+    }
+    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
+    pinnedApplicationIds.remove(Long.valueOf(applicationId));
+    pinStorage.setPinnedApplicationIds(username, pinnedApplicationIds);
   }
 
   /**
@@ -2276,6 +2361,13 @@ public class ApplicationCenterService {
     } else {
       return userAcl.getUserIdentity(username);
     }
+  }
+
+  private List<Long> getExistingPinnedApplicationIds(String username) {
+    return pinStorage.getPinnedApplicationIds(username)
+                     .stream()
+                     .filter(id -> appCenterStorage.getApplication(id) != null)
+                     .collect(Collectors.toCollection(ArrayList::new));
   }
 
   /**
