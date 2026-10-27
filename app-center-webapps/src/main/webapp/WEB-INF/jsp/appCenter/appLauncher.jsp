@@ -8,10 +8,6 @@
 <%@page import="org.exoplatform.container.ExoContainerContext"%>
 <%@page import="org.exoplatform.services.resources.ResourceBundleService"%>
 <%@page import="java.util.ResourceBundle"%>
-<%@page import="org.exoplatform.commons.api.settings.SettingService"%>
-<%@page import="org.exoplatform.commons.api.settings.SettingValue"%>
-<%@page import="org.exoplatform.commons.api.settings.data.Scope"%>
-<%@page import="org.exoplatform.commons.api.settings.data.Context"%>
 <%
   ResourceBundle bundle;
   try {
@@ -23,11 +19,8 @@
   String tooltipShortcut = bundle.getString("appCenter.appLauncher.topbarIcon.tooltip.shortcut");
   boolean isAdmin = ConversationState.getCurrent().getIdentity().isMemberOf("/platform/administrators");
 
-  SettingService settingService = ExoContainerContext.getService(SettingService.class);
-  SettingValue settingValue = settingService.get(Context.USER.id(request.getRemoteUser()), Scope.APPLICATION.id("PinnedApplications"), "pins");
-  String pinnedApplicationIds = settingValue == null || settingValue.getValue() == null ? "[]" : settingValue.getValue().toString().replace("\"", "`");
-
   ApplicationCenterService appCenterService = ExoContainerContext.getService(ApplicationCenterService.class);
+  String pinnedApplicationIds = appCenterService == null ? "[]" : io.meeds.social.util.JsonUtils.toJsonString(appCenterService.getPinnedApplicationIds(request.getRemoteUser()));
   String appPlacementsJson = "null";
   boolean hasStuckApplication = false;
   if (appCenterService != null && StringUtils.isNotBlank(request.getRemoteUser())) {

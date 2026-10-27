@@ -16,37 +16,54 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const contextName = 'USER';
-const contextId = eXo.env.portal.userName;
-const scopeName = 'APPLICATION';
-const scopeId = 'PinnedApplications';
-const key = 'pins';
+// The server rewrites the whole list of pins on each pin and unpin: the
+// requests of the page are sent one after the other, so that two quick clicks
+// can't overwrite each other, and a refresh never reads an older list than
+// the last save
+let pendingRequest = Promise.resolve();
 
-export async function getPinnedApplications() {
-  try {
-    const pinnedApplicationIds = await Vue.prototype.$settingService.getSettingValue(contextName, contextId, scopeName, scopeId, key);
-    return pinnedApplicationIds?.value && JSON.parse(pinnedApplicationIds.value) || [];
-  } catch (e) {
-    return [];
-  }
+function enqueue(request) {
+  const result = pendingRequest.then(request);
+  pendingRequest = result.catch(() => null);
+  return result;
 }
 
-export async function pinApplication(applicationId) {
-  const pinnedApplicationIds = await getPinnedApplications();
-  if (!pinnedApplicationIds.includes(applicationId)) {
-    pinnedApplicationIds.push(applicationId);
-  }
-  await savePinnedApplications(pinnedApplicationIds);
+export function getPinnedApplications() {
+  return enqueue(() => fetch('/app-center/rest/pins', {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then(resp => {
+      if (resp?.ok) {
+        return resp.json();
+      } else {
+        throw new Error('Error when getting pinned applications');
+      }
+    }))
+    .catch(() => []);
 }
 
-export async function unpinApplication(applicationId) {
-  const pinnedApplicationIds = await getPinnedApplications();
-  while (pinnedApplicationIds.includes(applicationId)) {
-    pinnedApplicationIds.splice(pinnedApplicationIds.indexOf(applicationId), 1);
-  }
-  await savePinnedApplications(pinnedApplicationIds);
+export function pinApplication(applicationId) {
+  return enqueue(() => fetch(`/app-center/rest/pins/${applicationId}`, {
+    method: 'PUT',
+    credentials: 'include',
+  })
+    .then(resp => checkResponse(resp, 'Error when pinning application')));
 }
 
-export async function savePinnedApplications(pinnedApplicationIds) {
-  await Vue.prototype.$settingService.setSettingValue(contextName, contextId, scopeName, scopeId, key, JSON.stringify(pinnedApplicationIds));
+export function unpinApplication(applicationId) {
+  return enqueue(() => fetch(`/app-center/rest/pins/${applicationId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+    .then(resp => checkResponse(resp, 'Error when unpinning application')));
+}
+
+// A refused request is rejected with the message the server sent, which is
+// the key of its label when the request is invalid
+async function checkResponse(resp, defaultMessage) {
+  if (!resp?.ok) {
+    const error = resp && await resp.json().catch(() => null);
+    throw new Error(error?.message || defaultMessage);
+  }
 }
