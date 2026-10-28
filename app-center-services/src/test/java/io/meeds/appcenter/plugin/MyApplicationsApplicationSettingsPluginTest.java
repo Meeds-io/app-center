@@ -267,6 +267,18 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   /**
+   * The view reads an absent number as its default, as the read does:
+   * sending that default back is unchanged and writes nothing
+   */
+  @Test
+  void testDefaultSentBackToAWindowWithoutStoredNumberWritesNothing() throws Exception {
+    ApplicationSettingsContext context = context(Map.of(), false);
+    plugin.apply(context, plugin.read(context));
+    verify(applicationSettingsService, never()).updatePreferences(any(), anyMap());
+    verify(applicationSettingsService, never()).markOwner(any(), anyMap());
+  }
+
+  /**
    * A stored translation in a language the platform no longer offers is
    * what the read returns: kept unchecked when another language changes,
    * refused when it is itself changed

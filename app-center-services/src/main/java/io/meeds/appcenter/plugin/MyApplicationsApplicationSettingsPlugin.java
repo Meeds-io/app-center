@@ -254,7 +254,8 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    */
   private boolean isStoredNumber(Object value, String stored) {
     try {
-      return stored != null && value instanceof Number number && number.doubleValue() == Integer.parseInt(stored);
+      return value instanceof Number number
+             && number.doubleValue() == Integer.parseInt(stored == null ? String.valueOf(DEFAULT_APPS_TO_LIST) : stored);
     } catch (NumberFormatException e) {
       return false;
     }
