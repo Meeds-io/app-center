@@ -53,6 +53,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -318,7 +319,7 @@ class MyApplicationsSettingsServiceTest {
   void canEditSettingsOfSiteLayoutWindowWithUnparsablePageIsRefused() {
     mockUser(true);
     when(cmsService.getSetting(SETTING_TYPE, SITE_NAME)).thenReturn(setting(SITE_NAME, "not-a-page", 0));
-    when(layoutAclService.canEditSite(any(), anyString())).thenReturn(true);
+    when(layoutAclService.canEditSite(nullable(SiteKey.class), anyString())).thenReturn(true);
 
     assertFalse(settingsService.canEditSettings(SITE_NAME, USERNAME));
   }
