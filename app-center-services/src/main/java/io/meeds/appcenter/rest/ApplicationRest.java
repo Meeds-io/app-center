@@ -20,14 +20,17 @@ package io.meeds.appcenter.rest;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,13 +49,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.service.LinkProvider;
 
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationCenterSettings;
 import io.meeds.appcenter.model.ApplicationForm;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -63,6 +66,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("applications")
@@ -70,6 +74,14 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ApplicationRest {
 
   private static final Log         LOG = ExoLogger.getLogger(ApplicationRest.class);
+
+  /**
+   * Cache directives of an answer that depends on the current user from a URL
+   * that names no user: the platform sets none, so a shared cache could serve
+   * it to another user. Set before the call, a refusal the handler renders
+   * carries them too.
+   */
+  private static final String      NOT_SHARED_CACHE_CONTROL = CacheControl.noStore().cachePrivate().getHeaderValue();
 
   @Autowired
   private ApplicationCenterService appCenterService;
@@ -98,6 +110,188 @@ public class ApplicationRest {
                                                   keyword.orElse(null),
                                                   request.getLocale(),
                                                   request.getRemoteUser());
+  }
+
+  @GetMapping(path = "list")
+  @Secured("users")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists", method = "GET", description = "Returns, in the order of the ids, or grouped per category in the order of the category ids, the active applications the current user may access, unknown and forbidden ids skipped")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 ids or category ids, or both ids and category ids"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getListedApplications(
+                                                 HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                 @RequestParam("settingName")
+                                                 String settingName,
+                                                 @Parameter(description = "Ordered application ids, comma-separated", required = false)
+                                                 @RequestParam(name = "ids", required = false)
+                                                 List<Long> ids,
+                                                 @Parameter(description = "Ordered category ids, comma-separated", required = false)
+                                                 @RequestParam(name = "categoryIds", required = false)
+                                                 List<Long> categoryIds) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
+    try {
+      return appCenterService.getListedApplications(new ApplicationListFilter(settingName, ids, categoryIds),
+                                                    request.getLocale(),
+                                                    request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @GetMapping(path = "contextual/list")
+  @Secured("users")
+  @Operation(summary = "Retrieves the applications a Shortcuts portlet lists, for its settings drawer", method = "GET", description = "As applications/list, for a user who may edit the portlet's settings, plus the applications the portlet created whose audience excludes the user, unless an administrator emptied that audience. The applications the portlet created carry their categoryIds: empty when they have none, null when they could not be read")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 ids"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getContextApplications(
+                                                  HttpServletRequest request,
+                                                  HttpServletResponse response,
+                                                  @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                  @RequestParam("settingName")
+                                                  String settingName,
+                                                  @Parameter(description = "Ordered application ids, comma-separated", required = false)
+                                                  @RequestParam(name = "ids", required = false)
+                                                  List<Long> ids) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
+    try {
+      return appCenterService.getContextApplications(new ApplicationListFilter(settingName, ids),
+                                                     request.getLocale(),
+                                                     request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @GetMapping(path = "contextual/suggest")
+  @Secured("users")
+  @Operation(summary = "Suggests the applications a Shortcuts portlet may list", method = "GET", description = "Returns active, non-personal applications the current user may access, and the applications the portlet created, matching the keyword. The applications the portlet created carry their categoryIds, as on contextual/list")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "More than 100 excluded ids"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to edit the portlet's settings"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting") })
+  public List<Application> getContextSuggestions(
+                                                 HttpServletRequest request,
+                                                 HttpServletResponse response,
+                                                 @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                                 @RequestParam("settingName")
+                                                 String settingName,
+                                                 @Parameter(description = "Keyword to search in applications title and url", required = false)
+                                                 @RequestParam(name = "keyword", required = false)
+                                                 String keyword,
+                                                 @Parameter(description = "Application ids already selected, never suggested, at most 100", required = false)
+                                                 @RequestParam(name = "excludedIds", required = false)
+                                                 List<Long> excludedIds,
+                                                 @Parameter(description = "Query Offset", required = false)
+                                                 @RequestParam(name = "offset", defaultValue = "0")
+                                                 int offset,
+                                                 @Parameter(description = "Query results limit, at most 20", required = false)
+                                                 @RequestParam(name = "limit", defaultValue = "20")
+                                                 int limit) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, NOT_SHARED_CACHE_CONTROL);
+    try {
+      return appCenterService.getContextSuggestions(settingName,
+                                                    keyword,
+                                                    excludedIds,
+                                                    offset,
+                                                    limit,
+                                                    request.getLocale(),
+                                                    request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @PostMapping(path = "contextual")
+  @Secured("users")
+  @Operation(summary = "Creates an application listed only by a Shortcuts portlet", method = "POST", description = "Creates, from the settings of a Shortcuts portlet, an application only that portlet lists, displayed to the audience of the portlet's context, and returns it")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, the response's message naming it"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or space of its context") })
+  public Application createContextApplication(
+                                              HttpServletRequest request,
+                                              @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                              @RequestParam("settingName")
+                                              String settingName,
+                                              @RequestBody
+                                              ApplicationForm application) {
+    try {
+      return appCenterService.createContextApplication(application, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @PutMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Updates an application a Shortcuts portlet created", method = "PUT", description = "Updates, from the settings of the Shortcuts portlet that created it, an application only that portlet lists, with the fields its form offers, and returns it without its permissions, its badge resolved, with its categoryIds (null when they could not be read)")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Invalid field or illustration, or application not created by a Shortcuts portlet, or by another one, the response's message naming which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
+  public Application updateContextApplication(
+                                              HttpServletRequest request,
+                                              @Parameter(description = "Application technical id to update", required = true)
+                                              @PathVariable("applicationId")
+                                              long applicationId,
+                                              @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                              @RequestParam("settingName")
+                                              String settingName,
+                                              @RequestBody
+                                              ApplicationForm application) {
+    try {
+      return appCenterService.updateContextApplication(applicationId, application, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  @DeleteMapping(path = "contextual/{applicationId}")
+  @Secured("users")
+  @Operation(summary = "Deletes an application a Shortcuts portlet created", method = "DELETE", description = "Deletes, from the settings of the Shortcuts portlet that created it, an application only that portlet lists")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
+    @ApiResponse(responseCode = "400", description = "Application not created by a Shortcuts portlet, or by another one, the response's message telling which"),
+    @ApiResponse(responseCode = "403", description = "Not allowed to manage the applications of the portlet"),
+    @ApiResponse(responseCode = "404", description = "Unknown portlet setting, or unknown application, or one the portlet does not manage that the user may not access") })
+  public void deleteContextApplication(
+                                       HttpServletRequest request,
+                                       @Parameter(description = "Application technical id to delete", required = true)
+                                       @PathVariable("applicationId")
+                                       long applicationId,
+                                       @Parameter(description = "CMS setting name of the portlet window", required = true)
+                                       @RequestParam("settingName")
+                                       String settingName) {
+    try {
+      appCenterService.deleteContextApplication(applicationId, settingName, request.getRemoteUser());
+    } catch (ObjectNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    } catch (IllegalAccessException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
   }
 
   @GetMapping(path = "all")
@@ -226,7 +420,7 @@ public class ApplicationRest {
   @Secured("users")
   @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "Bad Request"),
+    @ApiResponse(responseCode = "400", description = "Bad Request: an application that may not be stuck, the response's message telling it; or an invalid side, with no message"),
     @ApiResponse(responseCode = "401", description = "Unauthorized operation"),
     @ApiResponse(responseCode = "404", description = "Not found") })
   public void stickApplication(
@@ -264,6 +458,7 @@ public class ApplicationRest {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
+
 
   private PlacementSide placementSide(String side) {
     try {
@@ -348,7 +543,7 @@ public class ApplicationRest {
                                                                         @Parameter(description = "Application id", required = true)
                                                                         @PathVariable("applicationId")
                                                                         long applicationId,
-                                                                        @Parameter(description = "A token that is used to authorize anonymous request")
+                                                                        @Parameter(description = "The token of the illustration URL, which authorizes a user who may not see the application, anonymous included")
                                                                         @RequestParam(name = "r", required = false)
                                                                         String token,
                                                                         @Parameter(description = "Dimensions of size")
@@ -362,21 +557,13 @@ public class ApplicationRest {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
-        if (!LinkProvider.isAttachmentTokenValid(token,
-                                                 "appcenter",
-                                                 String.valueOf(applicationId),
-                                                 "icon",
-                                                 String.valueOf(lastModified.orElse(0l)))) {
+        if (!appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
           throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
       } else if (!appCenterService.canEdit(request.getRemoteUser())
                  && !appCenterService.canAccess(application, request.getRemoteUser())
-                 && !LinkProvider.isAttachmentTokenValid(token,
-                                                         "appCenter",
-                                                         String.valueOf(applicationId),
-                                                         "icon",
-                                                         String.valueOf(lastModified.orElse(0l)))) {
+                 && !appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
       }

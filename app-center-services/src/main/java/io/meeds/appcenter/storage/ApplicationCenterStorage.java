@@ -19,9 +19,12 @@
 package io.meeds.appcenter.storage;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +42,8 @@ import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.utils.IOUtil;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
@@ -62,15 +67,21 @@ import lombok.SneakyThrows;
 @Component
 public class ApplicationCenterStorage {
 
+  public static final String     NAME_SPACE                          = "appCenter";
+
+  public static final Long       DEFAULT_LAST_MODIFIED               = System.currentTimeMillis();
+
+  private static final Log       LOG                                 = ExoLogger.getLogger(ApplicationCenterStorage.class);
+
   private static final String    APPLICATION_NOT_FOUND_MESSAGE       = "Application with id %s doesn't exist";
+
+  private static final String    ILLUSTRATION_TOKEN_PROVIDER         = "appcenter";
+
+  private static final String    ILLUSTRATION_TOKEN_TYPE             = "icon";
 
   private static final String    APPLICATION_ID_IS_MANDATORY_MESSAGE = "applicationId is mandatory";
 
   private static final String    USERNAME_IS_MANDATORY_MESSAGE       = "username is mandatory";
-
-  public static final String     NAME_SPACE                          = "appCenter";
-
-  public static final Long       DEFAULT_LAST_MODIFIED               = System.currentTimeMillis();
 
   @Autowired
   private FileService            fileService;
@@ -96,12 +107,21 @@ public class ApplicationCenterStorage {
   @Lazy
   private ApplicationCenterStorage self;
 
+  /**
+   * Creates an application of the Application Center: whatever the
+   * application carries, it is owned by no Shortcuts portlet window.
+   *
+   * @param application the application to create
+   * @return the created application
+   */
   public Application createApplication(Application application) {
     if (application == null) {
       throw new IllegalArgumentException("application is mandatory");
     }
     ApplicationEntity applicationEntity = toEntity(application);
     applicationEntity.setId(null);
+    applicationEntity.setContextSettingName(null);
+    applicationEntity.setContextSpaceId(null);
 
     if (application instanceof ApplicationForm applicationForm && StringUtils.isNotBlank(applicationForm.getImageUploadId())) {
       Long imageFileId = saveImageFileItem(null, applicationForm.getImageUploadId(), applicationForm.getIllustrationMimeType());
@@ -112,12 +132,82 @@ public class ApplicationCenterStorage {
     return getApplication(applicationEntity.getId());
   }
 
+  /**
+   * Creates an application owned by a Shortcuts portlet window. The
+   * application is stored as given, its illustration file id included: the
+   * caller decides every field, no upload is read here. When the database
+   * refuses the application, its illustration is deleted.
+   *
+   * @param application the application to create
+   * @param contextSettingName the CMS setting name of the owning window
+   * @param contextSpaceId the space of the window's context, 0 for the
+   *          platform context
+   * @return the created application
+   */
+  public Application createContextApplication(Application application, String contextSettingName, long contextSpaceId) {
+    if (application == null) {
+      throw new IllegalArgumentException("application is mandatory");
+    } else if (StringUtils.isBlank(contextSettingName)) {
+      throw new IllegalArgumentException("contextSettingName is mandatory");
+    }
+    ApplicationEntity applicationEntity = toEntity(application);
+    applicationEntity.setId(null);
+    applicationEntity.setContextSettingName(contextSettingName);
+    applicationEntity.setContextSpaceId(contextSpaceId);
+    try {
+      applicationEntity = applicationDAO.save(applicationEntity);
+    } catch (RuntimeException e) {
+      // No illustration is left behind an application the database refused
+      if (application.getImageFileId() != null) {
+        fileService.deleteFile(application.getImageFileId());
+      }
+      throw e;
+    }
+    return getApplication(applicationEntity.getId());
+  }
+
+  /**
+   * Updates an application owned by a Shortcuts portlet window. The
+   * application is stored as given, its illustration file id included: the
+   * caller decides every field, no upload is read here. Its owner and system
+   * flag stay the stored ones. The illustration it replaces or removes is
+   * deleted once the application is saved. A new illustration is the
+   * caller's: it deletes it when the update fails.
+   *
+   * @param application the application to update
+   * @throws ApplicationNotFoundException when the application no longer
+   *           exists as the update reads it
+   */
+  @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
+  public void updateContextApplication(Application application) throws ApplicationNotFoundException {
+    ApplicationEntity storedApplicationEntity =
+                                              applicationDAO.findById(application.getId())
+                                                            .orElseThrow(() -> new ApplicationNotFoundException(String.format(APPLICATION_NOT_FOUND_MESSAGE,
+                                                                                                                              application.getId())));
+    Long oldImageFileId = storedApplicationEntity.getImageFileId();
+    ApplicationEntity applicationEntity = toEntity(application);
+    applicationEntity.setSystem(storedApplicationEntity.isSystem());
+    applicationEntity.setContextSettingName(storedApplicationEntity.getContextSettingName());
+    applicationEntity.setContextSpaceId(storedApplicationEntity.getContextSpaceId());
+    applicationDAO.save(applicationEntity);
+    if (oldImageFileId != null && !oldImageFileId.equals(application.getImageFileId())) {
+      try {
+        fileService.deleteFile(oldImageFileId);
+      } catch (RuntimeException e) {
+        // The application is updated: its former illustration is only left behind
+        LOG.warn("Unable to delete the former illustration {} of application {}", oldImageFileId, application.getId(), e);
+      }
+    }
+  }
+
   @CacheEvict(cacheNames = "app-center.application", key = "#p0.getId()")
   public void updateApplication(Application application) {
     Long applicationId = application.getId();
     ApplicationEntity storedApplicationEntity = applicationDAO.findById(applicationId).orElseThrow();
-    // Avoid changing this flag by UI
+    // Avoid changing these fields by UI
     application.setSystem(storedApplicationEntity.isSystem());
+    application.setContextSettingName(storedApplicationEntity.getContextSettingName());
+    application.setContextSpaceId(storedApplicationEntity.getContextSpaceId());
     Long oldImageFileId = storedApplicationEntity.getImageFileId();
     boolean imageRemoved = (application.getImageFileId() == null || application.getImageFileId() == 0)
                            && oldImageFileId != null
@@ -286,6 +376,29 @@ public class ApplicationCenterStorage {
     return null;
   }
 
+  /**
+   * @param id the application's id
+   * @param token the token of an illustration URL
+   * @param imageLastModified the version of the illustration the URL names
+   * @return true when the token is the one the application's illustration URL
+   *         carries for that version
+   */
+  public boolean isIllustrationTokenValid(long id, String token, long imageLastModified) {
+    return LinkProvider.isAttachmentTokenValid(token,
+                                               ILLUSTRATION_TOKEN_PROVIDER,
+                                               String.valueOf(id),
+                                               ILLUSTRATION_TOKEN_TYPE,
+                                               String.valueOf(imageLastModified));
+  }
+
+  /**
+   * @param  keyword matched in title and url, all applications when blank
+   * @return         the ids of the matching applications, sorted by title
+   */
+  public List<Long> getApplicationIds(String keyword) {
+    return StringUtils.isBlank(keyword) ? applicationDAO.getApplicationIds() : applicationDAO.getApplicationIds(keyword);
+  }
+
   public List<Application> getApplications(String keyword) {
     List<Long> applicationIds = StringUtils.isBlank(keyword) ? applicationDAO.getApplicationIds() :
                                                              applicationDAO.getApplicationIds(keyword);
@@ -299,6 +412,84 @@ public class ApplicationCenterStorage {
     return applicationDAO.count();
   }
 
+  /**
+   * @param spaceId a space id
+   * @return the ids of the applications created by Shortcuts portlet windows
+   *         in that space's context
+   */
+  public List<Long> getContextApplicationIds(long spaceId) {
+    return applicationDAO.findIdsByContextSpaceId(spaceId);
+  }
+
+  /**
+   * @param ownerPattern a LIKE pattern over the CMS setting names of
+   *          Shortcuts portlet windows
+   * @return the ids of the applications created by the windows whose setting
+   *         name matches the pattern
+   */
+  public List<Long> getContextApplicationIdsByOwnerPattern(String ownerPattern) {
+    return applicationDAO.findIdsByContextSettingNameLike(ownerPattern);
+  }
+
+  /**
+   * Reads the start of an upload, at most one byte more than the given bound,
+   * so that a caller tells an upload above the bound without reading it whole.
+   *
+   * @param uploadId the upload id
+   * @param maxBytes the bound
+   * @return at most maxBytes + 1 bytes of the upload, null when no completed
+   *         upload has that id
+   */
+  public byte[] readUpload(String uploadId, int maxBytes) {
+    UploadResource uploadResource = StringUtils.isBlank(uploadId) ? null : uploadService.getUploadResource(uploadId);
+    if (uploadResource == null
+        || uploadResource.getStatus() != UploadResource.UPLOADED_STATUS
+        || StringUtils.isBlank(uploadResource.getStoreLocation())) {
+      return null; // NOSONAR
+    }
+    Path storeLocation = Path.of(uploadResource.getStoreLocation());
+    if (!Files.isRegularFile(storeLocation)) {
+      return null; // NOSONAR
+    }
+    try (InputStream inputStream = Files.newInputStream(storeLocation)) {
+      return inputStream.readNBytes(maxBytes + 1);
+    } catch (IOException e) {
+      LOG.debug("Unable to read upload {}", uploadId, e);
+      return null; // NOSONAR
+    }
+  }
+
+  /**
+   * Removes an upload once its content is stored.
+   *
+   * @param uploadId the upload id
+   */
+  public void removeUpload(String uploadId) {
+    if (StringUtils.isNotBlank(uploadId)) {
+      uploadService.removeUploadResource(uploadId);
+    }
+  }
+
+  /**
+   * Stores an application illustration.
+   *
+   * @param content the image content
+   * @param mimeType the image type, decided from the content
+   * @return the id of the stored file
+   */
+  public Long saveIllustration(byte[] content, String mimeType) {
+    return saveImageFileItem(null, content, mimeType);
+  }
+
+  /**
+   * Deletes an application illustration that no application uses.
+   *
+   * @param fileId the id of the stored file
+   */
+  public void deleteIllustration(long fileId) {
+    fileService.deleteFile(fileId);
+  }
+
   public List<UserApplication> getMandatoryAndFavoriteApplications(String username, Pageable pageable) {
     return applicationDAO.findFavoriteAndMandatoryApplications(username, pageable)
                          .map(this::toUserApplicationDTO)
@@ -309,6 +500,11 @@ public class ApplicationCenterStorage {
   private Long saveImageFileItem(Long imageFileId, String uploadId, String mimeType) {
     UploadResource uploadResource = uploadService.getUploadResource(uploadId);
     byte[] bytesContent = IOUtil.getFileContentAsBytes(uploadResource.getStoreLocation());
+    return saveImageFileItem(imageFileId, bytesContent, mimeType);
+  }
+
+  @SneakyThrows
+  private Long saveImageFileItem(Long imageFileId, byte[] bytesContent, String mimeType) {
     FileItem fileItem = new FileItem(imageFileId,
                                      "appCenterIllustration",
                                      mimeType,
@@ -361,7 +557,9 @@ public class ApplicationCenterStorage {
                            applicationEntity.isPersonal(),
                            applicationEntity.getBadgeName(),
                            applicationEntity.isAllowStick(),
-                           applicationEntity.isAllowDetach());
+                           applicationEntity.isAllowDetach(),
+                           applicationEntity.getContextSettingName(),
+                           applicationEntity.getContextSpaceId());
   }
 
   private UserApplication toUserApplicationDTO(Long applicationId) {
@@ -414,6 +612,8 @@ public class ApplicationCenterStorage {
                                    application.getBadgeName(),
                                    application.isAllowStick(),
                                    application.isAllowDetach(),
+                                   application.getContextSettingName(),
+                                   application.getContextSpaceId(),
                                    null);
     }
   }
@@ -433,9 +633,9 @@ public class ApplicationCenterStorage {
     if (codecInitializer == null) {
       return StringUtils.EMPTY;
     } else {
-      return URLEncoder.encode(LinkProvider.generateAttachmentToken("appcenter",
+      return URLEncoder.encode(LinkProvider.generateAttachmentToken(ILLUSTRATION_TOKEN_PROVIDER,
                                                                     String.valueOf(id),
-                                                                    "icon",
+                                                                    ILLUSTRATION_TOKEN_TYPE,
                                                                     String.valueOf(imageLastModified)),
                                StandardCharsets.UTF_8);
     }

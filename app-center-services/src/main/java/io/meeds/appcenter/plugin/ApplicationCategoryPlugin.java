@@ -20,6 +20,8 @@ package io.meeds.appcenter.plugin;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,9 @@ import org.exoplatform.container.PortalContainer;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.service.ApplicationCenterService;
 import io.meeds.social.category.plugin.CategoryPlugin;
+import io.meeds.social.category.service.CategoryPluginService;
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class ApplicationCategoryPlugin implements CategoryPlugin {
@@ -37,7 +42,21 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
   @Autowired
   private PortalContainer          portalContainer;
 
+  @Autowired(required = false)
+  private CategoryPluginService    categoryPluginService;
+
   private ApplicationCenterService applicationCenterService;
+
+  /**
+   * Registers this plugin, without which every category read of applications
+   * falls back to the default plugin
+   */
+  @PostConstruct
+  public void init() {
+    if (categoryPluginService != null) {
+      categoryPluginService.addPlugin(this);
+    }
+  }
 
   @Override
   public String getType() {
@@ -46,20 +65,39 @@ public class ApplicationCategoryPlugin implements CategoryPlugin {
 
   @Override
   public boolean canAccess(String applicationId, String username) {
-    Application application = getApplicationCenterService().getApplication(Long.parseLong(applicationId));
+    if (StringUtils.isBlank(username)) {
+      // ApplicationCenterService#canEdit grants a blank username, an internal call
+      return false;
+    }
+    Application application = getApplication(applicationId);
     return application != null
            && ((application.isActive() && getApplicationCenterService().canAccess(application, username))
                || canEdit(applicationId, username));
   }
 
+  /**
+   * An administrator links any application to a category, and whoever manages
+   * the applications of a Shortcuts portlet window links those it created.
+   */
   @Override
   public boolean canEdit(String applicationId, String username) {
-    return getApplicationCenterService().canEdit(username);
+    if (getApplicationCenterService().canEdit(username)) {
+      return true;
+    }
+    Application application = getApplication(applicationId);
+    return application != null
+           && application.isContextual()
+           && getApplicationCenterService().canEditContextApplication(application, username);
   }
 
   @Override
   public List<Long> getCategoryIds() {
     return getApplicationCenterService().getCategoryIds();
+  }
+
+  private Application getApplication(String applicationId) {
+    long id = NumberUtils.toLong(applicationId, 0);
+    return id > 0 ? getApplicationCenterService().getApplication(id) : null;
   }
 
   private ApplicationCenterService getApplicationCenterService() {

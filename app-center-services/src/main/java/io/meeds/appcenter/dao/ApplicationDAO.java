@@ -19,7 +19,9 @@
 package io.meeds.appcenter.dao;
 
 import java.util.List;
+import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -55,7 +57,9 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
   List<Long> getApplicationIds(String keyword, Sort sort);
 
   default List<Long> getApplicationIds(String keyword) {
-    return getApplicationIds(keyword, Sort.by(Sort.Order.asc("title").ignoreCase()));
+    // The query lowers the columns, never the keyword: a LIKE is case-sensitive on PostgreSQL
+    return getApplicationIds(StringUtils.lowerCase(StringUtils.trim(keyword), Locale.ROOT),
+                             Sort.by(Sort.Order.asc("title").ignoreCase()));
   }
 
   @Query("""
@@ -86,6 +90,33 @@ public interface ApplicationDAO extends JpaRepository<ApplicationEntity, Long> {
       WHERE app.badgeName = :badgeName
       """)
   List<Long> getApplicationIdsByBadgeName(@Param("badgeName") String badgeName);
+
+  /**
+   * @param  spaceId the space of the context the applications were created in
+   * @return         the ids of the applications Shortcuts portlet windows
+   *                 created in that space context
+   */
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.contextSpaceId = :spaceId
+      """)
+  List<Long> findIdsByContextSpaceId(@Param("spaceId") long spaceId);
+
+  /**
+   * @param  ownerPattern a LIKE pattern over the owners' CMS setting names,
+   *                        compared in the column's collation: case-sensitive
+   *                        on PostgreSQL and HSQLDB, case-insensitive on MySQL,
+   *                        where the column takes the table's
+   *                        utf8_general_ci; a caller that needs an exact
+   *                        match checks each owner again
+   * @return              the ids of the applications Shortcuts portlet
+   *                      windows whose setting name matches created
+   */
+  @Query("""
+      SELECT app.id FROM ApplicationEntity app
+      WHERE app.contextSettingName LIKE :ownerPattern
+      """)
+  List<Long> findIdsByContextSettingNameLike(@Param("ownerPattern") String ownerPattern);
 
   @Query("""
       SELECT new FavoriteApplicationEntity(favoriteApp.id, app, favoriteApp.userName, favoriteApp.order, favoriteApp.favorite)

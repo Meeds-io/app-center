@@ -19,35 +19,26 @@
 -->
 
 <template>
-  <v-hover v-if="display" v-model="hover">
+  <v-hover
+    v-if="display"
+    :value="hover"
+    @input="setHover">
     <v-card
-      v-bind="application.type === 'LINK' && {
-        href: applicationUrl,
-        target: applicationUrlTarget,
-        rel: 'nofollow noreferrer noopener',
-      } || {
-        loading,
-      }"
-      v-on="application.type !== 'LINK' && {
+      v-bind="cardBindings"
+      v-on="application.type !== 'LINK' && !preview && {
         click: () => openApplication(application.type, application.url),
       }"
-      :id="`App${application.id}`"
-      @contextmenu="$refs.placementMenu?.open?.($event)"
+      :id="!preview && `App${application.id}`"
+      @contextmenu="!preview && $refs.placementMenu?.open?.($event)"
       :title="applicationDescription"
-      :class="[
-        $attrs.class,
-        {
-          'border-color': card,
-          'border-color-black': isFocused,
-          'transparent': !hover,
-          'light-grey-background-color': hover,
-        }
-      ]"
-      :width="width"
-      :max-width="maxWidth"
-      :height="height"
-      :max-height="maxHeight"
-      :elevation="hover ? 2 : 0"
+      :class="cardClass"
+      :style="cardStyle"
+      :width="template ? null : width"
+      :max-width="template ? templateMaxWidth : maxWidth"
+      :min-width="template === 'CARDS' ? 114 : null"
+      :height="template ? null : height"
+      :max-height="template ? null : maxHeight"
+      :elevation="hover && !lift ? 2 : 0"
       link
       flat
       @keydown.enter="openApplication"
@@ -55,53 +46,27 @@
       @focusin="onFocusIn"
       @focusout="onFocusOut">
       <app-center-placement-menu
+        v-if="!preview"
         ref="placementMenu"
         :application="application" />
-      <div class="d-flex flex-column justify-center align-center full-width">
-        <app-center-badge
-          :badge-name="application.badgeName"
-          top-spacing="-5px"
-          x-spacing="12px"
-          class="mx-auto" />
-        <v-img
-          v-if="application.imageUrl"
-          :src="application.imageUrl"
-          referrerpolicy="no-referrer"
-          class="mx-auto"
-          max-width="45"
-          max-height="45"
-          contain />
-        <v-icon
-          v-else-if="application.icon"
-          size="45"
-          class="d-flex align-center justify-center">
-          {{ application.icon }}
-        </v-icon>
-        <v-img
-          v-else
-          src="/app-center/skin/images/defaultApp.png"
-          max-width="45"
-          max-height="45"
-          contain
-          class="mx-auto"
-          referrerpolicy="no-referrer" />
-        <v-tooltip
-          bottom>
-          <template #activator="{ on, attrs }">
-            <span
-              class="text-truncate-2 mt-2 text-color"
-              v-bind="attrs"
-              v-on="on">
-              {{ applicationTitle }}
-            </span>
-          </template>
-          <span>{{ applicationTitle }}</span>
-        </v-tooltip>
-      </div>
+      <my-application-item-face
+        v-if="template"
+        ref="face"
+        :application="application"
+        :display-settings="displaySettings"
+        :preview="preview"
+        :focused="isFocused"
+        @lift="lift = $event" />
+      <my-application-item-content
+        v-else
+        :application="application"
+        :preview="preview" />
     </v-card>
   </v-hover>
 </template>
 <script>
+import {getLiftedSlotStyle, getTileClass, getTileStyle} from '../../myApplicationsDisplay.js';
+
 export default {
   props: {
     application: {
@@ -124,6 +89,16 @@ export default {
       type: String,
       default: null
     },
+    // The resolved display settings of a template, null for the legacy tile, left as it is
+    displaySettings: {
+      type: Object,
+      default: null
+    },
+    // Displayed only, as in the settings' preview: opens nothing
+    preview: {
+      type: Boolean,
+      default: false
+    },
   },
   data: () => ({
     illustrationBaseUrl: '/app-center/rest/applications/illustration/',
@@ -131,6 +106,8 @@ export default {
     hover: false,
     isFocused: false,
     ignoreNextFocus: false,
+    // The size the tile keeps in its line while its face is lifted over the page, null otherwise
+    lift: null,
   }),
   computed: {
     applicationUrl() {
@@ -139,18 +116,55 @@ export default {
     applicationUrlTarget() {
       return this.application?.target;
     },
-    applicationTitle() {
-      return this.application?.title;
-    },
     applicationDescription() {
       return this.application?.description;
     },
     display() {
       return this.application.type !== 'DRAWER' || this.$root.quickActions[this.application.url];
     },
+    cardBindings() {
+      if (this.preview) {
+        return {tabindex: -1};
+      } else if (this.application.type === 'LINK') {
+        return {
+          href: this.applicationUrl,
+          target: this.applicationUrlTarget,
+          rel: 'nofollow noreferrer noopener',
+        };
+      } else {
+        return {loading: this.loading};
+      }
+    },
+    template() {
+      return this.displaySettings?.template;
+    },
+    // A column's app spans its line
+    templateMaxWidth() {
+      if (this.template === 'COLUMN') {
+        return null;
+      }
+      return this.template === 'CARDS' ? 114 : 240;
+    },
+    cardClass() {
+      return this.lift ? null : getTileClass(this.displaySettings, this.hover, this.isFocused);
+    },
+    cardStyle() {
+      return this.lift ? getLiftedSlotStyle(this.lift) : getTileStyle(this.displaySettings);
+    },
   },
   methods: {
+    setHover(hover) {
+      if (hover && !this.hover) {
+        this.$refs.face?.open();
+      } else if (!hover) {
+        this.$refs.face?.close();
+      }
+      this.hover = hover;
+    },
     async openApplication(event) {
+      if (this.preview) {
+        return;
+      }
       this.onFocusOut(event);
       const appType = this.application.type;
       const appUrl = this.application.url;
@@ -176,7 +190,7 @@ export default {
     },
     onFocusOut(event) {
       if (!this.$el.contains(event.relatedTarget)) {
-        this.hover = false;
+        this.setHover(false);
         this.isFocused = false;
       }
     },
@@ -187,7 +201,7 @@ export default {
       } else {
         this.isFocused = true;
       }
-      this.hover = true;
+      this.setHover(true);
     },
     onMouseDown() {
       this.ignoreNextFocus = true;

@@ -18,6 +18,8 @@
  */
 package io.meeds.appcenter.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,30 +30,46 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.InOrder;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
+import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.upload.UploadResource;
 import org.exoplatform.upload.UploadService;
+import org.exoplatform.web.security.codec.CodecInitializer;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.dao.ApplicationDAO;
@@ -85,6 +103,12 @@ public class ApplicationCenterStorageTest {
   private static final String      TEST_USER     = "testuser";
 
   private static final Long        ID            = 2l;
+
+  private static final Long        IMAGE_FILE_ID = 55L;
+
+  private static final Long        SPACE_ID      = 5L;
+
+  private static final String      SETTING_NAME  = "Untitled-12-1b4e28ba-2fa1-11d2-883f-0016d3cca427";
 
   @MockitoBean
   private FileService              fileService;
@@ -401,6 +425,272 @@ public class ApplicationCenterStorageTest {
     assertEquals(1, applicationCenterStorage.getSystemApplications().size());
   }
 
+  @Test
+  void createApplicationIsOwnedByNoWindowWhateverTheApplicationCarries() {
+    Application application = application(null);
+    application.setContextSettingName(SETTING_NAME);
+    application.setContextSpaceId(SPACE_ID);
+
+    Application storedApplication = applicationCenterStorage.createApplication(application);
+
+    verify(applicationDAO).save(argThat(entity -> entity.getContextSettingName() == null && entity.getContextSpaceId() == null));
+    assertNull(storedApplication.getContextSettingName());
+    assertNull(storedApplication.getContextSpaceId());
+    assertFalse(storedApplication.isContextual());
+  }
+
+  @Test
+  void createContextApplicationIsOwnedByTheWindow() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterStorage.createContextApplication(null, SETTING_NAME, 0));
+    assertThrows(IllegalArgumentException.class,
+                 () -> applicationCenterStorage.createContextApplication(application(null), " ", 0));
+    verify(applicationDAO, never()).save(any());
+
+    Application application = application(null);
+    application.setImageFileId(IMAGE_FILE_ID);
+    Application storedApplication = applicationCenterStorage.createContextApplication(application, SETTING_NAME, SPACE_ID);
+
+    verify(applicationDAO).save(argThat(entity -> SETTING_NAME.equals(entity.getContextSettingName())
+                                                  && SPACE_ID.equals(entity.getContextSpaceId())
+                                                  && IMAGE_FILE_ID.equals(entity.getImageFileId())));
+    assertEquals(SETTING_NAME, storedApplication.getContextSettingName());
+    assertEquals(SPACE_ID, storedApplication.getContextSpaceId());
+    assertTrue(storedApplication.isContextual());
+    verify(uploadService, never()).getUploadResource(any());
+  }
+
+  @Test
+  void createContextApplicationDeletesTheIllustrationOfAnApplicationTheDatabaseRefuses() {
+    Application application = application(null);
+    application.setImageFileId(IMAGE_FILE_ID);
+    doThrow(new IllegalStateException("insert refused")).when(applicationDAO).save(any());
+
+    assertThrows(IllegalStateException.class,
+                 () -> applicationCenterStorage.createContextApplication(application, SETTING_NAME, SPACE_ID));
+    verify(fileService).deleteFile(IMAGE_FILE_ID);
+  }
+
+  @Test
+  void createContextApplicationKeepsTheIllustrationOfAnApplicationCreated() {
+    Application application = application(null);
+    application.setImageFileId(IMAGE_FILE_ID);
+    when(fileService.getFileInfo(IMAGE_FILE_ID)).thenThrow(new IllegalStateException("read refused"));
+
+    assertThrows(IllegalStateException.class,
+                 () -> applicationCenterStorage.createContextApplication(application, SETTING_NAME, SPACE_ID));
+    verify(applicationDAO).save(any());
+    verify(fileService, never()).deleteFile(anyLong());
+  }
+
+  @Test
+  void deleteIllustration() {
+    applicationCenterStorage.deleteIllustration(IMAGE_FILE_ID);
+    verify(fileService).deleteFile(IMAGE_FILE_ID);
+  }
+
+  @Test
+  void updateApplicationKeepsTheStoredOwner() {
+    ApplicationEntity existingApplication = applicationEntity(ID);
+    existingApplication.setContextSettingName(SETTING_NAME);
+    existingApplication.setContextSpaceId(SPACE_ID);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(existingApplication));
+
+    Application application = application(ID);
+    application.setContextSettingName("Untitled-13-forged");
+    application.setContextSpaceId(SPACE_ID + 1);
+    applicationCenterStorage.updateApplication(application);
+    verify(applicationDAO).save(argThat(entity -> SETTING_NAME.equals(entity.getContextSettingName())
+                                                  && SPACE_ID.equals(entity.getContextSpaceId())));
+
+    ApplicationEntity catalogApplication = applicationEntity(ID);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(catalogApplication));
+    application.setContextSettingName(SETTING_NAME);
+    application.setContextSpaceId(SPACE_ID);
+    applicationCenterStorage.updateApplication(application);
+    verify(applicationDAO).save(argThat(entity -> entity.getContextSettingName() == null && entity.getContextSpaceId() == null));
+  }
+
+  /**
+   * Fails the mutants taking the owner or the system flag from the
+   * application, keeping the replaced illustration, deleting it before the
+   * save, and deleting the new one
+   */
+  @Test
+  void updateContextApplicationKeepsTheStoredOwnerAndDeletesTheReplacedIllustrationOnceSaved() throws Exception {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    Application application = application(ID);
+    application.setContextSettingName("Untitled-13-forged");
+    application.setContextSpaceId(SPACE_ID + 1);
+    application.setSystem(true);
+    application.setImageFileId(IMAGE_FILE_ID + 1);
+
+    applicationCenterStorage.updateContextApplication(application);
+
+    InOrder inOrder = inOrder(applicationDAO, fileService);
+    inOrder.verify(applicationDAO).save(argThat(entity -> SETTING_NAME.equals(entity.getContextSettingName())
+                                                          && SPACE_ID.equals(entity.getContextSpaceId())
+                                                          && !entity.isSystem()
+                                                          && Long.valueOf(IMAGE_FILE_ID + 1).equals(entity.getImageFileId())));
+    inOrder.verify(fileService).deleteFile(IMAGE_FILE_ID);
+    verify(fileService, never()).deleteFile(IMAGE_FILE_ID + 1);
+  }
+
+  /**
+   * Fails the mutants deleting the illustration the application keeps, and
+   * keeping the one it removes
+   */
+  @Test
+  void updateContextApplicationDeletesTheIllustrationItRemovesOnly() throws Exception {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID);
+    applicationCenterStorage.updateContextApplication(application);
+    verify(fileService, never()).deleteFile(anyLong());
+
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    application.setImageFileId(null);
+    applicationCenterStorage.updateContextApplication(application);
+    verify(applicationDAO).save(argThat(entity -> entity.getImageFileId() == null));
+    verify(fileService).deleteFile(IMAGE_FILE_ID);
+  }
+
+  /**
+   * A new illustration is the caller's: fails the mutants deleting the
+   * illustration of an application the database refuses, the stored one
+   * included when the update keeps it, and failing an update done because its
+   * former illustration is not deleted
+   */
+  @Test
+  void updateContextApplicationDeletesNoIllustrationOfAnApplicationTheDatabaseRefuses() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(contextApplicationEntity()));
+    doThrow(new IllegalStateException("update refused")).when(applicationDAO).save(any());
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID + 1);
+
+    assertThrows(IllegalStateException.class, () -> applicationCenterStorage.updateContextApplication(application));
+    verify(fileService, never()).deleteFile(anyLong());
+
+    doAnswer(invocation -> invocation.getArgument(0)).when(applicationDAO).save(any());
+    doThrow(new IllegalStateException("delete refused")).when(fileService).deleteFile(IMAGE_FILE_ID);
+    assertDoesNotThrow(() -> applicationCenterStorage.updateContextApplication(application));
+  }
+
+  /**
+   * Fails the mutants deleting the illustration the application gives when
+   * the application cannot be read: it is the stored one when the update keeps
+   * it, and a read refused while the application exists would delete it
+   */
+  @Test
+  void updateContextApplicationDeletesNoIllustrationOfAnApplicationItCannotRead() {
+    Application application = application(ID);
+    application.setImageFileId(IMAGE_FILE_ID);
+    when(applicationDAO.findById(ID)).thenReturn(Optional.empty());
+    assertThrows(ApplicationNotFoundException.class, () -> applicationCenterStorage.updateContextApplication(application));
+
+    when(applicationDAO.findById(ID)).thenThrow(new IllegalStateException("read refused"));
+    assertThrows(IllegalStateException.class, () -> applicationCenterStorage.updateContextApplication(application));
+    verify(fileService, never()).deleteFile(anyLong());
+    verify(applicationDAO, never()).save(any());
+  }
+
+  @Test
+  void getContextApplicationIds() {
+    when(applicationDAO.findIdsByContextSpaceId(SPACE_ID)).thenReturn(List.of(ID));
+    assertEquals(List.of(ID), applicationCenterStorage.getContextApplicationIds(SPACE_ID));
+  }
+
+  @Test
+  void readUploadReadsAtMostOneByteMoreThanTheBound(@TempDir Path tempDir) throws Exception {
+    Path file = Files.write(tempDir.resolve("upload"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
+    mockUpload("uploadId", file.toString(), UploadResource.UPLOADED_STATUS);
+
+    assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 }, applicationCenterStorage.readUpload("uploadId", 4));
+    assertArrayEquals(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, applicationCenterStorage.readUpload("uploadId", 10));
+  }
+
+  @Test
+  void readUploadReturnsNullWithoutACompletedUpload(@TempDir Path tempDir) throws Exception {
+    assertNull(applicationCenterStorage.readUpload(null, 4));
+    assertNull(applicationCenterStorage.readUpload("unknown", 4));
+
+    Path file = Files.write(tempDir.resolve("upload"), new byte[] { 1, 2, 3 });
+    mockUpload("uploading", file.toString(), UploadResource.UPLOADING_STATUS);
+    assertNull(applicationCenterStorage.readUpload("uploading", 4));
+
+    mockUpload("failed", file.toString(), UploadResource.FAILED_STATUS);
+    assertNull(applicationCenterStorage.readUpload("failed", 4));
+
+    mockUpload("missingFile", tempDir.resolve("missing").toString(), UploadResource.UPLOADED_STATUS);
+    assertNull(applicationCenterStorage.readUpload("missingFile", 4));
+  }
+
+  @Test
+  void removeUpload() {
+    applicationCenterStorage.removeUpload(" ");
+    verify(uploadService, never()).removeUploadResource(any());
+
+    applicationCenterStorage.removeUpload("uploadId");
+    verify(uploadService).removeUploadResource("uploadId");
+  }
+
+  @Test
+  void saveIllustrationStoresTheContentWithTheGivenType() throws Exception {
+    List<FileInfo> writtenFiles = new ArrayList<>();
+    when(fileService.writeFile(any())).thenAnswer(invocation -> {
+      FileItem fileItem = invocation.getArgument(0);
+      FileInfo fileInfo = fileItem.getFileInfo();
+      writtenFiles.add(fileInfo);
+      fileItem.setFileInfo(new FileInfo(IMAGE_FILE_ID,
+                                        fileInfo.getName(),
+                                        fileInfo.getMimetype(),
+                                        fileInfo.getNameSpace(),
+                                        fileInfo.getSize(),
+                                        null,
+                                        null,
+                                        null,
+                                        false));
+      return fileItem;
+    });
+
+    assertEquals(IMAGE_FILE_ID, applicationCenterStorage.saveIllustration(new byte[] { 1, 2, 3 }, "image/png"));
+    assertEquals(1, writtenFiles.size());
+    assertEquals("image/png", writtenFiles.get(0).getMimetype());
+    assertEquals(3, writtenFiles.get(0).getSize());
+    assertEquals(ApplicationCenterStorage.NAME_SPACE, writtenFiles.get(0).getNameSpace());
+  }
+
+  private void mockUpload(String uploadId, String storeLocation, int status) {
+    UploadResource uploadResource = mock(UploadResource.class);
+    lenient().when(uploadResource.getStoreLocation()).thenReturn(storeLocation);
+    lenient().when(uploadResource.getStatus()).thenReturn(status);
+    when(uploadService.getUploadResource(uploadId)).thenReturn(uploadResource);
+  }
+
+  /**
+   * The token of an illustration URL authorizes that URL: fails the mutant
+   * checking a token with another provider or type than the one the URL's
+   * token is generated with, which no token then matches
+   */
+  @Test
+  void isIllustrationTokenValidAcceptsTheTokenOfTheIllustrationUrl() {
+    when(applicationDAO.findById(ID)).thenReturn(Optional.of(applicationEntity(ID)));
+    ReflectionTestUtils.setField(applicationCenterStorage, "codecInitializer", mock(CodecInitializer.class));
+    try (MockedStatic<LinkProvider> linkProvider = mockStatic(LinkProvider.class)) {
+      linkProvider.when(() -> LinkProvider.generateAttachmentToken(any(), any(), any(), any()))
+                  .thenAnswer(invocation -> StringUtils.join(invocation.getArguments(), ':'));
+      linkProvider.when(() -> LinkProvider.isAttachmentTokenValid(any(), any(), any(), any(), any())).thenCallRealMethod();
+      String imageUrl = applicationCenterStorage.getApplication(ID).getImageUrl();
+      String token = URLDecoder.decode(StringUtils.substringAfter(imageUrl, "&r="), StandardCharsets.UTF_8);
+      long version = Long.parseLong(StringUtils.substringBetween(imageUrl, "?v=", "&r="));
+
+      assertTrue(applicationCenterStorage.isIllustrationTokenValid(ID, token, version));
+      assertFalse(applicationCenterStorage.isIllustrationTokenValid(ID, token, version + 1));
+      assertFalse(applicationCenterStorage.isIllustrationTokenValid(ID + 1, token, version));
+    } finally {
+      ReflectionTestUtils.setField(applicationCenterStorage, "codecInitializer", null);
+    }
+  }
+
   private ApplicationEntity applicationEntity(Long id) {
     return new ApplicationEntity(id,
                                  TITLE + "1",
@@ -425,7 +715,17 @@ public class ApplicationCenterStorageTest {
                                  null,
                                  false,
                                  false,
+                                 null,
+                                 null,
                                  null);
+  }
+
+  private ApplicationEntity contextApplicationEntity() {
+    ApplicationEntity applicationEntity = applicationEntity(ID);
+    applicationEntity.setContextSettingName(SETTING_NAME);
+    applicationEntity.setContextSpaceId(SPACE_ID);
+    applicationEntity.setImageFileId(IMAGE_FILE_ID);
+    return applicationEntity;
   }
 
   private Application application(Long id) {
@@ -453,7 +753,9 @@ public class ApplicationCenterStorageTest {
                            false,
                            null,
                            false,
-                           false);
+                           false,
+                           null,
+                           null);
   }
 
 }

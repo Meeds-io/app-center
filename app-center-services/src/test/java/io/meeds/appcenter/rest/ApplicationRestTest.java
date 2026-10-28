@@ -18,7 +18,15 @@
  */
 package io.meeds.appcenter.rest;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -26,9 +34,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,12 +67,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import org.exoplatform.commons.exception.ObjectNotFoundException;
+import org.exoplatform.commons.file.model.FileInfo;
 import org.exoplatform.commons.file.services.FileService;
 
 import io.meeds.appcenter.constant.ApplicationType;
 import io.meeds.appcenter.constant.PlacementSide;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationList;
+import io.meeds.appcenter.model.ApplicationListFilter;
 import io.meeds.appcenter.model.ApplicationPlacements;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.service.ApplicationCenterService;
@@ -82,6 +97,20 @@ public class ApplicationRestTest {
   private static final String ALL_APPLICATIONS_PATH = "/applications/all";// NOSONAR
 
   private static final String PLACEMENTS_PATH       = "/applications/placements";// NOSONAR
+
+  private static final String LISTED_APPLICATIONS_PATH  = "/applications/list";             // NOSONAR
+
+  private static final String CONTEXT_APPLICATIONS_PATH = "/applications/contextual/list";  // NOSONAR
+
+  private static final String CONTEXT_SUGGEST_PATH      = "/applications/contextual/suggest"; // NOSONAR
+
+  private static final String CONTEXT_PATH              = "/applications/contextual";       // NOSONAR
+
+  private static final String ILLUSTRATION_PATH         = "/applications/illustration/1";   // NOSONAR
+
+  private static final String SETTING_NAME_PARAM        = "settingName";
+
+  private static final String SETTING_NAME              = "Untitled-12";
 
   private static final String SIMPLE_USER           = "simple";
 
@@ -120,6 +149,283 @@ public class ApplicationRestTest {
     mockMvc = MockMvcBuilders.webAppContextSetup(context)
                              .addFilters(filterChain.getFilters().toArray(new Filter[0]))
                              .build();
+  }
+
+  @Test
+  void getListedApplicationsAnonymously() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).param("ids", "1"))
+           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getListedApplicationsPassesTheIdsInOrder() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "5,3,9")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getListedApplications(eq(new ApplicationListFilter(SETTING_NAME, List.of(5L, 3L, 9L))),
+                                                           any(),
+                                                           eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getListedApplicationsPassesTheCategoryIdsInOrder() throws Exception {
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("categoryIds", "7,4")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getListedApplications(eq(new ApplicationListFilter(SETTING_NAME, null, List.of(7L, 4L))),
+                                                           any(),
+                                                           eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getListedApplicationsAnswers400OnAnInvalidCategoryListing() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1")
+                                                 .param("categoryIds", "7")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("categoryIds", "7,x")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getListedApplicationsAnswers400OverTheCapOrOnAnInvalidId() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                 .param("ids", "1,x")
+                                                 .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getContextApplicationsAnswers403WithoutTheSettingsRight() throws Exception {
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalAccessException.class);
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                  .param("ids", "1")
+                                                  .with(testSimpleUser()))
+           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getContextApplicationsAnswers400OverTheCap() throws Exception {
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                  .param("ids", "1")
+                                                  .with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void listingAndSuggestionAnswersAreKeptOutOfSharedCaches() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenReturn(List.of());
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenReturn(List.of());
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any())).thenReturn(List.of());
+    for (String path : List.of(LISTED_APPLICATIONS_PATH, CONTEXT_APPLICATIONS_PATH, CONTEXT_SUGGEST_PATH)) {
+      mockMvc.perform(get(path).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+             .andExpect(status().isOk())
+             .andExpect(header().string("Cache-Control", "no-store, private"));
+    }
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(header().string("Cache-Control", "no-store, private"));
+  }
+
+  @Test
+  void listingAndSuggestionEndpointsAnswer404OnAnUnknownSetting() throws Exception {
+    when(applicationCenterService.getListedApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextApplications(any(), any(), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(ObjectNotFoundException.class);
+    mockMvc.perform(get(LISTED_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(get(CONTEXT_APPLICATIONS_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void getContextSuggestions() throws Exception {
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                             .param("keyword", "doc")
+                                             .param("excludedIds", "4,7")
+                                             .with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).getContextSuggestions(eq(SETTING_NAME), eq("doc"), eq(List.of(4L, 7L)), eq(0), eq(20), any(), eq(SIMPLE_USER));
+  }
+
+  @Test
+  void getContextSuggestionsAnswers400OverTheExclusionCap() throws Exception {
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                                .thenThrow(IllegalArgumentException.class);
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getContextSuggestionsAnswers403WithoutTheSettingsRight() throws Exception {
+    when(applicationCenterService.getContextSuggestions(any(), any(), any(), anyInt(), anyInt(), any(), any()))
+                                                                                                         .thenThrow(IllegalAccessException.class);
+    mockMvc.perform(get(CONTEXT_SUGGEST_PATH).param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void createContextApplication() throws Exception {
+    Application created = application();
+    created.setContextSettingName(SETTING_NAME);
+    when(applicationCenterService.createContextApplication(any(), eq(SETTING_NAME), eq(SIMPLE_USER))).thenReturn(created);
+
+    mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                      .content("{\"title\":\"title\",\"url\":\"https://meeds.io\",\"contextual\":false,\"imageUploadId\":\"upload\"}")
+                                      .contentType(MediaType.APPLICATION_JSON)
+                                      .with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.contextual").value(true))
+           .andExpect(jsonPath("$.contextSettingName").value(SETTING_NAME));
+    verify(applicationCenterService).createContextApplication(argThat(form -> "title".equals(form.getTitle())
+                                                                              && "upload".equals(form.getImageUploadId())),
+                                                              eq(SETTING_NAME),
+                                                              eq(SIMPLE_USER));
+  }
+
+  @Test
+  void createContextApplicationAnonymously() throws Exception {
+    mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                      .content("{\"title\":\"title\"}")
+                                      .contentType(MediaType.APPLICATION_JSON))
+           .andExpect(status().isForbidden());
+    verify(applicationCenterService, never()).createContextApplication(any(), any(), any());
+  }
+
+  /**
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
+   */
+  @Test
+  void createContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    when(applicationCenterService.createContextApplication(any(), eq("unknown"), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.createContextApplication(any(), eq("forbidden"), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.createContextApplication(any(),
+                                                           eq("invalid"),
+                                                           any())).thenThrow(new IllegalArgumentException(ApplicationCenterService.INVALID_TYPE_MESSAGE));
+
+    postContextApplication("unknown").andExpect(status().isNotFound());
+    postContextApplication("forbidden").andExpect(status().isForbidden());
+    postContextApplication("invalid").andExpect(status().isBadRequest())
+                                     .andExpect(status().reason(ApplicationCenterService.INVALID_TYPE_MESSAGE));
+  }
+
+  @Test
+  void updateContextApplication() throws Exception {
+    Application updated = application();
+    updated.setContextSettingName(SETTING_NAME);
+    updated.setCategoryIds(List.of(10L));
+    when(applicationCenterService.updateContextApplication(eq(7L), any(), eq(SETTING_NAME), eq(SIMPLE_USER))).thenReturn(updated);
+
+    mockMvc.perform(put(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)
+                                            .content("{\"title\":\"title\",\"imageUploadId\":\"upload\",\"illustrationRemoved\":true,\"categoryIds\":[10]}")
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.contextual").value(true))
+           .andExpect(jsonPath("$.categoryIds[0]").value(10));
+    verify(applicationCenterService).updateContextApplication(eq(7L),
+                                                              argThat(form -> "title".equals(form.getTitle())
+                                                                              && "upload".equals(form.getImageUploadId())
+                                                                              && form.isIllustrationRemoved()
+                                                                              && List.of(10L).equals(form.getCategoryIds())),
+                                                              eq(SETTING_NAME),
+                                                              eq(SIMPLE_USER));
+
+    mockMvc.perform(put(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)
+                                            .content("{\"title\":\"title\"}")
+                                            .contentType(MediaType.APPLICATION_JSON))
+           .andExpect(status().isForbidden());
+    verify(applicationCenterService, times(1)).updateContextApplication(anyLong(), any(), any(), any());
+  }
+
+  /**
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
+   */
+  @Test
+  void updateContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    when(applicationCenterService.updateContextApplication(eq(1L), any(), eq(SETTING_NAME), any())).thenThrow(ObjectNotFoundException.class);
+    when(applicationCenterService.updateContextApplication(eq(2L), any(), eq(SETTING_NAME), any())).thenThrow(IllegalAccessException.class);
+    when(applicationCenterService.updateContextApplication(eq(3L),
+                                                           any(),
+                                                           eq(SETTING_NAME),
+                                                           any())).thenThrow(new IllegalArgumentException(ApplicationCenterService.NOT_OWNED_MESSAGE));
+
+    putContextApplication(1L).andExpect(status().isNotFound());
+    putContextApplication(2L).andExpect(status().isForbidden());
+    putContextApplication(3L).andExpect(status().isBadRequest())
+                             .andExpect(status().reason(ApplicationCenterService.NOT_OWNED_MESSAGE));
+  }
+
+  @Test
+  void deleteContextApplication() throws Exception {
+    mockMvc.perform(delete(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isOk());
+    verify(applicationCenterService).deleteContextApplication(7L, SETTING_NAME, SIMPLE_USER);
+
+    mockMvc.perform(delete(CONTEXT_PATH + "/7").param(SETTING_NAME_PARAM, SETTING_NAME)).andExpect(status().isForbidden());
+  }
+
+  /**
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
+   */
+  @Test
+  void deleteContextApplicationAnswersTheStatusOfEachRefusal() throws Exception {
+    doThrow(ObjectNotFoundException.class).when(applicationCenterService).deleteContextApplication(1L, SETTING_NAME, SIMPLE_USER);
+    doThrow(IllegalAccessException.class).when(applicationCenterService).deleteContextApplication(2L, SETTING_NAME, SIMPLE_USER);
+    doThrow(new IllegalArgumentException(ApplicationCenterService.NOT_OWNED_MESSAGE)).when(applicationCenterService)
+                                                                                    .deleteContextApplication(3L,
+                                                                                                              SETTING_NAME,
+                                                                                                              SIMPLE_USER);
+
+    mockMvc.perform(delete(CONTEXT_PATH + "/1").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isNotFound());
+    mockMvc.perform(delete(CONTEXT_PATH + "/2").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isForbidden());
+    mockMvc.perform(delete(CONTEXT_PATH + "/3").param(SETTING_NAME_PARAM, SETTING_NAME).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(status().reason(ApplicationCenterService.NOT_OWNED_MESSAGE));
+  }
+
+  private ResultActions postContextApplication(String settingName) throws Exception {
+    return mockMvc.perform(post(CONTEXT_PATH).param(SETTING_NAME_PARAM, settingName)
+                                             .content("{\"title\":\"title\"}")
+                                             .contentType(MediaType.APPLICATION_JSON)
+                                             .with(testSimpleUser()));
+  }
+
+  private ResultActions putContextApplication(long applicationId) throws Exception {
+    return mockMvc.perform(put(CONTEXT_PATH + "/" + applicationId).param(SETTING_NAME_PARAM, SETTING_NAME)
+                                                                  .content("{\"title\":\"title\"}")
+                                                                  .contentType(MediaType.APPLICATION_JSON)
+                                                                  .with(testSimpleUser()));
   }
 
   @Test
@@ -215,6 +521,10 @@ public class ApplicationRestTest {
     response.andExpect(status().isUnauthorized());
   }
 
+  /**
+   * Fails the mutant refusing without the message code, the reason the
+   * platform returns in the error body for the client to translate
+   */
   @Test
   void stickApplicationNotAllowed() throws Exception {
     doThrow(new IllegalArgumentException("appCenter.placement.stickNotAllowed")).when(applicationCenterService)
@@ -222,7 +532,7 @@ public class ApplicationRestTest {
                                                                                                   PlacementSide.LEFT,
                                                                                                   SIMPLE_USER);
     ResultActions response = mockMvc.perform(put(PLACEMENTS_PATH + "/left?applicationId=1").with(testSimpleUser()));
-    response.andExpect(status().isBadRequest());
+    response.andExpect(status().isBadRequest()).andExpect(status().reason("appCenter.placement.stickNotAllowed"));
   }
 
   @Test
@@ -235,6 +545,28 @@ public class ApplicationRestTest {
   private RequestPostProcessor testAdminUser() {
     return user(ADMIN_USER).password(TEST_PASSWORD)
                            .authorities(new SimpleGrantedAuthority("administrators"));
+  }
+
+  /**
+   * A tile's illustration URL authorizes its illustration for a signed-in user
+   * who may not see the application, such as an editor of the window that
+   * created it: fails the mutant refusing that token to a signed-in user
+   */
+  @Test
+  void getApplicationIllustrationWithTheTokenOfItsUrl() throws Exception {
+    Application application = application();
+    when(applicationCenterService.getApplication(1L)).thenReturn(application);
+    FileInfo fileInfo = mock(FileInfo.class);
+    when(fileInfo.getMimetype()).thenReturn("image/png");
+    when(fileService.getFileInfo(application.getImageFileId())).thenReturn(fileInfo);
+    when(applicationCenterService.getApplicationImageInputStream(1L, null)).thenReturn(new ByteArrayInputStream(new byte[] { 1 }));
+    when(applicationCenterService.getApplicationImageLastUpdated(1L)).thenReturn(3L);
+    when(applicationCenterService.isIllustrationTokenValid(1L, "token", 3L)).thenReturn(true);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("r", "token").param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isOk());
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("r", "other").param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isUnauthorized());
   }
 
   private RequestPostProcessor testSimpleUser() {
@@ -273,7 +605,9 @@ public class ApplicationRestTest {
                            false,
                            null,
                            false,
-                           false);
+                           false,
+                           null,
+                           null);
   }
 
   @SneakyThrows

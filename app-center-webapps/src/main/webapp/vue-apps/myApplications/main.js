@@ -31,14 +31,19 @@ if (extensionRegistry) {
 }
 
 const lang = eXo?.env?.portal?.language || 'en';
-const url = `/app-center/i18n/locale.portlet.MyApplications?lang=${lang}`;
+const urls = [`/app-center/i18n/locale.portlet.MyApplications?lang=${lang}`];
+// The application form's labels, for the editors only: a viewer never opens it
+const editorUrls = [
+  `/app-center/i18n/locale.addon.appcenter?lang=${lang}`,
+  `/app-center/i18n/locale.portlet.QuickActions?lang=${lang}`,
+];
 const vuetify = Vue.prototype.vuetifyOptions;
-const appId = 'myApplications';
 
-export function init(settings) {
-  exoi18n.loadLanguageAsync(lang, url).then(i18n => {
+export function init(appId, settings) {
+  exoi18n.loadLanguageAsync(lang, settings?.canEdit ? [...urls, ...editorUrls] : urls).then(i18n => {
     Vue.createApp({
       data: () => ({
+        appId,
         settings,
         noAutoOpen: true,
         quickActionExtensions: [],

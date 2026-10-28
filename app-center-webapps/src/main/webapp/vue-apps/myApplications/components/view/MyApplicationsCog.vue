@@ -1,0 +1,62 @@
+<!--
+ * This file is part of the Meeds project (https://meeds.io/).
+ *
+ * Copyright (C) 2026 Meeds Association contact@meeds.io
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+-->
+
+<template>
+  <!-- Hidden, it keeps its place in the tab order, and focusing it shows it. A pointer cannot hit it until it shows -->
+  <v-btn
+    :title="$t('myApplications.editSettings.tooltip')"
+    :aria-label="$t('myApplications.editSettings.tooltip')"
+    :style="!displayed && !focused && 'opacity: 0; pointer-events: none'"
+    class="text-font-size"
+    small
+    link
+    icon
+    @focus="setFocused(true)"
+    @blur="setFocused(false)"
+    @click="$emit('open-settings')">
+    <v-icon
+      :size="18"
+      class="icon-default-size icon-default-color">
+      fas fa-cog
+    </v-icon>
+  </v-btn>
+</template>
+<script>
+export default {
+  props: {
+    // Displayed with the portlet's hover state, which the pointer and the keyboard focus both set
+    displayed: {
+      type: Boolean,
+      default: false
+    },
+  },
+  data: () => ({
+    // Focused, it stays displayed: the pointer leaving the portlet clears its hover state while the focus stays here
+    focused: false,
+  }),
+  methods: {
+    // Told to the list, so that the cog shown by its focus keeps its room as when the portlet is hovered
+    setFocused(focused) {
+      this.focused = focused;
+      this.$emit('focused', focused);
+    },
+  },
+};
+</script>

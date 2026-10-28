@@ -61,7 +61,11 @@ export default {
       }
       this.resolving = true;
       try {
-        const application = await this.$appPlacementService.findApplicationById(this.applicationId).catch(() => null);
+        // An application created from a Shortcuts portlet is read from that portlet's list
+        const settingName = new URLSearchParams(window.location.search).get('settingName');
+        const application = await (settingName
+          ? this.$appPlacementService.findListedApplication(settingName, this.applicationId)
+          : this.$appPlacementService.findApplicationById(this.applicationId)).catch(() => null);
         if (!application?.allowDetach) {
           this.error = true;
           return;

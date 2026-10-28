@@ -36,6 +36,15 @@ public class ApplicationForm extends Application {
   @Exclude
   private String illustrationMimeType;
 
+  /**
+   * Read by the Shortcuts portlet's update only (PUT
+   * applications/contextual/{id}): there the stored illustration is removed on
+   * this flag alone and kept otherwise, unless an upload replaces it. The
+   * administrators' update ignores it.
+   */
+  @Exclude
+  private boolean illustrationRemoved;
+
   public ApplicationForm(Application application) {
     super(application.getId(),
           application.getTitle(),
@@ -61,7 +70,9 @@ public class ApplicationForm extends Application {
           application.isPersonal(),
           application.getBadgeName(),
           application.isAllowStick(),
-          application.isAllowDetach());
+          application.isAllowDetach(),
+          application.getContextSettingName(),
+          application.getContextSpaceId());
   }
 
 }

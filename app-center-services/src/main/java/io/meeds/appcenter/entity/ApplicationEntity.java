@@ -122,6 +122,21 @@ public class ApplicationEntity {
   @Column(name = "ALLOW_DETACH")
   private boolean                               allowDetach;
 
+  /**
+   * CMS setting name of the Shortcuts portlet window that created the
+   * application, null for an application of the Application Center. Set on
+   * creation, never changed.
+   */
+  @Column(name = "CONTEXT_SETTING_NAME")
+  private String                                contextSettingName;
+
+  /**
+   * Space of the context the application was created in, 0 for the platform
+   * context, null for an application of the Application Center.
+   */
+  @Column(name = "CONTEXT_SPACE_ID")
+  private Long                                  contextSpaceId;
+
   @lombok.ToString.Exclude
   @lombok.EqualsAndHashCode.Exclude
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "application", cascade = CascadeType.REMOVE)

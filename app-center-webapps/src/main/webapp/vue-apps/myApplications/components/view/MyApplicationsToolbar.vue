@@ -26,56 +26,43 @@
       <span class="text-truncate">{{ headerLabel }}</span>
     </div>
     <div v-else class="flex-grow-1"></div>
+    <!-- Holds the cog's height while the cog lies out of the flow: the line does not move when it shows -->
     <div
-      class="d-flex align-center ms-auto">
-      <template v-if="hasApplications">
-        <v-btn
-          v-if="!hover || !isAdmin"
-          :loading="loading === 'seeMore'"
-          color="primary"
-          class="pa-0 text-font-size"
-          small
-          text
-          link
-          @click="openApplications('seeMore')">
-          <span class="primary--text text-none">
-            {{ $t('myApplications.seeMore.label') }}
-          </span>
-        </v-btn>
+      :style="showCog && 'min-height: 28px'"
+      class="d-flex align-center position-relative ms-auto">
+      <template v-if="hasApplications && showSeeMore">
+        <my-applications-see-more
+          v-if="!seeMoreIconDisplayed" />
+        <!-- Drawn as the Links portlet draws it on hover -->
         <v-btn
           v-else
           ref="btnSeeMoreIcon"
           :loading="loading === 'seeMoreIcon'"
           :title="$t('myApplications.seeMore.tooltip')"
-          color="primary"
           class="ms-2 text-font-size"
           small
           link
+          outlined
           icon
           @click="openApplications('seeMoreIcon')">
           <v-icon
             :size="18"
-            class="icon-default-size">
+            class="primary--text">
             fas fa-external-link-alt
           </v-icon>
         </v-btn>
       </template>
+      <!-- The cog shows with the portlet's hover state, as in the platform's other widgets. Until then it lies hidden
+           over the line's end, out of the flow: 'see more' ends the line, and the cog keeps its place in the tab order -->
+      <my-applications-cog
+        v-if="showCog"
+        :displayed="hover"
+        :class="cogShown ? 'ms-2' : 'position-absolute'"
+        :style="!cogShown && 'inset-inline-end: 0'"
+        @focused="cogFocused = $event"
+        @open-settings="$emit('open-settings')" />
       <v-btn
-        v-if="hover && isAdmin"
-        :title="$t('myApplications.editSettings.tooltip')"
-        class="ms-2 text-font-size"
-        small
-        link
-        icon
-        @click="$emit('open-settings')">
-        <v-icon
-          :size="18"
-          class="icon-default-size icon-default-color">
-          fas fa-cog
-        </v-icon>
-      </v-btn>
-      <v-btn
-        v-if="!hasApplications"
+        v-if="!hasApplications && favorites"
         :title="$t('myApplications.add.application.tooltip')"
         :loading="loading === 'addAppIcon'"
         class="ms-2 text-font-size"
@@ -103,7 +90,12 @@ export default {
       type: Boolean,
       default: false
     },
-    isAdmin: {
+    canEdit: {
+      type: Boolean,
+      default: false
+    },
+    // The settings cog is on this line
+    showCog: {
       type: Boolean,
       default: false
     },
@@ -115,14 +107,33 @@ export default {
       type: Boolean,
       default: true
     },
+    showSeeMore: {
+      type: Boolean,
+      default: true
+    },
+    favorites: {
+      type: Boolean,
+      default: true
+    },
   },
   data: () => ({
     loading: false,
     applicationsDrawer: false,
+    // The cog holds the focus, which shows it whatever the hover
+    cogFocused: false,
   }),
   computed: {
     headerLabel() {
       return this.headerTitle || this.$t('myApplications.name.label');
+    },
+    // With the portlet's hover state, an editor sees an icon in place of 'see more', next to the cog, as in the
+    // platform's other widgets
+    seeMoreIconDisplayed() {
+      return this.hover && this.canEdit;
+    },
+    // Shown, the cog takes its room after 'see more'
+    cogShown() {
+      return this.hover || this.cogFocused;
     },
   },
   methods: {
