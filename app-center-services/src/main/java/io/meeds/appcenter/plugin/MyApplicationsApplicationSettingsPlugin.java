@@ -200,7 +200,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> preferences = new LinkedHashMap<>();
     Object maxAppsToList = settings.get(MAX_APPS_TO_LIST);
-    if (maxAppsToList != null && !isStoredNumber(maxAppsToList, readMaxAppsToList(stored))) {
+    if (maxAppsToList != null && !isStoredNumber(maxAppsToList, stored.get(MAX_APPS_TO_LIST_PREFERENCE))) {
       preferences.put(MAX_APPS_TO_LIST_PREFERENCE,
                       String.valueOf(toInt(maxAppsToList, MAX_APPS_TO_LIST, MIN_APPS_TO_LIST, MAX_APPS_TO_LIST_BOUND)));
     }
@@ -218,7 +218,8 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    */
   private Map<String, String> toHeader(ApplicationSettingsContext context, Map<String, Object> settings) {
     Object value = settings.get(HEADER_TITLE);
-    if (value == null || value.equals(readHeader(context.getPreferences().get(APPLICATION_ID_PREFERENCE)))) {
+    Map<String, String> stored = readHeader(context.getPreferences().get(APPLICATION_ID_PREFERENCE));
+    if (value == null || value.equals(stored)) {
       return null; // NOSONAR
     }
     Object showHeader = settings.get(SHOW_HEADER);
@@ -226,7 +227,11 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     if (!shown) {
       throw notAccepted(HEADER_TITLE);
     }
-    Map<String, String> header = toTranslations(value, HEADER_TITLE, HEADER_MAX_LENGTH, getLanguages(localeConfigService));
+    Map<String, String> header = toTranslations(value,
+                                                HEADER_TITLE,
+                                                HEADER_MAX_LENGTH,
+                                                getLanguages(localeConfigService),
+                                                stored);
     if (StringUtils.isBlank(header.get(getDefaultLanguage()))) {
       throw notAccepted(HEADER_TITLE);
     }
@@ -242,8 +247,17 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     return value == null || Boolean.parseBoolean(value);
   }
 
-  private boolean isStoredNumber(Object value, int stored) {
-    return value instanceof Number number && number.doubleValue() == stored;
+  /**
+   * @return whether the value is the stored number as the view parses it:
+   *         a stored value the view cannot parse is never unchanged, so
+   *         sending the read default repairs it
+   */
+  private boolean isStoredNumber(Object value, String stored) {
+    try {
+      return stored != null && value instanceof Number number && number.doubleValue() == Integer.parseInt(stored);
+    } catch (NumberFormatException e) {
+      return false;
+    }
   }
 
   private Map<String, String> readHeader(String applicationId) {

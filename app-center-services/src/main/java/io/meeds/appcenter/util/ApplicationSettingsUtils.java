@@ -76,20 +76,25 @@ public class ApplicationSettingsUtils {
    * @param  option    the option holding it
    * @param  maxLength the longest text accepted
    * @param  languages the language tags the platform offers
+   * @param  stored    the stored translations, an entry equal to one of
+   *                     them accepted unchecked, as the read returned it
    * @return           the translations, an empty text dropped: an empty
    *                   text removes the translation of its language
    */
   public static Map<String, String> toTranslations(Object value,
                                                    String option,
                                                    int maxLength,
-                                                   Collection<String> languages) {
+                                                   Collection<String> languages,
+                                                   Map<String, String> stored) {
     if (!(value instanceof Map<?, ?> map)) {
       throw notAccepted(option);
     }
     Map<String, String> translations = new LinkedHashMap<>();
     for (Map.Entry<?, ?> entry : map.entrySet()) {
-      if (!(entry.getKey() instanceof String language) || !languages.contains(language)
-          || !(entry.getValue() instanceof String text) || text.length() > maxLength) {
+      if (!(entry.getKey() instanceof String language) || !(entry.getValue() instanceof String text)) {
+        throw notAccepted(option);
+      }
+      if (!text.equals(stored.get(language)) && (!languages.contains(language) || text.length() > maxLength)) {
         throw notAccepted(option);
       }
       if (StringUtils.isNotBlank(text)) {

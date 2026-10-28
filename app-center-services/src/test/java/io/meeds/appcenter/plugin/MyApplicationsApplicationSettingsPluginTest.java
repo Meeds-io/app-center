@@ -159,7 +159,9 @@ class MyApplicationsApplicationSettingsPluginTest {
     assertRefused(context, Map.of("show_header", "false"), "value is not accepted for show_header");
     assertRefused(context, Map.of("view_template", "List"), "value is not accepted for view_template");
     assertRefused(context, Map.of("header_title", Map.of("en", "x".repeat(256))), "value is not accepted for header_title");
-    assertRefused(context, Map.of("header_title", Map.of("de", "Werkzeuge")), "value is not accepted for header_title");
+    assertRefused(context,
+                  Map.of("header_title", Map.of("en", "Tools", "de", "Werkzeuge")),
+                  "value is not accepted for header_title");
     assertRefused(context, Map.of("header_title", Map.of("fr", "Outils")), "value is not accepted for header_title");
     assertRefused(context, Map.of("header_title", "Tools"), "value is not accepted for header_title");
   }
@@ -246,6 +248,43 @@ class MyApplicationsApplicationSettingsPluginTest {
     verify(applicationSettingsService, never()).updatePreferences(any(), anyMap());
     verify(applicationSettingsService, never()).markOwner(any(), anyMap());
     verify(translationService, never()).saveTranslationLabels(anyString(), anyString(), anyString(), anyMap(), anyString(), anyBoolean());
+  }
+
+  /**
+   * The view parses the stored number as is and fails on what it cannot
+   * parse, while the read shows its default: sending that default back
+   * writes it, which repairs the window
+   */
+  @Test
+  void testUnparseableStoredNumberIsRepairedByTheReadValue() throws Exception {
+    ApplicationSettingsContext empty = context(Map.of("maxAppsToList", ""), false);
+    plugin.apply(empty, Map.of("max_apps_to_list", plugin.read(empty).get("max_apps_to_list")));
+    verify(applicationSettingsService).updatePreferences(empty, Map.of("maxAppsToList", "4"));
+
+    ApplicationSettingsContext padded = context(Map.of("maxAppsToList", " 7"), false);
+    plugin.apply(padded, Map.of("max_apps_to_list", plugin.read(padded).get("max_apps_to_list")));
+    verify(applicationSettingsService).updatePreferences(padded, Map.of("maxAppsToList", "7"));
+  }
+
+  /**
+   * A stored translation in a language the platform no longer offers is
+   * what the read returns: kept unchecked when another language changes,
+   * refused when it is itself changed
+   */
+  @Test
+  void testStoredLanguageNoLongerOfferedIsKeptWhenAnotherChanges() throws Exception {
+    storedHeader(APPLICATION_ID, Map.of(Locale.ENGLISH, "Tools", Locale.GERMAN, "Werkzeuge"));
+    ApplicationSettingsContext context = context(Map.of("applicationId", APPLICATION_ID), true);
+    assertRefused(context,
+                  Map.of("header_title", Map.of("en", "Tools", "de", "Apps")),
+                  "value is not accepted for header_title");
+    plugin.apply(context, Map.of("header_title", Map.of("en", "Apps", "de", "Werkzeuge")));
+    verify(translationService).saveTranslationLabels(OBJECT_TYPE,
+                                                     APPLICATION_ID,
+                                                     FIELD,
+                                                     Map.of(Locale.ENGLISH, "Apps", Locale.GERMAN, "Werkzeuge"),
+                                                     USERNAME,
+                                                     false);
   }
 
   @Test

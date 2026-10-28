@@ -30,7 +30,7 @@
         applicationId: '<%=applicationId%>',
         maxAppsToList: '<%=maxAppsToList%>',
         showHeader: <%=showHeader%>,
-        headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeJava(headerTitle).replace("\\\"", "\"").replace("\\\\\"", "\\\""))%>,
+        headerTitle: <%=headerTitle == null ? null : "'" + StringEscapeUtils.escapeEcmaScript(headerTitle) + "'"%>,
         isAdmin: <%=isAdmin%>,
         saveSettingsUrl: '<%=saveSettingsUrl%>'
       }));
