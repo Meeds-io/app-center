@@ -200,7 +200,11 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> preferences = new LinkedHashMap<>();
     Object maxAppsToList = settings.get(MAX_APPS_TO_LIST);
-    if (maxAppsToList != null && !isStoredNumber(maxAppsToList, stored.get(MAX_APPS_TO_LIST_PREFERENCE))) {
+    if (maxAppsToList instanceof Number number && number.doubleValue() == readMaxAppsToList(stored)) {
+      if (!isViewNumber(stored.get(MAX_APPS_TO_LIST_PREFERENCE), readMaxAppsToList(stored))) {
+        preferences.put(MAX_APPS_TO_LIST_PREFERENCE, String.valueOf(readMaxAppsToList(stored)));
+      }
+    } else if (maxAppsToList != null) {
       preferences.put(MAX_APPS_TO_LIST_PREFERENCE,
                       String.valueOf(toInt(maxAppsToList, MAX_APPS_TO_LIST, MIN_APPS_TO_LIST, MAX_APPS_TO_LIST_BOUND)));
     }
@@ -248,14 +252,13 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
   }
 
   /**
-   * @return whether the value is the stored number as the view parses it:
-   *         a stored value the view cannot parse is never unchanged, so
-   *         sending the read default repairs it
+   * @return whether the view parses the stored text as the read number: when
+   *         it does not, the read number sent back is written as is, which
+   *         repairs the window without bounding a value it already holds
    */
-  private boolean isStoredNumber(Object value, String stored) {
+  private boolean isViewNumber(String stored, int read) {
     try {
-      return value instanceof Number number
-             && number.doubleValue() == Integer.parseInt(stored == null ? String.valueOf(DEFAULT_APPS_TO_LIST) : stored);
+      return Integer.parseInt(stored == null ? String.valueOf(DEFAULT_APPS_TO_LIST) : stored) == read;
     } catch (NumberFormatException e) {
       return false;
     }

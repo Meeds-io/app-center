@@ -264,6 +264,10 @@ class MyApplicationsApplicationSettingsPluginTest {
     ApplicationSettingsContext padded = context(Map.of("maxAppsToList", " 7"), false);
     plugin.apply(padded, Map.of("max_apps_to_list", plugin.read(padded).get("max_apps_to_list")));
     verify(applicationSettingsService).updatePreferences(padded, Map.of("maxAppsToList", "7"));
+
+    ApplicationSettingsContext paddedOutOfRange = context(Map.of("maxAppsToList", " 150"), false);
+    plugin.apply(paddedOutOfRange, plugin.read(paddedOutOfRange));
+    verify(applicationSettingsService).updatePreferences(paddedOutOfRange, Map.of("maxAppsToList", "150"));
   }
 
   /**
