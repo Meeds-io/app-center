@@ -112,6 +112,10 @@ public class ApplicationRestTest {
 
   private static final String SETTING_NAME              = "Untitled-12";
 
+  private static final String SETTINGS_PATH         = "/applications/settings";// NOSONAR
+
+  private static final String PRIVATE_NO_STORE      = "no-store, private";
+
   private static final String SIMPLE_USER           = "simple";
 
   private static final String ADMIN_USER            = "admin";
@@ -438,7 +442,7 @@ public class ApplicationRestTest {
   void getAllApplications() throws Exception {
     when(applicationCenterService.getApplications(0, 10, "")).thenReturn(applicationList());
     ResultActions response = mockMvc.perform(get(ALL_APPLICATIONS_PATH).with(testAdminUser()));
-    response.andExpect(status().isOk());
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test
@@ -450,7 +454,19 @@ public class ApplicationRestTest {
   @Test
   void getApplications() throws Exception {
     ResultActions response = mockMvc.perform(get(APPLICATIONS_PATH).with(testSimpleUser()));
-    response.andExpect(status().isOk());
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
+  @Test
+  void getSettingsAnonymously() throws Exception {
+    ResultActions response = mockMvc.perform(get(SETTINGS_PATH));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getSettings() throws Exception {
+    ResultActions response = mockMvc.perform(get(SETTINGS_PATH).with(testSimpleUser()));
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test
@@ -489,7 +505,7 @@ public class ApplicationRestTest {
                                                                                                                     application(),
                                                                                                                     null));
     ResultActions response = mockMvc.perform(get(PLACEMENTS_PATH + "?siteName=dw").with(testSimpleUser()));
-    response.andExpect(status().isOk());
+    response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
   @Test
