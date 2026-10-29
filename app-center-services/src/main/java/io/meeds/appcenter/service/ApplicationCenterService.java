@@ -2373,10 +2373,17 @@ public class ApplicationCenterService {
     }
   }
 
-  private List<Long> getExistingPinnedApplicationIds(String username) {
+  /**
+   * Reads the stored pins of the user that still count: those of an existing
+   * application not created from a Shortcuts portlet, which can't be pinned.
+   */
+  private List<Long> getKeptPinnedApplicationIds(String username) {
     return pinStorage.getPinnedApplicationIds(username)
                      .stream()
-                     .filter(id -> appCenterStorage.getApplication(id) != null)
+                     .filter(id -> {
+                       Application application = appCenterStorage.getApplication(id);
+                       return application != null && !application.isContextual();
+                     })
                      .collect(Collectors.toCollection(ArrayList::new));
   }
 
