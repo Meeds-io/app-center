@@ -857,8 +857,38 @@ public class ApplicationCenterServiceTest {
     assertEquals(Collections.emptyList(), applicationCenterService.getPinnedApplicationIds(null));
     verify(pinStorage, never()).getPinnedApplicationIds(any());
 
+    when(appCenterStorage.getApplication(3l)).thenReturn(accessibleApplication(3l));
+    when(appCenterStorage.getApplication(1l)).thenReturn(accessibleApplication(1l));
     when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(3l, 1l));
     assertEquals(Arrays.asList(3l, 1l), applicationCenterService.getPinnedApplicationIds(TEST_USER));
+  }
+
+  /**
+   * A stored pin of an application created from a Shortcuts portlet, or of a
+   * deleted one, is left out of the read, which writes nothing: the next pin
+   * or unpin writes the list without it. A pin of an application the user
+   * can't access right now is kept.
+   */
+  @Test
+  void getPinnedApplicationIdsDropsAPinnedContextApplication() {
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, ID, 6l, 7l));
+
+    assertEquals(Arrays.asList(5l, 7l), applicationCenterService.getPinnedApplicationIds(TEST_USER));
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+  }
+
+  @Test
+  void pinApplicationRefusesAContextApplication() {
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertEquals("appCenter.pin.pinNotAllowed",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
   }
 
   @Test
@@ -884,9 +914,9 @@ public class ApplicationCenterServiceTest {
   }
 
   /**
-   * A pin of a deleted application is dropped, a pin of an application the
-   * user can't access right now is kept: it is displayed again once the
-   * access is given back.
+   * A pin of a deleted application, or of one created from a Shortcuts
+   * portlet, is dropped, a pin of an application the user can't access right
+   * now is kept: it is displayed again once the access is given back.
    */
   @Test
   @SneakyThrows
@@ -894,9 +924,11 @@ public class ApplicationCenterServiceTest {
     Application application = accessibleApplication(ID);
     when(appCenterStorage.getApplication(ID)).thenReturn(application);
     when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
-    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    // 6 was deleted, 7 is restricted to a group the user isn't member of, 8
+    // was created from a Shortcuts portlet
     when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
-    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 7l));
+    when(appCenterStorage.getApplication(8l)).thenReturn(contextApplication(8l, SETTING_NAME));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 8l, 7l));
 
     applicationCenterService.pinApplication(ID, TEST_USER);
     verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l, ID));
@@ -938,9 +970,11 @@ public class ApplicationCenterServiceTest {
 
     when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
     when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
-    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    // 6 was deleted, 7 is restricted to a group the user isn't member of, 8
+    // was created from a Shortcuts portlet
     when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
-    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, ID, 7l));
+    when(appCenterStorage.getApplication(8l)).thenReturn(contextApplication(8l, SETTING_NAME));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 8l, ID, 7l));
 
     applicationCenterService.unpinApplication(ID, TEST_USER);
     verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l));
