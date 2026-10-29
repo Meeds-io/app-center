@@ -88,8 +88,9 @@ import jakarta.annotation.PostConstruct;
  * preference, which the portlet's first render consumes: the first write of
  * any option on such a window creates its setting and consumes the copy into
  * it, as the render would, so that the applications it lists exist. In a
- * site container the plain options are written on the site's windows and the
- * header is not configurable.
+ * site container, which has no page to hang a setting on, the plain options
+ * are written on the site's windows, a copy stays for the site's first
+ * render, and the header is not configurable.
  */
 @Component
 @Profile("layout")
@@ -287,8 +288,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> header = toHeader(context, settings);
     String name = stored.get(NAME_PREFERENCE);
-    boolean rekey = (header != null || carriesCopy(stored)) && !isOwned(context, name);
-    toPreferences(context, settings, name, null, rekey);
+    toPreferences(context, settings, name, null, needsSetting(context, header, name));
   }
 
   @Override
@@ -302,7 +302,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> preferences = toPreferences(context, settings, name, null, false);
     if (header == null && preferences.isEmpty()) {
       return;
-    } else if ((header == null && !carriesCopy(stored)) || isOwned(context, name)) {
+    } else if (!needsSetting(context, header, name)) {
       if (header != null) {
         saveHeader(name, header, context.getUsername());
       }
@@ -325,6 +325,19 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
       preferences.put(DATA_INIT_PREFERENCE, "");
     }
     applicationSettingsService.markOwner(context, preferences);
+  }
+
+  /**
+   * Whether a write gives the window a setting of its own on the live page:
+   * a header write, or any write on a window carrying a copy, on a window
+   * that does not own its setting. A site container has no page to hang a
+   * setting on: its windows keep their preferences and their copy, which
+   * the site's first render consumes.
+   */
+  private boolean needsSetting(ApplicationSettingsContext context, Map<String, String> header, String name) {
+    return !context.isSiteContainer()
+           && (header != null || carriesCopy(context.getPreferences()))
+           && !isOwned(context, name);
   }
 
   /**

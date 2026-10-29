@@ -761,6 +761,25 @@ class MyApplicationsApplicationSettingsPluginTest {
     verify(cmsService, never()).saveSettingName(anyString(), anyString(), anyString(), anyLong(), anyLong());
   }
 
+  /**
+   * A site container has no page to hang a setting on: a window carrying a
+   * copy there keeps it for the site's first render, its carried
+   * applications listable meanwhile, and nothing is created
+   */
+  @Test
+  void testSiteContainerWindowCarryingACopyIsNotKeyed() throws Exception {
+    lenient().when(applicationCenterStorage.getApplication(1L)).thenReturn(contextApplication(1L, "Untitled-1-source"));
+    String payload = payload(Map.of("en", "Carried"), 1L);
+    ApplicationSettingsContext context = siteContainer(Map.of("data.init", payload, "listingMode", "SELECTED", "applicationIds", "1"));
+
+    plugin.apply(context, Map.of("template", "ROW", "application_ids", List.of(1, 2)));
+
+    verify(applicationSettingsService).updatePreferences(context, Map.of("template", "ROW", "applicationIds", "1,2"));
+    verify(cmsService, never()).saveSettingName(anyString(), anyString(), anyString(), anyLong(), anyLong());
+    verify(copyService, never()).copyListToSetting(anyMap(), anyString(), anyString());
+    verify(applicationSettingsService, never()).markOwner(any(), anyMap());
+  }
+
   private void storedHeader(String key, Map<Locale, String> labels) throws Exception {
     TranslationField field = new TranslationField();
     field.setLabels(new LinkedHashMap<>(labels));
