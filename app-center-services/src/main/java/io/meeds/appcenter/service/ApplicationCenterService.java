@@ -722,8 +722,14 @@ public class ApplicationCenterService {
 
   /**
    * Retrieves the ids of the applications the given user pinned to the topbar,
-   * in pin order. The ids are those stored: the pages render only the pinned
-   * applications found in the user's own list of applications.
+   * in pin order. The stored pins of applications that no longer exist or that
+   * were created from a Shortcuts portlet are left out, without rewriting the
+   * stored list. The pins of applications the user can't access or that are
+   * inactive are kept: the pages render only the pinned applications found in
+   * the user's own list of applications. The cache keeps no absent
+   * application, so a stored pin of a deleted application is read from the
+   * database at each call, until the user's next pin or unpin writes the list
+   * without it.
    *
    * @param username user login
    * @return the pinned application ids, an empty list for a blank username
@@ -732,24 +738,26 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(username)) {
       return Collections.emptyList();
     }
-    return pinStorage.getPinnedApplicationIds(username);
+    return getKeptPinnedApplicationIds(username);
   }
 
   /**
    * Pins an active application the user can access to the user's topbar, after
    * the applications already pinned, up to
    * {@link ApplicationPinStorage#MAX_PINNED_APPLICATIONS}. An application
-   * already pinned keeps its place. The written list drops the applications
-   * that no longer exist, and keeps the ones the user can't access anymore,
-   * which the pages don't display and display again once the access is given
-   * back.
+   * created from a Shortcuts portlet can't be pinned. An application already
+   * pinned keeps its place. The written list drops the applications that no
+   * longer exist or that were created from a Shortcuts portlet, and keeps the
+   * ones the user can't access anymore, which the pages don't display and
+   * display again once the access is given back.
    *
    * @param applicationId technical application id
    * @param username user login
    * @throws ApplicationNotFoundException when the application doesn't exist
    * @throws IllegalAccessException when the user can't access the application
-   * @throws IllegalArgumentException when the application is inactive, or the
-   *           user already pinned the maximum number of applications
+   * @throws IllegalArgumentException when the application is inactive or was
+   *           created from a Shortcuts portlet, or the user already pinned the
+   *           maximum number of applications
    */
   public void pinApplication(long applicationId, String username) throws ApplicationNotFoundException,
                                                                   IllegalAccessException {
@@ -766,10 +774,11 @@ public class ApplicationCenterService {
     if (!canAccess(application, username)) {
       throw new IllegalAccessException(String.format(USER_CANNOT_ACCESS_APP_MESSAGE, username, applicationId));
     }
-    if (!application.isActive()) {
+    // An application created from a Shortcuts portlet is used in that list only
+    if (!application.isActive() || application.isContextual()) {
       throw new IllegalArgumentException(PIN_NOT_ALLOWED_MESSAGE);
     }
-    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
+    List<Long> pinnedApplicationIds = getKeptPinnedApplicationIds(username);
     if (!pinnedApplicationIds.contains(applicationId)) {
       if (pinnedApplicationIds.size() >= ApplicationPinStorage.MAX_PINNED_APPLICATIONS) {
         throw new IllegalArgumentException(TOO_MANY_PINS_MESSAGE);
@@ -782,8 +791,9 @@ public class ApplicationCenterService {
   /**
    * Unpins an application from the topbar of the given user. An application
    * that isn't pinned is left as is, so the operation stays idempotent. The
-   * written list drops the applications that no longer exist, as
-   * {@link #pinApplication(long, String)} does.
+   * written list drops the applications that no longer exist or that were
+   * created from a Shortcuts portlet, as {@link #pinApplication(long, String)}
+   * does.
    *
    * @param applicationId technical application id
    * @param username user login
@@ -792,7 +802,7 @@ public class ApplicationCenterService {
     if (StringUtils.isBlank(username)) {
       throw new IllegalArgumentException(USERNAME_IS_MANDATORY_MESSAGE);
     }
-    List<Long> pinnedApplicationIds = getExistingPinnedApplicationIds(username);
+    List<Long> pinnedApplicationIds = getKeptPinnedApplicationIds(username);
     pinnedApplicationIds.remove(Long.valueOf(applicationId));
     pinStorage.setPinnedApplicationIds(username, pinnedApplicationIds);
   }
@@ -2363,10 +2373,17 @@ public class ApplicationCenterService {
     }
   }
 
-  private List<Long> getExistingPinnedApplicationIds(String username) {
+  /**
+   * Reads the stored pins of the user that still count: those of an existing
+   * application not created from a Shortcuts portlet, which can't be pinned.
+   */
+  private List<Long> getKeptPinnedApplicationIds(String username) {
     return pinStorage.getPinnedApplicationIds(username)
                      .stream()
-                     .filter(id -> appCenterStorage.getApplication(id) != null)
+                     .filter(id -> {
+                       Application application = appCenterStorage.getApplication(id);
+                       return application != null && !application.isContextual();
+                     })
                      .collect(Collectors.toCollection(ArrayList::new));
   }
 
