@@ -33,7 +33,8 @@ const BORDER_COLOR_VARIABLE = '--allPagesBorderColor';
 // The hexadecimal shapes the color picker parses
 const PICKER_HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
-// The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined
+// The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined.
+// Mirrored by MyApplicationsSettingsService.TEMPLATE_DEFAULTS for the layout tools, whose test reads this block: keep one "key: value," per line
 const TEMPLATE_DEFAULTS = {
   ROW: {
     showHeader: false,
