@@ -153,6 +153,11 @@ class MyApplicationsApplicationSettingsPluginTest {
     lenient().when(settingsService.getWritableSettings(any(), anyMap()))
              .thenAnswer(invocation -> drawerValidation.getWritableSettings(invocation.getArgument(0), invocation.getArgument(1)));
     lenient().when(applicationCenterStorage.getApplication(anyLong())).thenReturn(new Application());
+    lenient().when(copyService.getCopyPreferences(anyMap(), eq(false), eq(USERNAME))).thenAnswer(invocation -> {
+      Map<String, String> preferences = invocation.getArgument(0);
+      String payload = preferences.get("data.init");
+      return payload == null ? Map.of() : Map.of("data.init", payload);
+    });
     lenient().when(metadataService.getMetadataById(anyLong())).thenAnswer(invocation -> metadata(invocation.getArgument(0), "category"));
   }
 
@@ -383,6 +388,53 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   /**
+   * A stored id the drawer's validation drops is written as dropped, even
+   * when the caller sends it back with another listing change: only an id
+   * new against the read is the caller's to answer for
+   */
+  @Test
+  void testStoredIdsTheServiceDropsAreWrittenAsDroppedWhenSentBackUnchanged() throws Exception {
+    when(applicationCenterStorage.getApplication(9L)).thenReturn(null);
+    when(metadataService.getMetadataById(5L)).thenReturn(metadata(5L, "tags"));
+    when(metadataService.getMetadataById(6L)).thenReturn(metadata(6L, "tags"));
+    ApplicationSettingsContext applications = context(Map.of("applicationIds", "1,9"), false);
+    Map<String, Object> read = plugin.read(applications);
+    plugin.apply(applications,
+                 Map.of("listing_mode", "SELECTED",
+                        "selection_mode", read.get("selection_mode"),
+                        "application_ids", read.get("application_ids"),
+                        "category_ids", read.get("category_ids")));
+    verify(applicationSettingsService).updatePreferences(applications, Map.of("listingMode", "SELECTED", "applicationIds", "1"));
+
+    ApplicationSettingsContext categories = context(Map.of("categoryIds", "5"), false);
+    plugin.apply(categories, Map.of("listing_mode", "SELECTED", "selection_mode", "CATEGORY", "category_ids", List.of(5, 8)));
+    verify(applicationSettingsService).updatePreferences(categories,
+                                                         Map.of("listingMode", "SELECTED", "selectionMode", "CATEGORY", "categoryIds", "8"));
+    assertRefused(categories, Map.of("listing_mode", "SELECTED", "selection_mode", "CATEGORY", "category_ids", List.of(8, 5, 6)),
+                  "value is not accepted for category_ids");
+  }
+
+  /**
+   * A new setting lists none of the old setting's applications but those a
+   * copy of the window carries to it: validate judges the listing under that
+   * setting, so a SELECTED listing the copy would empty is refused before
+   * anything is created, and accepted when the copy carries its applications
+   */
+  @Test
+  void testHeaderWriteIsValidatedUnderTheNewSettingListability() throws Exception {
+    when(applicationCenterStorage.getApplication(1L)).thenReturn(contextApplication(1L, SETTING_NAME));
+    Map<String, String> stored = Map.of("name", SETTING_NAME, "listingMode", "SELECTED", "applicationIds", "1");
+    ApplicationSettingsContext context = context(stored, false);
+    Map<String, Object> header = Map.of("header_title", Map.of("en", "Tools"));
+    assertRefused(context, header, "value is not accepted for application_ids");
+    verify(cmsService, never()).saveSettingName(anyString(), anyString(), anyString(), anyLong(), anyLong());
+
+    when(copyService.getCopyPreferences(context.getPreferences(), false, USERNAME))
+                                                                                 .thenReturn(Map.of("data.init", payload(Map.of(), 1L)));
+    assertDoesNotThrow(() -> plugin.validate(context, header));
+  }
+
+  /**
    * The drawer saves the header title only while the header is shown: a
    * changed one is refused when the switch is off, whether stored or given
    * in the same call, and accepted when the same call turns it on
@@ -564,7 +616,7 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   /**
-   * A template change keeps the other display options as stored (D55);
+   * A template change keeps the other display options as stored;
    * "unchanged" is judged against the defaults of the template the view
    * will read them with
    */
@@ -745,7 +797,7 @@ class MyApplicationsApplicationSettingsPluginTest {
   /**
    * In a site container the plain options are the site draft's own
    * preferences; the header, keyed by a setting hanging on a page, is not
-   * configurable there, an unchanged one accepted back (D53)
+   * configurable there, an unchanged one accepted back
    */
   @Test
   void testSiteContainerWritesPlainOptionsAndRefusesAChangedHeader() throws Exception {

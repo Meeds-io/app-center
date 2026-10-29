@@ -280,6 +280,13 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     return settings;
   }
 
+  /**
+   * A window given a new setting is validated under that setting's
+   * listability: none of the applications the old setting created, but those
+   * a copy of the window would carry to it, which
+   * {@link MyApplicationsCopyService#getCopyPreferences} previews with no
+   * write; a copy refused at creation stays beyond the preview.
+   */
   @Override
   public void validate(ApplicationSettingsContext context, Map<String, Object> settings) throws IllegalAccessException,
                                                                                          ObjectNotFoundException {
@@ -288,7 +295,11 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> header = toHeader(context, settings);
     String name = stored.get(NAME_PREFERENCE);
-    toPreferences(context, settings, name, null, needsSetting(context, header, name));
+    if (needsSetting(context, header, name)) {
+      toPreferences(context, settings, null, null, getCarriedIds(copyService.getCopyPreferences(stored, false, context.getUsername())), true);
+    } else {
+      toPreferences(context, settings, name, null, getCarriedIds(stored), false);
+    }
   }
 
   @Override
@@ -299,7 +310,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> header = toHeader(context, settings);
     String name = stored.get(NAME_PREFERENCE);
-    Map<String, String> preferences = toPreferences(context, settings, name, null, false);
+    Map<String, String> preferences = toPreferences(context, settings, name, null, getCarriedIds(stored), false);
     if (header == null && preferences.isEmpty()) {
       return;
     } else if (!needsSetting(context, header, name)) {
@@ -313,7 +324,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     }
     String newName = createSetting(context);
     Map<Long, Long> created = copyService.copyListToSetting(toCopySource(stored, settings), newName, context.getUsername());
-    preferences = toPreferences(context, settings, newName, created, true);
+    preferences = toPreferences(context, settings, newName, created, List.of(), true);
     if (header != null) {
       saveHeader(newName, header, context.getUsername());
     }
@@ -383,39 +394,43 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    * the changed ones through
    * {@link MyApplicationsSettingsService#getWritableSettings}, with the
    * whole listing section when one of its options changes, or when the
-   * window is given a new setting, whose applications its list must name.
+   * window is given a new setting, whose applications its list must name. A
+   * changed option the service alters is refused; a stored value it drops is
+   * written as dropped.
    *
-   * @param settingName the setting the applications are listable by
+   * @param settingName the setting the applications are listable by, null
+   *          when the window is given one that does not exist yet
    * @param createdIds the applications created for a new setting by the id
    *          the list names, null while the window keeps its setting
+   * @param carriedIds the applications listable although no setting lists
+   *          them: those the window's copy carries, or those a copy to a new
+   *          setting would carry
    * @param listingRewritten whether the listing section is validated and
    *          written whole, as on a new setting
    * @return the preferences to store, by name: the ones whose written value
    *         differs from the stored one as the view reads it
    */
-  private Map<String, String> toPreferences(ApplicationSettingsContext context,
+  private Map<String, String> toPreferences(ApplicationSettingsContext context, // NOSONAR
                                             Map<String, Object> settings,
                                             String settingName,
                                             Map<Long, Long> createdIds,
+                                            List<Long> carriedIds,
                                             boolean listingRewritten) {
     Map<String, String> stored = context.getPreferences();
     Map<String, String> preferences = new LinkedHashMap<>();
     Map<String, String> posted = new HashMap<>();
     putMaxAppsToList(stored, settings, preferences);
-    putListingOptions(stored, settings, posted, createdIds, listingRewritten);
+    List<String> changed = putListingOptions(stored, settings, posted, createdIds, listingRewritten);
     putShowHeader(stored, settings, posted);
     putDisplayOptions(stored, settings, posted);
     if (posted.isEmpty()) {
       return preferences;
     }
-    Map<String, String> writable = getWritableSettings(settingName,
-                                                       posted,
-                                                       settings,
-                                                       createdIds == null ? getCarriedIds(context) : List.of());
+    Map<String, String> writable = getWritableSettings(settingName, posted, settings, carriedIds);
     posted.forEach((preference, value) -> {
       String option = optionOf(preference);
       String written = writable.get(preference);
-      if (settings.containsKey(option) && !StringUtils.equals(written, value)) {
+      if (isAltered(option, changed.contains(option), value, written, viewText(preference, stored))) {
         throw notAccepted(option);
       }
       if (written != null && !StringUtils.equals(written, viewText(preference, stored))) {
@@ -423,6 +438,24 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
       }
     });
     return preferences;
+  }
+
+  /**
+   * @return whether the service altered what the caller changed: a changed
+   *         value it rewrote, or, in a changed list, an id new against the
+   *         read it dropped; a stored id it drops is written as dropped
+   */
+  private static boolean isAltered(String option, boolean changed, String posted, String written, String read) {
+    if (StringUtils.equals(posted, written) || (!changed && LISTING_OPTIONS.contains(option))) {
+      return false;
+    } else if (!APPLICATION_IDS.equals(option) && !CATEGORY_IDS.equals(option)) {
+      return true;
+    }
+    List<Long> kept = MyApplicationsSettingsService.getApplicationIds(written);
+    List<Long> stored = MyApplicationsSettingsService.getApplicationIds(read);
+    return MyApplicationsSettingsService.getApplicationIds(posted)
+                                        .stream()
+                                        .anyMatch(id -> !kept.contains(id) && !stored.contains(id));
   }
 
   /**
@@ -465,8 +498,10 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    * Posts the changed listing options, and the stored values of the others
    * once one changes or the list is rewritten: the service validates the
    * listing whole, as the drawer posts it
+   *
+   * @return the listing options whose given value differs from the read
    */
-  private void putListingOptions(Map<String, String> stored,
+  private List<String> putListingOptions(Map<String, String> stored,
                                  Map<String, Object> settings,
                                  Map<String, String> posted,
                                  Map<Long, Long> createdIds,
@@ -496,10 +531,10 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
         changed.put(option, text);
       }
     }
-    if (changed.isEmpty() && !listingRewritten) {
-      return;
+    if (!changed.isEmpty() || listingRewritten) {
+      LISTING_OPTIONS.forEach(option -> posted.put(PREFERENCES.get(option), changed.getOrDefault(option, read.get(option))));
     }
-    LISTING_OPTIONS.forEach(option -> posted.put(PREFERENCES.get(option), changed.getOrDefault(option, read.get(option))));
+    return List.copyOf(changed.keySet());
   }
 
   private void putShowHeader(Map<String, String> stored, Map<String, Object> settings, Map<String, String> posted) {
@@ -731,11 +766,11 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
   }
 
   /**
-   * @return the ids of the applications the window carries in its data.init
-   *         preference, none when it carries nothing readable
+   * @return the ids of the applications a window's data.init preference
+   *         carries, none when it carries nothing readable
    */
-  private List<Long> getCarriedIds(ApplicationSettingsContext context) {
-    ApplicationListCopy carried = getCarriedCopy(context.getPreferences());
+  private List<Long> getCarriedIds(Map<String, String> preferences) {
+    ApplicationListCopy carried = getCarriedCopy(preferences);
     if (carried == null || carried.getApplications() == null) {
       return List.of();
     }
