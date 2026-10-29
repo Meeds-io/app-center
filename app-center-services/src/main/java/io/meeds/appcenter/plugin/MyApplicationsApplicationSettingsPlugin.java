@@ -77,7 +77,9 @@ import jakarta.annotation.PostConstruct;
  * settings drawer does: every option of the drawer, validated by
  * {@link MyApplicationsSettingsService#getWritableSettings} as the drawer's
  * own save is, under the right that save has, computed from the live page
- * or site holding the window, never from a window preference. The listing
+ * holding the window or, in a site container, from the site the context
+ * names, a draft site on a draft, whose live site's edit right the layout
+ * tool checks first; never from a window preference. The listing
  * and display options are the window's preferences; the header title is a
  * translation keyed by the window's CMS setting name, which a draft shares
  * with the live window: the first header write on a window that does not
@@ -281,11 +283,13 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
   }
 
   /**
-   * A window given a new setting is validated under that setting's
-   * listability: none of the applications the old setting created, but those
-   * a copy of the window would carry to it for the list the caller gives,
-   * which {@link MyApplicationsCopyService#getCopyPreferences} previews with
-   * no write; a copy refused at creation stays beyond the preview.
+   * Nothing to write, as {@link #apply} judges it, is accepted whatever the
+   * window. A window given a new setting is then validated under that
+   * setting's listability: none of the applications the old setting created,
+   * but those a copy of the window would carry to it for the list the caller
+   * gives, which {@link MyApplicationsCopyService#getCopyPreferences}
+   * previews with no write; a copy refused at creation stays beyond the
+   * preview.
    */
   @Override
   public void validate(ApplicationSettingsContext context, Map<String, Object> settings) throws IllegalAccessException,
@@ -295,11 +299,13 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> stored = context.getPreferences();
     Map<String, String> header = toHeader(context, settings);
     String name = stored.get(NAME_PREFERENCE);
+    Map<String, String> preferences = toPreferences(context, settings, name, null, getCarriedIds(stored), false);
+    if (header == null && preferences.isEmpty()) {
+      return;
+    }
     if (needsSetting(context, header, name)) {
       Map<String, String> preview = copyService.getCopyPreferences(toCopySource(stored, settings), false, context.getUsername());
       toPreferences(context, settings, null, null, getCarriedIds(preview), true);
-    } else {
-      toPreferences(context, settings, name, null, getCarriedIds(stored), false);
     }
   }
 

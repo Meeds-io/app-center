@@ -561,6 +561,36 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   /**
+   * A window carrying a copy that holds the header only, its list naming the
+   * source's applications the copy did not carry: the read sent back is
+   * nothing to write, so validate accepts it as apply does, without judging
+   * the listing under the setting a write would create
+   */
+  @Test
+  void testReadOfACarryingWindowListingNoCarriedApplicationIsAcceptedBack() throws Exception {
+    lenient().when(applicationCenterStorage.getApplication(9L)).thenReturn(contextApplication(9L, "Untitled-1-source"));
+    ApplicationSettingsContext context = context(Map.of("data.init", payload(Map.of("en", "Carried")),
+                                                        "listingMode", "SELECTED",
+                                                        "applicationIds", "9"),
+                                                 false);
+    Map<String, Object> sent = new LinkedHashMap<>();
+    plugin.read(context).forEach((option, value) -> {
+      if (value != null) {
+        sent.put(option, value);
+      }
+    });
+    assertEquals(List.of(9L), sent.get("application_ids"));
+
+    plugin.validate(context, sent);
+    plugin.apply(context, sent);
+
+    verify(applicationSettingsService, never()).updatePreferences(any(), anyMap());
+    verify(applicationSettingsService, never()).markOwner(any(), anyMap());
+    verify(cmsService, never()).saveSettingName(anyString(), anyString(), anyString(), anyLong(), anyLong());
+    assertRefused(context, Map.of("show_header", false), "value is not accepted for application_ids");
+  }
+
+  /**
    * The view parses the stored number as is and fails on what it cannot
    * parse, while the read shows its default: sending that default back
    * writes it, which repairs the window
