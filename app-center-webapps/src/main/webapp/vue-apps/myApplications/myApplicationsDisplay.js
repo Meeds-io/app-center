@@ -27,7 +27,8 @@ export const MAX_ICON_SIZE = 60;
 // The settings a template reads but showHeader, which the legacy layout reads too, in the order they are compared
 export const DISPLAY_KEYS = ['template', 'showSeeMore', 'listInRow', 'showIcon', 'iconSize', 'showName', 'color', 'outlined', 'hAlign', 'vAlign'];
 
-// The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined
+// The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined.
+// Mirrored by MyApplicationsSettingsService.TEMPLATE_DEFAULTS for the layout tools, whose test reads this block: keep one "key: value," per line
 const TEMPLATE_DEFAULTS = {
   ROW: {
     showHeader: false,
