@@ -62,6 +62,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +72,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -127,6 +132,9 @@ class MyApplicationsSettingsServiceTest {
   private static final String           SECTION_DRAFT_PAGE  = "portal::global::section_draft_7_testuser";
 
   private static final String           LEGACY_ID           = "4528710563";
+
+  private static final Path             DISPLAY_SCRIPT      =
+                                                       Path.of("../app-center-webapps/src/main/webapp/vue-apps/myApplications/myApplicationsDisplay.js");
 
   @MockitoBean
   private CMSService                    cmsService;
@@ -1440,6 +1448,31 @@ class MyApplicationsSettingsServiceTest {
                  List.copyOf(MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "ROW")).keySet()));
   }
 
+  /**
+   * The defaults are the view's: read from myApplicationsDisplay.js
+   * TEMPLATE_DEFAULTS, so that a change there alone fails here
+   */
+  @Test
+  void getDisplaySettingsMatchTheViewTemplateDefaults() throws IOException {
+    String script = Files.readString(DISPLAY_SCRIPT);
+    Matcher block = Pattern.compile("const TEMPLATE_DEFAULTS = \\{(.*?)\\n\\};", Pattern.DOTALL).matcher(script);
+    assertTrue(block.find(), "TEMPLATE_DEFAULTS not found in " + DISPLAY_SCRIPT);
+    Matcher template = Pattern.compile("\\n  (\\w+): \\{(.*?)\\n  \\}", Pattern.DOTALL).matcher(block.group(1));
+    int templates = 0;
+    while (template.find()) {
+      templates++;
+      Map<String, Object> expected = new HashMap<>();
+      Matcher setting = Pattern.compile("\\n    (\\w+): ([^,\\n]+),").matcher(template.group(2));
+      while (setting.find()) {
+        if (!"showHeader".equals(setting.group(1))) {
+          expected.put(setting.group(1), scriptValue(setting.group(2)));
+        }
+      }
+      assertEquals(expected, MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, template.group(1))), template.group(1));
+    }
+    assertEquals(3, templates);
+  }
+
   @Test
   void getDisplaySettingsReadsAValidStoredValueOverTheTemplateDefault() {
     Map<String, String> preferences = Map.of(TEMPLATE, "ROW",
@@ -1454,6 +1487,16 @@ class MyApplicationsSettingsServiceTest {
                  MyApplicationsSettingsService.getDisplaySettings(preferences));
     assertEquals(display(false, true, true, 45, true, "#AABBCC", false, "END", "CENTER"),
                  MyApplicationsSettingsService.getDisplaySettings(preferences, "CARDS"));
+  }
+
+  private static Object scriptValue(String literal) {
+    String value = literal.trim();
+    if ("true".equals(value) || "false".equals(value)) {
+      return Boolean.valueOf(value);
+    } else if (value.startsWith("'")) {
+      return value.substring(1, value.length() - 1);
+    }
+    return Integer.valueOf(value);
   }
 
   private Map<String, Object> display(boolean showSeeMore, // NOSONAR
