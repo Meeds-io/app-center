@@ -85,12 +85,12 @@ import jakarta.annotation.PostConstruct;
  * and the applications the window created to it through
  * {@link MyApplicationsCopyService}, as a copy of the window carries them.
  * A window copied with no setting name carries them in its data.init
- * preference, which the portlet's first render consumes: the first write of
- * any option on such a window creates its setting and consumes the copy into
- * it, as the render would, so that the applications it lists exist. In a
- * site container, which has no page to hang a setting on, the plain options
- * are written on the site's windows, a copy stays for the site's first
- * render, and the header is not configurable.
+ * preference, which a render of the portlet consumes: the first write of any
+ * option on such a window creates its setting and consumes the copy into it,
+ * as the render would, so that the applications it lists exist. In a site
+ * container, which has no page to hang a setting on, the plain options are
+ * written on the site's windows, a copy stays for a render of the site to
+ * consume, and the header is not configurable.
  */
 @Component
 @Profile("layout")
@@ -343,8 +343,8 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    * Whether a write gives the window a setting of its own on the live page:
    * a header write, or any write on a window carrying a copy, on a window
    * that does not own its setting. A site container has no page to hang a
-   * setting on: its windows keep their preferences and their copy, which
-   * the site's first render consumes.
+   * setting on: its windows keep their preferences and their copy, which a
+   * render of the site consumes.
    */
   private boolean needsSetting(ApplicationSettingsContext context, Map<String, String> header, String name) {
     return !context.isSiteContainer()
@@ -586,14 +586,17 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
 
   /**
    * The drawer's own validation. The applications a window carries in its
-   * copy exist only once the copy is consumed, which the first write does:
+   * copy, or those a copy to a new setting would carry, exist under a
+   * setting only once the copy is made, by the write that gives the window
+   * its setting or, otherwise, by a render of the portlet that consumes it:
    * until then they are listable, and the listing rule is checked over them
    * as it will be once they are created. A refusal of the listing whole
    * names the list of the selection mode when it is given, else the listing
    * mode when it is, else that list.
    *
-   * @param carriedIds the applications the window's copy carries, none once
-   *          consumed
+   * @param carriedIds the applications listable although no setting lists
+   *          them yet: those the window's copy carries, or those a copy to a
+   *          new setting would carry; none once the copy is made
    */
   private Map<String, String> getWritableSettings(String settingName,
                                                   Map<String, String> posted,

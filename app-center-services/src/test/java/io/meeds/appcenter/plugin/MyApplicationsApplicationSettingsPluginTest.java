@@ -729,8 +729,8 @@ class MyApplicationsApplicationSettingsPluginTest {
 
   /**
    * A window copied with no setting name carries the source's header and
-   * applications in data.init, which the portlet's first render consumes:
-   * the header write consumes it instead, into the setting it creates
+   * applications in data.init, which a render of the portlet consumes: the
+   * header write consumes it instead, into the setting it creates
    */
   @Test
   @SuppressWarnings("unchecked")
@@ -838,7 +838,7 @@ class MyApplicationsApplicationSettingsPluginTest {
 
   /**
    * A site container has no page to hang a setting on: a window carrying a
-   * copy there keeps it for the site's first render, its carried
+   * copy there keeps it for a render of the site to consume, its carried
    * applications listable meanwhile, and nothing is created
    */
   @Test
