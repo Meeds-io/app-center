@@ -435,6 +435,29 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   /**
+   * The copy apply makes carries the applications the list the caller gives
+   * names: validate previews it from that list, not from the stored one
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testHeaderWritePreviewsTheCopyFromTheGivenList() throws Exception {
+    lenient().when(applicationCenterStorage.getApplication(1L)).thenReturn(contextApplication(1L, SETTING_NAME));
+    lenient().when(applicationCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
+    ApplicationSettingsContext context = context(Map.of("name", SETTING_NAME, "listingMode", "SELECTED", "applicationIds", "1"), false);
+    when(copyService.getCopyPreferences(anyMap(), eq(false), eq(USERNAME))).thenAnswer(invocation -> {
+      Map<String, String> source = invocation.getArgument(0);
+      long[] ids = MyApplicationsSettingsService.getApplicationIds(source.get("applicationIds")).stream().mapToLong(Long::longValue).toArray();
+      return Map.of("data.init", payload(Map.of(), ids));
+    });
+
+    assertDoesNotThrow(() -> plugin.validate(context, Map.of("header_title", Map.of("en", "Tools"), "application_ids", List.of(1, 2))));
+    assertDoesNotThrow(() -> plugin.validate(context, Map.of("header_title", Map.of("en", "Tools"), "application_ids", List.of(2))));
+    ArgumentCaptor<Map<String, String>> source = ArgumentCaptor.forClass(Map.class);
+    verify(copyService, org.mockito.Mockito.times(2)).getCopyPreferences(source.capture(), eq(false), eq(USERNAME));
+    assertEquals(List.of("1,2", "2"), source.getAllValues().stream().map(s -> s.get("applicationIds")).toList());
+  }
+
+  /**
    * The drawer saves the header title only while the header is shown: a
    * changed one is refused when the switch is off, whether stored or given
    * in the same call, and accepted when the same call turns it on

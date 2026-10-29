@@ -283,9 +283,9 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
   /**
    * A window given a new setting is validated under that setting's
    * listability: none of the applications the old setting created, but those
-   * a copy of the window would carry to it, which
-   * {@link MyApplicationsCopyService#getCopyPreferences} previews with no
-   * write; a copy refused at creation stays beyond the preview.
+   * a copy of the window would carry to it for the list the caller gives,
+   * which {@link MyApplicationsCopyService#getCopyPreferences} previews with
+   * no write; a copy refused at creation stays beyond the preview.
    */
   @Override
   public void validate(ApplicationSettingsContext context, Map<String, Object> settings) throws IllegalAccessException,
@@ -296,7 +296,8 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> header = toHeader(context, settings);
     String name = stored.get(NAME_PREFERENCE);
     if (needsSetting(context, header, name)) {
-      toPreferences(context, settings, null, null, getCarriedIds(copyService.getCopyPreferences(stored, false, context.getUsername())), true);
+      Map<String, String> preview = copyService.getCopyPreferences(toCopySource(stored, settings), false, context.getUsername());
+      toPreferences(context, settings, null, null, getCarriedIds(preview), true);
     } else {
       toPreferences(context, settings, name, null, getCarriedIds(stored), false);
     }
@@ -420,7 +421,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     Map<String, String> preferences = new LinkedHashMap<>();
     Map<String, String> posted = new HashMap<>();
     putMaxAppsToList(stored, settings, preferences);
-    List<String> changed = putListingOptions(stored, settings, posted, createdIds, listingRewritten);
+    putListingOptions(stored, settings, posted, createdIds, listingRewritten);
     putShowHeader(stored, settings, posted);
     putDisplayOptions(stored, settings, posted);
     if (posted.isEmpty()) {
@@ -430,7 +431,7 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     posted.forEach((preference, value) -> {
       String option = optionOf(preference);
       String written = writable.get(preference);
-      if (isAltered(option, changed.contains(option), value, written, viewText(preference, stored))) {
+      if (isAltered(option, value, written, viewText(preference, stored))) {
         throw notAccepted(option);
       }
       if (written != null && !StringUtils.equals(written, viewText(preference, stored))) {
@@ -441,12 +442,12 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
   }
 
   /**
-   * @return whether the service altered what the caller changed: a changed
-   *         value it rewrote, or, in a changed list, an id new against the
-   *         read it dropped; a stored id it drops is written as dropped
+   * @return whether the service altered what the caller changed: a value it
+   *         rewrote, or, in a list, an id new against the read it dropped; a
+   *         stored id it drops is written as dropped
    */
-  private static boolean isAltered(String option, boolean changed, String posted, String written, String read) {
-    if (StringUtils.equals(posted, written) || (!changed && LISTING_OPTIONS.contains(option))) {
+  private static boolean isAltered(String option, String posted, String written, String read) {
+    if (StringUtils.equals(posted, written)) {
       return false;
     } else if (!APPLICATION_IDS.equals(option) && !CATEGORY_IDS.equals(option)) {
       return true;
@@ -498,10 +499,8 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
    * Posts the changed listing options, and the stored values of the others
    * once one changes or the list is rewritten: the service validates the
    * listing whole, as the drawer posts it
-   *
-   * @return the listing options whose given value differs from the read
    */
-  private List<String> putListingOptions(Map<String, String> stored,
+  private void putListingOptions(Map<String, String> stored,
                                  Map<String, Object> settings,
                                  Map<String, String> posted,
                                  Map<Long, Long> createdIds,
@@ -534,7 +533,6 @@ public class MyApplicationsApplicationSettingsPlugin implements ApplicationSetti
     if (!changed.isEmpty() || listingRewritten) {
       LISTING_OPTIONS.forEach(option -> posted.put(PREFERENCES.get(option), changed.getOrDefault(option, read.get(option))));
     }
-    return List.copyOf(changed.keySet());
   }
 
   private void putShowHeader(Map<String, String> stored, Map<String, Object> settings, Map<String, String> posted) {
