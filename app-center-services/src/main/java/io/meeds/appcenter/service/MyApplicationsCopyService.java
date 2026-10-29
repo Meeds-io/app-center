@@ -171,19 +171,11 @@ public class MyApplicationsCopyService {
    */
   public String consumeCopy(String settingName, String payload, String applicationIds) {
     ApplicationListCopy listCopy = parseListCopy(settingName, payload);
-    Map<Long, ApplicationCopy> copiedApplications = new HashMap<>();
-    if (listCopy != null && listCopy.getApplications() != null) {
-      listCopy.getApplications()
-              .stream()
-              .filter(Objects::nonNull)
-              .limit(ApplicationCenterService.MAX_LISTED_APPLICATIONS)
-              .forEach(application -> copiedApplications.putIfAbsent(application.getId(), application));
-    }
+    Map<Long, Long> created = createCopiedApplications(settingName, listCopy, applicationIds);
     List<Long> ids = new ArrayList<>();
     for (Long id : MyApplicationsSettingsService.getApplicationIds(applicationIds)) {
-      ApplicationCopy copiedApplication = copiedApplications.get(id);
-      if (copiedApplication != null) {
-        Long createdId = createCopiedApplication(settingName, copiedApplication);
+      if (created.containsKey(id)) {
+        Long createdId = created.get(id);
         if (createdId != null) {
           ids.add(createdId);
         }
@@ -195,6 +187,34 @@ public class MyApplicationsCopyService {
       copyHeaderTitle(settingName, listCopy.getHeaderTitles());
     }
     return StringUtils.join(ids, ",");
+  }
+
+  /**
+   * Copies to a setting what a window keyed on another setting holds: the
+   * header title, and the applications its list names that its setting
+   * created, each created again as the new setting's, every field validated
+   * again, as a copy of the window carries them for the user
+   * ({@link #getCopyPreferences(Map, boolean, String)}: the copy a window
+   * carries in its data.init preference, not consumed yet, is used as it
+   * is). The layout tools call it when a window that does not own its
+   * setting is given a new one.
+   *
+   * @param preferences the window's preferences
+   * @param settingName the new setting's name, which exists already
+   * @param username the user the copy is made for
+   * @return the created application's id by the id its list names, null for
+   *         a carried application whose fields are refused
+   */
+  public Map<Long, Long> copyListToSetting(Map<String, String> preferences, String settingName, String username) {
+    String payload = getCopyPreferences(preferences, false, username).get(DATA_INIT_PREFERENCE);
+    ApplicationListCopy listCopy = StringUtils.isBlank(payload) ? null : parseListCopy(settingName, payload);
+    Map<Long, Long> created = createCopiedApplications(settingName,
+                                                       listCopy,
+                                                       preferences.get(MyApplicationsSettingsService.APPLICATION_IDS));
+    if (listCopy != null) {
+      copyHeaderTitle(settingName, listCopy.getHeaderTitles());
+    }
+    return created;
   }
 
   /**
@@ -433,6 +453,32 @@ public class MyApplicationsCopyService {
       LOG.debug("Illustration of application {} not copied", application.getId(), e);
       return null;
     }
+  }
+
+  /**
+   * Creates, owned by the setting, one application per carried application
+   * the list names, with no right checked and every field validated again
+   *
+   * @return the created application's id by the id the list names, null for
+   *         a carried application that is not created
+   */
+  private Map<Long, Long> createCopiedApplications(String settingName, ApplicationListCopy listCopy, String applicationIds) {
+    Map<Long, ApplicationCopy> copiedApplications = new HashMap<>();
+    if (listCopy != null && listCopy.getApplications() != null) {
+      listCopy.getApplications()
+              .stream()
+              .filter(Objects::nonNull)
+              .limit(ApplicationCenterService.MAX_LISTED_APPLICATIONS)
+              .forEach(application -> copiedApplications.putIfAbsent(application.getId(), application));
+    }
+    Map<Long, Long> created = new LinkedHashMap<>();
+    for (Long id : MyApplicationsSettingsService.getApplicationIds(applicationIds)) {
+      ApplicationCopy copiedApplication = copiedApplications.get(id);
+      if (copiedApplication != null) {
+        created.put(id, createCopiedApplication(settingName, copiedApplication));
+      }
+    }
+    return created;
   }
 
   private Long createCopiedApplication(String settingName, ApplicationCopy copiedApplication) {
