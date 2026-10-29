@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -203,7 +204,35 @@ public class MyApplicationsSettingsService {
 
   private static final Pattern COLOR_VALUE              = Pattern.compile("^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$");
 
+  /**
+   * The settings a template reads, in the order the view compares them
+   * (myApplicationsDisplay.js DISPLAY_KEYS, the template itself apart).
+   */
+  public static final List<String> DISPLAY_SETTINGS     = List.of(SHOW_SEE_MORE,
+                                                                   LIST_IN_ROW,
+                                                                   SHOW_ICON,
+                                                                   ICON_SIZE,
+                                                                   SHOW_NAME,
+                                                                   COLOR,
+                                                                   OUTLINED,
+                                                                   H_ALIGN,
+                                                                   V_ALIGN);
+
   private static final List<String> DISPLAY_FLAGS       = List.of(SHOW_SEE_MORE, LIST_IN_ROW, SHOW_ICON, SHOW_NAME, OUTLINED);
+
+  /**
+   * The configuration each template comes with, which the view applies to a
+   * setting stored null, unset or invalid: myApplicationsDisplay.js
+   * TEMPLATE_DEFAULTS, pinned by MyApplicationsSettingsServiceTest. An empty
+   * color is none.
+   */
+  private static final Map<String, Map<String, Object>> TEMPLATE_DEFAULTS =
+                                                                          Map.of(TEMPLATE_ROW,
+                                                                                 displayDefaults(false, true, false, 32, true, true, ALIGN_CENTER, ALIGN_CENTER),
+                                                                                 TEMPLATE_CARDS,
+                                                                                 displayDefaults(false, true, true, 45, true, false, ALIGN_CENTER, ALIGN_CENTER),
+                                                                                 TEMPLATE_COLUMN,
+                                                                                 displayDefaults(true, true, true, 32, true, false, ALIGN_START, ALIGN_CENTER));
 
   private static final int     MAX_KEPT_SETTING_NAMES   = 1000;
 
@@ -258,9 +287,7 @@ public class MyApplicationsSettingsService {
    * @return true when the user may write the window's settings
    */
   public boolean canEditSettings(String settingName, String username) {
-    if (StringUtils.isBlank(settingName)
-        || StringUtils.isBlank(username)
-        || StringUtils.equals(username, IdentityConstants.ANONIM)) {
+    if (StringUtils.isBlank(settingName) || !isNamedUser(username)) {
       return false;
     }
     CMSSetting setting = cmsService.getSetting(SETTING_TYPE, settingName);
@@ -273,17 +300,47 @@ public class MyApplicationsSettingsService {
     }
     if (isSharedLayoutWindow(settingName, setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
-    } else if (isSectionTemplateDraft(setting.getPageReference())) {
-      return userAcl.isAdministrator(identity);
-    } else if (SITE_LAYOUT_NAME.matcher(settingName).find()) {
-      return canEditSite(setting.getPageReference(), username);
+    } else if (SITE_LAYOUT_NAME.matcher(settingName).find() && !isSectionTemplateDraft(setting.getPageReference())) {
+      return canEditSiteLayoutWindowSettings(getSiteKey(setting.getPageReference()), username);
     } else {
-      // The page-content right in the space owning the recorded page's site,
-      // which a window rendered before that rule may not have recorded
-      return cmsService.hasEditPermission(identity,
-                                          setting.getPageReference(),
-                                          getSiteSpaceId(getSiteKey(setting.getPageReference())));
+      return canEditPageWindowSettings(setting.getPageReference(), identity);
     }
+  }
+
+  /**
+   * Whether a user may change the settings of a page window whose setting
+   * records the page, or would record it once created: administrators only
+   * on a section-template draft page, else the page-content right in the
+   * space owning the page's site, the rule
+   * {@link #canEditSettings(String, String)} applies to a page window.
+   *
+   * @param pageReference the live page holding the window
+   * @param username the user, null or anonymous for a guest
+   * @return true when the user may write the window's settings
+   */
+  public boolean canEditPageWindowSettings(String pageReference, String username) {
+    if (StringUtils.isBlank(pageReference) || !isNamedUser(username)) {
+      return false;
+    }
+    Identity identity = userAcl.getUserIdentity(username);
+    return identity != null && canEditPageWindowSettings(pageReference, identity);
+  }
+
+  /**
+   * Whether a user may change the settings of a site-layout window of a site,
+   * before or after its setting exists: the site edit right, the rule
+   * {@link #canEditSettings(String, String)} applies to a site-marked name.
+   *
+   * @param siteKey the site whose layout holds the window, a draft site
+   *          included
+   * @param username the user, null or anonymous for a guest
+   * @return true when the user may write the window's settings
+   */
+  public boolean canEditSiteLayoutWindowSettings(SiteKey siteKey, String username) {
+    if (siteKey == null || !isNamedUser(username) || userAcl.getUserIdentity(username) == null) {
+      return false;
+    }
+    return layoutAclService.canEditSite(siteKey, username);
   }
 
   /**
@@ -295,7 +352,7 @@ public class MyApplicationsSettingsService {
    * @return true when the user is an administrator
    */
   public boolean canEditLegacyHeaderTitle(String username) {
-    if (StringUtils.isBlank(username) || StringUtils.equals(username, IdentityConstants.ANONIM)) {
+    if (!isNamedUser(username)) {
       return false;
     }
     Identity identity = userAcl.getUserIdentity(username);
@@ -514,6 +571,41 @@ public class MyApplicationsSettingsService {
   }
 
   /**
+   * Reads the display settings as the view renders them from the stored
+   * template: see {@link #getDisplaySettings(Map, String)}.
+   *
+   * @param preferences the window's preferences
+   * @return the display settings to render, null for the legacy layout
+   */
+  public static Map<String, Object> getDisplaySettings(Map<String, String> preferences) {
+    return getDisplaySettings(preferences, getTemplate(preferences.get(TEMPLATE)));
+  }
+
+  /**
+   * Reads the display settings as the view renders them for a template: each
+   * of {@link #DISPLAY_SETTINGS} is its stored value when valid, else the
+   * template's default, a Boolean flag, an Integer icon size, a String color,
+   * empty for none, or alignment.
+   *
+   * @param preferences the window's preferences
+   * @param template the template read for, the stored one or one being set
+   * @return the display settings to render, null without a template, which
+   *         renders the legacy layout
+   */
+  public static Map<String, Object> getDisplaySettings(Map<String, String> preferences, String template) {
+    Map<String, Object> defaults = template == null ? null : TEMPLATE_DEFAULTS.get(template);
+    if (defaults == null) {
+      return null; // NOSONAR
+    }
+    Map<String, Object> display = new LinkedHashMap<>();
+    for (String setting : DISPLAY_SETTINGS) {
+      Object stored = readDisplaySetting(setting, preferences.get(setting));
+      display.put(setting, stored == null ? defaults.get(setting) : stored);
+    }
+    return display;
+  }
+
+  /**
    * @return the ordered ids without duplicates, an empty list for an empty
    *         value, null for a value that is not a list of at most maxIds ids
    */
@@ -530,6 +622,47 @@ public class MyApplicationsSettingsService {
     }
     List<Long> ids = Arrays.stream(tokens).map(Long::valueOf).distinct().toList();
     return ids.size() > maxIds ? null : ids;
+  }
+
+  /**
+   * @return the stored display setting as its type, null when unset or
+   *         invalid; a color is never null, an invalid one being none
+   */
+  private static Object readDisplaySetting(String setting, String storedValue) {
+    if (DISPLAY_FLAGS.contains(setting)) {
+      return getDisplayFlag(storedValue);
+    } else if (ICON_SIZE.equals(setting)) {
+      return getIconSize(storedValue);
+    } else if (COLOR.equals(setting)) {
+      return getColor(storedValue);
+    } else {
+      return getAlignment(storedValue);
+    }
+  }
+
+  private static Map<String, Object> displayDefaults(boolean showSeeMore, // NOSONAR
+                                                     boolean listInRow,
+                                                     boolean showIcon,
+                                                     int iconSize,
+                                                     boolean showName,
+                                                     boolean outlined,
+                                                     String hAlign,
+                                                     String vAlign) {
+    Map<String, Object> defaults = new LinkedHashMap<>();
+    defaults.put(SHOW_SEE_MORE, showSeeMore);
+    defaults.put(LIST_IN_ROW, listInRow);
+    defaults.put(SHOW_ICON, showIcon);
+    defaults.put(ICON_SIZE, iconSize);
+    defaults.put(SHOW_NAME, showName);
+    defaults.put(COLOR, "");
+    defaults.put(OUTLINED, outlined);
+    defaults.put(H_ALIGN, hAlign);
+    defaults.put(V_ALIGN, vAlign);
+    return Collections.unmodifiableMap(defaults);
+  }
+
+  private static boolean isNamedUser(String username) {
+    return StringUtils.isNotBlank(username) && !StringUtils.equals(username, IdentityConstants.ANONIM);
   }
 
   /**
@@ -862,13 +995,17 @@ public class MyApplicationsSettingsService {
     }
   }
 
-  private boolean canEditSite(String pageReference, String username) {
-    try {
-      return layoutAclService.canEditSite(PageKey.parse(pageReference).getSite(), username);
-    } catch (RuntimeException e) {
-      LOG.debug("Unable to resolve the site of page {}", pageReference, e);
-      return false;
+  /**
+   * @return the page-window right of an identity on a page: administrators
+   *         only on a section-template draft page, else the page-content
+   *         right in the space owning the page's site, which a window
+   *         rendered before that rule may not have recorded
+   */
+  private boolean canEditPageWindowSettings(String pageReference, Identity identity) {
+    if (isSectionTemplateDraft(pageReference)) {
+      return userAcl.isAdministrator(identity);
     }
+    return cmsService.hasEditPermission(identity, pageReference, getSiteSpaceId(getSiteKey(pageReference)));
   }
 
   private boolean isSectionTemplateDraft(String pageReference) {
