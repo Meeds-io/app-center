@@ -34,6 +34,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -295,7 +296,7 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   @Test
-  void testValidateRefusesValuesTheDrawerRefuses() {
+  void testValidateRefusesListingValuesTheDrawerRefuses() {
     ApplicationSettingsContext context = context(Map.of("template", "ROW"), false);
     assertRefused(context, Map.of("listing_mode", "ALL"), "value is not accepted for listing_mode");
     assertRefused(context, Map.of("selection_mode", "manual"), "value is not accepted for selection_mode");
@@ -311,6 +312,11 @@ class MyApplicationsApplicationSettingsPluginTest {
                   Map.of("application_ids", java.util.stream.LongStream.rangeClosed(1, 101).boxed().toList()),
                   "value is not accepted for application_ids");
     assertRefused(context, Map.of("category_ids", List.of(2.5)), "value is not accepted for category_ids");
+  }
+
+  @Test
+  void testValidateRefusesDisplayAndHeaderValuesTheDrawerRefuses() {
+    ApplicationSettingsContext context = context(Map.of("template", "ROW"), false);
     assertRefused(context, Map.of("show_header", "false"), "value is not accepted for show_header");
     assertRefused(context, Map.of("template", "List"), "value is not accepted for template");
     assertRefused(context, Map.of("show_icon", "true"), "value is not accepted for show_icon");
@@ -440,7 +446,7 @@ class MyApplicationsApplicationSettingsPluginTest {
    */
   @Test
   @SuppressWarnings("unchecked")
-  void testHeaderWritePreviewsTheCopyFromTheGivenList() throws Exception {
+  void testHeaderWritePreviewsTheCopyFromTheGivenList() {
     lenient().when(applicationCenterStorage.getApplication(1L)).thenReturn(contextApplication(1L, SETTING_NAME));
     lenient().when(applicationCenterStorage.getApplication(2L)).thenReturn(contextApplication(2L, SETTING_NAME));
     ApplicationSettingsContext context = context(Map.of("name", SETTING_NAME, "listingMode", "SELECTED", "applicationIds", "1"), false);
@@ -453,7 +459,7 @@ class MyApplicationsApplicationSettingsPluginTest {
     assertDoesNotThrow(() -> plugin.validate(context, Map.of("header_title", Map.of("en", "Tools"), "application_ids", List.of(1, 2))));
     assertDoesNotThrow(() -> plugin.validate(context, Map.of("header_title", Map.of("en", "Tools"), "application_ids", List.of(2))));
     ArgumentCaptor<Map<String, String>> source = ArgumentCaptor.forClass(Map.class);
-    verify(copyService, org.mockito.Mockito.times(2)).getCopyPreferences(source.capture(), eq(false), eq(USERNAME));
+    verify(copyService, times(2)).getCopyPreferences(source.capture(), eq(false), eq(USERNAME));
     assertEquals(List.of("1,2", "2"), source.getAllValues().stream().map(s -> s.get("applicationIds")).toList());
   }
 
@@ -503,7 +509,7 @@ class MyApplicationsApplicationSettingsPluginTest {
   }
 
   @Test
-  void testSiteContainerRightIsTheSiteEditRight() throws Exception {
+  void testSiteContainerRightIsTheSiteEditRight() {
     ApplicationSettingsContext context = siteContainer(Map.of());
     when(settingsService.canEditSiteLayoutWindowSettings(SiteKey.portal("classic"), USERNAME)).thenReturn(false);
     assertThrows(IllegalAccessException.class, () -> plugin.validate(context, Map.of("show_header", false)));
@@ -856,9 +862,8 @@ class MyApplicationsApplicationSettingsPluginTest {
   void testSiteContainerWritesPlainOptionsAndRefusesAChangedHeader() throws Exception {
     storedHeader(SETTING_NAME, Map.of(Locale.ENGLISH, "Tools"));
     ApplicationSettingsContext context = siteContainer(Map.of("name", SETTING_NAME, "showHeader", "false"));
-    IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                                              () -> plugin.validate(context,
-                                                                    Map.of("show_header", true, "header_title", Map.of("en", "Apps"))));
+    Map<String, Object> changedHeader = Map.of("show_header", true, "header_title", Map.of("en", "Apps"));
+    IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> plugin.validate(context, changedHeader));
     assertEquals("not configurable in a site container: header_title", e.getMessage());
     plugin.apply(context, Map.of("show_header", true, "header_title", Map.of("en", "Tools"), "template", "COLUMN"));
     verify(applicationSettingsService).updatePreferences(context, Map.of("showHeader", "true", "template", "COLUMN"));

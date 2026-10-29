@@ -199,13 +199,16 @@ public class MyApplicationsCopyService {
    * is). The layout tools call it when a window that does not own its
    * setting is given a new one.
    *
-   * @param preferences the window's preferences
+   * @param preferences the window's preferences, null when it has none
    * @param settingName the new setting's name, which exists already
    * @param username the user the copy is made for
    * @return the created application's id by the id its list names, null for
    *         a carried application whose fields are refused
    */
   public Map<Long, Long> copyListToSetting(Map<String, String> preferences, String settingName, String username) {
+    if (preferences == null) {
+      return new LinkedHashMap<>();
+    }
     String payload = getCopyPreferences(preferences, false, username).get(DATA_INIT_PREFERENCE);
     ApplicationListCopy listCopy = StringUtils.isBlank(payload) ? null : parseListCopy(settingName, payload);
     Map<Long, Long> created = createCopiedApplications(settingName,

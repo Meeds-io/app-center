@@ -1412,7 +1412,8 @@ class MyApplicationsSettingsServiceTest {
     assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, USERNAME));
     when(layoutAclService.canEditSite(siteKey, USERNAME)).thenReturn(true);
     assertTrue(settingsService.canEditSiteLayoutWindowSettings(siteKey, USERNAME));
-    lenient().when(userAcl.getUserIdentity(IdentityConstants.ANONIM)).thenReturn(mock(Identity.class));
+    Identity guest = mock(Identity.class);
+    lenient().when(userAcl.getUserIdentity(IdentityConstants.ANONIM)).thenReturn(guest);
     lenient().when(layoutAclService.canEditSite(siteKey, IdentityConstants.ANONIM)).thenReturn(true);
     assertFalse(settingsService.canEditSiteLayoutWindowSettings(null, USERNAME));
     assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, null));
