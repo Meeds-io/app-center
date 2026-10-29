@@ -20,14 +20,17 @@ package io.meeds.appcenter.util;
 
 import static io.meeds.layout.service.ApplicationSettingsService.VALUE_NOT_ACCEPTED;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import org.exoplatform.services.resources.LocaleConfigService;
 
@@ -67,6 +70,48 @@ public class ApplicationSettingsUtils {
       if (doubleValue >= min && doubleValue <= max) {
         return (int) doubleValue;
       }
+    }
+    throw notAccepted(option);
+  }
+
+  public static String toText(Object value, String option, int maxLength) {
+    if (value instanceof String text && text.length() <= maxLength) {
+      return text;
+    }
+    throw notAccepted(option);
+  }
+
+  public static String toValue(Object value, String option, Collection<String> values) {
+    if (value instanceof String text && values.contains(text)) {
+      return text;
+    }
+    throw notAccepted(option);
+  }
+
+  /**
+   * @return the ids of a list of numeric ids, in their order, each once
+   */
+  public static List<Long> toIds(Object value, String option) {
+    if (!(value instanceof List<?> list)) {
+      throw notAccepted(option);
+    }
+    List<Long> ids = new ArrayList<>();
+    for (Object item : list) {
+      long id = toId(item, option);
+      if (ids.contains(id)) {
+        throw notAccepted(option);
+      }
+      ids.add(id);
+    }
+    return ids;
+  }
+
+  public static long toId(Object value, String option) {
+    if (value instanceof Number number && number.doubleValue() == Math.rint(number.doubleValue())
+        && number.longValue() > 0) {
+      return number.longValue();
+    } else if (value instanceof String text && NumberUtils.toLong(text) > 0) {
+      return NumberUtils.toLong(text);
     }
     throw notAccepted(option);
   }
@@ -145,6 +190,22 @@ public class ApplicationSettingsUtils {
     Map<String, Object> schema = schema("integer", description);
     schema.put("minimum", min);
     schema.put("maximum", max);
+    return schema;
+  }
+
+  public static Map<String, Object> stringSchema(String description) {
+    return schema("string", description);
+  }
+
+  public static Map<String, Object> enumSchema(Collection<String> values, String description) {
+    Map<String, Object> schema = schema("string", description);
+    schema.put("enum", new ArrayList<>(values));
+    return schema;
+  }
+
+  public static Map<String, Object> idsSchema(String description) {
+    Map<String, Object> schema = schema("array", description);
+    schema.put("items", schema("integer", null));
     return schema;
   }
 
