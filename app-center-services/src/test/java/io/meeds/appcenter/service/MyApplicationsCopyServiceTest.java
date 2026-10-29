@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -458,6 +459,67 @@ class MyApplicationsCopyServiceTest {
     copyService.consumeCopy(COPY_NAME, payload(Map.of("", "Nobody's", "en", "Shortcuts")), "");
 
     verify(translationService).saveTranslationLabels(HEADER_TYPE, COPY_NAME, HEADER_FIELD, Map.of(Locale.ENGLISH, "Shortcuts"), false);
+  }
+
+  @Test
+  void copyListToSettingCopiesTheHeaderAndTheWindowApplicationsToTheNewSetting() throws Exception {
+    contextApplication(1L, SETTING_NAME);
+    appCenterApplication(2L);
+    contextApplication(3L, OTHER_NAME);
+    givenLabels(HEADER_TYPE, SETTING_NAME, HEADER_FIELD, Map.of(Locale.ENGLISH, "Shortcuts"));
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
+
+    Map<Long, Long> created = copyService.copyListToSetting(preferences(SETTING_NAME, "1,2,3", null), COPY_NAME, USERNAME);
+
+    assertEquals(Map.of(1L, 41L), created);
+    ArgumentCaptor<ApplicationForm> form = ArgumentCaptor.forClass(ApplicationForm.class);
+    verify(applicationCenterService).createCopiedContextApplication(form.capture(), isNull(), eq(COPY_NAME));
+    assertEquals("Wiki 1", form.getValue().getTitle());
+    verify(translationService).saveTranslationLabels(HEADER_TYPE, COPY_NAME, HEADER_FIELD, Map.of(Locale.ENGLISH, "Shortcuts"), false);
+  }
+
+  /**
+   * An unconsumed copy names the source's applications, which the window's
+   * setting never created: the carried payload is the source, read as it is
+   */
+  @Test
+  void copyListToSettingUsesTheCarriedPayloadAsItIs() throws Exception {
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME))).thenReturn(created(41L));
+
+    Map<Long, Long> created = copyService.copyListToSetting(preferences(null, "1,2", payload(Map.of("fr", "Raccourcis"), copy(1L), copy(9L))),
+                                                            COPY_NAME,
+                                                            USERNAME);
+
+    assertEquals(Map.of(1L, 41L), created);
+    verify(applicationCenterService, times(1)).createCopiedContextApplication(any(), any(), any());
+    verify(applicationCenterService, never()).getApplication(anyLong());
+    verify(translationService).saveTranslationLabels(HEADER_TYPE, COPY_NAME, HEADER_FIELD, Map.of(Locale.FRENCH, "Raccourcis"), false);
+  }
+
+  @Test
+  void copyListToSettingMapsARefusedCopyToNull() throws Exception {
+    contextApplication(1L, SETTING_NAME);
+    contextApplication(2L, SETTING_NAME);
+    when(applicationCenterService.createCopiedContextApplication(any(), any(), eq(COPY_NAME)))
+                                                                                         .thenThrow(new IllegalArgumentException("appCenter.contextual.invalidUrl"))
+                                                                                         .thenReturn(created(42L));
+
+    Map<Long, Long> created = copyService.copyListToSetting(preferences(SETTING_NAME, "1,2", null), COPY_NAME, USERNAME);
+
+    assertEquals(2, created.size());
+    assertTrue(created.containsKey(1L));
+    assertNull(created.get(1L));
+    assertEquals(42L, created.get(2L));
+  }
+
+  @Test
+  void copyListToSettingWithNothingToCopyCreatesNothing() throws Exception {
+    appCenterApplication(2L);
+
+    assertEquals(Map.of(), copyService.copyListToSetting(preferences(SETTING_NAME, "2", null), COPY_NAME, USERNAME));
+    assertEquals(Map.of(), copyService.copyListToSetting(preferences(null, "2", null), COPY_NAME, USERNAME));
+    verify(applicationCenterService, never()).createCopiedContextApplication(any(), any(), any());
+    verify(translationService, never()).saveTranslationLabels(anyString(), anyString(), anyString(), any(), anyBoolean());
   }
 
   /**
