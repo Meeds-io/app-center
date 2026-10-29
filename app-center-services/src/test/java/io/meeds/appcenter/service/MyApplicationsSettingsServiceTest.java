@@ -1356,6 +1356,128 @@ class MyApplicationsSettingsServiceTest {
     throw new AssertionError("The other windows must not be read for a name generated for the window");
   }
 
+  /**
+   * The rule a page window's setting gets once created, computed before it
+   * exists: the plugin of the layout tools asks it from the live page it
+   * configures, never from a window preference
+   */
+  @Test
+  void canEditPageWindowSettingsIsThePageWindowRuleBeforeItsSettingExists() {
+    Identity identity = mockUser(false);
+    when(spaceService.getSpaceByGroupId("/spaces/space1")).thenReturn(space(5L));
+
+    assertFalse(settingsService.canEditPageWindowSettings(PAGE_REFERENCE, USERNAME));
+    when(cmsService.hasEditPermission(identity, PAGE_REFERENCE, 5)).thenReturn(true);
+    assertTrue(settingsService.canEditPageWindowSettings(PAGE_REFERENCE, USERNAME));
+    Identity guest = mock(Identity.class);
+    lenient().when(userAcl.getUserIdentity(IdentityConstants.ANONIM)).thenReturn(guest);
+    lenient().when(cmsService.hasEditPermission(guest, PAGE_REFERENCE, 5)).thenReturn(true);
+    assertFalse(settingsService.canEditPageWindowSettings(null, USERNAME));
+    assertFalse(settingsService.canEditPageWindowSettings(" ", USERNAME));
+    assertFalse(settingsService.canEditPageWindowSettings(PAGE_REFERENCE, null));
+    assertFalse(settingsService.canEditPageWindowSettings(PAGE_REFERENCE, IdentityConstants.ANONIM));
+    verify(cmsService, never()).getSetting(anyString(), anyString());
+  }
+
+  @Test
+  void canEditPageWindowSettingsRefusesAnUnknownUser() {
+    lenient().when(cmsService.hasEditPermission(any(), anyString(), anyLong())).thenReturn(true);
+
+    assertFalse(settingsService.canEditPageWindowSettings(PAGE_REFERENCE, USERNAME));
+  }
+
+  @Test
+  void canEditPageWindowSettingsOfASectionTemplateDraftPageIsAdministratorOnly() {
+    Identity identity = mockUser(false);
+    lenient().when(cmsService.hasEditPermission(any(Identity.class), anyString(), anyLong())).thenReturn(true);
+
+    assertFalse(settingsService.canEditPageWindowSettings(SECTION_DRAFT_PAGE, USERNAME));
+    when(userAcl.isAdministrator(identity)).thenReturn(true);
+    assertTrue(settingsService.canEditPageWindowSettings(SECTION_DRAFT_PAGE, USERNAME));
+  }
+
+  @Test
+  void canEditSiteLayoutWindowSettingsIsTheSiteEditRight() {
+    mockUser(false);
+    SiteKey siteKey = SiteKey.portal("classic");
+
+    assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, USERNAME));
+    when(layoutAclService.canEditSite(siteKey, USERNAME)).thenReturn(true);
+    assertTrue(settingsService.canEditSiteLayoutWindowSettings(siteKey, USERNAME));
+    lenient().when(userAcl.getUserIdentity(IdentityConstants.ANONIM)).thenReturn(mock(Identity.class));
+    lenient().when(layoutAclService.canEditSite(siteKey, IdentityConstants.ANONIM)).thenReturn(true);
+    assertFalse(settingsService.canEditSiteLayoutWindowSettings(null, USERNAME));
+    assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, null));
+    assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, IdentityConstants.ANONIM));
+  }
+
+  @Test
+  void canEditSiteLayoutWindowSettingsRefusesAnUnknownUser() {
+    SiteKey siteKey = SiteKey.portal("classic");
+    lenient().when(layoutAclService.canEditSite(siteKey, USERNAME)).thenReturn(true);
+
+    assertFalse(settingsService.canEditSiteLayoutWindowSettings(siteKey, USERNAME));
+  }
+
+  /**
+   * The values of myApplicationsDisplay.js TEMPLATE_DEFAULTS, which the view
+   * applies to a setting stored null, unset or invalid: a change there moves
+   * these too
+   */
+  @Test
+  void getDisplaySettingsAppliesTheTemplateDefaultsOfTheView() {
+    assertNull(MyApplicationsSettingsService.getDisplaySettings(Map.of()));
+    assertNull(MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "LIST")));
+    assertNull(MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "ROW"), null));
+
+    assertEquals(display(false, true, false, 32, true, "", true, "CENTER", "CENTER"),
+                 MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "ROW")));
+    assertEquals(display(false, true, true, 45, true, "", false, "CENTER", "CENTER"),
+                 MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "CARDS")));
+    assertEquals(display(true, true, true, 32, true, "", false, "START", "CENTER"),
+                 MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "COLUMN")));
+    assertEquals(MyApplicationsSettingsService.DISPLAY_SETTINGS,
+                 List.copyOf(MyApplicationsSettingsService.getDisplaySettings(Map.of(TEMPLATE, "ROW")).keySet()));
+  }
+
+  @Test
+  void getDisplaySettingsReadsAValidStoredValueOverTheTemplateDefault() {
+    Map<String, String> preferences = Map.of(TEMPLATE, "ROW",
+                                             SHOW_ICON, "true",
+                                             ICON_SIZE, "61",
+                                             COLOR, "#AABBCC",
+                                             OUTLINED, "maybe",
+                                             H_ALIGN, "END",
+                                             V_ALIGN, "DOWN");
+
+    assertEquals(display(false, true, true, 32, true, "#AABBCC", true, "END", "CENTER"),
+                 MyApplicationsSettingsService.getDisplaySettings(preferences));
+    assertEquals(display(false, true, true, 45, true, "#AABBCC", false, "END", "CENTER"),
+                 MyApplicationsSettingsService.getDisplaySettings(preferences, "CARDS"));
+  }
+
+  private Map<String, Object> display(boolean showSeeMore, // NOSONAR
+                                      boolean listInRow,
+                                      boolean showIcon,
+                                      int iconSize,
+                                      boolean showName,
+                                      String color,
+                                      boolean outlined,
+                                      String hAlign,
+                                      String vAlign) {
+    Map<String, Object> display = new HashMap<>();
+    display.put(SHOW_SEE_MORE, showSeeMore);
+    display.put(LIST_IN_ROW, listInRow);
+    display.put(SHOW_ICON, showIcon);
+    display.put(ICON_SIZE, iconSize);
+    display.put(SHOW_NAME, showName);
+    display.put(COLOR, color);
+    display.put(OUTLINED, outlined);
+    display.put(H_ALIGN, hAlign);
+    display.put(V_ALIGN, vAlign);
+    return display;
+  }
+
   private Identity mockUser(boolean administrator) {
     Identity identity = mock(Identity.class);
     when(userAcl.getUserIdentity(USERNAME)).thenReturn(identity);
