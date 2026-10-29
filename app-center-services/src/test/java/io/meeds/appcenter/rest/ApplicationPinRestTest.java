@@ -146,6 +146,17 @@ class ApplicationPinRestTest {
   }
 
   @Test
+  void pinApplicationNotPinnable() throws Exception {
+    // the service's refusal of an inactive application, or of one created from
+    // a Shortcuts portlet
+    doThrow(new IllegalArgumentException("appCenter.pin.pinNotAllowed")).when(applicationCenterService)
+                                                                         .pinApplication(anyLong(), anyString());
+    mockMvc.perform(put(PIN_PATH).with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(status().reason("appCenter.pin.pinNotAllowed"));
+  }
+
+  @Test
   void pinApplicationWithInvalidId() throws Exception {
     mockMvc.perform(put(PINS_PATH + "/abc").with(testSimpleUser())).andExpect(status().isBadRequest());
     verifyNoInteractions(applicationCenterService);
