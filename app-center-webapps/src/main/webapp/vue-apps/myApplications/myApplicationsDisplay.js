@@ -27,6 +27,12 @@ export const MAX_ICON_SIZE = 60;
 // The settings a template reads but showHeader, which the legacy layout reads too, in the order they are compared
 export const DISPLAY_KEYS = ['template', 'showSeeMore', 'listInRow', 'showIcon', 'iconSize', 'showName', 'color', 'outlined', 'hAlign', 'vAlign'];
 
+// The skin's border color, which an outlined tile takes while it has no color of its own
+const BORDER_COLOR_VARIABLE = '--allPagesBorderColor';
+
+// The hexadecimal shapes the color picker parses
+const PICKER_HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
 // The configuration each template comes with. An empty color is none: a transparent tile, with the skin's border color when outlined
 const TEMPLATE_DEFAULTS = {
   ROW: {
@@ -143,12 +149,26 @@ export function getTileStyle(displaySettings) {
     return null;
   } else if (displaySettings.outlined) {
     // No fill, and never the transparent class: it makes the border transparent as well
-    return {border: `thin solid ${displaySettings.color || 'var(--allPagesBorderColor)'}`, backgroundColor: 'transparent'};
+    return {border: `thin solid ${displaySettings.color || `var(${BORDER_COLOR_VARIABLE})`}`, backgroundColor: 'transparent'};
   } else {
     // No border, yet the room of the focus border so that focusing it moves nothing. Without a color, no fill
     // either, set inline: in the settings drawer, a clickable card is white otherwise
     return {border: 'thin solid transparent', backgroundColor: displaySettings.color || 'transparent'};
   }
+}
+
+// The skin's border color as the color picker emits a color (#RRGGBBAA, upper case), for the settings to show the
+// color an outlined tile takes while it has none. None when the stylesheet gives it in a shape the picker cannot parse
+export function getSkinBorderColor() {
+  const color = window.getComputedStyle(document.documentElement).getPropertyValue(BORDER_COLOR_VARIABLE).trim();
+  if (!PICKER_HEX_COLOR.test(color)) {
+    return null;
+  }
+  let hex = color.substring(1).toUpperCase();
+  if (hex.length <= 4) {
+    hex = hex.split('').map(digit => digit + digit).join('');
+  }
+  return `#${hex.padEnd(8, 'F')}`;
 }
 
 // The style of a tile whose face is lifted over the page: it keeps its size in the line, and shows nothing

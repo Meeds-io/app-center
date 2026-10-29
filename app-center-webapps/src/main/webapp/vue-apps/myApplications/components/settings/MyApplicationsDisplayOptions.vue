@@ -32,6 +32,7 @@
         <div class="align-end">
           <color-picker
             :value="display.color"
+            :placeholder="colorPlaceholder"
             :disabled="disabled"
             swatch-size="28px"
             resettable
@@ -104,7 +105,7 @@
 </template>
 
 <script>
-import {MAX_ICON_SIZE, MIN_ICON_SIZE} from '../../myApplicationsDisplay.js';
+import {MAX_ICON_SIZE, MIN_ICON_SIZE, getSkinBorderColor} from '../../myApplicationsDisplay.js';
 
 export default {
   props: {
@@ -125,8 +126,13 @@ export default {
     minIconSize: MIN_ICON_SIZE,
     maxIconSize: MAX_ICON_SIZE,
     alignments: ['START', 'CENTER', 'END'],
+    skinBorderColor: null,
   }),
   computed: {
+    // The color the tiles take while none is set: the skin's border when outlined, and no fill otherwise
+    colorPlaceholder() {
+      return this.display.outlined ? this.skinBorderColor : null;
+    },
     options() {
       return [
         {key: 'showSeeMore', label: 'myApplications.showSeeMore.label'},
@@ -162,6 +168,9 @@ export default {
         },
       ];
     },
+  },
+  created() {
+    this.skinBorderColor = getSkinBorderColor();
   },
   methods: {
     update(key, value) {
