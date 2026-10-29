@@ -54,7 +54,7 @@ public class ApplicationPinRest {
 
   @GetMapping
   @Secured("users")
-  @Operation(summary = "Retrieves the ids of the applications pinned to the topbar of the authenticated user", method = "GET", description = "Returns the application ids in pin order")
+  @Operation(summary = "Retrieves the ids of the applications pinned to the topbar of the authenticated user", method = "GET", description = "Returns the application ids in pin order, leaving out the pins of deleted applications and of applications created from a Shortcuts portlet")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
   public ResponseEntity<List<Long>> getPinnedApplicationIds(HttpServletRequest request) {
     return privateAnswer(appCenterService.getPinnedApplicationIds(request.getRemoteUser()));
@@ -62,9 +62,9 @@ public class ApplicationPinRest {
 
   @PutMapping(path = "{applicationId}")
   @Secured("users")
-  @Operation(summary = "Pins an application to the topbar of the authenticated user", method = "PUT", description = "Pins an active application the authenticated user can access, after the applications already pinned, up to 100 pinned applications")
+  @Operation(summary = "Pins an application to the topbar of the authenticated user", method = "PUT", description = "Pins an active application the authenticated user can access, not created from a Shortcuts portlet, after the applications already pinned, up to 100 pinned applications")
   @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled"),
-    @ApiResponse(responseCode = "400", description = "Invalid application id, inactive application (appCenter.pin.pinNotAllowed), or an application not pinned yet while 100 applications are already pinned (appCenter.pin.tooManyPins)"),
+    @ApiResponse(responseCode = "400", description = "Invalid application id, inactive application or application created from a Shortcuts portlet (appCenter.pin.pinNotAllowed), or an application not pinned yet while 100 applications are already pinned (appCenter.pin.tooManyPins)"),
     @ApiResponse(responseCode = "403", description = "The authenticated user can't access the application"),
     @ApiResponse(responseCode = "404", description = "Application not found") })
   public void pinApplication(
