@@ -356,7 +356,11 @@ export default {
     },
     linkAriaLabel() {
       const shortcut = this.application?.shortcut
-        ? ` & keyboard shortcut: Ctrl + Shift + ${this.application?.shortcut}`
+        ? ` ${this.$t('appCenter.appLauncher.card.shortcut', [
+          this.$t('appCenter.adminSetupForm.ctrl'),
+          this.$t('appCenter.adminSetupForm.shift'),
+          this.application?.shortcut
+        ])}`
         : '';
 
       return `${this.$t('appCenter.appLauncher.appLink.ariaLabel')} : ${this.applicationTitle}, ${this.applicationDescription}${shortcut}`;
