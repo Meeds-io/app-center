@@ -70,6 +70,7 @@ import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationOrder;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPinStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.layout.service.PortletInstanceService;
@@ -99,6 +100,9 @@ class ApplicationCenterServiceTransactionTest {
 
   @MockitoBean
   private ApplicationPlacementStorage    placementStorage;
+
+  @MockitoBean
+  private ApplicationPinStorage          pinStorage;
 
   @MockitoBean
   private NavigationConfigurationService navigationConfigurationService;

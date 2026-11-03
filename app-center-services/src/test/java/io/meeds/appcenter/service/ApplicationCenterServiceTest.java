@@ -108,6 +108,7 @@ import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
+import io.meeds.appcenter.storage.ApplicationPinStorage;
 import io.meeds.appcenter.storage.ApplicationPlacementStorage;
 import io.meeds.appcenter.storage.PortletWindowStorage;
 import io.meeds.layout.model.PortletInstance;
@@ -190,6 +191,9 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ApplicationPlacementStorage placementStorage;
+
+  @MockitoBean
+  private ApplicationPinStorage    pinStorage;
 
   @MockitoBean
   private NavigationConfigurationService navigationConfigurationService;
@@ -846,6 +850,134 @@ public class ApplicationCenterServiceTest {
 
     applicationCenterService.unstickApplication(PlacementSide.RIGHT, TEST_USER);
     verify(placementStorage).removePlacedApplicationId(TEST_USER, PlacementSide.RIGHT);
+  }
+
+  @Test
+  void getPinnedApplicationIds() {
+    assertEquals(Collections.emptyList(), applicationCenterService.getPinnedApplicationIds(null));
+    verify(pinStorage, never()).getPinnedApplicationIds(any());
+
+    when(appCenterStorage.getApplication(3l)).thenReturn(accessibleApplication(3l));
+    when(appCenterStorage.getApplication(1l)).thenReturn(accessibleApplication(1l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(3l, 1l));
+    assertEquals(Arrays.asList(3l, 1l), applicationCenterService.getPinnedApplicationIds(TEST_USER));
+  }
+
+  /**
+   * A stored pin of an application created from a Shortcuts portlet, or of a
+   * deleted one, is left out of the read, which writes nothing: the next pin
+   * or unpin writes the list without it. A pin of an application the user
+   * can't access right now is kept.
+   */
+  @Test
+  void getPinnedApplicationIdsDropsAPinnedContextApplication() {
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, ID, 6l, 7l));
+
+    assertEquals(Arrays.asList(5l, 7l), applicationCenterService.getPinnedApplicationIds(TEST_USER));
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+  }
+
+  @Test
+  void pinApplicationRefusesAContextApplication() {
+    when(appCenterStorage.getApplication(ID)).thenReturn(contextApplication(ID, SETTING_NAME));
+
+    assertEquals("appCenter.pin.pinNotAllowed",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationRefusesBeforeAnyWrite() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(ID, ""));
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.pinApplication(0, TEST_USER));
+    assertThrows(ApplicationNotFoundException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+
+    // the application is restricted to PERMISSIONS_1, which the user isn't member of
+    Application application = application();
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    assertThrows(IllegalAccessException.class, () -> applicationCenterService.pinApplication(ID, TEST_USER));
+
+    application.setPermissions(Collections.singletonList(PERMISSIONS_2));
+    application.setActive(false);
+    // the message is the key of the label the client displays
+    assertEquals("appCenter.pin.pinNotAllowed",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
+
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+  }
+
+  /**
+   * A pin of a deleted application, or of one created from a Shortcuts
+   * portlet, is dropped, a pin of an application the user can't access right
+   * now is kept: it is displayed again once the access is given back.
+   */
+  @Test
+  @SneakyThrows
+  void pinApplicationAppendsAfterThePinsOfExistingApplications() {
+    Application application = accessibleApplication(ID);
+    when(appCenterStorage.getApplication(ID)).thenReturn(application);
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of, 8
+    // was created from a Shortcuts portlet
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(appCenterStorage.getApplication(8l)).thenReturn(contextApplication(8l, SETTING_NAME));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 8l, 7l));
+
+    applicationCenterService.pinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l, ID));
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationRefusesBeyondTheMaximum() {
+    List<Long> pinnedApplicationIds = LongStream.range(100, 100l + ApplicationPinStorage.MAX_PINNED_APPLICATIONS)
+                                                .boxed()
+                                                .toList();
+    when(appCenterStorage.getApplication(anyLong())).thenReturn(accessibleApplication(ID));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(pinnedApplicationIds);
+
+    assertEquals("appCenter.pin.tooManyPins",
+                 assertThrows(IllegalArgumentException.class,
+                              () -> applicationCenterService.pinApplication(ID, TEST_USER)).getMessage());
+    verify(pinStorage, never()).setPinnedApplicationIds(any(), any());
+
+    // an application already pinned is still accepted, at its place
+    applicationCenterService.pinApplication(100l, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, pinnedApplicationIds);
+  }
+
+  @Test
+  @SneakyThrows
+  void pinApplicationKeepsThePlaceOfAnAlreadyPinnedApplication() {
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(ID, 5l));
+
+    applicationCenterService.pinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(ID, 5l));
+  }
+
+  @Test
+  void unpinApplication() {
+    assertThrows(IllegalArgumentException.class, () -> applicationCenterService.unpinApplication(ID, ""));
+
+    when(appCenterStorage.getApplication(ID)).thenReturn(accessibleApplication(ID));
+    when(appCenterStorage.getApplication(5l)).thenReturn(accessibleApplication(5l));
+    // 6 was deleted, 7 is restricted to a group the user isn't member of, 8
+    // was created from a Shortcuts portlet
+    when(appCenterStorage.getApplication(7l)).thenReturn(application(7l));
+    when(appCenterStorage.getApplication(8l)).thenReturn(contextApplication(8l, SETTING_NAME));
+    when(pinStorage.getPinnedApplicationIds(TEST_USER)).thenReturn(Arrays.asList(5l, 6l, 8l, ID, 7l));
+
+    applicationCenterService.unpinApplication(ID, TEST_USER);
+    verify(pinStorage).setPinnedApplicationIds(TEST_USER, Arrays.asList(5l, 7l));
   }
 
   @Test
