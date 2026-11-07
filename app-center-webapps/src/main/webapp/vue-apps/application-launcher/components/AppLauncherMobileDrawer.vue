@@ -25,14 +25,15 @@
     v-model="drawer"
     :right="!$vuetify.rtl"
     :loading="loading"
+    :aria-label="$t('appCenter.appLauncher.drawer.title')"
     class="appCenterMobileDrawer">
     <template v-if="drawer" #content>
       <v-flex class="mx-0 drawerHeader flex-grow-0">
         <v-list-item class="ps-1 pe-0">
           <v-list-item-action class="drawerIcons me-2">
             <v-btn
-              :aria-label="$t('label.back')"
-              :title="$t('label.back')"
+              :aria-label="$t('appCenter.appLauncher.drawer.back')"
+              :title="$t('appCenter.appLauncher.drawer.back')"
               icon
               @click="goBack">
               <v-icon aria-hidden="true" size="20">
