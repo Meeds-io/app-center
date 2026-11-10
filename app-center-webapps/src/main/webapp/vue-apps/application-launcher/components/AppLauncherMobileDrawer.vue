@@ -25,13 +25,18 @@
     v-model="drawer"
     :right="!$vuetify.rtl"
     :loading="loading"
+    :aria-label="$t('appCenter.appLauncher.drawer.title')"
     class="appCenterMobileDrawer">
     <template v-if="drawer" #content>
       <v-flex class="mx-0 drawerHeader flex-grow-0">
         <v-list-item class="ps-1 pe-0">
           <v-list-item-action class="drawerIcons me-2">
-            <v-btn icon @click="goBack">
-              <v-icon size="20">
+            <v-btn
+              :aria-label="$t('appCenter.appLauncher.drawer.back')"
+              :title="$t('appCenter.appLauncher.drawer.back')"
+              icon
+              @click="goBack">
+              <v-icon aria-hidden="true" size="20">
                 {{ $vuetify.rtl && 'fa fa-arrow-right' || 'fa fa-arrow-left' }}
               </v-icon>
             </v-btn>
@@ -41,6 +46,7 @@
               <v-text-field
                 v-model="keyword"
                 :placeholder="$t('appCenter.appLauncher.filterPlaceholder')"
+                :aria-label="$t('appCenter.appLauncher.filterPlaceholder')"
                 :prepend-inner-icon="keyword && 'fa-filter primary--text' || 'fa-filter icon-default-color'"
                 class="flex-grow-1 full-height pa-0"
                 clear-icon="fa-times fa-1x primary--text position-absolute absolute-vertical-center"
@@ -59,16 +65,18 @@
             </v-list-item-content>
             <v-list-item-action class="drawerIcons align-end d-flex flex-row">
               <v-btn
+                :aria-label="$t('appCenter.userSettings.mobile.filterTitle')"
                 :title="$t('appCenter.userSettings.mobile.filterTitle')"
                 icon
                 @click="toogleFilter">
-                <v-icon size="20">fa-filter</v-icon>
+                <v-icon aria-hidden="true" size="20">fa-filter</v-icon>
               </v-btn>
               <v-btn
+                :aria-label="$t('label.close')"
                 :title="$t('label.close')"
                 icon
                 @click="close">
-                <v-icon size="20">fa-times</v-icon>
+                <v-icon aria-hidden="true" size="20">fa-times</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
