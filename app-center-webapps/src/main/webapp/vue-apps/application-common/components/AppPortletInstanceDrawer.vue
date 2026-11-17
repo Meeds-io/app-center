@@ -62,12 +62,19 @@ export default {
       await this.$nextTick();
       this.drawer = true;
       this.loading = true;
+      this.applyLightScope(portletInstanceId).catch(() => null);
       this.applicationTitle = await this.portletInstanceQuickAction.getName(portletInstanceId);
       await this.$nextTick();
       window.setTimeout(async () => {
         await this.portletInstanceQuickAction.render(portletInstanceId, '#appLauncherPortletViewer');
         window.setTimeout(() => this.loading = false, 300);
       }, 200);
+    },
+    async applyLightScope(portletInstanceId) {
+      // the drawer keeps its light display while it shows an application that keeps it, whatever the user's mode
+      const lightOnly = await this.$appPlacementService.isLightOnlyPortletInstance(portletInstanceId);
+      await this.$nextTick();
+      this.$appPlacementService.applyLightScope(this.$refs.drawer?.$el, lightOnly);
     },
     refreshQuickActions() {
       const portletInstanceQuickActions = extensionRegistry.loadExtensions('QuickAction', 'PortletExtension');
