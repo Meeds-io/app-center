@@ -27,6 +27,60 @@ const DEFAULT_APPLICATION_IMAGE = '/app-center/skin/images/defaultApp.png';
 // finds its placement options and its detached page can read it
 const contextApplications = new Map();
 
+// The portlet instances of the applications that keep their light display
+// whatever the user's display mode, read once per page
+let lightOnlyPortletInstanceIds = null;
+
+export function getLightOnlyPortletInstanceIds() {
+  if (!lightOnlyPortletInstanceIds) {
+    lightOnlyPortletInstanceIds = fetch('/app-center/rest/applications/lightOnly', {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then(resp => {
+        if (!resp?.ok) {
+          throw new Error(`light-only applications not read: ${resp?.status}`);
+        }
+        return resp.json();
+      })
+      .then(ids => ids || [])
+      .catch(() => {
+        // asked again next time: a failed read must not hide a light-only application for the whole page; a
+        // successful empty list stays read for the page
+        lightOnlyPortletInstanceIds = null;
+        return [];
+      });
+  }
+  return lightOnlyPortletInstanceIds;
+}
+
+/**
+ * @param {string|number} portletInstanceId the id of a portlet instance, an application's url
+ * @returns {Promise<boolean>} true when the portlet of that instance keeps its light display whatever the user's mode
+ */
+export function isLightOnlyPortletInstance(portletInstanceId) {
+  return getLightOnlyPortletInstanceIds().then(ids => ids.includes(`${portletInstanceId}`));
+}
+
+/**
+ * Writes, or removes, the light scope on an element of a container that shows an application: the application keeps
+ * its light display, with what it opens, inside a dark page.
+ *
+ * @param {Element} element the container of the application
+ * @param {boolean} lightOnly true to keep the light display
+ * @returns {void}
+ */
+export function applyLightScope(element, lightOnly) {
+  if (!element?.setAttribute) {
+    return;
+  }
+  if (lightOnly) {
+    element.setAttribute('data-display-mode', 'light');
+  } else if (element.getAttribute('data-display-mode') === 'light') {
+    element.removeAttribute('data-display-mode');
+  }
+}
+
 export function getPlacements() {
   return window.eXo?.env?.portal?.appPlacements || null;
 }
@@ -157,7 +211,17 @@ export function openDetached(applicationId) {
   window.open(getDetachUrl(applicationId), `ac-app-${applicationId}`);
 }
 
+// The icon of an application is drawn once in the primary color: drawn again when the displayed mode changes
+let faviconApplication = null;
+
+document.addEventListener('displayModeChanged', () => {
+  if (faviconApplication?.icon && !faviconApplication.imageUrl) {
+    applyApplicationFavicon(faviconApplication).catch(() => null);
+  }
+});
+
 export async function applyApplicationFavicon(application) {
+  faviconApplication = application;
   const href = application?.imageUrl
     || (application?.icon ? await renderIconAsDataUrl(application.icon) : DEFAULT_APPLICATION_IMAGE);
   if (!href) {
