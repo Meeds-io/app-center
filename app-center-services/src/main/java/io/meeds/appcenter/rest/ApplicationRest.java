@@ -418,6 +418,14 @@ public class ApplicationRest {
     return privateAnswer(appCenterService.getApplicationPlacements(request.getRemoteUser(), siteName));
   }
 
+  @GetMapping(path = "lightOnly")
+  @Secured("users")
+  @Operation(summary = "Retrieves the ids of the portlet instances that keep their light display whatever the user's display mode", method = "GET")
+  @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Request fulfilled") })
+  public ResponseEntity<List<String>> getLightOnlyPortletInstanceIds(HttpServletRequest request) {
+    return privateAnswer(appCenterService.getLightOnlyPortletInstanceIds(request.getRemoteUser()));
+  }
+
   @PutMapping(path = "placements/{side}")
   @Secured("users")
   @Operation(summary = "Sticks an application to the given layout side for the authenticated user", method = "PUT")

@@ -93,7 +93,7 @@ export default {
           this.$set(this.renderedPortletApps, side, application.id);
           // a docked drawer brings its own page-side border: the bare
           // portlet panel draws the same separation line itself
-          anchor.style[side === 'left' && 'borderRight' || 'borderLeft'] = '1px solid rgba(0, 0, 0, 0.12)';
+          anchor.style[side === 'left' && 'borderRight' || 'borderLeft'] = '1px solid var(--allPagesBorderColorDark, rgba(0, 0, 0, 0.12))';
           // same header idiom as the exo-drawer: v-list-item structure,
           // text-title title, icon actions, then the divider separator —
           // header stays put while only the portlet content scrolls
@@ -127,8 +127,16 @@ export default {
           container.className = 'flex-grow-1 overflow-y-auto';
           container.style.minHeight = '0';
           this.anchorContent(anchor).replaceChildren(header, divider, container);
+          this.applyLightScope(side, anchor, application).catch(() => null);
           portletQuickAction.render(application.url, `#${container.id}`);
         }
+      }
+    },
+    async applyLightScope(side, anchor, application) {
+      // the whole panel keeps its light display while it shows an application that keeps it, whatever the user's mode
+      const lightOnly = await this.$appPlacementService.isLightOnlyPortletInstance(application.url);
+      if (this.renderedPortletApps[side] === application.id) {
+        this.$appPlacementService.applyLightScope(anchor, lightOnly);
       }
     },
     ensureAnchor(side) {
@@ -169,7 +177,7 @@ export default {
         // the platform skin forces v-application transparent with !important:
         // the panel paints its own white ground at the same priority so a
         // short application never shows the page through
-        application.style.setProperty('background-color', 'white', 'important');
+        application.style.setProperty('background-color', 'var(--allPagesBaseBackground, white)', 'important');
         const wrap = document.createElement('div');
         wrap.className = 'v-application--wrap full-height';
         application.appendChild(wrap);
@@ -221,6 +229,7 @@ export default {
         this.anchorContent(anchor).replaceChildren();
         anchor.style.removeProperty('border-left');
         anchor.style.removeProperty('border-right');
+        this.$appPlacementService.applyLightScope(anchor, false);
         this.$set(this.renderedPortletApps, side, null);
       }
     },

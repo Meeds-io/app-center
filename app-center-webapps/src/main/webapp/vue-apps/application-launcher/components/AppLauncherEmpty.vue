@@ -16,7 +16,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div class="d-flex flex-column align-center justify-center mx-5">
-    <v-icon size="40" color="tertiary">fa-th</v-icon>
+    <v-icon size="40" color="secondary">fa-th</v-icon>
     <div class="mt-6">
       {{ hasApplications && $t('appCenter.appLauncher.drawer.placeholder.noApplicationsFound') || $t('appCenter.appLauncher.drawer.placeholder') }}
     </div>

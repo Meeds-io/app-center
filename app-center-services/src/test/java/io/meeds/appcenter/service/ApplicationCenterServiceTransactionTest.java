@@ -53,6 +53,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.portal.branding.BrandingService;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -68,6 +69,7 @@ import io.meeds.appcenter.entity.ApplicationEntity;
 import io.meeds.appcenter.entity.FavoriteApplicationEntity;
 import io.meeds.appcenter.model.Application;
 import io.meeds.appcenter.model.ApplicationOrder;
+import io.meeds.appcenter.storage.ApplicationBadgePortletStorage;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPinStorage;
@@ -112,6 +114,12 @@ class ApplicationCenterServiceTransactionTest {
 
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @MockitoBean
+  private ApplicationBadgePortletStorage badgePortletStorage;
+
+  @MockitoBean
+  private BrandingService                brandingService;
 
   @MockitoBean
   private TranslationService             translationService;

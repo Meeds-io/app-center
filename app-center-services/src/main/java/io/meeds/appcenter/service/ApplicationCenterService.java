@@ -61,6 +61,7 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.portal.branding.BrandingService;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -85,6 +86,7 @@ import io.meeds.appcenter.model.UserApplication;
 import io.meeds.appcenter.model.exception.ApplicationNotFoundException;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
+import io.meeds.appcenter.storage.ApplicationBadgePortletStorage;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPinStorage;
@@ -248,6 +250,12 @@ public class ApplicationCenterService {
 
   @Autowired
   private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @Autowired
+  private ApplicationBadgePortletStorage badgePortletStorage;
+
+  @Autowired
+  private BrandingService          brandingService;
 
   @Autowired
   private TranslationService       translationService;
@@ -667,6 +675,42 @@ public class ApplicationCenterService {
       return null;
     }
     return application;
+  }
+
+  /**
+   * The applications of type portlet store the id of the portlet instance they
+   * display: the ones whose portlet keeps its light display whatever the
+   * user's mode (the branding's light-only applications) are the ones the
+   * containers of the Application Center (launcher drawer, stuck panels,
+   * standalone viewer) must show in a light scope.
+   *
+   * @param username the user the instances are listed for: only the instances
+   *          the user may access are returned
+   * @return the ids of the portlet instances of a light-only portlet that the
+   *         user may access
+   */
+  public List<String> getLightOnlyPortletInstanceIds(String username) {
+    if (CollectionUtils.isEmpty(brandingService.getLightOnlyApplications())) {
+      return List.of();
+    }
+    // The permission is evaluated on the few light-only instances only, never
+    // on every portlet instance of the platform
+    return badgePortletStorage.getPortletContentIdsByInstanceId()
+                              .entrySet()
+                              .stream()
+                              .filter(entry -> brandingService.isLightOnlyApplication(entry.getValue()))
+                              .map(Map.Entry::getKey)
+                              .filter(instanceId -> canAccessPortletInstance(instanceId, username))
+                              .sorted()
+                              .toList();
+  }
+
+  private boolean canAccessPortletInstance(String instanceId, String username) {
+    try {
+      return portletInstanceService.getPortletInstance(NumberUtils.toLong(instanceId, 0), username, null, false) != null;
+    } catch (ObjectNotFoundException | IllegalAccessException e) {
+      return false;
+    }
   }
 
   public boolean isPlacementEligibleSite(String siteName) {
