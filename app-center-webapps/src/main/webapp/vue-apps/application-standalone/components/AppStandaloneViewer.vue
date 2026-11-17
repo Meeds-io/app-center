@@ -86,6 +86,9 @@ export default {
             this.displayed = true;
             const container = document.createElement('div');
             container.id = 'appStandaloneViewerPortlet';
+            // the page follows the user's mode, the application it shows keeps its light display when it is meant to
+            this.$appPlacementService.applyLightScope(container,
+              await this.$appPlacementService.isLightOnlyPortletInstance(application.url));
             document.querySelector('#appStandaloneViewerContent').replaceChildren(container);
             await portletQuickAction.render(application.url, `#${container.id}`);
           }

@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
@@ -78,6 +80,7 @@ import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.configuration.ConfigurationManager;
+import org.exoplatform.portal.branding.BrandingService;
 import org.exoplatform.portal.config.UserACL;
 import org.exoplatform.portal.config.UserPortalConfigService;
 import org.exoplatform.services.resources.ResourceBundleService;
@@ -106,6 +109,7 @@ import io.meeds.appcenter.model.exception.WindowPreferencesTimeoutException;
 import io.meeds.appcenter.plugin.ApplicationBadgePlugin;
 import io.meeds.appcenter.plugin.ApplicationCategoryPlugin;
 import io.meeds.appcenter.plugin.ApplicationTranslationPlugin;
+import io.meeds.appcenter.storage.ApplicationBadgePortletStorage;
 import io.meeds.appcenter.storage.ApplicationCategoryStorage;
 import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.appcenter.storage.ApplicationPinStorage;
@@ -167,6 +171,12 @@ public class ApplicationCenterServiceTest {
 
   @MockitoBean
   private ApplicationBadgePluginRegistry badgePluginRegistry;
+
+  @MockitoBean
+  private ApplicationBadgePortletStorage badgePortletStorage;
+
+  @MockitoBean
+  private BrandingService          brandingService;
 
   @MockitoBean
   private ConfigurationManager     configurationManager;
@@ -3305,6 +3315,63 @@ public class ApplicationCenterServiceTest {
                            false,
                            null,
                            null);
+  }
+
+
+  @Test
+  void getLightOnlyPortletInstanceIds() throws Exception {
+    when(badgePortletStorage.getPortletContentIdsByInstanceId()).thenReturn(Map.of("12", "time-tracker/TimeTrackingPortlet",
+                                                                                   "7", "social/ProfilePortlet",
+                                                                                   "3", "time-tracker/TimeSheetPortlet"));
+    when(brandingService.getLightOnlyApplications()).thenReturn(List.of("time-tracker/TimeTrackingPortlet",
+                                                                        "time-tracker/TimeSheetPortlet"));
+    when(brandingService.isLightOnlyApplication("time-tracker/TimeTrackingPortlet")).thenReturn(true);
+    when(brandingService.isLightOnlyApplication("time-tracker/TimeSheetPortlet")).thenReturn(true);
+    when(portletInstanceService.getPortletInstance(12L, TEST_USER, null, false)).thenReturn(portletInstance(12L));
+    when(portletInstanceService.getPortletInstance(3L, TEST_USER, null, false)).thenReturn(portletInstance(3L));
+
+    assertEquals(List.of("12", "3"), applicationCenterService.getLightOnlyPortletInstanceIds(TEST_USER));
+  }
+
+  @Test
+  void getLightOnlyPortletInstanceIdsExcludesInstancesTheUserCannotAccess() throws Exception {
+    when(badgePortletStorage.getPortletContentIdsByInstanceId()).thenReturn(Map.of("12", "time-tracker/TimeTrackingPortlet",
+                                                                                   "3", "time-tracker/TimeSheetPortlet"));
+    when(brandingService.getLightOnlyApplications()).thenReturn(List.of("time-tracker/TimeTrackingPortlet",
+                                                                        "time-tracker/TimeSheetPortlet"));
+    when(brandingService.isLightOnlyApplication("time-tracker/TimeTrackingPortlet")).thenReturn(true);
+    when(brandingService.isLightOnlyApplication("time-tracker/TimeSheetPortlet")).thenReturn(true);
+    when(portletInstanceService.getPortletInstance(12L, TEST_USER, null, false)).thenThrow(new IllegalAccessException());
+    when(portletInstanceService.getPortletInstance(3L, TEST_USER, null, false)).thenReturn(portletInstance(3L));
+
+    assertEquals(List.of("3"), applicationCenterService.getLightOnlyPortletInstanceIds(TEST_USER));
+  }
+
+  @Test
+  void getLightOnlyPortletInstanceIdsDoesNotCheckThePermissionOfOtherInstances() throws Exception {
+    when(badgePortletStorage.getPortletContentIdsByInstanceId()).thenReturn(Map.of("12", "time-tracker/TimeTrackingPortlet",
+                                                                                   "7", "social/ProfilePortlet"));
+    when(brandingService.getLightOnlyApplications()).thenReturn(List.of("time-tracker/TimeTrackingPortlet"));
+    when(brandingService.isLightOnlyApplication("time-tracker/TimeTrackingPortlet")).thenReturn(true);
+    when(portletInstanceService.getPortletInstance(12L, TEST_USER, null, false)).thenReturn(portletInstance(12L));
+
+    assertEquals(List.of("12"), applicationCenterService.getLightOnlyPortletInstanceIds(TEST_USER));
+    verify(portletInstanceService, never()).getPortletInstance(eq(7L), anyString(), any(), anyBoolean());
+    verify(portletInstanceService, never()).getPortletInstances(anyLong(), anyString(), any(), anyBoolean());
+  }
+
+  private PortletInstance portletInstance(long id) {
+    PortletInstance portletInstance = new PortletInstance();
+    portletInstance.setId(id);
+    return portletInstance;
+  }
+
+  @Test
+  void getLightOnlyPortletInstanceIdsWhenNoPortletIsLightOnly() throws Exception {
+    when(brandingService.getLightOnlyApplications()).thenReturn(List.of());
+
+    assertEquals(List.of(), applicationCenterService.getLightOnlyPortletInstanceIds(TEST_USER));
+    verifyNoInteractions(portletInstanceService, badgePortletStorage);
   }
 
 }

@@ -98,6 +98,8 @@ public class ApplicationRestTest {
 
   private static final String PLACEMENTS_PATH       = "/applications/placements";// NOSONAR
 
+  private static final String LIGHT_ONLY_PATH       = "/applications/lightOnly";// NOSONAR
+
   private static final String LISTED_APPLICATIONS_PATH  = "/applications/list";             // NOSONAR
 
   private static final String CONTEXT_APPLICATIONS_PATH = "/applications/contextual/list";  // NOSONAR
@@ -506,6 +508,22 @@ public class ApplicationRestTest {
                                                                                                                     null));
     ResultActions response = mockMvc.perform(get(PLACEMENTS_PATH + "?siteName=dw").with(testSimpleUser()));
     response.andExpect(status().isOk()).andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
+  @Test
+  void getLightOnlyPortletInstanceIdsAnonymously() throws Exception {
+    ResultActions response = mockMvc.perform(get(LIGHT_ONLY_PATH));
+    response.andExpect(status().isForbidden());
+  }
+
+  @Test
+  void getLightOnlyPortletInstanceIds() throws Exception {
+    when(applicationCenterService.getLightOnlyPortletInstanceIds(SIMPLE_USER)).thenReturn(List.of("12", "3"));
+    ResultActions response = mockMvc.perform(get(LIGHT_ONLY_PATH).with(testSimpleUser()));
+    response.andExpect(status().isOk())
+            .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE))
+            .andExpect(jsonPath("$[0]").value("12"))
+            .andExpect(jsonPath("$[1]").value("3"));
   }
 
   @Test
