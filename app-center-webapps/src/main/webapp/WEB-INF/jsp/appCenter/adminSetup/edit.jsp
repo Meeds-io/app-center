@@ -1,6 +1,7 @@
 <%@ page import="javax.portlet.PortletURL" %>
 <%@ page import="javax.portlet.PortletMode" %>
 <%@ page import="javax.portlet.PortletPreferences" %>
+<%@ page import="io.meeds.appcenter.portlet.AdminSetupPortlet" %>
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet"%>
 <%@ page import="java.util.ResourceBundle"%>
 
@@ -9,13 +10,8 @@
   ResourceBundle resource = portletConfig.getResourceBundle(renderRequest.getLocale());
 	PortletURL actionURL = renderResponse.createActionURL();
 	PortletPreferences preferences = renderRequest.getPreferences();
-	String pageSize = renderRequest.getParameter("pageSize");
-	if (pageSize == null) {
-		pageSize = preferences.getValue("pageSize", "");
-		if (pageSize == null) {
-			pageSize = "";
-		}
-	}
+	String pageSizeParameter = renderRequest.getParameter("pageSize");
+	String pageSize = AdminSetupPortlet.getPageSize(pageSizeParameter == null ? preferences.getValue("pageSize", null) : pageSizeParameter);
 %>
 <div class="editpref-form UIFormWithTitle">
 	<form class="formLogin" action="<%=actionURL%>" method="post">
