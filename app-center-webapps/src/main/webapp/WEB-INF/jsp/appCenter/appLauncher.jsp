@@ -29,7 +29,7 @@
           appCenterService.getApplicationPlacements(request.getRemoteUser(),
                                                     PortalRequestContext.getCurrentInstance().getPortalOwner());
       hasStuckApplication = placements.getLeft() != null || placements.getRight() != null;
-      appPlacementsJson = io.meeds.social.util.JsonUtils.toJsonString(placements).replace("</", "<\\/");
+      appPlacementsJson = io.meeds.social.util.JsonUtils.toJsonString(placements).replace("<", "\\u003c");
     } catch (Exception e) {
       // the topbar must render whatever happens to the placement resolution
     }
