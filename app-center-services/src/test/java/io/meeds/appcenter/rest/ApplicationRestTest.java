@@ -630,6 +630,48 @@ public class ApplicationRestTest {
            .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
   }
 
+  @Test
+  void illustrationRefusedToAnonymousWithoutValidTokenIsKeptOutOfSharedCaches() throws Exception {
+    when(applicationCenterService.getApplication(1L)).thenReturn(application());
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").param("r", "other"))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
+  @Test
+  void illustrationWithoutStreamIsKeptOutOfSharedCaches() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), any())).thenReturn(true);
+    when(applicationCenterService.getApplicationImageInputStream(1L, "ax1")).thenReturn(null);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("sizes", "ax1").with(testSimpleUser()))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
+  @Test
+  void illustrationOfMissingImageIsKeptOutOfSharedCaches() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), any())).thenReturn(true);
+    when(applicationCenterService.getApplicationImageInputStream(1L, "ax1")).thenThrow(new ApplicationNotFoundException());
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("sizes", "ax1").with(testSimpleUser()))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
+  @Test
+  void illustrationWithInvalidSizesIsKeptOutOfSharedCaches() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), any())).thenReturn(true);
+    when(applicationCenterService.getApplicationImageInputStream(1L, "ax1")).thenThrow(new IllegalArgumentException("sizes"));
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("sizes", "ax1").with(testSimpleUser()))
+           .andExpect(status().isBadRequest())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
   private void stubIllustration() throws Exception {
     Application application = application();
     when(applicationCenterService.getApplication(1L)).thenReturn(application);

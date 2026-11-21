@@ -596,9 +596,9 @@ public class ApplicationRest {
   }
 
   /**
-   * A shared cache may store the illustration only of an application that the
-   * endpoint would serve to a guest: any other illustration is kept for the
-   * browser of the user it was authorized for.
+   * A shared cache may store the illustration only of an application open to
+   * guests ({@code canAccess} with no user): any other illustration is kept by
+   * the browser of the user it was served to.
    */
   private CacheControl getIllustrationCacheControl(Application application) {
     CacheControl cacheControl = CacheControl.maxAge(Duration.ofDays(365));
