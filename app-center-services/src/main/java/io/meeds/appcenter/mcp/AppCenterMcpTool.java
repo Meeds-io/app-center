@@ -188,10 +188,11 @@ public class AppCenterMcpTool implements McpToolPlugin {
       throw new IllegalArgumentException("Nothing to update: provide at least one of title, url or icon.");
     }
     String currentUser = getCurrentUserName();
-    Application application = applicationCenterService.getApplication(id);
-    if (application == null) {
+    Application stored = applicationCenterService.getApplication(id);
+    if (stored == null) {
       throw notFound(id);
     }
+    Application application = new Application(stored);
     if (StringUtils.isNotBlank(title)) {
       application.setTitle(title.trim());
     }

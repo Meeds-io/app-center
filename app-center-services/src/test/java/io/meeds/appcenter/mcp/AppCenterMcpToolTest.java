@@ -344,6 +344,38 @@ class AppCenterMcpToolTest {
     assertThrows(IllegalStateException.class, () -> appCenterMcpTool.updatePersonalApp(APP_ID, "New", null, null));
   }
 
+  @Test
+  void updatePersonalAppRefusedLeavesReadApplicationUnchanged() throws Exception {
+    Application stored = app(APP_ID, "Old", true);
+    stored.setIcon("fa-old");
+    String title = stored.getTitle();
+    String url = stored.getUrl();
+    when(applicationCenterService.getApplication(APP_ID)).thenReturn(stored);
+    doThrow(new IllegalAccessException("not owner")).when(applicationCenterService)
+                                                    .updatePersonalApplication(any(Application.class), eq(USERNAME));
+
+    assertThrows(IllegalStateException.class,
+                 () -> appCenterMcpTool.updatePersonalApp(APP_ID, "New title", "https://example.org/new", "fa-new"));
+
+    assertEquals(title, stored.getTitle());
+    assertEquals(url, stored.getUrl());
+    assertEquals("fa-old", stored.getIcon());
+  }
+
+  @Test
+  void updatePersonalAppAcceptedSendsNewValues() throws Exception {
+    Application stored = app(APP_ID, "Old", true);
+    when(applicationCenterService.getApplication(APP_ID)).thenReturn(stored);
+
+    appCenterMcpTool.updatePersonalApp(APP_ID, "New title", "https://example.org/new", "fa-new");
+
+    ArgumentCaptor<Application> captor = ArgumentCaptor.forClass(Application.class);
+    verify(applicationCenterService).updatePersonalApplication(captor.capture(), eq(USERNAME));
+    assertEquals("New title", captor.getValue().getTitle());
+    assertEquals("https://example.org/new", captor.getValue().getUrl());
+    assertEquals("fa-new", captor.getValue().getIcon());
+  }
+
   // --- delete_personal_app -------------------------------------------------
 
   @Test
