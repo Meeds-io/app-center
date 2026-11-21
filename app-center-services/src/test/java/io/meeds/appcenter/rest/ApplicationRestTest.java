@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -583,6 +584,48 @@ public class ApplicationRestTest {
            .andExpect(status().isOk());
     mockMvc.perform(get(ILLUSTRATION_PATH).param("r", "other").param("v", "3").with(testSimpleUser()))
            .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void illustrationOfRestrictedApplicationIsKeptOutOfSharedCaches() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), eq(SIMPLE_USER))).thenReturn(true);
+    when(applicationCenterService.canAccess(any(Application.class), isNull())).thenReturn(false);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(header().string("Cache-Control", "max-age=31536000, private"))
+           .andExpect(header().exists("ETag"));
+  }
+
+  @Test
+  void illustrationOfApplicationOpenToGuestsStaysPubliclyCacheable() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), any())).thenReturn(true);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(header().string("Cache-Control", "max-age=31536000, public"));
+  }
+
+  @Test
+  void illustrationWithoutVersionIsNotStored() throws Exception {
+    stubIllustration();
+    when(applicationCenterService.canAccess(any(Application.class), any())).thenReturn(true);
+
+    mockMvc.perform(get(ILLUSTRATION_PATH).with(testSimpleUser()))
+           .andExpect(status().isOk())
+           .andExpect(header().string("Cache-Control", "no-store"));
+  }
+
+  private void stubIllustration() throws Exception {
+    Application application = application();
+    when(applicationCenterService.getApplication(1L)).thenReturn(application);
+    FileInfo fileInfo = mock(FileInfo.class);
+    when(fileInfo.getMimetype()).thenReturn("image/png");
+    when(fileService.getFileInfo(application.getImageFileId())).thenReturn(fileInfo);
+    when(applicationCenterService.getApplicationImageInputStream(1L, null)).thenReturn(new ByteArrayInputStream(new byte[] { 1 }));
+    when(applicationCenterService.getApplicationImageLastUpdated(1L)).thenReturn(3L);
   }
 
   private RequestPostProcessor testSimpleUser() {

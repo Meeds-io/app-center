@@ -581,7 +581,7 @@ public class ApplicationRest {
       if (lastModified.isPresent()) {
         builder.lastModified(lastUpdated)
                .eTag(String.valueOf(Objects.hash(lastUpdated)))
-               .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic());
+               .cacheControl(getIllustrationCacheControl(application));
       } else {
         builder.cacheControl(CacheControl.noStore());
       }
@@ -592,6 +592,16 @@ public class ApplicationRest {
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
+  }
+
+  /**
+   * A shared cache may store the illustration only of an application that the
+   * endpoint would serve to a guest: any other illustration is kept for the
+   * browser of the user it was authorized for.
+   */
+  private CacheControl getIllustrationCacheControl(Application application) {
+    CacheControl cacheControl = CacheControl.maxAge(Duration.ofDays(365));
+    return appCenterService.canAccess(application, null) ? cacheControl.cachePublic() : cacheControl.cachePrivate();
   }
 
 }
