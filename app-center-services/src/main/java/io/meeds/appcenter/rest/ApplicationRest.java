@@ -19,6 +19,7 @@
 package io.meeds.appcenter.rest;
 
 import static io.meeds.appcenter.rest.util.RestUtils.privateAnswer;
+import static io.meeds.appcenter.rest.util.RestUtils.privateRefusal;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -556,25 +557,25 @@ public class ApplicationRest {
                                                                         Optional<Long> lastModified) {
     Application application = appCenterService.getApplication(applicationId);
     if (application == null) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      return privateRefusal(HttpStatus.NOT_FOUND);
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
         if (!appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
-          throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+          return privateRefusal(HttpStatus.NOT_FOUND);
         }
       } else if (!appCenterService.canEdit(request.getRemoteUser())
                  && !appCenterService.canAccess(application, request.getRemoteUser())
                  && !appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
 
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        return privateRefusal(HttpStatus.UNAUTHORIZED);
       }
     }
     try {
       String mimeType = fileService.getFileInfo(application.getImageFileId()).getMimetype();
       InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, dimensions);
       if (stream == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        return privateRefusal(HttpStatus.NOT_FOUND);
       }
       Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId);
       BodyBuilder builder = ResponseEntity.ok();
@@ -588,9 +589,9 @@ public class ApplicationRest {
       return builder.contentType(MediaType.valueOf(mimeType))
                     .body(new InputStreamResource(stream));
     } catch (ApplicationNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      return privateRefusal(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+      return privateRefusal(HttpStatus.BAD_REQUEST);
     }
   }
 

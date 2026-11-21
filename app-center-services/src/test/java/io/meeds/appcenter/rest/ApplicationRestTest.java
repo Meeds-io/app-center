@@ -618,6 +618,18 @@ public class ApplicationRestTest {
            .andExpect(header().string("Cache-Control", "no-store"));
   }
 
+  @Test
+  void illustrationRefusalsAreKeptOutOfSharedCaches() throws Exception {
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isNotFound())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+
+    when(applicationCenterService.getApplication(1L)).thenReturn(application());
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
+           .andExpect(status().isUnauthorized())
+           .andExpect(header().string("Cache-Control", PRIVATE_NO_STORE));
+  }
+
   private void stubIllustration() throws Exception {
     Application application = application();
     when(applicationCenterService.getApplication(1L)).thenReturn(application);
