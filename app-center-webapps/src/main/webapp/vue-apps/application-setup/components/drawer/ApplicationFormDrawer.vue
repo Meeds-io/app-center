@@ -1015,9 +1015,18 @@ export default {
           } catch (e) {
             // The application is saved: the drawer stays open on the requested selection, with the
             // really-saved categories as the reference, so that a new save re-sends only the refused ones.
-            // The illustration is saved too: the retry takes its stored file, never the consumed upload
+            // The illustration is saved too: the retry takes its stored file, never the consumed upload.
+            // A creation answers with it, an update answers nothing: the stored application is read again,
+            // else the retry would send the form's former file id with no upload, which the storage reads
+            // as a removal of the file this save has just stored
             console.error('Error while updating the application categories', e);
-            this.application = {...this.application, id: app.id, imageFileId: app.imageFileId, imageUrl: app.imageUrl};
+            const stored = isNew ? app : await this.getStoredApplication(app.id);
+            this.application = {
+              ...this.application,
+              id: app.id,
+              imageFileId: stored ? stored.imageFileId : app.imageFileId,
+              imageUrl: stored ? stored.imageUrl : app.imageUrl,
+            };
             this.uploadedImage = null;
             this.oldCategoryIds = this.$categoryLinkService.getCategoryIdsAfterFailure(this.oldCategoryIds, e);
             // Reverting to the original selection is then a change that can be saved
@@ -1040,6 +1049,15 @@ export default {
         this.$root.$emit('alert-message', this.$t(this.saveErrorMessageKey(isNew, e)), 'error');
       } finally {
         this.loading = false;
+      }
+    },
+    async getStoredApplication(applicationId) {
+      try {
+        const data = await this.$applicationService.getApplications(true);
+        return data?.applications?.find?.(a => a.id === applicationId);
+      } catch (e) {
+        console.error('Error while reading the stored application', e);
+        return null;
       }
     },
     async saveContextApplication() {
