@@ -1004,7 +1004,29 @@ export default {
           }
           await this.$translationService.saveTranslations('appCenter', app.id, 'title', this.titles);
           await this.$translationService.saveRichTranslations('appCenter', app.id, 'description', this.descriptions);
-          await this.$applicationCategoryService.updateCategories(app.id, this.oldCategoryIds, this.newCategoryIds);
+          try {
+            await this.$categoryLinkService.updateCategories({
+              objectType: 'appCenter',
+              objectId: app.id,
+              oldCategories: this.oldCategoryIds,
+              newCategories: this.newCategoryIds,
+              dropExisting: true,
+            });
+          } catch (e) {
+            // The application is saved: the drawer stays open on the requested selection, with the
+            // really-saved categories as the reference, so that a new save re-sends only the refused ones.
+            // The illustration is saved too: the retry takes its stored file, never the consumed upload
+            console.error('Error while updating the application categories', e);
+            this.application = {...this.application, id: app.id, imageFileId: app.imageFileId, imageUrl: app.imageUrl};
+            this.uploadedImage = null;
+            this.oldCategoryIds = this.$categoryLinkService.getCategoryIdsAfterFailure(this.oldCategoryIds, e);
+            // Reverting to the original selection is then a change that can be saved
+            this.originalApplication = {...this.originalApplication, categoryIds: this.oldCategoryIds.slice()};
+            this.$root.$emit('app-center-refresh-list');
+            const message = await this.$categoryLinkService.getUpdateErrorMessage(e, this.$t.bind(this));
+            this.$root.$emit('alert-message', message || this.$t('appCenter.adminSetupForm.errorSavingApplication'), 'error');
+            return;
+          }
           this.$root.$emit('app-center-refresh-list');
           if (isNew) {
             this.$root.$emit('alert-message', this.$t('appCenter.adminSetupForm.applicationCreatedSuccessfully'), 'success');
