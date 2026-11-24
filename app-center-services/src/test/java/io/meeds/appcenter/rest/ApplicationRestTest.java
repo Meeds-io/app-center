@@ -592,10 +592,18 @@ public class ApplicationRestTest {
     when(applicationCenterService.canAccess(any(Application.class), eq(SIMPLE_USER))).thenReturn(true);
     when(applicationCenterService.canAccess(any(Application.class), isNull())).thenReturn(false);
 
-    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
-           .andExpect(status().isOk())
-           .andExpect(header().string("Cache-Control", "max-age=31536000, private"))
-           .andExpect(header().exists("ETag"));
+    String etag = mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").with(testSimpleUser()))
+                         .andExpect(status().isOk())
+                         .andExpect(header().string("Cache-Control", "max-age=31536000, private"))
+                         .andExpect(header().exists("ETag"))
+                         .andReturn()
+                         .getResponse()
+                         .getHeader("ETag");
+
+    when(applicationCenterService.getApplicationImageInputStream(1L, null)).thenReturn(new ByteArrayInputStream(new byte[] { 1 }));
+    mockMvc.perform(get(ILLUSTRATION_PATH).param("v", "3").header("If-None-Match", etag).with(testSimpleUser()))
+           .andExpect(status().isNotModified())
+           .andExpect(header().string("Cache-Control", "max-age=31536000, private"));
   }
 
   @Test
