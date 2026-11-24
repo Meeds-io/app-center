@@ -31,10 +31,6 @@
   <artifactId>app-center-services</artifactId>
   <name>Add-on:: Application Center - Services</name>
   <properties>
-    <rest.api.doc.title>App-center Rest Api</rest.api.doc.title>
-    <rest.api.doc.version>1.0</rest.api.doc.version>
-    <rest.api.doc.description>App-center addon Rest endpoints</rest.api.doc.description>
-
     <exo.test.coverage.ratio>0.71</exo.test.coverage.ratio>
   </properties>
   <dependencies>
