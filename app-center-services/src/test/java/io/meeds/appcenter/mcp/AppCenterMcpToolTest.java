@@ -363,6 +363,24 @@ class AppCenterMcpToolTest {
   }
 
   @Test
+  void updatePersonalAppWithRefusedUrlLeavesReadApplicationUnchanged() throws Exception {
+    Application stored = app(APP_ID, "Old", true);
+    stored.setIcon("fa-old");
+    String title = stored.getTitle();
+    String url = stored.getUrl();
+    when(applicationCenterService.getApplication(APP_ID)).thenReturn(stored);
+    doThrow(new IllegalArgumentException("invalid url")).when(applicationCenterService)
+                                                        .updatePersonalApplication(any(Application.class), eq(USERNAME));
+
+    assertThrows(IllegalArgumentException.class,
+                 () -> appCenterMcpTool.updatePersonalApp(APP_ID, "New title", "//example.org/new", "fa-new"));
+
+    assertEquals(title, stored.getTitle());
+    assertEquals(url, stored.getUrl());
+    assertEquals("fa-old", stored.getIcon());
+  }
+
+  @Test
   void updatePersonalAppAcceptedSendsNewValues() throws Exception {
     Application stored = app(APP_ID, "Old", true);
     when(applicationCenterService.getApplication(APP_ID)).thenReturn(stored);
