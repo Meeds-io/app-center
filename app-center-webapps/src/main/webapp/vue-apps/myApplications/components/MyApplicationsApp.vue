@@ -30,11 +30,16 @@
         @focusout="onFocusOut">
         <div class="position-relative d-flex flex-column flex-grow-1">
           <!-- Laid over the portlet's top end: it takes no line of the list, whose lines end before it while it shows -->
+          <!-- With no header line, the cross hides the portlet from its top end -->
+          <my-applications-hide-button
+            v-if="!isLoading && allowHide && !hideOnToolbar"
+            class="position-absolute t-0 z-index-one"
+            style="inset-inline-end: 0;" />
           <my-applications-cog
             v-if="!isLoading && canEdit && cogPlacement === 'TOP'"
             :displayed="hovered"
+            :style="`inset-inline-end: ${allowHide && !hideOnToolbar ? 32 : 0}px;`"
             class="position-absolute t-0 z-index-one"
-            style="inset-inline-end: 0;"
             @focused="topCogFocused = $event"
             @open-settings="openSettingsDrawer" />
           <my-applications-toolbar
@@ -43,6 +48,7 @@
             :hover="hovered"
             :can-edit="canEdit"
             :show-cog="canEdit && cogPlacement === 'HEADER'"
+            :show-hide="hideOnToolbar"
             :show-header="showHeader"
             :show-see-more="seeMorePlacement === 'HEADER'"
             :header-title="headerTitle"
@@ -124,6 +130,7 @@ export default {
       topCogFocused: false,
       tabindex: '0',
       listingLoaded: false,
+      inLayoutEditor: false,
     };
   },
   computed: {
@@ -139,7 +146,18 @@ export default {
     },
     portletVisible() {
       // A selected list none of whose apps can be shown is hidden, but from whoever may edit it
-      return !this.selectedListing || this.hasDisplayedApplications || this.canEdit;
+      return (!this.selectedListing || this.hasDisplayedApplications || this.canEdit) && !this.hiddenByUser;
+    },
+    allowHide() {
+      return !!this.$root.settings?.allowHide;
+    },
+    // The current user hid the portlet, which the page layout editor still displays
+    hiddenByUser() {
+      return this.allowHide && !!this.$root.settings?.hidden && !this.inLayoutEditor;
+    },
+    // The cross is on the header line along with the title, else over the portlet's top end
+    hideOnToolbar() {
+      return this.allowHide && this.toolbarDisplayed && !!this.showHeader;
     },
     hasApplications() {
       return this.favoriteApplications?.length > 0;
@@ -185,10 +203,16 @@ export default {
   },
   watch: {
     portletVisible(visible) {
-      if (this.listingLoaded) {
+      if (this.listingLoaded || this.allowHide) {
         this.$root.$updateApplicationVisibility(visible);
       }
     },
+  },
+  mounted() {
+    this.inLayoutEditor = !!this.$el?.closest?.('.layout-application[data-storage-id]');
+    if (this.hiddenByUser) {
+      this.$root.$updateApplicationVisibility(false);
+    }
   },
   created() {
     this.getFavoriteApplications();
@@ -210,6 +234,11 @@ export default {
       this.$root.settings.categoryIds = settings.categoryIds ? settings.categoryIds.split(',').map(Number) : [];
       this.$root.settings.maxAppsToList = settings.maxAppsToList;
       this.$root.settings.showHeader = settings.showHeader;
+      if ('allowHide' in settings) {
+        // Turned off, the option shows the portlet again to every user
+        this.$root.settings.hidden = settings.allowHide && this.$root.settings.hidden;
+        this.$root.settings.allowHide = settings.allowHide;
+      }
       DISPLAY_KEYS.filter(key => key in settings).forEach(key => this.$root.settings[key] = settings[key]);
       this.$root.settings.headerTitle = headerTitle;
       this.$refs.settingsDrawer.close();

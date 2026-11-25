@@ -99,8 +99,14 @@ public class MyApplicationsPortlet extends CMSPortlet {
       parameters.put(parameterName, request.getParameter(parameterName));
     }
     Map<String, String> settings;
+    String settingName = preferences.getValue(NAME, null);
     try {
-      settings = getSettingsService().getSettingsToStore(preferences.getValue(NAME, null), getCurrentUsername(), parameters);
+      settings = getSettingsService().getSettingsToStore(settingName, getCurrentUsername(), parameters);
+      if (parameters.containsKey(MyApplicationsSettingsService.ALLOW_HIDE)) {
+        getSettingsService().saveHideAllowed(settingName,
+                                             getCurrentUsername(),
+                                             Boolean.parseBoolean(parameters.get(MyApplicationsSettingsService.ALLOW_HIDE)));
+      }
     } catch (IllegalAccessException e) {
       throw new PortletException("User is not allowed to edit settings", e);
     } catch (IllegalArgumentException e) {
@@ -197,6 +203,10 @@ public class MyApplicationsPortlet extends CMSPortlet {
    */
   @Override
   protected void setViewRequestAttributes(String name, RenderRequest request, RenderResponse response) {
+    // Read by every render, before the copy of a window's data, which returns early
+    boolean allowHide = getSettingsService().isHideAllowed(name);
+    request.setAttribute(MyApplicationsSettingsService.ALLOW_HIDE, allowHide);
+    request.setAttribute("hidden", allowHide && getSettingsService().isHidden(name, request.getRemoteUser()));
     PortletPreferences preferences = request.getPreferences();
     String legacyApplicationId = preferences.getValue(APPLICATION_ID, null);
     if (StringUtils.isNotBlank(legacyApplicationId)) {

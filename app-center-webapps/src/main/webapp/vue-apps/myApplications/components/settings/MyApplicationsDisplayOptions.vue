@@ -56,6 +56,12 @@
             @change="update(option.key, $event)" />
         </div>
       </div>
+      <my-applications-allow-hide-switch
+        v-if="option.key === 'showSeeMore'"
+        :key="`${option.key}-allow-hide`"
+        :value="allowHide"
+        :disabled="disabled"
+        @input="$emit('update:allow-hide', $event)" />
       <!-- The size is kept while the icons are hidden -->
       <div
         v-if="option.key === 'showIcon' && display.showIcon"
@@ -118,6 +124,10 @@ export default {
       default: 0,
     },
     disabled: {
+      type: Boolean,
+      default: false,
+    },
+    allowHide: {
       type: Boolean,
       default: false,
     },

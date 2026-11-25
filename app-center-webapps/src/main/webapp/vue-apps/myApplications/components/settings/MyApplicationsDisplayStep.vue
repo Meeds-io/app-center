@@ -99,7 +99,15 @@
       :display="display"
       :version="version"
       :disabled="disabled"
-      @update:display="$emit('update:display', $event)" />
+      :allow-hide="allowHide"
+      @update:display="$emit('update:display', $event)"
+      @update:allow-hide="$emit('update:allow-hide', $event)" />
+    <!-- The legacy layout has no display options: the option follows the header -->
+    <my-applications-allow-hide-switch
+      v-else
+      :value="allowHide"
+      :disabled="disabled"
+      @input="$emit('update:allow-hide', $event)" />
   </div>
 </template>
 
@@ -129,6 +137,10 @@ export default {
       default: null,
     },
     disabled: {
+      type: Boolean,
+      default: false,
+    },
+    allowHide: {
       type: Boolean,
       default: false,
     },

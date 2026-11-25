@@ -78,6 +78,7 @@
             <div v-show="stepper === 2" class="mt-4">
               <my-applications-display-step
                 :show-header.sync="showHeader"
+                :allow-hide.sync="allowHide"
                 :display.sync="display"
                 :version="displayVersion"
                 :preview-applications="previewApplications"
@@ -123,6 +124,7 @@ export default {
       stepper: 1,
       isSaving: false,
       showHeader: true,
+      allowHide: false,
       // The template and its settings, null while the legacy layout is kept
       display: null,
       // Renewed whenever the display settings are replaced rather than edited
@@ -193,6 +195,7 @@ export default {
           || this.savedApplicationIds.join(',') !== this.postedApplicationIds.join(',')
           || this.savedCategoryIds.join(',') !== this.postedCategoryIds.join(',')
           || this.settings.showHeader !== this.showHeader
+          || !!this.settings.allowHide !== this.allowHide
           // Against the stored value, not its clamped display: a value stored out of the bounds can be saved back within them
           || Number(this.settings.maxAppsToList) !== this.maxAppsToList
           || !isSameDisplay(this.savedDisplay, this.display)
@@ -285,6 +288,7 @@ export default {
         categoryIds: postedCategoryIds.join(','),
         maxAppsToList: this.maxAppsToList,
         showHeader: this.showHeader,
+        allowHide: this.allowHide,
         // No template picked: the legacy layout is kept
         ...this.display,
       };
@@ -478,6 +482,7 @@ export default {
       this.categories = [...this.savedCategories];
       this.maxAppsToList = this.savedMaxAppsToList;
       this.showHeader = this.settings.showHeader;
+      this.allowHide = !!this.settings.allowHide;
       this.display = this.savedDisplay && {...this.savedDisplay};
       this.displayVersion++;
     }

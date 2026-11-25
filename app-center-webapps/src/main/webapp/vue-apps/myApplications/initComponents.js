@@ -21,6 +21,8 @@ import MyApplicationsApp from './components/MyApplicationsApp.vue';
 import MyApplicationsList from './components/view/MyApplicationsList.vue';
 import MyApplicationsTemplateList from './components/view/MyApplicationsTemplateList.vue';
 import MyApplicationsToolbar from './components/view/MyApplicationsToolbar.vue';
+import MyApplicationsHideButton from './components/view/MyApplicationsHideButton.vue';
+import MyApplicationsAllowHideSwitch from './components/settings/MyApplicationsAllowHideSwitch.vue';
 import MyApplicationsSeeMore from './components/view/MyApplicationsSeeMore.vue';
 import MyApplicationsCog from './components/view/MyApplicationsCog.vue';
 import MyApplicationItem from './components/view/MyApplicationItem.vue';
@@ -40,6 +42,8 @@ const components = {
   'my-applications-list': MyApplicationsList,
   'my-applications-template-list': MyApplicationsTemplateList,
   'my-applications-toolbar': MyApplicationsToolbar,
+  'my-applications-hide-button': MyApplicationsHideButton,
+  'my-applications-allow-hide-switch': MyApplicationsAllowHideSwitch,
   'my-applications-see-more': MyApplicationsSeeMore,
   'my-applications-cog': MyApplicationsCog,
   'my-application-item': MyApplicationItem,

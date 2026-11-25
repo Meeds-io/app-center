@@ -58,7 +58,7 @@
         v-if="showCog"
         :displayed="hover"
         :class="cogShown ? 'ms-2' : 'position-absolute'"
-        :style="!cogShown && 'inset-inline-end: 0'"
+        :style="!cogShown && `inset-inline-end: ${showHide ? 32 : 0}px`"
         @focused="cogFocused = $event"
         @open-settings="$emit('open-settings')" />
       <v-btn
@@ -76,6 +76,9 @@
           fas fa-plus
         </v-icon>
       </v-btn>
+      <my-applications-hide-button
+        v-if="showHide"
+        class="ms-2" />
     </div>
   </div>
 </template>
@@ -96,6 +99,11 @@ export default {
     },
     // The settings cog is on this line
     showCog: {
+      type: Boolean,
+      default: false
+    },
+    // The cross hiding the portlet is on this line
+    showHide: {
       type: Boolean,
       default: false
     },

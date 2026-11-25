@@ -14,6 +14,8 @@
   String settingName = (settingNameParam instanceof String[]) ? ((String[]) settingNameParam)[0]
           : (String) settingNameParam;
   boolean canEdit = Boolean.TRUE.equals(request.getAttribute("canEdit"));
+  boolean allowHide = Boolean.TRUE.equals(request.getAttribute("allowHide"));
+  boolean hidden = Boolean.TRUE.equals(request.getAttribute("hidden"));
 
   PortletPreferences preferences = renderRequest.getPreferences();
   int maxAppsToList = Integer.parseInt(preferences.getValue("maxAppsToList", "4"));
@@ -64,6 +66,8 @@
         vAlign: <%=vAlign == null ? null : String.format("'%s'", vAlign)%>,
         headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeEcmaScript(headerTitle))%>,
         canEdit: <%=canEdit%>,
+        allowHide: <%=allowHide%>,
+        hidden: <%=hidden%>,
         saveSettingsUrl: '<%=saveSettingsUrl%>'
       }));
     </script>

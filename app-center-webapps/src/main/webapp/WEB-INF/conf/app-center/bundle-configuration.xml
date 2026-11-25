@@ -33,10 +33,12 @@
           <values-param>
             <name>classpath.resources</name>
             <value>locale.addon.appcenter</value>
+            <value>locale.portlet.MyApplications</value>
           </values-param>
           <values-param>
             <name>portal.resource.names</name>
             <value>locale.addon.appcenter</value>
+            <value>locale.portlet.MyApplications</value>
           </values-param>
         </init-params>
         </component-plugin>
