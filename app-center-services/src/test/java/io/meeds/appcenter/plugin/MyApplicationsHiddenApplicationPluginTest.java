@@ -131,6 +131,19 @@ class MyApplicationsHiddenApplicationPluginTest {
     assertFalse(plugin.canView(NAME, null));
   }
 
+  @Test
+  void siteLayoutWindowHasNoPageAndShowsToTheUsersOfItsSite() {
+    mockSetting();
+    when(myApplicationsSettingsService.isSiteLayoutWindow(NAME, PAGE_REFERENCE)).thenReturn(true);
+    Identity siteUser = new Identity("siteUser");
+    when(myApplicationsSettingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, siteUser)).thenReturn(true);
+
+    assertNull(plugin.getApplication(NAME, "fr").getPageReference(),
+               "A site-layout window is in no page: Hidden content would drop it for its recorded page");
+    assertTrue(plugin.canView(NAME, siteUser));
+    assertFalse(plugin.canView(NAME, new Identity("other")));
+  }
+
   private void mockSetting() {
     when(cmsService.getSetting(MyApplicationsSettingsService.SETTING_TYPE, NAME)).thenReturn(new CMSSetting(MyApplicationsSettingsService.SETTING_TYPE,
                                                                                                             NAME,

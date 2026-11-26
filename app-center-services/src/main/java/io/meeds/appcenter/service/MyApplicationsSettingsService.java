@@ -344,7 +344,7 @@ public class MyApplicationsSettingsService {
     }
     if (isSharedLayoutWindow(settingName, setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
-    } else if (SITE_LAYOUT_NAME.matcher(settingName).find() && !isSectionTemplateDraft(setting.getPageReference())) {
+    } else if (isSiteLayoutWindow(settingName, setting.getPageReference())) {
       return canEditSiteLayoutWindowSettings(getSiteKey(setting.getPageReference()), username);
     } else {
       return canEditPageWindowSettings(setting.getPageReference(), identity);
@@ -980,6 +980,34 @@ public class MyApplicationsSettingsService {
    */
   public boolean isSharedLayoutWindow(String settingName, String pageReference) {
     return SHARED_LAYOUT_NAME.matcher(settingName).find() || StringUtils.equals(pageReference, SHARED_LAYOUT_REFERENCE);
+  }
+
+  /**
+   * @return whether a setting is a site-layout window's: its generated name,
+   *         unless the setting was recorded on a section-template draft page.
+   *         Its setting records a page of the layout's site, the one first
+   *         rendered, which doesn't hold the window
+   */
+  public boolean isSiteLayoutWindow(String settingName, String pageReference) {
+    return SITE_LAYOUT_NAME.matcher(settingName).find() && !isSectionTemplateDraft(pageReference);
+  }
+
+  /**
+   * Whether a user may view a site-layout window, which shows on every page of
+   * its site: the site's access permissions, not those of the page its setting
+   * records
+   *
+   * @param pageReference the page reference the window's setting records
+   * @param identity the user's identity, null for a guest
+   * @return true when the user may access the layout's site
+   */
+  public boolean canViewSiteLayoutWindow(String pageReference, Identity identity) {
+    SiteKey site = getSiteKey(pageReference);
+    if (site == null || identity == null || IdentityConstants.ANONIM.equals(identity.getUserId())) {
+      return false;
+    }
+    PortalConfig portalConfig = layoutService.getPortalConfig(site);
+    return portalConfig != null && userAcl.hasAccessPermission(portalConfig, identity);
   }
 
   /**

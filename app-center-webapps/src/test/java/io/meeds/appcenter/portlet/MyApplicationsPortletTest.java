@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -747,6 +748,30 @@ class MyApplicationsPortletTest {
     assertThrows(PortletException.class, () -> portlet.processAction(request, mock(ActionResponse.class)));
 
     doThrow(new IllegalArgumentException("refused")).when(settingsService).getSettingsToStore(any(), any(), any());
+    assertThrows(PortletException.class, () -> portlet.processAction(request, mock(ActionResponse.class)));
+    verify(actionPreferences, never()).store();
+  }
+
+  @Test
+  void processActionSavesTheHidingOptionWithTheSettings() throws Exception {
+    Map<String, String> parameters = Map.of(MyApplicationsSettingsService.ALLOW_HIDE, "false");
+    ActionRequest request = actionRequest(parameters);
+    when(settingsService.getSettingsToStore("Untitled-12-name", USERNAME, parameters)).thenReturn(Map.of());
+
+    portlet.processAction(request, mock(ActionResponse.class));
+
+    verify(settingsService).saveHideAllowed("Untitled-12-name", USERNAME, false);
+    verify(request.getPreferences()).store();
+  }
+
+  @Test
+  void processActionStagesNoSettingWhenTheHidingOptionIsRefused() throws Exception {
+    Map<String, String> parameters = Map.of(MyApplicationsSettingsService.ALLOW_HIDE, "true");
+    ActionRequest request = actionRequest(parameters);
+    PortletPreferences actionPreferences = request.getPreferences();
+    when(settingsService.getSettingsToStore("Untitled-12-name", USERNAME, parameters)).thenReturn(Map.of());
+    doThrow(new IllegalAccessException("not allowed")).when(settingsService).saveHideAllowed(any(), any(), anyBoolean());
+
     assertThrows(PortletException.class, () -> portlet.processAction(request, mock(ActionResponse.class)));
     verify(actionPreferences, never()).store();
   }

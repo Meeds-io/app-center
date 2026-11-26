@@ -1586,4 +1586,30 @@ class MyApplicationsSettingsServiceTest {
     assertFalse(settingsService.isHidden(PAGE_NAME, "other"));
   }
 
+
+  @Test
+  void siteLayoutWindowIsToldByItsNameUnlessRecordedOnASectionDraft() {
+    assertTrue(settingsService.isSiteLayoutWindow(SITE_NAME, PAGE_REFERENCE));
+    assertFalse(settingsService.isSiteLayoutWindow(SITE_NAME, SECTION_DRAFT_PAGE));
+    assertFalse(settingsService.isSiteLayoutWindow(PAGE_NAME, PAGE_REFERENCE));
+    assertFalse(settingsService.isSiteLayoutWindow(SHARED_NAME, PAGE_REFERENCE));
+  }
+
+  @Test
+  void siteLayoutWindowIsViewedWithTheAccessOfItsSite() {
+    PortalConfig site = new PortalConfig("group", "/spaces/space1");
+    when(layoutService.getPortalConfig(SiteKey.group("/spaces/space1"))).thenReturn(site);
+    Identity member = new Identity(USERNAME);
+    when(userAcl.hasAccessPermission(site, member)).thenReturn(true);
+    // A site open to Everyone: the ACL lets a guest through, the guard refuses it
+    Identity guest = new Identity(IdentityConstants.ANONIM);
+    lenient().when(userAcl.hasAccessPermission(site, guest)).thenReturn(true);
+
+    assertTrue(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, member));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, new Identity("other")));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, guest));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, null));
+    assertFalse(settingsService.canViewSiteLayoutWindow("portal::gone::home", member), "A deleted site refuses everyone");
+  }
+
 }

@@ -69,12 +69,12 @@ public class MyApplicationsHiddenApplicationPlugin implements HiddenApplicationP
     if (setting == null) {
       return null;
     }
-    // A shared-layout window is on every page of its site, not on the page its
-    // setting records: it is listed with no page
+    // A shared-layout or site-layout window is on every page of its site, not
+    // on the page its setting records: it is listed with no page
     return new HiddenApplication(getApplicationType(),
                                  name,
                                  getTitle(name, language),
-                                 isSharedLayoutWindow(name, setting) ? null : setting.getPageReference(),
+                                 isLayoutWindow(name, setting) ? null : setting.getPageReference(),
                                  myApplicationsSettingsService.isHideAllowed(name));
   }
 
@@ -85,12 +85,19 @@ public class MyApplicationsHiddenApplicationPlugin implements HiddenApplicationP
       // The shared layout shows to every user of the platform, whose page
       // reference names no page to read access permissions from
       return identity != null && !IdentityConstants.ANONIM.equals(identity.getUserId());
+    } else if (setting != null && myApplicationsSettingsService.isSiteLayoutWindow(name, setting.getPageReference())) {
+      return myApplicationsSettingsService.canViewSiteLayoutWindow(setting.getPageReference(), identity);
     }
     return cmsService.hasAccessPermission(identity, MyApplicationsSettingsService.SETTING_TYPE, name);
   }
 
   private boolean isSharedLayoutWindow(String name, CMSSetting setting) {
     return myApplicationsSettingsService.isSharedLayoutWindow(name, setting.getPageReference());
+  }
+
+  private boolean isLayoutWindow(String name, CMSSetting setting) {
+    return isSharedLayoutWindow(name, setting)
+           || myApplicationsSettingsService.isSiteLayoutWindow(name, setting.getPageReference());
   }
 
   private String getTitle(String name, String language) {
