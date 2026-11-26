@@ -7,6 +7,13 @@
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet" %>
 <portlet:defineObjects/>
 <portlet:actionURL var="saveSettingsUrl" />
+<%!
+  // a value printed into the init block below as a single-quoted string literal, null as null:
+  // myApplicationsService.js#isRenderedWithSettings reads the block back with single quotes
+  private static String scriptString(Object value) {
+    return value == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(String.valueOf(value)).replace("<", "\\u003c") + "'";
+  }
+%>
 <%
   String objectType = "myApplicationsPortlet";
   String fieldName  = "headerTitle";
@@ -44,27 +51,27 @@
     id="<%=StringEscapeUtils.escapeHtml4(appId)%>">
     <%-- myApplicationsService.js#isRenderedWithSettings parses this init block to confirm a save: keep settingName first and one "key: value," per line, a list printed as [a,b] --%>
     <script type="text/javascript">
-      require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init('<%=StringEscapeUtils.escapeEcmaScript(appId)%>', {
-        settingName: '<%=StringEscapeUtils.escapeEcmaScript(settingName)%>',
-        maxAppsToList: '<%=maxAppsToList%>',
-        listingMode: '<%=listingMode%>',
-        selectionMode: '<%=selectionMode%>',
+      require(['PORTLET/app-center/AppCenterMyApplicationsPortlet'], app => app.init(<%=scriptString(appId)%>, {
+        settingName: <%=scriptString(settingName)%>,
+        maxAppsToList: <%=scriptString(maxAppsToList)%>,
+        listingMode: <%=scriptString(listingMode)%>,
+        selectionMode: <%=scriptString(selectionMode)%>,
         applicationIds: <%=applicationIds%>,
         categoryIds: <%=categoryIds%>,
         showHeader: <%=showHeader%>,
-        template: <%=template == null ? null : String.format("'%s'", template)%>,
+        template: <%=scriptString(template)%>,
         showSeeMore: <%=showSeeMore%>,
         listInRow: <%=listInRow%>,
         showIcon: <%=showIcon%>,
         iconSize: <%=iconSize%>,
         showName: <%=showName%>,
-        color: '<%=StringEscapeUtils.escapeEcmaScript(color)%>',
+        color: <%=scriptString(color)%>,
         outlined: <%=outlined%>,
-        hAlign: <%=hAlign == null ? null : String.format("'%s'", hAlign)%>,
-        vAlign: <%=vAlign == null ? null : String.format("'%s'", vAlign)%>,
-        headerTitle: <%=headerTitle == null ? null : String.format("'%s'", StringEscapeUtils.escapeEcmaScript(headerTitle))%>,
+        hAlign: <%=scriptString(hAlign)%>,
+        vAlign: <%=scriptString(vAlign)%>,
+        headerTitle: <%=scriptString(headerTitle)%>,
         canEdit: <%=canEdit%>,
-        saveSettingsUrl: '<%=saveSettingsUrl%>'
+        saveSettingsUrl: <%=scriptString(saveSettingsUrl)%>
       }));
     </script>
   </div>
