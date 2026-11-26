@@ -106,6 +106,7 @@ import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
+import io.meeds.social.hidden.service.HiddenApplicationService;
 import io.meeds.social.translation.model.TranslationField;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -159,6 +160,9 @@ class MyApplicationsSettingsServiceTest {
 
   @MockitoBean
   private LayoutService                 layoutService;
+
+  @MockitoBean
+  private HiddenApplicationService      hiddenApplicationService;
 
   @Autowired
   private MyApplicationsSettingsService settingsService;
@@ -1548,6 +1552,64 @@ class MyApplicationsSettingsServiceTest {
 
   private TranslationField field(Map<Locale, String> labels) {
     return new TranslationField(SETTING_TYPE, null, HEADER_TITLE_FIELD, labels, 0);
+  }
+
+  @Test
+  void saveHideAllowedStoresTheOptionForAnEditor() throws Exception {
+    mockUser(true);
+    when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 0));
+    when(cmsService.hasEditPermission(any(Identity.class), anyString(), anyLong())).thenReturn(true);
+
+    settingsService.saveHideAllowed(PAGE_NAME, USERNAME, true);
+
+    verify(hiddenApplicationService).setHideAllowed(MyApplicationsSettingsService.APPLICATION_TYPE, PAGE_NAME, true);
+  }
+
+  @Test
+  void saveHideAllowedByANonEditorIsRefused() {
+    mockUser(true);
+    when(cmsService.getSetting(SETTING_TYPE, PAGE_NAME)).thenReturn(setting(PAGE_NAME, PAGE_REFERENCE, 0));
+
+    assertThrows(IllegalAccessException.class, () -> settingsService.saveHideAllowed(PAGE_NAME, USERNAME, false));
+    verify(hiddenApplicationService, never()).setHideAllowed(anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  void isHiddenNeedsTheOptionOn() {
+    String type = MyApplicationsSettingsService.APPLICATION_TYPE;
+    when(hiddenApplicationService.isHidden(type, PAGE_NAME, USERNAME)).thenReturn(true);
+    assertFalse(settingsService.isHidden(PAGE_NAME, USERNAME));
+
+    when(hiddenApplicationService.isHideAllowed(type, PAGE_NAME)).thenReturn(true);
+    assertTrue(settingsService.isHideAllowed(PAGE_NAME));
+    assertTrue(settingsService.isHidden(PAGE_NAME, USERNAME));
+    assertFalse(settingsService.isHidden(PAGE_NAME, "other"));
+  }
+
+
+  @Test
+  void siteLayoutWindowIsToldByItsNameUnlessRecordedOnASectionDraft() {
+    assertTrue(settingsService.isSiteLayoutWindow(SITE_NAME, PAGE_REFERENCE));
+    assertFalse(settingsService.isSiteLayoutWindow(SITE_NAME, SECTION_DRAFT_PAGE));
+    assertFalse(settingsService.isSiteLayoutWindow(PAGE_NAME, PAGE_REFERENCE));
+    assertFalse(settingsService.isSiteLayoutWindow(SHARED_NAME, PAGE_REFERENCE));
+  }
+
+  @Test
+  void siteLayoutWindowIsViewedWithTheAccessOfItsSite() {
+    PortalConfig site = new PortalConfig("group", "/spaces/space1");
+    when(layoutService.getPortalConfig(SiteKey.group("/spaces/space1"))).thenReturn(site);
+    Identity member = new Identity(USERNAME);
+    when(userAcl.hasAccessPermission(site, member)).thenReturn(true);
+    // A site open to Everyone: the ACL lets a guest through, the guard refuses it
+    Identity guest = new Identity(IdentityConstants.ANONIM);
+    lenient().when(userAcl.hasAccessPermission(site, guest)).thenReturn(true);
+
+    assertTrue(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, member));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, new Identity("other")));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, guest));
+    assertFalse(settingsService.canViewSiteLayoutWindow(PAGE_REFERENCE, null));
+    assertFalse(settingsService.canViewSiteLayoutWindow("portal::gone::home", member), "A deleted site refuses everyone");
   }
 
 }

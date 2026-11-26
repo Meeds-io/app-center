@@ -60,6 +60,7 @@ import io.meeds.appcenter.storage.ApplicationCenterStorage;
 import io.meeds.layout.service.LayoutAclService;
 import io.meeds.social.cms.model.CMSSetting;
 import io.meeds.social.cms.service.CMSService;
+import io.meeds.social.hidden.service.HiddenApplicationService;
 import io.meeds.social.translation.model.TranslationField;
 import io.meeds.social.translation.service.TranslationService;
 
@@ -72,6 +73,12 @@ import io.meeds.social.translation.service.TranslationService;
 public class MyApplicationsSettingsService {
 
   public static final String  SETTING_TYPE              = "myApplicationsPortlet";
+
+  /** Application type of the Shortcuts windows a user may hide */
+  public static final String  APPLICATION_TYPE          = "myApplications";
+
+  /** Parameter of a settings write telling whether each user may hide the window */
+  public static final String  ALLOW_HIDE                = "allowHide";
 
   public static final String  HEADER_TITLE_FIELD        = "headerTitle";
 
@@ -252,6 +259,9 @@ public class MyApplicationsSettingsService {
   private ApplicationCenterStorage applicationCenterStorage;
 
   @Autowired
+  private HiddenApplicationService hiddenApplicationService;
+
+  @Autowired
   private MetadataService     metadataService;
 
   @Autowired
@@ -267,6 +277,40 @@ public class MyApplicationsSettingsService {
    * is emptied, and a window is decided again.
    */
   private final Map<String, Boolean> keptSettingNames = new ConcurrentHashMap<>();
+
+  /**
+   * Stores whether each user may hide the window from its page. Turning it
+   * off shows the window again to every user who hid it.
+   *
+   * @param settingName the window's CMS setting name
+   * @param username user saving the option
+   * @param allowed whether the window allows hiding
+   * @throws IllegalAccessException when the user may not edit the window's
+   *           settings
+   */
+  public void saveHideAllowed(String settingName, String username, boolean allowed) throws IllegalAccessException {
+    if (!canEditSettings(settingName, username)) {
+      throw new IllegalAccessException(String.format("User %s is not allowed to edit settings %s", username, settingName));
+    }
+    hiddenApplicationService.setHideAllowed(APPLICATION_TYPE, settingName, allowed);
+  }
+
+  /**
+   * @param settingName the window's CMS setting name
+   * @return true when each user may hide the window from its page
+   */
+  public boolean isHideAllowed(String settingName) {
+    return hiddenApplicationService.isHideAllowed(APPLICATION_TYPE, settingName);
+  }
+
+  /**
+   * @param settingName the window's CMS setting name
+   * @param username user reading the window
+   * @return true when the window allows hiding and the user hid it
+   */
+  public boolean isHidden(String settingName, String username) {
+    return isHideAllowed(settingName) && hiddenApplicationService.isHidden(APPLICATION_TYPE, settingName, username);
+  }
 
   /**
    * Whether a user may change the settings of a Shortcuts portlet window,
@@ -300,7 +344,7 @@ public class MyApplicationsSettingsService {
     }
     if (isSharedLayoutWindow(settingName, setting.getPageReference())) {
       return userAcl.isAdministrator(identity);
-    } else if (SITE_LAYOUT_NAME.matcher(settingName).find() && !isSectionTemplateDraft(setting.getPageReference())) {
+    } else if (isSiteLayoutWindow(settingName, setting.getPageReference())) {
       return canEditSiteLayoutWindowSettings(getSiteKey(setting.getPageReference()), username);
     } else {
       return canEditPageWindowSettings(setting.getPageReference(), identity);
@@ -934,8 +978,36 @@ public class MyApplicationsSettingsService {
    * @return whether a setting is a shared-layout window's: its generated name,
    *         or the reference a window of a configured shared layout records
    */
-  private boolean isSharedLayoutWindow(String settingName, String pageReference) {
+  public boolean isSharedLayoutWindow(String settingName, String pageReference) {
     return SHARED_LAYOUT_NAME.matcher(settingName).find() || StringUtils.equals(pageReference, SHARED_LAYOUT_REFERENCE);
+  }
+
+  /**
+   * @return whether a setting is a site-layout window's: its generated name,
+   *         unless the setting was recorded on a section-template draft page.
+   *         Its setting records a page of the layout's site, the one first
+   *         rendered, which doesn't hold the window
+   */
+  public boolean isSiteLayoutWindow(String settingName, String pageReference) {
+    return SITE_LAYOUT_NAME.matcher(settingName).find() && !isSectionTemplateDraft(pageReference);
+  }
+
+  /**
+   * Whether a user may view a site-layout window, which shows on every page of
+   * its site: the site's access permissions, not those of the page its setting
+   * records
+   *
+   * @param pageReference the page reference the window's setting records
+   * @param identity the user's identity, null for a guest
+   * @return true when the user may access the layout's site
+   */
+  public boolean canViewSiteLayoutWindow(String pageReference, Identity identity) {
+    SiteKey site = getSiteKey(pageReference);
+    if (site == null || identity == null || IdentityConstants.ANONIM.equals(identity.getUserId())) {
+      return false;
+    }
+    PortalConfig portalConfig = layoutService.getPortalConfig(site);
+    return portalConfig != null && userAcl.hasAccessPermission(portalConfig, identity);
   }
 
   /**
