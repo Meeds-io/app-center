@@ -37,6 +37,18 @@ public class AdminSetupPortlet extends GenericPortlet {
 
   private static final String PAGE_SIZE_PREFERENCE_NAME = "pageSize";
 
+  /**
+   * Reads a page size setting
+   *
+   * @param value the stored or posted page size
+   * @return the page size when the value is a positive number, else an empty
+   *         string
+   */
+  public static String getPageSize(String value) {
+    int pageSize = parsePageSize(value);
+    return pageSize > 0 ? String.valueOf(pageSize) : "";
+  }
+
   @Override
   protected void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
     PortletRequestDispatcher dispatcher = getPortletContext().getRequestDispatcher("/WEB-INF/jsp/appCenter/adminSetup/view.jsp");
@@ -52,10 +64,22 @@ public class AdminSetupPortlet extends GenericPortlet {
   @Override
   public void processAction(ActionRequest request, ActionResponse response) throws IOException, PortletException {
     PortletPreferences preferences = request.getPreferences();
-    String pageSize = request.getParameter(PAGE_SIZE_PREFERENCE_NAME);
-    preferences.setValue(PAGE_SIZE_PREFERENCE_NAME, pageSize);
-    response.setRenderParameter(PAGE_SIZE_PREFERENCE_NAME, pageSize);
+    int pageSize = parsePageSize(request.getParameter(PAGE_SIZE_PREFERENCE_NAME));
+    if (pageSize <= 0) {
+      // only a positive number is stored, the stored page size stays otherwise
+      return;
+    }
+    preferences.setValue(PAGE_SIZE_PREFERENCE_NAME, String.valueOf(pageSize));
+    response.setRenderParameter(PAGE_SIZE_PREFERENCE_NAME, String.valueOf(pageSize));
     preferences.store();
+  }
+
+  private static int parsePageSize(String value) {
+    try {
+      return value == null ? 0 : Integer.parseInt(value.trim());
+    } catch (NumberFormatException e) {
+      return 0;
+    }
   }
 
 }

@@ -1,12 +1,11 @@
 <%@ page import="javax.portlet.PortletPreferences" %>
+<%@ page import="io.meeds.appcenter.portlet.AdminSetupPortlet" %>
+<%@ page import="org.exoplatform.social.webui.Utils" %>
 <%@ taglib uri="http://java.sun.com/portlet_2_0" prefix="portlet"%>
 <portlet:defineObjects/>
 <%
   PortletPreferences preferences = renderRequest.getPreferences();
-  String pageSize = preferences.getValue("pageSize", "");
-  if (pageSize == null) {
-  	pageSize = "";
-  }
+  String pageSize = AdminSetupPortlet.getPageSize(preferences.getValue("pageSize", null));
 %>
 <div class="VuetifyApp">
   <div data-app="true"
@@ -16,7 +15,7 @@
     <script>
   		require(['SHARED/adminSetupPortletBundle'], function(adminSetupPortletApp) {
   			var preferences = {
-  				pageSize: "<%=pageSize%>"
+  				pageSize: <%=Utils.toScriptString(pageSize)%>
   			};
   			adminSetupPortletApp.init(preferences);
 	    });
