@@ -19,6 +19,7 @@
 package io.meeds.appcenter.rest;
 
 import static io.meeds.appcenter.rest.util.RestUtils.privateAnswer;
+import static io.meeds.appcenter.rest.util.RestUtils.privateRefusal;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -556,42 +557,52 @@ public class ApplicationRest {
                                                                         Optional<Long> lastModified) {
     Application application = appCenterService.getApplication(applicationId);
     if (application == null) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      return privateRefusal(HttpStatus.NOT_FOUND);
     } else {
       if (StringUtils.isBlank(request.getRemoteUser())) {
         if (!appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
           LOG.warn("An anonymous user attempts to access avatar of user {} without a valid access token", applicationId);
-          throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+          return privateRefusal(HttpStatus.NOT_FOUND);
         }
       } else if (!appCenterService.canEdit(request.getRemoteUser())
                  && !appCenterService.canAccess(application, request.getRemoteUser())
                  && !appCenterService.isIllustrationTokenValid(applicationId, token, lastModified.orElse(0l))) {
 
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        return privateRefusal(HttpStatus.UNAUTHORIZED);
       }
     }
     try {
       String mimeType = fileService.getFileInfo(application.getImageFileId()).getMimetype();
       InputStream stream = appCenterService.getApplicationImageInputStream(applicationId, dimensions);
       if (stream == null) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        return privateRefusal(HttpStatus.NOT_FOUND);
       }
       Long lastUpdated = appCenterService.getApplicationImageLastUpdated(applicationId);
       BodyBuilder builder = ResponseEntity.ok();
       if (lastModified.isPresent()) {
         builder.lastModified(lastUpdated)
                .eTag(String.valueOf(Objects.hash(lastUpdated)))
-               .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic());
+               .cacheControl(getIllustrationCacheControl(application));
       } else {
         builder.cacheControl(CacheControl.noStore());
       }
       return builder.contentType(MediaType.valueOf(mimeType))
                     .body(new InputStreamResource(stream));
     } catch (ApplicationNotFoundException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      return privateRefusal(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+      return privateRefusal(HttpStatus.BAD_REQUEST);
     }
+  }
+
+  /**
+   * A shared cache may store the illustration only of an application open to
+   * guests ({@code canAccess} with no user): any other illustration is kept by
+   * the browser of the user it was served to.
+   */
+  private CacheControl getIllustrationCacheControl(Application application) {
+    CacheControl cacheControl = CacheControl.maxAge(Duration.ofDays(365));
+    return appCenterService.canAccess(application, null) ? cacheControl.cachePublic() : cacheControl.cachePrivate();
   }
 
 }
